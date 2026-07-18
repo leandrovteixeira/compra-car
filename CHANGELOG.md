@@ -11,6 +11,9 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 - 2026-07-18: criação inicial do Engineering Hub, com estrutura de diretórios e documentação de contexto, operação e arquitetura.
 - Criação de `PRODUCT_SPEC.md`, `DOMAIN_MODEL.md`, `CONTRACTS.md` e `UI_FLOW.md` como documentos de fundação anteriores à implementação do Next.js.
 - Atualização do escopo do MVP para disponibilizar todas as versões ativas já existentes no Supabase atual.
+- Preparação da inspeção mínima e somente leitura do Supabase atual.
+- Criação dos scripts SQL de inventário de schema, relacionamentos, RLS e perfil controlado de candidatos.
+- Criação dos documentos de plano de inspeção, requisitos de dados do MVP, mapa do Legacy Supabase Adapter e registro de resultados pendentes.
 
 ### Changed
 

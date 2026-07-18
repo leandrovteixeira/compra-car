@@ -58,6 +58,11 @@ Versões, bibliotecas auxiliares e ferramentas de testes estão **PENDENTE**.
 
 ## Decisões já tomadas
 
+- A Fase 1 começa pela inspeção mínima e somente leitura do Supabase atual.
+- O banco atual é a fonte inicial do MVP e não será alterado durante esta inspeção.
+- A inspeção usará metadados para descobrir a superfície real antes de validar consultas de perfil com dados existentes.
+- Nenhuma alteração estrutural, migration ou correção de dados será executada nesta etapa.
+- Os resultados da inspeção permanecem **PENDENTE** até a execução manual e controlada dos scripts preparados.
 - O MVP será mobile-first.
 - A comparação aceitará 2 ou 3 veículos.
 - A interface exibirá apenas as diferenças.
@@ -94,6 +99,8 @@ Versões, bibliotecas auxiliares e ferramentas de testes estão **PENDENTE**.
 ## Restrições
 
 - Não alterar `Legacy` sem autorização e auditoria.
+- Manter a inspeção inicial do Supabase estritamente somente leitura.
+- Não tratar hipótese histórica ou documental como estrutura atual sem evidência do banco.
 - Não expor chaves, senhas ou segredos.
 - Não acoplar componentes de interface diretamente às tabelas legadas.
 - Não presumir detalhes técnicos ainda não confirmados.
@@ -114,18 +121,21 @@ Em 2026-07-18, foi criada a estrutura inicial do Engineering Hub. A aplicação 
 
 Foram criados os quatro documentos de fundação do produto: especificação do produto, modelo de domínio, contratos conceituais e fluxo de interface mobile-first. A implementação do Next.js ainda não foi executada. Uma nova carga do Excel não é necessária para iniciar ou concluir o MVP.
 
+A Fase 1 foi iniciada com a preparação da inspeção mínima e somente leitura do Supabase atual. Foram preparados o plano, os requisitos de dados, o mapa do legado, o registro de resultados e consultas de inventário. Nenhuma consulta foi executada e os resultados permanecem **PENDENTE**. O Legacy Supabase Adapter e o frontend ainda não foram iniciados.
+
 ## Próximos passos
 
 1. Revisar e aprovar o Engineering Hub.
 2. Confirmar o estado do repositório Git e do remoto.
 3. Identificar a próxima atividade aplicável em `ROADMAP_MASTER.md`.
 4. Revisar e aprovar `PRODUCT_SPEC.md`, `DOMAIN_MODEL.md`, `CONTRACTS.md` e `UI_FLOW.md` antes de criar o Next.js.
-5. Inspecionar minimamente o schema e os dados já existentes na superfície do Supabase atual usada pelo MVP.
-6. Mapear o Legacy Supabase Adapter.
-7. Validar os contratos normalizados com os dados reais existentes.
-8. Implementar a UI sobre os contratos, sem acesso direto às estruturas legadas.
-9. Concluir o MVP e executar o piloto.
-10. Após o piloto, planejar correções graduais e ajustar o importador Excel à estrutura vigente.
+5. Revisar os artefatos de inspeção somente leitura preparados em `docs/data/` e `supabase/inspection/`.
+6. Executar manualmente os inventários aprovados no ambiente confirmado e registrar resultados sanitizados.
+7. Mapear o Legacy Supabase Adapter a partir das evidências encontradas.
+8. Validar os contratos normalizados com os dados reais existentes.
+9. Implementar a UI sobre os contratos, sem acesso direto às estruturas legadas.
+10. Concluir o MVP e executar o piloto.
+11. Após o piloto, planejar correções graduais e ajustar o importador Excel à estrutura vigente.
 
 ## Pendências
 
@@ -136,4 +146,5 @@ Foram criados os quatro documentos de fundação do produto: especificação do 
 - **PENDENTE:** definir, após o piloto, a evolução do importador Excel e o processo seguro para cargas futuras.
 - **PENDENTE:** confirmar identidade visual provisória e permissões de marca.
 - **PENDENTE:** auditar o Supabase atual e seus controles de acesso.
+- **PENDENTE:** executar os scripts de inspeção aprovados e preencher `SUPABASE_INSPECTION_RESULTS.md`.
 - **PENDENTE:** definir versões e ferramentas do frontend quando sua criação for autorizada.

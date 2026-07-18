@@ -3,6 +3,13 @@
 ## Objetivo
 Criar rapidamente um MVP mobile-first para vendedores de concessionárias, permitindo comparar 2 ou 3 veículos, destacar diferenças e vantagens e gerar um PDF completo com aviso legal.
 
+## Estado atual da Fase 1
+
+- **CONCLUÍDO:** fundação arquitetural do produto
+- **INICIADO:** preparação da inspeção mínima e somente leitura do Supabase atual; execução e resultados ainda pendentes
+- **NÃO INICIADO:** Legacy Supabase Adapter
+- **NÃO INICIADO:** frontend Next.js
+
 ## Semana 1 — MVP
 - Criar Engineering Hub do projeto
 - Criar repositório GitHub privado
