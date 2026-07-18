@@ -1,0 +1,9 @@
+services:
+  appsmith:
+    image: appsmith/appsmith-ce:latest
+    container_name: appsmith
+    ports:
+      - "8080:80"
+    volumes:
+      - ./stacks:/appsmith-stacks
+    restart: unless-stopped

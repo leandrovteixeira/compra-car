@@ -1,0 +1,26 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: compracar
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  appsmith:
+    image: appsmith/appsmith-ce
+    container_name: appsmith
+    ports:
+      - "8080:80"
+    depends_on:
+      - postgres
+    volumes:
+      - appsmith-stacks:/appsmith-stacks
+
+volumes:
+  postgres-data:
+  appsmith-stacks:

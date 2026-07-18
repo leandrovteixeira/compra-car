@@ -1,0 +1,38 @@
+# Dependências
+node_modules/
+
+# Saídas de build e testes
+.next/
+out/
+dist/
+build/
+coverage/
+
+# Arquivos temporários e logs
+tmp/
+temp/
+*.log
+
+# Variáveis de ambiente e segredos
+.env
+.env.*
+!.env.example
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Configurações locais do editor
+.vscode/settings.json
+.vscode/*.local.json
+
+# Python
+**/__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Supabase local
+supabase/.temp/
+supabase/.branches/

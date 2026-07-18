@@ -1,0 +1,315 @@
+group_name;equipment_group;spec_set;detail;code;type;unit;value_direction;unit_perceived_value;relative_value;is_baseline;notes
+Dimensions;Length (mm);Length;Length;DM_0001;numeric;mm;Positive;0;0;;
+Dimensions;Width (mm);Width;Width;DM_0002;numeric;mm;Positive;0;0;;
+Dimensions;Height (mm);Height;Height;DM_0003;numeric;mm;Positive;0;0;;
+Dimensions;Wheelbase (mm);Wheelbase;Wheelbase;DM_0004;numeric;mm;Positive;0;0;;
+Dimensions;Ground clearance (mm);Ground clearance;Ground clearance;DM_0005;numeric;mm;Positive;0;0;;
+Dimensions;Cargo space;Trunk;Trunk;DM_0006;numeric;L;Positive;0;0;;
+Dimensions;Cargo space;Total;Total;DM_0007;numeric;L;Positive;0;0;;
+Dimensions;Weight;Curb weight;Curb weight;DM_0008;numeric;kg;Negative;0;0;;
+Dimensions;Weight;Gross vehicle weight;Gross vehicle weight;DM_0009;numeric;kg;Negative;0;0;;
+Dimensions;Weight;Load capacity;Load capacity;DM_0010;numeric;kg;Positive;0;0;;
+Dimensions;Weight;Maximum towing capacity;Maximum towing capacity;DM_0011;numeric;kg;Positive;0;0;;
+Powertrain;Engine type;Engine tech;ICE;PW_1015;scale;;;0;0;true;
+Powertrain;Engine type;Engine tech;MHEV;PW_0001;scale;;;0;7130;;vs. conventional
+Powertrain;Engine type;Engine tech;HEV;PW_0002;scale;;;0;14250;;vs. conventional
+Powertrain;Engine type;Engine tech;PHEV;PW_0003;scale;;;0;28500;;vs. conventional
+Powertrain;Engine type;Engine tech;EV;PW_0004;scale;;;0;34200;;vs. conventional
+Powertrain;Combustion engine;Displacement;Displacement;PW_0005;numeric;cc;Positive;0;0;;
+Powertrain;Combustion engine;Turbocharger;Aspirated;PW_1008;scale;;;0;0;true;baseline
+Powertrain;Combustion engine;Turbocharger;Turbocharger;PW_0006;scale;;;0;2600;;vs. conventional
+Powertrain;Combustion engine;Turbocharger;Turbocharger with direct fuel injection;PW_0007;scale;;;0;2600;;vs. conventional
+Powertrain;Combustion engine;Cylinders;Cylinders;PW_0008;numeric;unit;Positive;0;0;;
+Powertrain;Combustion engine;Engine type;Inline cylinders;PW_0009;scale;;;0;0;true;
+Powertrain;Combustion engine;Engine type;V cylinders;PW_0010;scale;;;0;50;;
+Powertrain;Combustion engine;Max power;Max power;PW_0011;numeric;cv;Positive;0;30;;
+Powertrain;Combustion engine;Max torque;Max torque;PW_0012;numeric;Nm;Positive;0;20;;
+Powertrain;Combustion engine;Rotation max power;Rotation max power;PW_0014;numeric;RPM;Negative;0;0;;
+Powertrain;Combustion engine;Rotation max torque;Rotation max torque;PW_0015;numeric;RPM;Negative;0;0;;
+Powertrain;Transmission;Transmission type;MT;PW_0016;scale;;;0;0;true;vs. MT (4AT 4000/ 500 per speed)
+Powertrain;Transmission;Transmission type;AT;PW_0045;scale;;;0;4280;;vs. MT (4AT 4000/ 500 per speed)
+Powertrain;Transmission;Transmission type;DCT;PW_0017;scale;;;0;5990;;vs. MT (6DCT 6000/ 500 per speed)
+Powertrain;Transmission;Transmission type;CVT;PW_0018;scale;;;0;5180;;vs. MT
+Powertrain;Transmission;Transmission type;DHT;PW_0019;scale;;;0;7000;;vs. MT
+Powertrain;Transmission;# of Speed;# of Speed;PW_0020;numeric;unit;Positive;500;0;;R$500 per speed
+Powertrain;Electric engine;Permanent Magnet Synchronous Motor (PMSM);Permanent Magnet Synchronous Motor (PMSM);PW_0021;binary;;;0;0;;
+Powertrain;Electric engine;FR Max power;FR Max power;PW_0022;numeric;cv;Positive;0;0;;
+Powertrain;Electric engine;FR Max torque;FR Max torque;PW_0023;numeric;Nm;Positive;0;0;;
+Powertrain;Electric engine;RR Max power;RR Max power;PW_0025;numeric;cv;Positive;0;0;;
+Powertrain;Electric engine;RR Max torque;RR Max torque;PW_0026;numeric;Nm;Positive;0;0;;
+Powertrain;Battery;Battery capacity;Battery capacity;PW_0028;numeric;kWh;Positive;500;0;;
+Powertrain;Battery;Max charger AC;Max charger AC;PW_0029;numeric;kW;Positive;0;10;;
+Powertrain;Battery;Max charger DC;Max charger DC;PW_0030;numeric;kW;Positive;0;10;;
+Powertrain;Battery;V2L function;V2L function;PW_0031;binary;;;0;100;;
+Powertrain;Combined performance;Total max power;Total max power;PW_0032;numeric;cv;Positive;30;0;;
+Powertrain;Combined performance;Total max torque;Total max torque;PW_0033;numeric;Nm;Positive;0;0;;
+Powertrain;Combined performance;Power x weight;Power x weight;PW_0035;numeric;kg/cv;Negative;0;0;;
+Powertrain;Combined performance;Torque x weight;Torque x weight;PW_0036;numeric;kg/Nm;Negative;0;0;;
+Powertrain;Combined performance;0-100 km/h acceleration;0-100 km/h acceleration;PW_0037;numeric;s;Negative;0;0;;
+Powertrain;Combined performance;Max speed;Max speed;PW_0038;numeric;km/h;Positive;0;0;;
+Powertrain;Traction;Traction;FWD;PW_0039;scale;;;0;0;true;
+Powertrain;Traction;Traction;RWD;PW_0040;scale;;;0;2850;;vs. 2WD
+Powertrain;Traction;Traction;AWD;PW_0041;scale;;;0;8100;;vs. 2WD
+Powertrain;Suspension;FR Suspension;FR McPherson;PW_0042;binary;;;0;0;;
+Powertrain;Suspension;RR Suspension;RR McPherson;PW_0043;scale;;;0;0;true;
+Powertrain;Suspension;RR Suspension;RR Multilink;PW_0044;scale;;;0;500;;
+Ownership;Inmetro;FE;FE;OW_0001;numeric;MJ/Km;Negative;0;0;;
+Ownership;Inmetro;Urban (gasoline);Urban (gasoline);OW_0002;numeric;km/L;Positive;0;0;;
+Ownership;Inmetro;Road (gasoline);Road (gasoline);OW_0003;numeric;km/L;Positive;0;0;;
+Ownership;Inmetro;Urban (ethanol);Urban (ethanol);OW_0004;numeric;km/L;Positive;0;0;;
+Ownership;Inmetro;Road (ethanol);Road (ethanol);OW_0005;numeric;km/L;Positive;0;0;;
+Ownership;Fuel tank;Fuel tank;Fuel tank;OW_0006;numeric;L;Positive;0;0;;
+Ownership;Autonomy;E-Range;E-Range;OW_0007;numeric;km;Positive;0;0;;
+Ownership;Autonomy;TTL autonomy;TTL autonomy;OW_0008;numeric;km;Positive;0;0;;
+Ownership;Total warranty;Total warranty;Total warranty;OW_0009;numeric;years;Positive;0;860;;
+Ownership;Electric system warranty;Electric system warranty;Electric system warranty;OW_0010;numeric;years;Positive;0;0;;
+Exterior;Rims;Alloy Wheels;Alloy Wheels;EX_0001;binary;;;0;720;;vs. Steel
+Exterior;Rims;Wheels diameter;Wheels diameter;EX_0002;numeric;inch;Positive;270;0;;per inch
+Exterior;Tires;Tires width;Tires width;EX_0003;numeric;mm;Positive;20;0;;per mm
+Exterior;Tires;Ratio;Ratio;EX_0004;numeric;mm;Negative;0;0;;
+Exterior;Spare tire;Spare tire;Repair kit;EX_1007;scale;;;0;0;true;vs. Kit
+Exterior;Spare tire;Spare tire;Temporary;EX_0005;scale;;;0;200;;vs. Kit
+Exterior;Spare tire;Spare tire;Full Size;EX_0006;scale;;;0;410;;vs. temporary
+Exterior;Front illumination;Projection headlamp;Projection headlamp;EX_0007;binary;;;0;220;;vs. conventional
+Exterior;Front illumination;LED headlamps;None;EX_1016;scale;;;0;0;true;vs. conventional
+Exterior;Front illumination;LED headlamps;Partial;EX_0008;scale;;;0;2180;;vs. conventional
+Exterior;Front illumination;LED headlamps;Full;EX_0009;scale;;;0;2630;;vs. conventional
+Exterior;Front illumination;Welcome function;Welcome function;EX_0010;binary;;;0;50;;vs. none
+Exterior;Front illumination;Auto Light Control;Auto Light Control;EX_0011;binary;;;0;120;;vs. none
+Exterior;Front illumination;IHC (Intelligent high beam control);IHC (Intelligent high beam control);EX_0012;binary;;;0;410;;vs. none
+Exterior;Front illumination;Electric height adjustment;Electric height adjustment;EX_0013;binary;;;0;50;;vs. Manual
+Exterior;Front illumination;DRL;None;EX_1002;scale;;;0;0;true;vs. none
+Exterior;Front illumination;DRL;Bulb;EX_0014;scale;;;0;140;;vs. none
+Exterior;Front illumination;DRL;LED;EX_0015;scale;;;0;480;;vs. none
+Exterior;Front illumination;LED decorative lights;LED decorative lights;EX_0016;binary;;;0;200;;vs. none
+Exterior;Front illumination;Fog lamps;None;EX_1001;scale;;;0;0;true;vs. none
+Exterior;Front illumination;Fog lamps;Bulb;EX_0017;scale;;;0;420;;vs. none
+Exterior;Front illumination;Fog lamps;LED;EX_0018;scale;;;0;680;;vs. none
+Exterior;Front illumination;LED side turn signal lamp;LED side turn signal lamp;EX_0019;binary;;;0;200;;vs. none
+Exterior;Front illumination;FR dynamic turn signals;FR dynamic turn signals;EX_0020;binary;;;0;50;;vs. conventional
+Exterior;Front illumination;Door courtesy lamp;Door courtesy lamp;EX_0021;binary;;;0;60;;vs. none
+Exterior;Rear illumination;LED rear lamps;LED rear lamps;EX_0022;binary;;;0;640;;vs. none
+Exterior;Rear illumination;Fog lamps;None;EX_1018;scale;;;0;0;true;vs. none
+Exterior;Rear illumination;Fog lamps;Bulb;EX_0023;scale;;;0;420;;vs. none
+Exterior;Rear illumination;Fog lamps;LED;EX_0024;scale;;;0;680;;vs. none
+Exterior;Rear illumination;LED brake light;LED brake light;EX_0025;binary;;;0;50;;vs. none
+Exterior;Rear illumination;RR dynamic turn signals ;RR dynamic turn signals ;EX_0026;binary;;;0;50;;vs. conventional
+Exterior;Rear illumination;Corner Window Charging Indicator Light;Corner Window Charging Indicator Light;EX_0044;binary;;;0;200;;vs. none
+Exterior;O/S mirror;Power mirrors;Power mirrors;EX_0027;binary;;;0;170;;vs. manual
+Exterior;O/S mirror;Electric folding;Electric folding;EX_0028;binary;;;0;270;;vs. manual
+Exterior;O/S mirror;Memory function;Memory function;EX_0029;binary;;;0;100;;vs. manual
+Exterior;O/S mirror;Tilt down;None;EX_1012;scale;;;0;0;true;vs. manual
+Exterior;O/S mirror;Tilt down;Right;EX_0030;scale;;;0;130;;vs. manual
+Exterior;O/S mirror;Tilt down;Left;EX_1006;scale;;;0;130;;vs. manual
+Exterior;O/S mirror;Tilt down;Both;EX_0031;scale;;;0;130;;vs. manual
+Exterior;O/S mirror;Heated;Heated;EX_0032;binary;;;0;110;;vs. none
+Exterior;O/S mirror;O/S electrochromic mirror (ECM);O/S electrochromic mirror (ECM);EX_0033;binary;;;0;320;;vs. none
+Exterior;O/S handles;Flush type;Flush type;EX_0034;binary;;;0;300;;vs. conventional
+Exterior;Sunroof;Sunroof;None;EX_1009;scale;;;0;0;true;vs. none
+Exterior;Sunroof;Sunroof;Power compact;EX_0035;scale;;;0;2760;;vs. none
+Exterior;Sunroof;Sunroof;Fixed glass roof;EX_0036;scale;;;0;3420;;vs. none
+Exterior;Sunroof;Sunroof;Power panorama;EX_0037;scale;;;0;4040;;vs. none
+Exterior;Roof rack;Roof rack;Roof rack;EX_0038;binary;;;0;450;;vs. none
+Exterior;Rear spoiler;Rear spoiler;Rear spoiler;EX_0039;binary;;;0;350;;vs. none
+Exterior;Shark antenna;Shark antenna;Shark antenna;EX_0040;binary;;;0;50;;vs. conventional
+Exterior;Tailgate;Power;Power;EX_0041;binary;;;0;2000;;vs. none
+Exterior;Tailgate;Hands Free;Hands Free;EX_0042;binary;;;0;550;;vs. none
+Exterior;Dual exhaust pipes;Dual exhaust pipes;Dual exhaust pipes;EX_0043;binary;;;0;290;;vs. conventional
+Interior;Seat Material;Seat Material;Fabric;IN_0001;scale;;;0;0;true;
+Interior;Seat Material;Seat Material;Fabric + artificial leather;IN_0002;scale;;;0;730;;vs. fabric
+Interior;Seat Material;Seat Material;Artificial leather;IN_0003;scale;;;0;1710;;vs. fabric
+Interior;Seat Material;Seat Material;Leather;IN_0004;scale;;;0;3190;;vs. fabric
+Interior;Door panel finish;Soft-touch (FR);Soft-touch (FR);IN_0005;binary;;;0;100;;vs. plastic
+Interior;Door panel finish;Soft-touch (RR);Soft-touch (RR);IN_0006;binary;;;0;100;;vs. plastic
+Interior;Dashboard finish;Soft-Touch;Soft-Touch;IN_0007;binary;;;0;100;;vs. plastic
+Interior;FR seat adjustament;Power seat (Driver);Power seat (Driver);IN_0008;binary;;;0;600;;vs. none
+Interior;FR seat adjustament;Power seat (Passenger);Power seat (Passenger);IN_0009;binary;;;0;600;;vs. none
+Interior;FR seat adjustament;Power seat (RR left);Power seat (RR left);IN_0062;binary;;;0;600;;
+Interior;FR seat adjustament;Power seat (RR right);Power seat (RR right);IN_0063;binary;;;0;600;;
+Interior;FR seat adjustament;Manual lumbar adjusment (Driver);Manual lumbar adjusment (Driver);IN_0010;binary;;;0;80;;vs. none
+Interior;FR seat adjustament;Manual lumbar adjusment (passenger);Manual lumbar adjusment (passenger);IN_0011;binary;;;0;50;;vs. none
+Interior;FR seat adjustament;Electric lumbar adjusment (Driver);Electric lumbar adjusment (Driver);IN_0012;binary;;;0;150;;vs. none
+Interior;FR seat adjustament;Electric lumbar adjusment (passenger);Electric lumbar adjusment (passenger);IN_0013;binary;;;0;150;;vs. none
+Interior;FR seat adjustament;Leg power adjustment (driver);Leg power adjustment (driver);IN_0014;binary;;;0;150;;vs. none
+Interior;FR seat adjustament;Leg power adjustment (passenger);Leg power adjustment (passenger);IN_0015;binary;;;0;150;;vs. none
+Interior;FR seat adjustament;Memory function (Driver);Memory function (Driver);IN_0016;binary;;;0;300;;vs. none
+Interior;FR seat adjustament;Memory function (Passenger);Memory function (Passenger);IN_0017;binary;;;0;300;;vs. none
+Interior;FR seat adjustament;Memory function (RR);Memory function (RR);IN_0064;binary;;;0;600;;
+Interior;FR seat adjustament;Welcome function (Driver);Welcome function (Driver);IN_0018;binary;;;0;100;;vs. none
+Interior;Headrest adjustment;Front row headrest adjustment;Front row headrest adjustment;IN_0019;binary;;;0;20;;vs. none
+Interior;Headrest adjustment;Second row headrest adjustment;Second row headrest adjustment;IN_0020;binary;;;0;20;;vs. none
+Interior;RR seat adjustment;Reclining;Reclining;IN_0021;binary;;;0;260;;vs. none
+Interior;RR seat adjustment;Split bench (60/40);Split bench (60/40);IN_0022;binary;;;0;350;;vs. fixed bench
+Interior;RR seat adjustment;Split bench (4/2/4);Split bench (4/2/4);IN_0023;binary;;;0;270;;vs. fixed bench
+Interior;RR seat adjustment;Luggage flat floor;Luggage flat floor;IN_0024;binary;;;0;570;;vs. fixed bench
+Interior;Seat heating;Heated (Driver);Heated (Driver);IN_0025;binary;;;0;550;;vs. none
+Interior;Seat heating;Heated (Passenger);Heated (Passenger);IN_0026;binary;;;0;550;;vs. none
+Interior;Seat heating;Heating (RR seat);Heating (RR seat);IN_0027;binary;;;0;860;;vs. none
+Interior;Seat ventilation;Ventilated (Driver);Ventilated (Driver);IN_0028;binary;;;0;600;;vs. none
+Interior;Seat ventilation;Ventilated (Passenger);Ventilated (Passenger);IN_0029;binary;;;0;600;;vs. none
+Interior;Seat ventilation;Ventilated (RR);Ventilated (RR);IN_0059;binary;;;0;600;;vs. none
+Interior;Seat massage;Massage (driver);Massage (driver);IN_0030;binary;;;0;250;;vs. none
+Interior;Seat massage;Massage (Passenger);Massage (Passenger);IN_0031;binary;;;0;250;;vs. none
+Interior;Seat massage;Massage (RR);Massage (RR);IN_0065;binary;;;0;500;;
+Interior;Seat massage;VIP seat (Passenger);VIP seat (Passenger);IN_0032;binary;;;0;250;;vs. none
+Interior;Steering Wheel;Power Steering (EPS);Power Steering (EPS);IN_0033;binary;;;0;1080;;vs power steering
+Interior;Steering Wheel;Steering Wheel;Fixed;IN_1013;scale;;;0;0;true;vs. none
+Interior;Steering Wheel;Steering Wheel;Tilt;IN_0034;scale;;;0;110;;vs. none
+Interior;Steering Wheel;Steering Wheel;Tilt & Telescopic;IN_0035;scale;;;0;330;;vs. none
+Interior;Steering Wheel;Steering Wheel;Electric tilt & Telescopic;IN_0036;scale;;;0;570;;vs. none
+Interior;Steering Wheel;Leather steering wheel;Leather steering wheel;IN_0037;binary;;;0;260;;vs. PVC
+Interior;Steering Wheel;Heated;Heated;IN_0038;binary;;;0;570;;vs. none
+Interior;Steering Wheel;Audio remote control;Audio remote control;IN_0039;binary;;;0;170;;vs. none
+Interior;Interior lighting;Ambient light;Ambient light;IN_0040;binary;;;0;100;;vs. none
+Interior;Interior lighting;Reading lamps;None;IN_1004;scale;;;0;0;true;vs. none
+Interior;Interior lighting;Reading lamps;Bulb;IN_0041;scale;;;0;40;;vs. none
+Interior;Interior lighting;Reading lamps;LED;IN_0042;scale;;;0;60;;vs. Bulb
+Interior;Interior lighting;Luggage lamp;None;IN_1005;scale;;;0;0;true;vs. none
+Interior;Interior lighting;Luggage lamp;Bulb;IN_0043;scale;;;0;40;;vs. none
+Interior;Interior lighting;Luggage lamp;LED;IN_0044;scale;;;0;30;;vs. none
+Interior;Sunvisor;Illumination;None;IN_1019;scale;;;0;0;true;vs. none
+Interior;Sunvisor;Illumination;Bulb;IN_0045;scale;;;0;40;;vs. none
+Interior;Sunvisor;Illumination;LED;IN_0046;scale;;;0;50;;vs. none
+Interior;Sunvisor;Vanity mirror;Vanity mirror;IN_0047;binary;;;0;50;;vs. none
+Interior;Sunglasses holder;Sunglasses holder;Sunglasses holder;IN_0048;binary;;;0;30;;vs. none
+Interior;I/S door handles;Electric handles (FR);Electric handles (FR);IN_0060;binary;;;0;200;;vs. none
+Interior;I/S door handles;Electric handles (RR);Electric handles (RR);IN_0061;binary;;;0;200;;vs. none
+Interior;Inside Mirror;I/S electrochromic mirror (ECM);I/S electrochromic mirror (ECM);IN_0049;binary;;;0;310;;vs. day & night
+Interior;Inside Mirror;Digital;Digital;IN_0050;binary;;;0;860;;vs. day & night
+Interior;Glove box;Cooling;Cooling;IN_0051;binary;;;0;140;;vs. none
+Interior;Glove box;Illuminated;Illuminated;IN_0052;binary;;;0;20;;vs. none
+Interior;Glove box;Damped;Damped;IN_0053;binary;;;0;50;;vs. none
+Interior;Front armrest;FR armrest;FR armrest;IN_0054;binary;;;0;210;;vs. none
+Interior;Front armrest;RR armrest;RR armrest;IN_0055;binary;;;0;210;;vs. none
+Interior;Storage box;Storage box;Storage box;IN_0056;binary;;;0;50;;
+Interior;Storage box;Illuminated;Illuminated;IN_0057;binary;;;0;20;;vs. none
+Interior;Storage box;Cooling;Cooling;IN_0058;binary;;;0;110;;vs. none
+Convenience;TGS Knob;TGS Knob;Regular;CO_1011;scale;;;0;0;true;vs. regular
+Convenience;TGS Knob;TGS Knob;SBW (shift by wire);CO_0001;scale;;;0;300;;vs. regular
+Convenience;TGS Knob;TGS Knob;Steering column shift;CO_0002;scale;;;0;500;;vs. regular
+Convenience;TGS Knob;Paddle shifts;Paddle shifts;CO_0003;binary;;;0;290;;vs. none
+Convenience;Drive mode select;Drive mode select;Drive mode select;CO_0004;binary;;;0;110;;vs. none
+Convenience;Conectivity;Voice recognition control;Voice recognition control;CO_0005;binary;;;0;240;;vs. none
+Convenience;Conectivity;Multi-zone voice assistant;Multi-zone voice assistant;CO_0006;binary;;;0;250;;vs. none
+Convenience;Conectivity;Bluetooth;Bluetooth;CO_0007;binary;;;0;200;;vs. none
+Convenience;Conectivity;Telematics;Telematics;CO_0008;binary;;;0;1000;;vs. none
+Convenience;Conectivity;Wi-Fi;Wi-Fi;CO_0009;binary;;;0;500;;vs. none
+Convenience;USB port (Type A);FR;FR;CO_0010;numeric;unit;Positive;90;0;;per each
+Convenience;USB port (Type A);RR;RR;CO_0011;numeric;unit;Positive;90;0;;per each
+Convenience;USB port (Type C);FR;FR;CO_0053;numeric;unit;Positive;130;0;;per each
+Convenience;USB port (Type C);RR;RR;CO_0054;numeric;unit;Positive;130;0;;per each
+Convenience;Power Outlet 12V;Central console;Central console;CO_0012;numeric;unit;Positive;60;0;;per each
+Convenience;Power Outlet 12V;Luggage ;Luggage ;CO_0013;numeric;unit;Positive;70;0;;per each
+Convenience;Wireless Charging Pad;Wireless Charger;None;CO_1014;scale;;;0;0;true;vs. none
+Convenience;Wireless Charging Pad;Wireless Charger;Conventional;CO_0014;scale;;;0;400;;vs. none
+Convenience;Wireless Charging Pad;Wireless Charger;Dual;CO_0015;scale;;;0;780;;vs. none
+Convenience;Wireless Charging Pad;With cooling;With cooling;CO_0016;binary;;;0;550;;vs. none
+Convenience;Cluster;Cluster Size;Cluster Size;CO_0017;numeric;inch;Positive;190;0;;per inch
+Convenience;Cluster;HUD;HUD;CO_0018;binary;;;0;1610;;vs. none
+Convenience;Touch screen display;Display Screen size;Display Screen size;CO_0019;numeric;inch;Positive;200;0;;per inch
+Convenience;Touch screen display;Sliding screen;Sliding screen;CO_0020;binary;;;0;200;;vs. none
+Convenience;Touch screen display;Rotating screen;Rotating screen;CO_0021;binary;;;0;200;;vs. none
+Convenience;Touch screen display;Multimedia connection;None;CO_1003;scale;;;0;0;true;vs. none
+Convenience;Touch screen display;Multimedia connection;CarPlay/ Android Auto (USB);CO_0022;scale;;;0;260;;vs. none
+Convenience;Touch screen display;Multimedia connection;CarPlay/ Android Auto (Wireless);CO_0023;scale;;;0;320;;vs. none
+Convenience;Touch screen display;Built-In Navigation (GPS);Built-In Navigation (GPS);CO_0024;binary;;;0;2970;;vs. none
+Convenience;Touch screen display;OTA (Over-the-Air);OTA (Over-the-Air);CO_0025;binary;;;0;800;;vs. none
+Convenience;Sound system;Premium sound;Premium sound;CO_0026;binary;;;0;1710;;vs. none
+Convenience;Sound system;Speakers;Speakers;CO_0027;numeric;unit;Positive;50;0;;per each
+Convenience;Sound system;Tweeters;Tweeters;CO_0028;numeric;unit;Positive;50;0;;per each
+Convenience;Sound system;Subwoofer;Subwoofer;CO_0029;numeric;unit;Positive;200;0;;per each
+Convenience;Sound system;Exterior amplifier;Exterior amplifier;CO_0030;numeric;unit;Positive;600;0;;per each
+Convenience;Sound system;Four Audio Zones(Voice command);Four Audio Zones(Voice command);CO_0031;binary;;;0;100;;vs. none
+Convenience;Cruise Control;Cruise Control;None;CO_1010;scale;;;0;0;true;vs. none
+Convenience;Cruise Control;Cruise Control;Regular;CO_0032;scale;;;0;350;;vs. none
+Convenience;Cruise Control;Cruise Control;Speed limitation system;CO_0033;scale;;;0;190;;vs. none
+Convenience;Air Conditioner;A/C Type;None;CO_1000;scale;;;0;0;true;vs. none
+Convenience;Air Conditioner;A/C Type;Manual;CO_0034;scale;;;0;3300;;vs. none
+Convenience;Air Conditioner;A/C Type;Full Auto;CO_0035;scale;;;0;4040;;vs. none
+Convenience;Air Conditioner;A/C Type;Full Auto Dual Zone;CO_0036;scale;;;0;4590;;vs. none
+Convenience;Air Conditioner;A/C Type;Full Auto Tri-Zone;CO_0037;scale;;;0;4570;;vs. none
+Convenience;Air Conditioner;A/C Type;Full Auto Quad-Zone;CO_0038;scale;;;0;5390;;vs. none
+Convenience;Air Conditioner;Cabin air filter;Cabin air filter;CO_0039;binary;;;0;50;;vs. none
+Convenience;Air Conditioner;Air ionizer;Air ionizer;CO_0040;binary;;;0;50;;vs. none
+Convenience;Air Conditioner;Fragrance System;Fragrance System;CO_0055;binary;;;0;200;;
+Convenience;Air Conditioner;Rear air vent;Rear air vent;CO_0041;binary;;;0;260;;vs. none
+Convenience;Auto Rear Window Defogger;Auto Rear Window Defogger;Auto Rear Window Defogger;CO_0042;binary;;;0;100;;vs. none
+Convenience;Power windows;Power;Power;CO_0043;binary;;;150;0;;vs. manual (Power 150 each/ one-touch 100 each)
+Convenience;Power windows;One-Touch;Down;CO_0044;numeric;unit;Positive;50;0;;vs. manual (Power 150 each/ one-touch 100 each)
+Convenience;Power windows;One-Touch;Up & Down;CO_0045;numeric;unit;Positive;110;0;;vs. manual (Power 150 each/ one-touch 100 each)
+Convenience;Keyless entry;Smart Key;Smart Key;CO_0046;binary;;;0;900;;vs. none
+Convenience;Keyless entry;NFC card;NFC card;CO_0047;binary;;;0;100;;vs. none
+Convenience;Keyless entry;Button Start;Button Start;CO_0048;binary;;;0;200;;vs. none
+Convenience;Keyless entry;Contactless Power-On;Contactless Power-On;CO_0049;binary;;;0;400;;vs. none
+Convenience;Keyless entry;E/G Remote Control;E/G Remote Control;CO_0050;binary;;;0;370;;vs. none
+Convenience;Fuel Filler Power Release;Fuel Filler Power Release;Fuel Filler Power Release;CO_0051;binary;;;0;100;;vs. none
+Convenience;Retractable trunk cover;Retractable trunk cover;Retractable trunk cover;CO_0052;binary;;;0;50;;vs. none
+Safety;Child safety lock;Child Lock;Mechanical;SF_0001;scale;;;0;0;true;vs. none
+Safety;Child safety lock;Child Lock;Electronic;SF_0002;scale;;;0;100;;vs. none
+Safety;Seat belt;Second Row Height-Adjustable;Second Row Height-Adjustable;SF_0003;binary;;;0;170;;vs. none
+Safety;Seat belt;Front Row Load-Limiting;Front Row Load-Limiting;SF_0004;binary;;;0;20;;vs. none
+Safety;Seat belt;Second Row Load-Limiting;Second Row Load-Limiting;SF_0005;binary;;;0;20;;vs. none
+Safety;Seat belt;Front Row Pretensioner ;Front Row Pretensioner ;SF_0006;binary;;;0;20;;vs. none
+Safety;Seat belt;Second Row Pretensioner;Second Row Pretensioner;SF_0007;binary;;;0;20;;vs. none
+Safety;Seat belt;ISOFIX Interface;ISOFIX Interface;SF_0008;binary;;;0;50;;vs. none
+Safety;Seat belt;Front row seat belt reminder;Front row seat belt reminder;SF_0009;binary;;;0;100;;vs. none
+Safety;Seat belt;Second row seat belt reminder;Second row seat belt reminder;SF_0010;binary;;;0;100;;vs. none
+Safety;Airbags;Front airbags;Front airbags;SF_0011;binary;;;0;1500;;vs. none
+Safety;Airbags;Side airbags (FR);Side airbags (FR);SF_0012;binary;;;0;640;;vs. none
+Safety;Airbags;Side airbags (RR);Side airbags (RR);SF_0013;binary;;;0;540;;vs. none
+Safety;Airbags;Central side airbags (FR);Central side airbags (FR);SF_0014;binary;;;0;550;;vs. none
+Safety;Airbags;Curtain airbags;Curtain airbags;SF_0015;binary;;;0;1450;;vs. none
+Safety;Airbags;Knee airbag (driver);Knee airbag (driver);SF_0016;binary;;;0;550;;vs. none
+Safety;TCS (Traction Control System);TCS (Traction Control System);TCS (Traction Control System);SF_0017;binary;;;0;480;;vs. ABS
+Safety;Brakes;ABS (Anti-lock Braking System);ABS (Anti-lock Braking System);SF_0018;binary;;;0;1430;;vs. none
+Safety;Brakes;EBD (Electronic Brakeforce Distribution);EBD (Electronic Brakeforce Distribution);SF_0019;binary;;;0;50;;vs. none
+Safety;Brakes;BAS (Brake Assist System);BAS (Brake Assist System);SF_0020;binary;;;0;50;;vs. none
+Safety;Brakes;BOS (Brake Override System);BOS (Brake Override System);SF_0021;binary;;;0;50;;vs. none
+Safety;Brakes;VSC (Vehicle Stability Control);VSC (Vehicle Stability Control);SF_0022;binary;;;0;990;;vs. ABS
+Safety;Brakes;Hill Assist Control (HAC);Hill Assist Control (HAC);SF_0023;binary;;;0;110;;vs. none
+Safety;Brakes;Hill Descent Control (HDC);Hill Descent Control (HDC);SF_0024;binary;;;0;190;;vs. none
+Safety;Brakes;Rear Disc Brake;Rear Disc Brake;SF_0025;binary;;;0;260;;vs. drum
+Safety;Brakes;Front ventilated disc brakes;Front ventilated disc brakes;SF_0026;binary;;;0;0;;
+Safety;Brakes;Rear solid disc brakes;Rear solid disc brakes;SF_0027;binary;;;0;0;;
+Safety;Brakes;Rear drum brakes;Rear drum brakes;SF_0028;binary;;;0;0;;
+Safety;Brakes;Eletronic Parking Brake;Eletronic Parking Brake;SF_0029;binary;;;0;480;;vs. hand type
+Safety;Brakes;Auto hold;Auto hold;SF_0030;binary;;;0;50;;vs. none
+Safety;Parking assist;Front Warning System;Front Warning System;SF_0031;binary;;;0;630;;vs. none
+Safety;Parking assist;Back Warning System;Back Warning System;SF_0032;binary;;;0;630;;vs. none
+Safety;Parking assist;Auto Parking;Auto Parking;SF_0033;binary;;;0;890;;vs. none
+Safety;Parking assist;Camera;None;SF_1017;scale;;;0;0;true;vs. none
+Safety;Parking assist;Camera;RVM;SF_0034;scale;;;0;770;;vs. none
+Safety;Parking assist;Camera;360°;SF_0035;scale;;;0;2280;;vs. none
+Safety;Parking assist;Camera;540°;SF_0036;scale;;;0;2850;;vs. none
+Safety;Crash-Activated Door Unlock;Crash-Activated Door Unlock;Crash-Activated Door Unlock;SF_0037;binary;;;0;20;;vs. none
+Safety;Central Door Lock;Central Door Lock;Central Door Lock;SF_0038;binary;;;0;420;;vs. none
+Safety;Automatic Door Lock;Automatic Door Lock;Automatic Door Lock;SF_0039;binary;;;0;50;;vs. none
+Safety;EDR (Event data recorder);EDR (Event data recorder);EDR (Event data recorder);SF_0040;binary;;;0;100;;vs. none
+Safety;Dashcam;Dashcam;Dashcam;SF_0041;binary;;;0;570;;vs. none
+Safety;TPMS (Tire Pressure Monitor System);TPMS (Tire Pressure Monitor System);TPMS (Tire Pressure Monitor System);SF_0042;binary;;;0;380;;vs. none
+Safety;Rain Sensor;Rain Sensor;Rain Sensor;SF_0043;binary;;;0;310;;vs. none
+Safety;Anti Theft Alarm;Anti Theft Alarm;Anti Theft Alarm;SF_0044;binary;;;0;320;;vs. none
+Safety;Immobilizer;Immobilizer;Immobilizer;SF_0045;binary;;;0;290;;vs. none
+Safety;ADAS;ROA (Rear Occupant Alert);ROA (Rear Occupant Alert);AD_0001;binary;;;0;400;;vs. none
+Safety;ADAS;FCW (Front Collision Warning);FCW (Front Collision Warning);AD_0002;binary;;;0;1200;;vs. none
+Safety;ADAS;FCW Advanced (Front Collision Warning);FCW Advanced (Front Collision Warning);AD_0003;binary;;;0;1500;;
+Safety;ADAS;AEB (Autonomous Emergency Braking);AEB (Autonomous Emergency Braking);AD_0004;binary;;;0;500;;vs. FCW
+Safety;ADAS;AEB Junction Turning (JT);AEB Junction Turning (JT);AD_0005;binary;;;0;250;;vs. AEB
+Safety;ADAS;RCW (Rear Collision Warning System);RCW (Rear Collision Warning System);AD_0006;binary;;;0;500;;vs. none
+Safety;ADAS;RCTA (Rear Cross Traffic Alert);RCTA (Rear Cross Traffic Alert);AD_0007;binary;;;0;500;;vs. none
+Safety;ADAS;RCTB (Rear Cross Traffic Braking);RCTB (Rear Cross Traffic Braking);AD_0008;binary;;;0;500;;vs. RCTB
+Safety;ADAS;ACC (Adaptative Cruise Control);ACC (Adaptative Cruise Control);AD_0009;binary;;;0;1000;;vs. none
+Safety;ADAS;DAI (DAI Leaving Reminder System);DAI (DAI Leaving Reminder System);AD_0010;binary;;;0;250;;vs. ACC
+Safety;ADAS;TJA (Traffic Jam Assist);TJA (Traffic Jam Assist);AD_0011;binary;;;0;250;;vs. ACC
+Safety;ADAS;CSA (Curve Speed-control Assist);CSA (Curve Speed-control Assist);AD_0012;binary;;;0;250;;vs. ACC
+Safety;ADAS;LDW  (Lane Departure Warning System);LDW  (Lane Departure Warning System);AD_0013;binary;;;0;550;;vs. none
+Safety;ADAS;LKA  (Lane Keep Assistance);LKA  (Lane Keep Assistance);AD_0014;binary;;;0;500;;vs. LKA
+Safety;ADAS;LFA (Lane Following Assistance);LFA (Lane Following Assistance);AD_0015;binary;;;0;250;;vs. LKA
+Safety;ADAS;ELK (Emergency lane keeping);ELK (Emergency lane keeping);AD_0016;binary;;;0;250;;vs. LKA
+Safety;ADAS;LCA (Lane Change Assist);LCA (Lane Change Assist);AD_0017;binary;;;0;250;;vs. LKA
+Safety;ADAS;BSD (BSD blind spot monitoring);BSD (BSD blind spot monitoring);AD_0018;binary;;;0;1000;;vs. none
+Safety;ADAS;BCA (Blind Spot Collision Avoidance Assist);BCA (Blind Spot Collision Avoidance Assist);AD_0019;binary;;;0;500;;vs. BSD
+Safety;ADAS;BSM (Blind Spot Monitor);BSM (Blind Spot Monitor);AD_0020;binary;;;0;500;;vs. none
+Safety;ADAS;DOW (Door Open Warning);DOW (Door Open Warning);AD_0021;binary;;;0;250;;vs. none
+Safety;ADAS;SLA (Speed Limit Assist);SLA (Speed Limit Assist);AD_0022;binary;;;0;1000;;vs. None
+Safety;ADAS;DMS (Driver Monitoring System);DMS (Driver Monitoring System);AD_0023;binary;;;0;500;;vs. none
