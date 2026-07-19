@@ -38,3 +38,6 @@ venv/
 # Supabase local
 supabase/.temp/
 supabase/.branches/
+
+# TypeScript build cache
+*.tsbuildinfo
