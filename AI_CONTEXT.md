@@ -1,150 +1,150 @@
 # Contexto para agentes de IA
 
-## Propósito do sistema
+## Propósito
 
-Apoiar a venda consultiva de veículos por meio de comparações claras, focadas nas diferenças e vantagens relevantes para o cliente.
-
-## Público-alvo
-
-Vendedores de concessionárias.
-
-## Problema resolvido
-
-O sistema deverá reduzir o esforço necessário para comparar veículos durante o atendimento e gerar um material compartilhável com informações consistentes.
+O Compra Car apoia vendedores de concessionárias em comparações claras entre veículos durante o atendimento e na geração futura de material compartilhável.
 
 ## Escopo do MVP
 
-- experiência mobile-first;
-- operação com os dados já existentes no Supabase atual e disponibilização de todas as versões ativas de veículo encontradas, sem limitar o MVP a poucos veículos fictícios;
-- nenhuma nova carga do Excel ou reestruturação ampla do banco como pré-requisito para o MVP;
-- comparação de 2 ou 3 veículos;
-- pesquisa e filtros para localizar versões ativas de veículo;
-- exibição apenas das diferenças;
-- opção para mostrar todos os itens;
-- filtro para mostrar somente vantagens;
-- comparação dos equipamentos, especificações e preços disponíveis;
-- comparação de políticas comerciais, condicionada à viabilidade técnica e à auditoria do banco atual;
-- geração e compartilhamento de PDF;
-- geração e compartilhamento de PDF inicialmente incorporados ao fluxo de comparação, sem exigir rota própria;
-- aviso legal;
-- identidade visual flexível por marca.
+- experiência mobile-first e online;
+- catálogo baseado nos dados existentes no Supabase atual;
+- seleção de 2 ou 3 veículos;
+- comparação por linhas normalizadas, diferenças e vantagens auditáveis;
+- geração e compartilhamento futuro de PDF com aviso legal;
+- identidade visual flexível por marca;
+- nenhuma nova carga do Excel ou reestruturação ampla do banco como pré-requisito.
 
-## Tecnologias previstas
+## Tecnologias vigentes
 
-- Next.js e TypeScript para o frontend;
-- Supabase atual como fonte inicial de dados;
-- Appsmith como backoffice temporário;
-- Railway para publicação;
-- GitHub como fonte autoritativa de código e documentação;
-- OneDrive para sincronização entre computadores.
+- monorepo com pnpm 10 e Turborepo 2;
+- Next.js 15, App Router, React 19 e TypeScript 5;
+- Tailwind CSS 4, ESLint 9 e Prettier 3;
+- Vitest 4 para testes unitários do domínio;
+- Railway com configuração em `railway.json`;
+- PWA instalável em modo `standalone`, sem service worker ou offline;
+- Supabase atual como fonte inicial de dados via adaptador somente leitura;
+- Appsmith como backoffice temporário.
 
-Versões, bibliotecas auxiliares e ferramentas de testes estão **PENDENTE**.
+## Estrutura arquitetural
 
-## Arquitetura transitória
+```text
+apps/web                     apresentação futura
+packages/contracts           DTOs e contratos públicos
+packages/core                domínio, portas e casos de uso puros
+packages/adapter-supabase    adaptador server-only e somente leitura do legado
+packages/shared              utilitários genéricos
+packages/ui                  primitivos visuais futuros
+```
 
-- Appsmith → operação interna;
-- Supabase atual → dados;
-- Next.js → experiência do vendedor;
-- Railway → publicação;
-- Adaptador Legacy → isolamento entre o frontend e o banco atual.
+Direção de execução vigente:
 
-## Arquitetura futura
+```text
+Next.js → contratos/casos de uso → portas do core ← Legacy Supabase Adapter ← Supabase atual
+```
 
-- Novo backoffice → operação interna;
-- Supabase V2 → dados;
-- Next.js → experiência do vendedor;
-- Railway → publicação;
-- Adaptador V2 → acesso ao novo modelo canônico.
+O frontend não pode conhecer tabelas, colunas, queries ou particularidades do Supabase legado. `LegacySupabaseAdapter` é a única fronteira autorizada e implementa as portas do core por DTOs e mappers explícitos.
 
-## Decisões já tomadas
+## Domínio consolidado
 
-- A Fase 1 começa pela inspeção mínima e somente leitura do Supabase atual.
-- O banco atual é a fonte inicial do MVP e não será alterado durante esta inspeção.
-- A inspeção usará metadados para descobrir a superfície real antes de validar consultas de perfil com dados existentes.
-- Nenhuma alteração estrutural, migration ou correção de dados será executada nesta etapa.
-- Os resultados da inspeção permanecem **PENDENTE** até a execução manual e controlada dos scripts preparados.
-- O MVP será mobile-first.
-- A comparação aceitará 2 ou 3 veículos.
-- A interface exibirá apenas as diferenças.
-- Haverá filtro para mostrar apenas vantagens.
-- O sistema gerará e permitirá compartilhar PDF.
-- A aplicação e o PDF incluirão aviso legal.
-- A identidade visual será flexível por marca.
-- A aplicação não deverá aparentar vínculo oficial com montadoras sem autorização.
-- O banco atual será utilizado inicialmente.
-- O catálogo pode conter modelos ativos, mas a unidade selecionável e comparável do MVP é uma `VehicleVersion` ativa.
-- O MVP consumirá diretamente os dados já existentes no Supabase atual e disponibilizará todas as versões ativas encontradas.
-- A existência histórica de uma versão não comprova sua disponibilidade comercial ativa.
-- Nenhuma alteração estrutural ampla do banco é pré-requisito para a UI, o MVP ou o piloto.
-- Nenhuma nova carga do Excel é pré-requisito para a UI, o MVP ou o piloto.
-- O importador Excel será ajustado posteriormente para respeitar a estrutura vigente do Supabase atual.
-- Correções de dados, normalizações, melhorias arquiteturais e evolução do importador ocorrerão gradualmente após o MVP e o piloto.
-- O frontend permanecerá isolado do legado por contratos normalizados e adaptadores durante essa evolução.
-- O Appsmith permanecerá como backoffice temporário.
-- O Next.js será o frontend.
-- O Railway será usado para publicação.
-- O GitHub será a fonte autoritativa.
-- O OneDrive será usado para mobilidade entre computadores.
-- O frontend será isolado do banco por contratos e adaptadores.
-- A fundação anterior à implementação do Next.js é documentada em `docs/product/PRODUCT_SPEC.md`, `docs/domain/DOMAIN_MODEL.md`, `docs/contracts/CONTRACTS.md` e `docs/ui/UI_FLOW.md`.
-- Estados de dados ausentes, não aplicáveis, não encontrados, desatualizados ou conflitantes devem permanecer explícitos.
-- Diferença e vantagem são conceitos separados; vantagem depende de regra conhecida e auditável.
-- `AdvantageRule` representa conceitualmente a regra explícita, versionada e auditável; `Advantage` é o resultado de sua aplicação.
-- Equipamentos distinguem os estados de série, opcional, disponível apenas em pacote, indisponível, não aplicável, não informado, não encontrado, desatualizado e conflitante.
-- A geração de PDF será inicialmente um modal, painel inferior ou estado incorporado à comparação; uma rota independente é evolução futura condicionada a novas necessidades.
-- A comparação e o PDF devem manter referência à carga ou snapshot utilizado, à fonte e à atualização quando essas informações estiverem disponíveis.
-- A primeira versão deverá ser colocada no ar rapidamente.
-- Após o MVP, será feita uma auditoria completa e criado o Supabase V2.
+### Vehicle
 
-## Restrições
+`Vehicle` é uma combinação comercial específica de `brand`, `model`, `version`, `modelYear` e `productionYear`. Também contém `id`, `displayName`, `isActive` e `isPublic`.
 
-- Não alterar `Legacy` sem autorização e auditoria.
-- Manter a inspeção inicial do Supabase estritamente somente leitura.
-- Não tratar hipótese histórica ou documental como estrutura atual sem evidência do banco.
-- Não expor chaves, senhas ou segredos.
-- Não acoplar componentes de interface diretamente às tabelas legadas.
-- Não presumir detalhes técnicos ainda não confirmados.
-- Preservar a abordagem mobile-first.
+Um veículo integra o catálogo público somente quando:
 
-## Riscos conhecidos
+1. `isActive = true` — vigência comercial;
+2. `isPublic = true` — revisão e liberação editorial;
+3. possui ao menos um item comparável.
 
-- estrutura e qualidade do banco atual ainda não auditadas;
-- regras de comparação ainda não formalizadas;
-- dependência temporária do Appsmith e do modelo legado;
-- risco de acoplamento ao banco atual sem contratos estáveis;
-- texto legal e permissões de identidade de marca ainda não validados;
-- sincronização pelo OneDrive exige cuidado com conflitos de arquivos.
+Esses estados não podem ser confundidos.
 
-## Estado atual
+### ComparisonItem
 
-Em 2026-07-18, foi criada a estrutura inicial do Engineering Hub. A aplicação Next.js ainda não foi criada, o Supabase não foi conectado e nenhuma dependência foi instalada.
+- `code` obrigatório e estável identifica uma linha independente;
+- `binary`, `numeric` e `scale` são os tipos suportados;
+- `scale` usa presença independente no MVP;
+- dois codes do mesmo `specSet` continuam em duas linhas;
+- não existe cardinalidade `single`/`multiple` nesta fase;
+- categories e prefixes de origem não determinam a arquitetura.
 
-Foram criados os quatro documentos de fundação do produto: especificação do produto, modelo de domínio, contratos conceituais e fluxo de interface mobile-first. A implementação do Next.js ainda não foi executada. Uma nova carga do Excel não é necessária para iniciar ou concluir o MVP.
+### Valores
 
-A Fase 1 foi iniciada com a preparação da inspeção mínima e somente leitura do Supabase atual. Foram preparados o plano, os requisitos de dados, o mapa do legado, o registro de resultados e consultas de inventário. Nenhuma consulta foi executada e os resultados permanecem **PENDENTE**. O Legacy Supabase Adapter e o frontend ainda não foram iniciados.
+- `binary`/`scale`: `present: boolean`;
+- `numeric`: `value: number | null` e `unit: string | null`;
+- numeric ausente nunca vira zero;
+- associação binary/scale ausente resulta em `false`;
+- o domínio não formata `Sim`, `Não` ou travessão.
+
+## Casos de uso implementados
+
+- `ListAvailableBrands`;
+- `ListAvailableModels`;
+- `ListAvailableVehicles`;
+- `GetVehiclesByIds`;
+- `CompareVehicles`.
+
+`CompareVehicles` aceita 2 ou 3 IDs distintos, preserva a ordem, usa `code` como identidade, agrupa por categoria, completa células tipadas e calcula `isDifferent`. Não calcula vantagem.
+
+## Decisões registradas
+
+- ADR-001: cada `ComparisonItem.code` representa uma linha.
+- ADR-002: itens `scale` não têm cardinalidade no MVP.
+- ADR-003: o frontend não acessa o banco legado diretamente.
+- ADR-004: `isActive` e `isPublic` têm significados distintos.
+- ADR-005: autenticação simples, sem RBAC, será implementada em fase posterior.
+- ADR-006: o legado é traduzido por DTOs/mappers em um adaptador server-only e somente leitura.
+- Diferença e vantagem são conceitos separados.
+- Uma vantagem futura exige regra explícita, versionada e auditável.
+- O MVP usa o Supabase atual sem depender de nova carga do Excel.
+- O importador Excel será ajustado posteriormente à estrutura vigente.
+
+## Restrições vigentes
+
+- não alterar `Legacy` sem autorização e auditoria;
+- manter a inspeção inicial do Supabase somente leitura;
+- não implementar ou presumir schema físico sem evidência real;
+- não expor chaves, tokens ou segredos;
+- não acessar Supabase fora do adaptador legado;
+- não colocar regras de negócio em `shared` ou na UI;
+- não implementar vantagem sem regra documentada;
+- não implementar autenticação, PDF ou offline nesta fase concluída.
+
+## Estado atual — 2026-07-18
+
+A infraestrutura do monorepo, o núcleo de domínio, o adaptador legado e os vertical slices de seleção e comparação estão implementados. `packages/core` contém entidades, value objects, erros, portas e os cinco casos de uso centrais. `packages/contracts` contém aliases, reexportações e DTOs públicos sem duplicação estrutural. `packages/adapter-supabase` implementa as duas portas sobre `products`, `specs` e `product_specs`, sem escrita. `apps/web` conecta seleção e comparação aos casos de uso por camada server-only, `unstable_cache` e composition root.
+
+A URL de comparação é `/comparar?vehicles=id1,id2[,id3]`. A página valida IDs, preserva sua ordem, executa `CompareVehicles`, apresenta categorias e usa apenas `isDifferent` para o filtro visual. O domínio e o adapter não conhecem componentes ou parâmetros de URL.
+
+Os testes do core usam repositórios in-memory. Os mappers do adaptador são testados sem rede e a integração real é opt-in por variáveis exclusivas. A UI de negócio e `Legacy` permanecem sem alteração nesta fase.
+
+A superfície mínima e o mapeamento físico fornecidos para a fase estão registrados em `SUPABASE_INSPECTION_RESULTS.md` e `LEGACY_SUPABASE_MAP.md`. A validação online permanece pendente quando não houver credenciais opt-in e não bloqueia o código ou o MVP.
 
 ## Próximos passos
 
-1. Revisar e aprovar o Engineering Hub.
-2. Confirmar o estado do repositório Git e do remoto.
-3. Identificar a próxima atividade aplicável em `ROADMAP_MASTER.md`.
-4. Revisar e aprovar `PRODUCT_SPEC.md`, `DOMAIN_MODEL.md`, `CONTRACTS.md` e `UI_FLOW.md` antes de criar o Next.js.
-5. Revisar os artefatos de inspeção somente leitura preparados em `docs/data/` e `supabase/inspection/`.
-6. Executar manualmente os inventários aprovados no ambiente confirmado e registrar resultados sanitizados.
-7. Mapear o Legacy Supabase Adapter a partir das evidências encontradas.
-8. Validar os contratos normalizados com os dados reais existentes.
-9. Implementar a UI sobre os contratos, sem acesso direto às estruturas legadas.
-10. Concluir o MVP e executar o piloto.
-11. Após o piloto, planejar correções graduais e ajustar o importador Excel à estrutura vigente.
+1. Executar o teste de integração opt-in no ambiente autorizado.
+2. Validar cobertura e desempenho com 2 ou 3 veículos reais.
+3. Conectar o Next.js ao adaptador apenas no runtime do servidor.
+4. Implementar a UI de negócio sobre os casos de uso.
+5. Concluir MVP e piloto.
+8. Após o piloto, evoluir dados, importador e arquitetura gradualmente.
+
+## Backlog pós-MVP
+
+- cardinalidade explícita `single`/`multiple`;
+- agrupamento visual opcional de itens `scale`;
+- validação de combinações incompatíveis;
+- evolução da taxonomia de categorias;
+- substituição futura do importador Excel;
+- revisão dos prefixes legados;
+- regras de vantagem auditáveis;
+- estados detalhados de equipamentos, qualidade e rastreabilidade.
 
 ## Pendências
 
-- **PENDENTE:** validar regras e critérios de comparação.
-- **PENDENTE:** definir o texto do aviso legal.
-- **PENDENTE:** selecionar três veículos-piloto.
-- **PENDENTE:** confirmar a marca piloto, os modelos do catálogo e a lista completa de versões ativas.
-- **PENDENTE:** definir, após o piloto, a evolução do importador Excel e o processo seguro para cargas futuras.
-- **PENDENTE:** confirmar identidade visual provisória e permissões de marca.
-- **PENDENTE:** auditar o Supabase atual e seus controles de acesso.
-- **PENDENTE:** executar os scripts de inspeção aprovados e preencher `SUPABASE_INSPECTION_RESULTS.md`.
-- **PENDENTE:** definir versões e ferramentas do frontend quando sua criação for autorizada.
+- **PENDENTE:** validação online opt-in e cobertura quantitativa do Supabase atual.
+- **PENDENTE:** regra exata de vantagem.
+- **PENDENTE:** texto jurídico final.
+- **PENDENTE:** marca e participantes do piloto.
+- **PENDENTE:** identidade visual autorizada.
+- **PENDENTE:** preço, políticas comerciais e referência temporal.
+- **PENDENTE:** estratégia de autenticação posterior e revisão de RLS.

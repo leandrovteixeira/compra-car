@@ -1,63 +1,48 @@
 # Resultados da Inspeção do Supabase Atual
 
-Este documento será preenchido depois da execução controlada das consultas. Nenhuma consulta foi executada durante a preparação destes artefatos.
+## Estado em 2026-07-18
 
-## 1. Data da inspeção
+A superfície mínima foi definida e mapeada a partir das evidências fornecidas para esta fase. Nenhuma credencial, URL privada ou conteúdo de linha é registrado neste documento. A validação online continua opt-in e não bloqueia testes unitários ou compilação.
 
-**PENDENTE:** inspeção ainda não realizada.
+## Objetos usados pelo MVP
 
-## 2. Ambiente inspecionado
+- `public.products`: veículo comercial e flags de atividade/publicação;
+- `public.specs`: metadados normalizados do item comparável;
+- `public.product_specs`: associação e valor do item por produto.
 
-**PENDENTE:** registrar o ambiente sem incluir URL privada, credenciais ou identificadores sensíveis.
+Nenhuma outra tabela, view, função ou storage integra o adaptador.
 
-## 3. Método utilizado
+## Relacionamentos confirmados
 
-**PENDENTE:** registrar SQL Editor utilizado, sequência executada e limitações encontradas.
+- `product_specs.equipment_id → specs.id`: foreign key física;
+- `product_specs.product_id → products.id`: vínculo lógico sem foreign key física.
 
-## 4. Arquivos SQL executados
+A ausência da segunda FK é dívida técnica documentada, não pré-requisito para o MVP e não autoriza mudança no legado.
 
-**PENDENTE:** nenhum arquivo executado nesta tarefa.
+## Regras confirmadas
 
-## 5. Tabelas e views candidatas
+- veículo disponível: produto ativo, público e com ao menos uma associação válida a spec ativa;
+- `binary` e `scale`: existência da associação significa `true`; ausência significa `false`;
+- `numeric`: `value` é convertido em número finito, `null` é preservado e valor inválido falha explicitamente;
+- unidade numérica: `input_unit ?? specs.unit ?? null`, considerando texto vazio como ausente;
+- tipo desconhecido falha explicitamente;
+- dois `code` distintos no mesmo `spec_set` continuam linhas distintas;
+- lista pública vazia é válida.
 
-**PENDENTE:** registrar somente objetos confirmados por metadados.
+## Segurança e permissões
 
-## 6. Relacionamentos encontrados
+O cliente é criado somente no servidor com `SUPABASE_URL` e `SUPABASE_SERVER_KEY`. Persistência de sessão, refresh automático e detecção de sessão por URL ficam desativados. A chave não usa prefixo `NEXT_PUBLIC_` e não pode ser enviada ao navegador ou registrada em logs.
 
-**PENDENTE:** registrar foreign keys, chaves e inferências técnicas, sem afirmar cardinalidades de negócio não comprovadas.
+RLS, grants e políticas do ambiente real ainda devem ser revisados antes da publicação do piloto. O adaptador não escreve no banco.
 
-## 7. Regras de atividade encontradas
+## Cobertura e inconsistências conhecidas
 
-**PENDENTE:** identificar como versões ativas são representadas e validar se atividade técnica corresponde à disponibilidade comercial.
+A cobertura quantitativa de marcas, modelos, versões e specs depende do teste opt-in no ambiente autorizado. Textos legados com problemas de encoding são preservados sem normalização silenciosa. O adaptador não corrige dados na leitura.
 
-## 8. RLS e permissões
+## Validação executável
 
-**PENDENTE:** registrar RLS, políticas, roles e grants necessários à leitura do MVP.
+Os testes unitários validam os mapeadores sem rede. `test/integration.test.ts` só executa selects quando `SUPABASE_INTEGRATION_URL` e `SUPABASE_INTEGRATION_SERVER_KEY` existem; IDs opcionais podem ser informados em `SUPABASE_INTEGRATION_VEHICLE_IDS`. Sem essas variáveis, a suíte é ignorada de forma explícita.
 
-## 9. Cobertura dos dados
+## Bloqueios
 
-**PENDENTE:** registrar cobertura de versões, anos, spec codes, especificações, equipamentos, preços, fontes, atualização e imagens.
-
-## 10. Inconsistências
-
-**PENDENTE:** registrar nulos, duplicidades, conflitos, datas divergentes e outras inconsistências confirmadas.
-
-## 11. Riscos
-
-**PENDENTE:** classificar riscos de dados, segurança, performance e acoplamento encontrados.
-
-## 12. Decisões confirmadas
-
-**PENDENTE:** nenhuma decisão física confirmada; a unidade conceitual do MVP permanece a versão ativa de veículo.
-
-## 13. Hipóteses ainda não confirmadas
-
-**PENDENTE:** separar hipóteses atuais de hipóteses históricas obtidas em `Legacy`.
-
-## 14. Bloqueios para o Legacy Supabase Adapter
-
-**PENDENTE:** registrar somente lacunas que impeçam mapear contratos normalizados sobre o banco atual.
-
-## 15. Próximas ações
-
-**PENDENTE:** definir depois da revisão dos resultados, sem alterar o banco nesta etapa.
+Não há bloqueio estrutural conhecido para implementar o adaptador. A validação online do ambiente continua pendente quando não houver credenciais opt-in, sem transformar Excel, migração ou reestruturação do banco em pré-requisito.

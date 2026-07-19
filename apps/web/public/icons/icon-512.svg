@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Compra Car">
+  <rect width="512" height="512" rx="112" fill="#0f172a" />
+  <path d="M116 300h280l-23-78c-8-28-34-48-64-48H203c-30 0-56 20-64 48l-23 78Z" fill="#22d3ee" />
+  <path d="M92 300c0-18 14-32 32-32h264c18 0 32 14 32 32v50c0 18-14 32-32 32H124c-18 0-32-14-32-32v-50Z" fill="#f8fafc" />
+  <circle cx="160" cy="350" r="34" fill="#0f172a" />
+  <circle cx="352" cy="350" r="34" fill="#0f172a" />
+  <path d="M176 222h160l14 46H162l14-46Z" fill="#0f172a" opacity=".86" />
+</svg>

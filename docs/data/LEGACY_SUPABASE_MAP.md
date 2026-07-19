@@ -1,75 +1,53 @@
 # Mapa do Legacy Supabase Adapter
 
-Este template relacionará o domínio e os contratos normalizados à estrutura física confirmada do Supabase atual. Ele não confirma nenhum nome físico nesta etapa.
-
-Os contratos conceituais abaixo são evidência documental do repositório. Todo mapeamento físico e todo status de validação permanecem `PENDENTE` até a inspeção do banco.
+Este documento relaciona os contratos normalizados à superfície física confirmada para o MVP. O adaptador só lê `public.products`, `public.specs` e `public.product_specs`; nomes físicos ficam confinados em `packages/adapter-supabase`.
 
 ## Identificação física
 
-| Conceito de domínio | Contrato do frontend | Schema físico | Tabela ou view | Coluna | Tipo físico |
-|---|---|---|---|---|---|
-| Brand | `BrandSummary` | PENDENTE | PENDENTE | PENDENTE | PENDENTE |
-| Model | `VehicleSearchOption`, `VehicleVersionSummary` | PENDENTE | PENDENTE | PENDENTE | PENDENTE |
-| VehicleVersion | `VehicleSearchOption`, `VehicleVersionSummary`, `VehicleVersionDetails` | PENDENTE | PENDENTE | PENDENTE | PENDENTE |
-| VehicleVersion.isActive | `VehicleSearchOption.isActive`, `VehicleVersionSummary.isActive` | PENDENTE | PENDENTE | PENDENTE | PENDENTE |
-| ProductionYear | `productionYear` nos contratos de versão | PENDENTE | PENDENTE | PENDENTE | PENDENTE |
-| ModelYear | `modelYear` nos contratos de versão | PENDENTE | PENDENTE | PENDENTE | PENDENTE |
-| SpecCode | Contrato PENDENTE | PENDENTE | PENDENTE | PENDENTE | PENDENTE |
-| Specification | `SpecificationValue` | PENDENTE | PENDENTE | PENDENTE | PENDENTE |
-| Equipment | `EquipmentValue` | PENDENTE | PENDENTE | PENDENTE | PENDENTE |
-| EquipmentCategory | `EquipmentValue`, `ComparisonSection` | PENDENTE | PENDENTE | PENDENTE | PENDENTE |
-| EquipmentValue | `EquipmentValue` | PENDENTE | PENDENTE | PENDENTE | PENDENTE |
-| Price | `PriceValue` | PENDENTE | PENDENTE | PENDENTE | PENDENTE |
-| CommercialPolicy | `CommercialPolicySummary` | PENDENTE | PENDENTE | PENDENTE | PENDENTE |
-| Translation | Campos de apresentação; contrato dedicado PENDENTE | PENDENTE | PENDENTE | PENDENTE | PENDENTE |
-| DataSource | `DataQualityStatus`, `DataSnapshotReference` | PENDENTE | PENDENTE | PENDENTE | PENDENTE |
-| DataFreshness | `DataQualityStatus`, `DataSnapshotReference` | PENDENTE | PENDENTE | PENDENTE | PENDENTE |
-| VehicleImage | Contrato PENDENTE | PENDENTE | PENDENTE | PENDENTE | PENDENTE |
+| Conceito normalizado | Origem física | Transformação |
+|---|---|---|
+| `Vehicle.id` | `products.id` | conversão para `string` |
+| `Vehicle.brand` | `products.brand` | texto obrigatório |
+| `Vehicle.model` | `products.model` | texto obrigatório |
+| `Vehicle.version` | `products.version` | texto obrigatório |
+| `Vehicle.modelYear` | `products.model_year` | conversão para `string` |
+| `Vehicle.productionYear` | `products.production_year` | conversão para `string` |
+| `Vehicle.displayName` | campos do produto | derivado pelo domínio |
+| `Vehicle.isActive` | `products.is_active` | somente `true` é ativo |
+| `Vehicle.isPublic` | `products.is_public` | somente `true` é público |
+| `ComparisonItem.id` | `specs.id` | conversão para `string` |
+| `ComparisonItem.code` | `specs.code` | texto obrigatório e identidade da linha |
+| `ComparisonItem.type` | `specs.type` | `binary`, `scale` ou `numeric`; demais tipos geram erro |
+| `ComparisonItem.category` | `specs.group_name` | texto obrigatório |
+| `ComparisonItem.equipmentGroup` | `specs.equipment_group` | texto obrigatório |
+| `ComparisonItem.specSet` | `specs.spec_set` | texto obrigatório, sem agrupamento de codes distintos |
+| `ComparisonItem.label` | `specs.detail` | texto obrigatório, preservado sem correção implícita |
+| `ComparisonItem.unit` | `specs.unit` | usada apenas em item `numeric` |
+| `ComparisonItem.sortOrder` | sem origem | `null` |
+| Associação | `product_specs.product_id` + `equipment_id` | `equipment_id → specs.id` possui FK física; `product_id → products.id` é vínculo lógico sem FK |
+| Valor `binary`/`scale` | existência em `product_specs` | associação existente = `true`; ausente = `false` |
+| Valor `numeric` | `product_specs.value` | número finito ou `null`; inválido gera erro explícito |
+| Unidade do valor | `product_specs.input_unit`, `specs.unit` | primeiro valor não vazio, nessa ordem, ou `null` |
 
-## Transformação e disponibilidade
+## Elegibilidade pública
 
-| Conceito de domínio | Transformação necessária | Estado de disponibilidade | Regra de atividade |
-|---|---|---|---|
-| Brand | PENDENTE | PENDENTE | PENDENTE |
-| Model | PENDENTE | PENDENTE | PENDENTE |
-| VehicleVersion | PENDENTE | PENDENTE | PENDENTE |
-| VehicleVersion.isActive | PENDENTE | PENDENTE | PENDENTE |
-| ProductionYear | PENDENTE | PENDENTE | PENDENTE |
-| ModelYear | PENDENTE | PENDENTE | PENDENTE |
-| SpecCode | PENDENTE | PENDENTE | PENDENTE |
-| Specification | PENDENTE | PENDENTE | PENDENTE |
-| Equipment | PENDENTE | PENDENTE | PENDENTE |
-| EquipmentCategory | PENDENTE | PENDENTE | PENDENTE |
-| EquipmentValue | PENDENTE | PENDENTE | PENDENTE |
-| Price | PENDENTE | PENDENTE | PENDENTE |
-| CommercialPolicy | PENDENTE | PENDENTE | PENDENTE |
-| Translation | PENDENTE | PENDENTE | PENDENTE |
-| DataSource | PENDENTE | PENDENTE | PENDENTE |
-| DataFreshness | PENDENTE | PENDENTE | PENDENTE |
-| VehicleImage | PENDENTE | PENDENTE | PENDENTE |
+Um produto só é retornado como disponível quando `is_active = true`, `is_public = true` e existe ao menos uma associação com uma `specs.is_active = true`. Uma lista pública vazia é um resultado válido.
 
-## Evidência e validação
+## Estratégia de consulta
 
-| Conceito de domínio | Fonte | Data de atualização | Qualidade conhecida | Risco | Evidência | Status de validação |
-|---|---|---|---|---|---|---|
-| Brand | PENDENTE | PENDENTE | PENDENTE | PENDENTE | PENDENTE | PENDENTE |
-| Model | PENDENTE | PENDENTE | PENDENTE | PENDENTE | PENDENTE | PENDENTE |
-| VehicleVersion | PENDENTE | PENDENTE | PENDENTE | PENDENTE | PENDENTE | PENDENTE |
-| VehicleVersion.isActive | PENDENTE | PENDENTE | PENDENTE | risco de confundir existência histórica com disponibilidade | PENDENTE | PENDENTE |
-| ProductionYear | PENDENTE | PENDENTE | PENDENTE | PENDENTE | PENDENTE | PENDENTE |
-| ModelYear | PENDENTE | PENDENTE | PENDENTE | PENDENTE | PENDENTE | PENDENTE |
-| SpecCode | PENDENTE | PENDENTE | PENDENTE | PENDENTE | PENDENTE | PENDENTE |
-| Specification | PENDENTE | PENDENTE | PENDENTE | PENDENTE | PENDENTE | PENDENTE |
-| Equipment | PENDENTE | PENDENTE | PENDENTE | PENDENTE | PENDENTE | PENDENTE |
-| EquipmentCategory | PENDENTE | PENDENTE | PENDENTE | PENDENTE | PENDENTE | PENDENTE |
-| EquipmentValue | PENDENTE | PENDENTE | PENDENTE | estados comerciais podem estar colapsados | PENDENTE | PENDENTE |
-| Price | PENDENTE | PENDENTE | PENDENTE | preço sem referência temporal | PENDENTE | PENDENTE |
-| CommercialPolicy | PENDENTE | PENDENTE | PENDENTE | vigência, acesso ou confidencialidade desconhecidos | PENDENTE | PENDENTE |
-| Translation | PENDENTE | PENDENTE | PENDENTE | PENDENTE | PENDENTE | PENDENTE |
-| DataSource | PENDENTE | PENDENTE | PENDENTE | rastreabilidade insuficiente | PENDENTE | PENDENTE |
-| DataFreshness | PENDENTE | PENDENTE | PENDENTE | dados desatualizados sem aviso | PENDENTE | PENDENTE |
-| VehicleImage | PENDENTE | PENDENTE | PENDENTE | acesso ou autorização de uso desconhecidos | PENDENTE | PENDENTE |
+- projeções explícitas, sem transportar linhas cruas além do adaptador;
+- filtros e lotes com `in(...)`, sem N+1;
+- `product_specs` é carregada por todos os veículos e `specs` por todos os `equipment_id` em duas consultas;
+- nenhuma operação `insert`, `update`, `upsert`, `delete`, RPC ou migration;
+- a chave do servidor nunca integra DTO, erro público, log ou variável `NEXT_PUBLIC_*`.
+
+## Dívida técnica conhecida
+
+- `product_specs.product_id → products.id` não possui foreign key física e depende de integridade lógica;
+- textos com mojibake, como `360ï¿½` ou `540ï¿½`, são preservados pelo adaptador e devem ser corrigidos na fonte após o MVP;
+- a ordem dos itens não possui fonte física confirmada, portanto `sortOrder = null`;
+- cardinalidade de itens `scale`, taxonomia e evolução do importador continuam pós-MVP.
 
 ## Regra para evidência histórica
 
-Informações encontradas somente em `Legacy` devem ser registradas como `HIPÓTESE HISTÓRICA`, acompanhadas do caminho de origem e sem preencher o status como confirmado. Somente evidência obtida do Supabase atual pode validar o mapeamento vigente.
+Informações encontradas somente em `Legacy` permanecem `HIPÓTESE HISTÓRICA`. A pasta não foi alterada nem usada como fonte de verdade desta implementação.

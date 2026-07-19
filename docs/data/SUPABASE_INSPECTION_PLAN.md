@@ -2,7 +2,7 @@
 
 ## 1. Objetivo da inspeção
 
-Identificar, com evidência do banco atual, a menor superfície de dados necessária para o MVP e para o futuro Legacy Supabase Adapter. A unidade selecionável é uma versão ativa de veículo.
+Validar, com evidência do banco atual, a menor superfície de dados necessária para o MVP e para o Legacy Supabase Adapter. A unidade selecionável é uma versão ativa de veículo.
 
 A inspeção deve descobrir objetos físicos, relacionamentos, regras de atividade, qualidade, atualização e permissões sem presumir nomes de schemas, tabelas ou colunas.
 

@@ -53,14 +53,14 @@ Apresentar o produto, contextualizar a experiência da marca e oferecer uma entr
 
 ### Objetivo
 
-Permitir localizar e selecionar 2 veículos obrigatórios e, opcionalmente, um terceiro, usando somente versões ativas.
+Permitir localizar e selecionar 2 veículos obrigatórios e, opcionalmente, um terceiro, usando somente veículos elegíveis ao catálogo público.
 
 ### Elementos
 
 - busca textual direta por marca, modelo, versão ou ano;
 - seleção progressiva por `Marca → Modelo → Versão/Ano`;
 - filtros opcionais por marca, modelo, versão e ano;
-- indicação de que somente versões ativas de veículo são apresentadas;
+- indicação de que somente veículos ativos, publicados e comparáveis são apresentados;
 - resultados com identificação suficiente para distinguir versões;
 - resumo dos veículos selecionados;
 - controles para remover ou substituir cada seleção;
@@ -83,7 +83,7 @@ Permitir localizar e selecionar 2 veículos obrigatórios e, opcionalmente, um t
 
 - exigir exatamente 2 ou 3 veículos para comparar;
 - impedir seleção duplicada da mesma versão;
-- aceitar apenas versões ativas de veículo;
+- aceitar apenas veículos com `isActive` e `isPublic` verdadeiros e ao menos um item comparável;
 - revalidar atividade antes de iniciar a comparação;
 - indicar quando não houver dados suficientes para identificar uma opção;
 - não interpretar informação ausente como ausência de equipamento.
@@ -324,7 +324,7 @@ Oferecer respostas consistentes para situações que interrompem ou limitam o fl
 - Tratar o terceiro veículo como opcional.
 - Garantir que o PDF reflita exatamente os veículos selecionados.
 - O modo visual da tela não deve necessariamente limitar o conteúdo completo do PDF.
-- Revalidar versões ativas antes de produzir a comparação.
+- Revalidar atividade, publicação e comparabilidade dos veículos antes de produzir a comparação.
 - Não descartar uma seleção válida em caso de falha recuperável.
 - O comportamento de atualização, recarga e expiração da sessão está **PENDENTE**.
 

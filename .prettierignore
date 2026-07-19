@@ -1,0 +1,13 @@
+.git/
+.next/
+.turbo/
+Legacy/
+coverage/
+data/
+dist/
+docs/
+node_modules/
+supabase/
+*.md
+pnpm-lock.yaml
+

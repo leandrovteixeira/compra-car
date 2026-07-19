@@ -1,76 +1,76 @@
 # Compra Car — Checklist de Preparação
 
 ## Contas
+
 - [ ] GitHub
 - [ ] Supabase
 - [ ] Railway
 - [ ] Conta Microsoft com OneDrive
 - [ ] Acesso ao Appsmith atual
 
-## Aplicativos
-- [ ] Visual Studio Code
+## Ferramentas locais
+
 - [ ] Git
-- [ ] Node.js LTS
-- [ ] npm
-- [ ] Python
-- [ ] Docker Desktop
-- [ ] Supabase CLI
-- [ ] GitHub CLI, opcional
-- [ ] DBeaver, opcional
+- [ ] Node.js `>=20 <25`
+- [ ] Corepack habilitado
+- [ ] pnpm 10 ativado pelo Corepack
+- [ ] Docker Desktop e Supabase CLI, apenas quando a fase de dados exigir
+- [ ] GitHub CLI e DBeaver, opcionais
 
-## Estrutura local sugerida
+## Preparação do monorepo
+
+```bash
+corepack enable
+pnpm install
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+```
+
+Não é necessário instalar Turborepo globalmente. O workspace usa a versão fixada no `package.json` e no `pnpm-lock.yaml`.
+
+## Estrutura vigente
+
+```text
 CompraCar/
-├── apps/
-│   └── web/
-├── packages/
-│   ├── database/
-│   ├── scoring/
-│   ├── reports/
-│   └── ui/
-├── supabase/
-│   ├── legacy/
-│   ├── migrations/
-│   └── tests/
-├── legacy/
-│   ├── appsmith/
-│   ├── scripts/
-│   ├── exports/
-│   └── documents/
+├── apps/web/
+├── packages/adapter-supabase/
+├── packages/contracts/
+├── packages/core/
+├── packages/shared/
+├── packages/ui/
 ├── docs/
-│   ├── architecture/
-│   ├── database/
-│   ├── modules/
-│   └── migration/
-├── data/
-│   ├── equipments/
-│   └── fixtures/
-├── scripts/
-├── tests/
-├── README.md
-├── START.md
-├── AI_CONTEXT.md
-├── ROADMAP_MASTER.md
-├── AGENTS.md
-├── CHANGELOG.md
-└── .gitignore
+├── supabase/
+├── Legacy/
+├── package.json
+├── pnpm-workspace.yaml
+├── turbo.json
+└── railway.json
+```
 
-## Materiais necessários
+## Configuração do adaptador
+
+- [ ] Copiar `.env.example` para um arquivo local ignorado pelo Git
+- [ ] Configurar `SUPABASE_URL` e `SUPABASE_SERVER_KEY` somente no servidor
+- [ ] Usar variáveis `SUPABASE_INTEGRATION_*` apenas para testes opt-in
+- [ ] Nunca criar variável `NEXT_PUBLIC_` para a chave do servidor
+
+## Materiais para as próximas fases
+
+- [ ] Resultados sanitizados da validação somente leitura do Supabase atual
 - [ ] Export do Appsmith
-- [ ] Export do schema do Supabase
-- [ ] Lista de tabelas e views
-- [ ] Queries usadas pelo comparador
-- [ ] Scripts existentes
-- [ ] Planilhas atuais
-- [ ] Base de equipamentos
-- [ ] Lista de marcas, modelos, versões e preços
 - [ ] Regras atuais de comparação
 - [ ] Três veículos-piloto
 - [ ] Texto legal provisório
 - [ ] Identidade visual provisória
 
+A nova carga do Excel não é requisito para iniciar a implementação do domínio ou concluir o MVP.
+
 ## Segurança
-- [ ] Nunca salvar service role no frontend
-- [ ] Nunca commitar arquivos .env
-- [ ] Revisar RLS das tabelas usadas pelo MVP
-- [ ] Usar apenas chave pública no navegador
-- [ ] Armazenar segredos no Railway e localmente em .env.local
+
+- [ ] Nunca salvar `service_role` no frontend
+- [ ] Nunca commitar arquivos `.env`
+- [ ] Revisar RLS antes de expor dados ao MVP
+- [ ] Armazenar segredos no Railway e localmente em `.env.local`
+- [ ] Preservar `Legacy` sem alterações não autorizadas

@@ -21,7 +21,10 @@ Estas regras se aplicam a todo o repositório, salvo instrução mais específic
 ## Implementação
 
 - Forneça códigos completos, incluindo imports, tipos e tratamento de erros necessários.
-- Quando o Next.js for criado, use TypeScript e preserve a compatibilidade mobile-first.
+- Use pnpm a partir da raiz do monorepo; não mantenha lockfiles de outros gerenciadores.
+- Preserve as fronteiras de `core`, `contracts`, `shared`, `adapter-supabase` e `ui`.
+- Mantenha o Next.js em TypeScript, com App Router e compatibilidade mobile-first.
+- Não adicione acesso ao Supabase fora de `packages/adapter-supabase` nem exponha nomes do banco legado aos componentes.
 - Mantenha a documentação sincronizada com o comportamento implementado.
 - Registre decisões arquiteturais relevantes na documentação adequada.
 - Registre mudanças relevantes em `CHANGELOG.md`.
@@ -29,6 +32,7 @@ Estas regras se aplicam a todo o repositório, salvo instrução mais específic
 
 ## Validação
 
+- Execute `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm format:check` e `pnpm build` para mudanças de domínio, infraestrutura ou aplicação.
 - Execute os testes disponíveis e relevantes para a mudança.
 - Não afirme que algo foi testado, validado ou executado quando não foi.
 - Se um teste não puder ser executado, informe o motivo e o risco residual.

@@ -3,6 +3,7 @@ node_modules/
 
 # Saídas de build e testes
 .next/
+.turbo/
 out/
 dist/
 build/
@@ -12,6 +13,7 @@ coverage/
 tmp/
 temp/
 *.log
+pnpm-debug.log*
 
 # Variáveis de ambiente e segredos
 .env
