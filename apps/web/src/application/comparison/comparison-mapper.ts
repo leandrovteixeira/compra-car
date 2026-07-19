@@ -1,30 +1,37 @@
 import type {
   ComparisonCellDto,
+  ComparisonOutcome,
   ComparisonPageDataDto,
   ComparisonResult,
   VehicleComparisonValue,
 } from '@compra-car/contracts';
 
-const NUMBER_FORMAT = new Intl.NumberFormat('pt-BR', {
-  maximumFractionDigits: 3,
-});
+import {
+  formatComparisonNumber,
+  type ComparisonNumberMetadata,
+} from './comparison-number-formatter';
 
-export function toComparisonCell(value: VehicleComparisonValue): ComparisonCellDto {
+export function toComparisonCell(
+  value: VehicleComparisonValue,
+  comparison: ComparisonOutcome = 'not-applicable',
+  metadata: ComparisonNumberMetadata = { code: String(value.itemCode) },
+): ComparisonCellDto {
   if (value.type !== 'numeric') {
     return Object.freeze({
       type: value.type,
-      displayValue: value.present ? 'Sim' : 'Não',
+      displayValue: value.present === true ? 'Sim' : '—',
+      comparison,
     });
   }
 
   if (value.value === null) {
-    return Object.freeze({ type: 'numeric', displayValue: '—' });
+    return Object.freeze({ type: 'numeric', displayValue: '—', comparison });
   }
 
-  const formattedValue = NUMBER_FORMAT.format(value.value);
   return Object.freeze({
     type: 'numeric',
-    displayValue: value.unit ? `${formattedValue} ${value.unit}` : formattedValue,
+    displayValue: formatComparisonNumber(value.value, value.unit, metadata),
+    comparison,
   });
 }
 
@@ -49,11 +56,17 @@ export function toComparisonPageData(result: ComparisonResult): ComparisonPageDa
           label: row.item.label,
           equipmentGroup: row.item.equipmentGroup,
           specSet: row.item.specSet,
-          isDifferent: row.isDifferent,
+          hasReferenceAdvantage: row.hasReferenceAdvantage,
           values: result.vehicles.map((vehicle) => {
             const value = row.valuesByVehicle[String(vehicle.id)];
             if (!value) throw new Error('Resultado de comparação incompleto.');
-            return toComparisonCell(value);
+            const comparison = row.comparisonByVehicle[String(vehicle.id)];
+            if (!comparison) throw new Error('Resultado de comparação incompleto.');
+            return toComparisonCell(value, comparison, {
+              code: String(row.item.code),
+              label: row.item.label,
+              specSet: row.item.specSet,
+            });
           }),
         }),
       ),

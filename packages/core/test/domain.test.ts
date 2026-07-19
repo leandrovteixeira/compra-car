@@ -50,6 +50,7 @@ function item(
       specSet: 'Cruise Control',
       label: code,
       unit: type === 'numeric' ? 'mm' : null,
+      valueDirection: type === 'numeric' ? 'positive' : null,
     }),
     ...overrides,
   };
@@ -208,15 +209,17 @@ describe('CompareVehicles', () => {
     ).rejects.toBeInstanceOf(ComparisonVehicleCountError);
   });
 
-  it('rejeita mais de três veículos', async () => {
+  it('compara qualquer quantidade de veículos', async () => {
     const fourthVehicle = vehicle('vehicle-4');
-    await expect(
-      compare([firstVehicle, secondVehicle, thirdVehicle, fourthVehicle], [binaryItem], []).execute(
-        {
-          vehicleIds: [firstVehicle.id, secondVehicle.id, thirdVehicle.id, fourthVehicle.id],
-        },
-      ),
-    ).rejects.toBeInstanceOf(ComparisonVehicleCountError);
+    const result = await compare(
+      [firstVehicle, secondVehicle, thirdVehicle, fourthVehicle],
+      [binaryItem],
+      [],
+    ).execute({
+      vehicleIds: [firstVehicle.id, secondVehicle.id, thirdVehicle.id, fourthVehicle.id],
+    });
+
+    expect(result.vehicles).toHaveLength(4);
   });
 
   it('rejeita veículos duplicados', async () => {
@@ -296,11 +299,150 @@ describe('CompareVehicles', () => {
 
     expect(binaryRow?.valuesByVehicle[firstVehicle.id]).toMatchObject({
       type: 'binary',
-      present: false,
+      present: null,
     });
     expect(numericRow?.valuesByVehicle[firstVehicle.id]).toMatchObject({
       type: 'numeric',
       value: null,
     });
+  });
+
+  it('calcula vantagem binary do primeiro veículo usando presença explícita', async () => {
+    const result = await compare(
+      [firstVehicle, secondVehicle, thirdVehicle],
+      [binaryItem],
+      [
+        {
+          vehicleId: firstVehicle.id,
+          itemCode: binaryItem.code,
+          type: 'binary',
+          present: true,
+        },
+        {
+          vehicleId: secondVehicle.id,
+          itemCode: binaryItem.code,
+          type: 'binary',
+          present: false,
+        },
+        {
+          vehicleId: thirdVehicle.id,
+          itemCode: binaryItem.code,
+          type: 'binary',
+          present: true,
+        },
+      ],
+    ).execute({ vehicleIds: [firstVehicle.id, secondVehicle.id, thirdVehicle.id] });
+    const row = allRows(result)[0];
+
+    expect(row?.comparisonByVehicle).toMatchObject({
+      [secondVehicle.id]: 'advantage',
+      [thirdVehicle.id]: 'tie',
+    });
+    expect(row?.hasReferenceAdvantage).toBe(true);
+  });
+
+  it.each([
+    [true, false, 'advantage'],
+    [true, true, 'tie'],
+    [false, false, 'tie'],
+    [false, true, 'disadvantage'],
+  ] as const)(
+    'compara binary %s × %s como %s',
+    async (referencePresent, competitorPresent, expected) => {
+      const result = await compare(
+        [firstVehicle, secondVehicle],
+        [binaryItem],
+        [
+          {
+            vehicleId: firstVehicle.id,
+            itemCode: binaryItem.code,
+            type: 'binary',
+            present: referencePresent,
+          },
+          {
+            vehicleId: secondVehicle.id,
+            itemCode: binaryItem.code,
+            type: 'binary',
+            present: competitorPresent,
+          },
+        ],
+      ).execute({ vehicleIds: [firstVehicle.id, secondVehicle.id] });
+
+      expect(allRows(result)[0]?.comparisonByVehicle[secondVehicle.id]).toBe(expected);
+    },
+  );
+
+  it.each([
+    ['positive', 120, 100, 'advantage'],
+    ['positive', 100, 120, 'disadvantage'],
+    ['negative', 8, 10, 'advantage'],
+    ['negative', 10, 8, 'disadvantage'],
+    ['positive', 100, 100, 'tie'],
+  ] as const)(
+    'compara numeric %s sem tolerância',
+    async (valueDirection, referenceValue, competitorValue, expected) => {
+      const numericItem = item('DM_0002', 'numeric', { valueDirection });
+      const result = await compare(
+        [firstVehicle, secondVehicle],
+        [numericItem],
+        [
+          {
+            vehicleId: firstVehicle.id,
+            itemCode: numericItem.code,
+            type: 'numeric',
+            value: referenceValue,
+            unit: 'mm',
+          },
+          {
+            vehicleId: secondVehicle.id,
+            itemCode: numericItem.code,
+            type: 'numeric',
+            value: competitorValue,
+            unit: 'mm',
+          },
+        ],
+      ).execute({ vehicleIds: [firstVehicle.id, secondVehicle.id] });
+
+      expect(allRows(result)[0]?.comparisonByVehicle[secondVehicle.id]).toBe(expected);
+    },
+  );
+
+  it('trata informação ausente como unknown e não cria vantagem', async () => {
+    const result = await compare(
+      [firstVehicle, secondVehicle],
+      [binaryItem],
+      [
+        {
+          vehicleId: firstVehicle.id,
+          itemCode: binaryItem.code,
+          type: 'binary',
+          present: true,
+        },
+      ],
+    ).execute({ vehicleIds: [firstVehicle.id, secondVehicle.id] });
+    const row = allRows(result)[0];
+
+    expect(row?.comparisonByVehicle[secondVehicle.id]).toBe('unknown');
+    expect(row?.hasReferenceAdvantage).toBe(false);
+  });
+
+  it('não classifica item scale', async () => {
+    const scaleItem = item('CO_0040', 'scale');
+    const result = await compare(
+      [firstVehicle, secondVehicle],
+      [scaleItem],
+      [
+        {
+          vehicleId: firstVehicle.id,
+          itemCode: scaleItem.code,
+          type: 'scale',
+          present: true,
+        },
+      ],
+    ).execute({ vehicleIds: [firstVehicle.id, secondVehicle.id] });
+    const row = allRows(result)[0];
+
+    expect(row?.comparisonByVehicle[secondVehicle.id]).toBe('not-applicable');
+    expect(row?.hasReferenceAdvantage).toBe(false);
   });
 });

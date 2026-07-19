@@ -37,4 +37,4 @@ As tags permitem revalidação futura sem acoplar a UI à fonte dos dados. Esta 
 
 ## Escopo da interface
 
-A página inicial carrega marcas, modelos e veículos progressivamente, permite adicionar dois ou três veículos sem duplicação e navega para `/comparar` preservando a ordem dos IDs. A rota de destino é somente um placeholder; comparação, autenticação e escrita permanecem fora desta fase.
+A página inicial carrega marcas, modelos e veículos progressivamente, permite adicionar dois ou mais veículos sem duplicação e navega para `/comparar` preservando a ordem dos IDs. O primeiro selecionado será a referência da comparação.

@@ -128,7 +128,7 @@ export function VehicleSelection() {
           Escolha os veículos
         </h1>
         <p className="mt-3 max-w-2xl text-base leading-7 text-slate-300">
-          Selecione dois veículos para comparar e, se quiser, adicione um terceiro.
+          Selecione pelo menos dois veículos. O primeiro será o veículo principal da comparação.
         </p>
 
         <div className="mt-8 grid min-w-0 gap-4 rounded-3xl border border-slate-800 bg-slate-900 p-5 shadow-2xl shadow-slate-950/40 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.5fr)_auto] sm:p-7">
@@ -150,7 +150,7 @@ export function VehicleSelection() {
           />
 
           <CatalogCombobox
-            disabled={!selection.model || loading || selection.selectedVehicles.length >= 3}
+            disabled={!selection.model || loading}
             label="Versão"
             onChange={selectVersion}
             options={vehicleOptions}
@@ -182,7 +182,7 @@ export function VehicleSelection() {
             <h2 className="text-lg font-semibold" id="selected-title">
               Selecionados
             </h2>
-            <span className="text-sm text-slate-400">{selection.selectedVehicles.length}/3</span>
+            <span className="text-sm text-slate-400">{selection.selectedVehicles.length}</span>
           </div>
 
           <div className="mt-3 grid gap-3">
@@ -201,7 +201,7 @@ export function VehicleSelection() {
                 >
                   <div className="min-w-0">
                     <p className="text-xs font-semibold uppercase tracking-wider text-cyan-400">
-                      Veículo {index + 1}
+                      {index === 0 ? 'Veículo principal' : `Concorrente ${index}`}
                     </p>
                     <p className="mt-1 truncate font-medium" title={compactName}>
                       {compactName}

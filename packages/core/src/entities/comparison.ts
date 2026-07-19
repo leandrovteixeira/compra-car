@@ -8,7 +8,7 @@ export interface PresenceComparisonValue {
   readonly vehicleId: VehicleId;
   readonly itemCode: ComparisonItemCode;
   readonly type: Exclude<ComparisonItemType, 'numeric'>;
-  readonly present: boolean;
+  readonly present: boolean | null;
 }
 
 export interface NumericComparisonValue {
@@ -22,6 +22,8 @@ export interface NumericComparisonValue {
 export type VehicleComparisonValue = PresenceComparisonValue | NumericComparisonValue;
 export type ComparisonValue = VehicleComparisonValue;
 
+export type ComparisonOutcome = 'advantage' | 'disadvantage' | 'tie' | 'unknown' | 'not-applicable';
+
 export interface VehicleComparisonData {
   readonly vehicles: readonly Vehicle[];
   readonly items: readonly ComparisonItem[];
@@ -31,7 +33,8 @@ export interface VehicleComparisonData {
 export interface ComparisonRow {
   readonly item: ComparisonItem;
   readonly valuesByVehicle: Readonly<Record<string, VehicleComparisonValue>>;
-  readonly isDifferent: boolean;
+  readonly comparisonByVehicle: Readonly<Record<string, ComparisonOutcome>>;
+  readonly hasReferenceAdvantage: boolean;
 }
 
 export interface ComparisonCategory {

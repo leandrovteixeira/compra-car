@@ -57,7 +57,7 @@ Cada `code` forma uma linha. Dois codes do mesmo `specSet` não podem ser consol
 ### Binary e scale
 
 - associação presente: `present: true`;
-- associação ausente: `present: false`;
+- associação ausente: `present: null` (informação desconhecida);
 - `scale` continua como linha independente no MVP.
 
 ### Numeric

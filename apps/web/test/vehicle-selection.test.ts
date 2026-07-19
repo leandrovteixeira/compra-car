@@ -80,11 +80,11 @@ describe('seleção explícita de veículos', () => {
     expect(addSelectedVehicle(state, [duplicate])).toBe(state);
   });
 
-  it('não permite adicionar um quarto veículo', () => {
+  it('permite adicionar um quarto veículo', () => {
     const state = readyState([vehicle('1'), vehicle('2'), vehicle('3')], '4');
 
-    expect(canAddSelectedVehicle(state, [vehicle('4')])).toBe(false);
-    expect(addSelectedVehicle(state, [vehicle('4')])).toBe(state);
+    expect(canAddSelectedVehicle(state, [vehicle('4')])).toBe(true);
+    expect(addSelectedVehicle(state, [vehicle('4')]).selectedVehicles).toHaveLength(4);
   });
 
   it('mudar a marca limpa modelo e versão, preservando os selecionados', () => {

@@ -23,9 +23,10 @@ Este documento relaciona os contratos normalizados à superfície física confir
 | `ComparisonItem.specSet` | `specs.spec_set` | texto obrigatório, sem agrupamento de codes distintos |
 | `ComparisonItem.label` | `specs.detail` | texto obrigatório, preservado sem correção implícita |
 | `ComparisonItem.unit` | `specs.unit` | usada apenas em item `numeric` |
+| `ComparisonItem.valueDirection` | `specs.value_direction` | `Positive → positive`; `Negative → negative`; obrigatório em item `numeric` |
 | `ComparisonItem.sortOrder` | sem origem | `null` |
 | Associação | `product_specs.product_id` + `equipment_id` | `equipment_id → specs.id` possui FK física; `product_id → products.id` é vínculo lógico sem FK |
-| Valor `binary`/`scale` | existência em `product_specs` | associação existente = `true`; ausente = `false` |
+| Valor `binary`/`scale` | `product_specs.is_present` | `true`/`false` explícitos; `null` ou associação ausente = informação desconhecida |
 | Valor `numeric` | `product_specs.value` | número finito ou `null`; inválido gera erro explícito |
 | Unidade do valor | `product_specs.input_unit`, `specs.unit` | primeiro valor não vazio, nessa ordem, ou `null` |
 

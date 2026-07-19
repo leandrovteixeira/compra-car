@@ -6,7 +6,7 @@ export class ComparisonVehicleCountError extends DomainValidationError {
   override readonly name = 'ComparisonVehicleCountError';
 
   constructor(readonly actualCount: number) {
-    super(`A comparação exige 2 ou 3 veículos; foram recebidos ${actualCount}.`);
+    super(`A comparação exige pelo menos 2 veículos; foram recebidos ${actualCount}.`);
   }
 }
 

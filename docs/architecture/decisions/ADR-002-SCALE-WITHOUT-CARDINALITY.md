@@ -13,6 +13,6 @@ No MVP, cada item `scale` é uma linha de presença independente, com `present: 
 
 ## Consequências
 
-- a associação ausente resulta em `present: false`;
+- `is_present` é preservado e a associação ausente resulta em `present: null`;
 - combinações não são consideradas incompatíveis sem regra documentada;
 - cardinalidade explícita e agrupamento visual ficam no backlog pós-MVP.

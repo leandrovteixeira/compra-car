@@ -81,7 +81,7 @@ Permitir localizar e selecionar 2 veículos obrigatórios e, opcionalmente, um t
 
 ### Validações
 
-- exigir exatamente 2 ou 3 veículos para comparar;
+- exigir pelo menos 2 veículos para comparar;
 - impedir seleção duplicada da mesma versão;
 - aceitar apenas veículos com `isActive` e `isPublic` verdadeiros e ao menos um item comparável;
 - revalidar atividade antes de iniciar a comparação;
@@ -96,7 +96,7 @@ Permitir localizar e selecionar 2 veículos obrigatórios e, opcionalmente, um t
 - resultados disponíveis;
 - nenhum resultado;
 - filtros sem correspondência;
-- 0, 1, 2 ou 3 veículos selecionados;
+- qualquer quantidade de veículos selecionados;
 - erro de conexão;
 - versão de veículo removida do catálogo ou tornada inativa;
 - dados incompletos ou conflitantes.
@@ -125,7 +125,7 @@ Apresentar rapidamente diferenças e vantagens entre os veículos selecionados, 
 
 ### Elementos
 
-- cabeçalho com os 2 ou 3 veículos;
+- cabeçalho com todos os veículos selecionados;
 - modo `Diferenças` selecionado por padrão;
 - botão ou controle `Mostrar tudo`;
 - botão ou controle `Mostrar só vantagens`;
@@ -151,7 +151,7 @@ Apresentar rapidamente diferenças e vantagens entre os veículos selecionados, 
 
 ### Validações
 
-- confirmar que existem 2 ou 3 versões distintas no resultado;
+- confirmar que existem pelo menos 2 versões distintas no resultado;
 - garantir um valor ou estado explícito por veículo em cada item;
 - mostrar vantagem somente quando houver regra conhecida e auditável;
 - não classificar ausência de dado como desvantagem;

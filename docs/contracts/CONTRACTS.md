@@ -82,7 +82,7 @@ Essas portas não definem cliente Supabase, SQL, paginação física ou nomes le
 
 - request: `{ vehicleIds: readonly string[] }`;
 - response: `ComparisonResult`;
-- aceita somente 2 ou 3 IDs distintos;
+- aceita 2 ou mais IDs distintos;
 - preserva ordem e valores ausentes;
 - agrupa linhas por categoria;
 - usa `ComparisonItem.code` como identidade.
@@ -97,13 +97,14 @@ interface ComparisonResult {
     rows: readonly {
       item: ComparisonItem;
       valuesByVehicle: Readonly<Record<string, VehicleComparisonValue>>;
-      isDifferent: boolean;
+      comparisonByVehicle: Readonly<Record<string, ComparisonOutcome>>;
+      hasReferenceAdvantage: boolean;
     }[];
   }[];
 }
 ```
 
-`isDifferent` permite o filtro futuro de diferenças. O resultado não contém textos finais de apresentação nem conclusões de vantagem.
+O primeiro veículo é a referência. `comparisonByVehicle` contém o resultado completo contra cada concorrente (`advantage`, `disadvantage`, `tie`, `unknown` ou `not-applicable`) e `hasReferenceAdvantage` informa se a referência vence ao menos um concorrente.
 
 ## Erros de domínio
 
@@ -122,7 +123,7 @@ O adaptador legado traduz falhas técnicas em erros próprios sem expor credenci
 - IDs e codes não podem ser vazios.
 - Cada `code` representa uma linha independente.
 - Dois codes do mesmo `specSet` não são consolidados.
-- `binary`/`scale` sem associação produzem `present: false`.
+- `binary`/`scale` usam `product_specs.is_present`; ausência de informação produz `present: null`.
 - `numeric` sem valor produz `value: null`, nunca zero.
 - Um valor precisa ter o mesmo tipo do item.
 - O repositório não pode retornar valores fora da seleção nem pares duplicados.
@@ -133,7 +134,7 @@ O adaptador legado traduz falhas técnicas em erros próprios sem expor credenci
 Continuam planejados, mas não fazem parte desta entrega:
 
 - estados detalhados de qualidade e disponibilidade de equipamentos;
-- regras e resultados de vantagem;
+- ranking de itens `scale`;
 - preços, políticas comerciais e snapshots;
 - tema de marca;
 - entrada autocontida para PDF;

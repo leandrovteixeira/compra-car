@@ -22,6 +22,7 @@ const numericSpec: LegacySpecRow = {
   spec_set: 'Potência',
   detail: 'Potência máxima',
   unit: 'cv',
+  value_direction: 'Positive',
   is_active: true,
 };
 
@@ -76,7 +77,7 @@ describe('mapeadores do legado', () => {
     );
   });
 
-  it('gera matriz completa: associação binary/scale é true e ausência é false', () => {
+  it('gera matriz completa usando is_present e trata ausência como unknown', () => {
     const values = mapLegacyRowsToComparisonValues(
       [createVehicleId('1'), createVehicleId('2')],
       [binarySpec],
@@ -93,8 +94,26 @@ describe('mapeadores do legado', () => {
 
     expect(values).toEqual([
       { vehicleId: '1', itemCode: 'safety.abs', type: 'binary', present: true },
-      { vehicleId: '2', itemCode: 'safety.abs', type: 'binary', present: false },
+      { vehicleId: '2', itemCode: 'safety.abs', type: 'binary', present: null },
     ]);
+  });
+
+  it('preserva is_present false em binary', () => {
+    const values = mapLegacyRowsToComparisonValues(
+      [createVehicleId('1')],
+      [binarySpec],
+      [
+        {
+          product_id: 1,
+          equipment_id: 11,
+          value: null,
+          is_present: false,
+          input_unit: null,
+        },
+      ],
+    );
+
+    expect(values[0]).toMatchObject({ type: 'binary', present: false });
   });
 
   it('converte numérico, prioriza input_unit e preserva null quando não há associação', () => {

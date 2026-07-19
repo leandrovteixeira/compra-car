@@ -7,15 +7,11 @@ export type ParsedComparisonRequest =
 const ERRORS = Object.freeze({
   missing: {
     code: 'MISSING_VEHICLES',
-    message: 'Selecione dois ou três veículos para comparar.',
+    message: 'Selecione pelo menos dois veículos para comparar.',
   },
   tooFew: {
     code: 'TOO_FEW_VEHICLES',
     message: 'Selecione pelo menos dois veículos para comparar.',
-  },
-  tooMany: {
-    code: 'TOO_MANY_VEHICLES',
-    message: 'É possível comparar no máximo três veículos.',
   },
   duplicate: {
     code: 'DUPLICATE_VEHICLES',
@@ -40,7 +36,6 @@ export function parseComparisonRequest(
 
   const vehicleIds = rawVehicles.split(',').map((id) => id.trim());
   if (vehicleIds.length < 2) return { ok: false, error: ERRORS.tooFew };
-  if (vehicleIds.length > 3) return { ok: false, error: ERRORS.tooMany };
   if (vehicleIds.some((id) => !isCompatibleVehicleId(id))) {
     return { ok: false, error: ERRORS.invalid };
   }

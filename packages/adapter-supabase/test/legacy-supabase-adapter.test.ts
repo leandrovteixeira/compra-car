@@ -143,6 +143,7 @@ describe('LegacySupabaseAdapter', () => {
       spec_set: 'ABS',
       detail: 'Freios ABS',
       unit: null,
+      value_direction: null,
       is_active: true,
     };
     const { client, calls } = fakeClient({

@@ -8,7 +8,7 @@ O Compra Car apoia vendedores de concessionárias em comparações claras entre 
 
 - experiência mobile-first e online;
 - catálogo baseado nos dados existentes no Supabase atual;
-- seleção de 2 ou 3 veículos;
+- seleção de 2 ou mais veículos;
 - comparação por linhas normalizadas, diferenças e vantagens auditáveis;
 - geração e compartilhamento futuro de PDF com aviso legal;
 - identidade visual flexível por marca;
@@ -84,7 +84,7 @@ Esses estados não podem ser confundidos.
 - `GetVehiclesByIds`;
 - `CompareVehicles`.
 
-`CompareVehicles` aceita 2 ou 3 IDs distintos, preserva a ordem, usa `code` como identidade, agrupa por categoria, completa células tipadas e calcula `isDifferent`. Não calcula vantagem.
+`CompareVehicles` aceita 2 ou mais IDs distintos, preserva a ordem, usa o primeiro como referência, completa células tipadas e calcula o resultado contra todos os concorrentes. `binary` usa presença explícita, `numeric` usa direção positiva/negativa e `scale` não é classificado.
 
 ## Decisões registradas
 
@@ -95,8 +95,8 @@ Esses estados não podem ser confundidos.
 - ADR-005: autenticação simples, sem RBAC, será implementada em fase posterior.
 - ADR-006: o legado é traduzido por DTOs/mappers em um adaptador server-only e somente leitura.
 - ADR-007: Appsmith é adotado no backoffice da Fase 1, sem mudança de schema; GitHub, `C:\Dev` e OneDrive possuem papéis distintos.
-- Diferença e vantagem são conceitos separados.
-- Uma vantagem futura exige regra explícita, versionada e auditável.
+- O resultado distingue vantagem, desvantagem, empate, informação desconhecida e item não aplicável.
+- Apenas vantagens da referência são destacadas nesta versão.
 - O MVP usa o Supabase atual sem depender de nova carga do Excel.
 - O importador Excel será ajustado posteriormente à estrutura vigente.
 
@@ -108,7 +108,7 @@ Esses estados não podem ser confundidos.
 - não expor chaves, tokens ou segredos;
 - não acessar Supabase fora do adaptador legado;
 - não colocar regras de negócio em `shared` ou na UI;
-- não implementar vantagem sem regra documentada;
+- não implementar novas regras de vantagem sem documentação;
 - não tratar autenticação ou PDF como implementados; ambos permanecem em fases posteriores do roadmap;
 - suporte offline não integra o escopo atual, e a PWA instalável não implica funcionamento offline;
 - não alterar schema na Fase 1 do backoffice;
@@ -119,7 +119,7 @@ Esses estados não podem ser confundidos.
 
 A infraestrutura do monorepo, o núcleo de domínio, o adaptador legado e os vertical slices de seleção e comparação estão implementados. `packages/core` contém entidades, value objects, erros, portas e os cinco casos de uso centrais. `packages/contracts` contém aliases, reexportações e DTOs públicos sem duplicação estrutural. `packages/adapter-supabase` implementa as duas portas sobre `products`, `specs` e `product_specs`, sem escrita. `apps/web` conecta seleção e comparação aos casos de uso por camada server-only, `unstable_cache` e composition root.
 
-A URL de comparação é `/comparar?vehicles=id1,id2[,id3]`. A página valida IDs, preserva sua ordem, executa `CompareVehicles`, apresenta categorias e usa apenas `isDifferent` para o filtro visual. O domínio e o adapter não conhecem componentes ou parâmetros de URL.
+A URL de comparação é `/comparar?vehicles=id1,id2[,id3,...]`. A página valida IDs, preserva sua ordem, executa `CompareVehicles`, apresenta categorias e usa `hasReferenceAdvantage` no filtro “Ver destaques”. A UI usa uma única superfície tabular com cabeçalho e primeira coluna fixos, rolagem bidirecional, células com slot estável para checks e estados dedicados de loading, vazio e erro. O domínio e o adapter não conhecem componentes ou parâmetros de URL.
 
 Os testes do core usam repositórios in-memory. Os mappers do adaptador são testados sem rede e a integração real é opt-in por variáveis exclusivas. A UI de negócio e `Legacy` permanecem sem alteração nesta fase.
 
@@ -136,9 +136,10 @@ O repositório contém apenas infraestrutura Docker e recomendações histórica
 3. Comparar este clone com o `C:\Dev\compra-car` do outro notebook.
 4. Obter e versionar de forma segura o export oficial do Appsmith atual.
 5. Validar no Supabase os objetos necessários ao backoffice, sem alterar o schema.
-6. Implementar a Fase 1 administrativa em blocos pequenos e revisáveis.
-7. Concluir PDF, publicação e piloto do MVP público.
-8. Após o piloto, evoluir dados, importadores e arquitetura gradualmente.
+6. Conectar o Next.js ao adaptador apenas no runtime do servidor.
+7. Implementar a UI de negócio sobre os casos de uso.
+8. Concluir MVP e piloto.
+9. Após o piloto, evoluir dados, importador e arquitetura gradualmente.
 
 ## Backlog pós-MVP
 
@@ -148,13 +149,12 @@ O repositório contém apenas infraestrutura Docker e recomendações histórica
 - evolução da taxonomia de categorias;
 - substituição futura do importador Excel;
 - revisão dos prefixes legados;
-- regras de vantagem auditáveis;
+- evolução e versionamento das regras de vantagem;
 - estados detalhados de equipamentos, qualidade e rastreabilidade.
 
 ## Pendências
 
 - **PENDENTE:** validação online opt-in e cobertura quantitativa do Supabase atual.
-- **PENDENTE:** regra exata de vantagem.
 - **PENDENTE:** texto jurídico final.
 - **PENDENTE:** marca e participantes do piloto.
 - **PENDENTE:** identidade visual autorizada.

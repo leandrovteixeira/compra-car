@@ -1,6 +1,7 @@
 import type {
   AvailableVehicleFilters,
   ComparisonItem,
+  ComparisonOutcome,
   ComparisonResult,
   Vehicle,
   VehicleComparisonValue,
@@ -12,6 +13,7 @@ export type {
   ComparisonItem,
   ComparisonItemCode,
   ComparisonItemType,
+  ComparisonOutcome,
   ComparisonRepository,
   ComparisonResult,
   ComparisonRow,
@@ -89,6 +91,7 @@ export interface ComparisonVehiclePresentationDto {
 export interface ComparisonCellDto {
   readonly type: 'binary' | 'numeric' | 'scale';
   readonly displayValue: string;
+  readonly comparison: ComparisonOutcome;
 }
 
 export interface ComparisonRowPresentationDto {
@@ -96,7 +99,7 @@ export interface ComparisonRowPresentationDto {
   readonly label: string;
   readonly equipmentGroup: string;
   readonly specSet: string;
-  readonly isDifferent: boolean;
+  readonly hasReferenceAdvantage: boolean;
   readonly values: readonly ComparisonCellDto[];
 }
 
@@ -113,7 +116,6 @@ export interface ComparisonPageDataDto {
 export type ComparisonPageErrorCode =
   | 'MISSING_VEHICLES'
   | 'TOO_FEW_VEHICLES'
-  | 'TOO_MANY_VEHICLES'
   | 'DUPLICATE_VEHICLES'
   | 'INVALID_VEHICLE_IDS'
   | 'VEHICLES_UNAVAILABLE'

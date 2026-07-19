@@ -18,6 +18,7 @@ export interface LegacySpecRow {
   readonly spec_set: string | null;
   readonly detail: string | null;
   readonly unit: string | null;
+  readonly value_direction: string | null;
   readonly is_active: boolean | null;
 }
 

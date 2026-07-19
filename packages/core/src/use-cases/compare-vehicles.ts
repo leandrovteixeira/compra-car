@@ -1,6 +1,7 @@
 import type { ComparisonItem } from '../entities/comparison-item';
 import type {
   ComparisonCategory,
+  ComparisonOutcome,
   ComparisonResult,
   ComparisonRow,
   VehicleComparisonData,
@@ -67,24 +68,34 @@ function missingValue(vehicleId: VehicleId, item: ComparisonItem): VehicleCompar
     vehicleId,
     itemCode: item.code,
     type: item.type,
-    present: false,
+    present: null,
   });
 }
 
-function valuesAreEqual(left: VehicleComparisonValue, right: VehicleComparisonValue): boolean {
-  if (left.type !== right.type) {
-    return false;
+function compareWithReference(
+  item: ComparisonItem,
+  reference: VehicleComparisonValue,
+  competitor: VehicleComparisonValue,
+): ComparisonOutcome {
+  if (item.type === 'scale') return 'not-applicable';
+
+  if (reference.type === 'binary' && competitor.type === 'binary') {
+    if (reference.present === null || competitor.present === null) return 'unknown';
+    if (reference.present === competitor.present) return 'tie';
+    return reference.present ? 'advantage' : 'disadvantage';
   }
 
-  if (left.type === 'numeric' && right.type === 'numeric') {
-    return left.value === right.value && left.unit === right.unit;
+  if (reference.type === 'numeric' && competitor.type === 'numeric') {
+    if (reference.value === null || competitor.value === null) return 'unknown';
+    if (reference.value === competitor.value) return 'tie';
+
+    const referenceIsGreater = reference.value > competitor.value;
+    const referenceWins =
+      item.valueDirection === 'positive' ? referenceIsGreater : !referenceIsGreater;
+    return referenceWins ? 'advantage' : 'disadvantage';
   }
 
-  if (left.type !== 'numeric' && right.type !== 'numeric') {
-    return left.present === right.present;
-  }
-
-  return false;
+  throw new InvalidComparisonDataError(`Não foi possível comparar o item ${item.code}.`);
 }
 
 function buildRows(data: VehicleComparisonData): readonly ComparisonRow[] {
@@ -117,13 +128,34 @@ function buildRows(data: VehicleComparisonData): readonly ComparisonRow[] {
       return [vehicle.id, value ?? missingValue(vehicle.id, item)] as const;
     });
     const valuesByVehicle = Object.freeze(Object.fromEntries(entries));
-    const values = Object.values(valuesByVehicle);
-    const firstValue = values[0];
-    const isDifferent = firstValue
-      ? values.slice(1).some((value) => !valuesAreEqual(firstValue, value))
-      : false;
+    const referenceVehicle = data.vehicles[0];
+    if (!referenceVehicle) {
+      throw new InvalidComparisonDataError('A comparação não possui veículo de referência.');
+    }
+    const referenceValue = valuesByVehicle[String(referenceVehicle.id)];
+    if (!referenceValue) {
+      throw new InvalidComparisonDataError('A comparação não possui valor de referência.');
+    }
 
-    return Object.freeze({ item, valuesByVehicle, isDifferent });
+    const comparisonEntries = data.vehicles.map((vehicle, index) => {
+      if (index === 0) return [vehicle.id, 'not-applicable'] as const;
+      const competitorValue = valuesByVehicle[String(vehicle.id)];
+      if (!competitorValue) {
+        throw new InvalidComparisonDataError(`Valor ausente para o veículo ${vehicle.id}.`);
+      }
+      return [vehicle.id, compareWithReference(item, referenceValue, competitorValue)] as const;
+    });
+    const comparisonByVehicle = Object.freeze(Object.fromEntries(comparisonEntries));
+    const hasReferenceAdvantage = Object.values(comparisonByVehicle).some(
+      (outcome) => outcome === 'advantage',
+    );
+
+    return Object.freeze({
+      item,
+      valuesByVehicle,
+      comparisonByVehicle,
+      hasReferenceAdvantage,
+    });
   });
 }
 
@@ -148,7 +180,7 @@ export class CompareVehicles {
   ) {}
 
   async execute(input: CompareVehiclesInput): Promise<ComparisonResult> {
-    if (input.vehicleIds.length < 2 || input.vehicleIds.length > 3) {
+    if (input.vehicleIds.length < 2) {
       throw new ComparisonVehicleCountError(input.vehicleIds.length);
     }
 

@@ -7,6 +7,7 @@ import {
   assertComparisonItemType,
   type ComparisonItemType,
 } from '../value-objects/comparison-item-type';
+import { assertValueDirection, type ValueDirection } from '../value-objects/value-direction';
 
 export interface ComparisonItem {
   readonly id: string;
@@ -17,6 +18,7 @@ export interface ComparisonItem {
   readonly specSet: string;
   readonly label: string;
   readonly unit: string | null;
+  readonly valueDirection: ValueDirection | null;
   readonly sortOrder: number | null;
 }
 
@@ -29,6 +31,7 @@ export interface CreateComparisonItemInput {
   readonly specSet: string;
   readonly label: string;
   readonly unit: string | null;
+  readonly valueDirection?: string | null;
   readonly sortOrder?: number | null;
 }
 
@@ -55,6 +58,16 @@ export function createComparisonItem(input: CreateComparisonItemInput): Comparis
     throw new DomainValidationError('Itens binary e scale não podem possuir unidade.');
   }
 
+  const valueDirection = input.valueDirection ?? null;
+  if (input.type === 'numeric') {
+    if (valueDirection === null) {
+      throw new DomainValidationError('Itens numeric devem possuir valueDirection.');
+    }
+    assertValueDirection(valueDirection);
+  } else if (valueDirection !== null) {
+    throw new DomainValidationError('Apenas itens numeric podem possuir valueDirection.');
+  }
+
   return Object.freeze({
     id: requiredText(input.id, 'id'),
     code: createComparisonItemCode(input.code),
@@ -64,6 +77,7 @@ export function createComparisonItem(input: CreateComparisonItemInput): Comparis
     specSet: requiredText(input.specSet, 'specSet'),
     label: requiredText(input.label, 'label'),
     unit,
+    valueDirection,
     sortOrder,
   });
 }

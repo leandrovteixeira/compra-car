@@ -47,6 +47,7 @@ interface ComparisonItem {
   specSet: string;
   label: string;
   unit: string | null;
+  valueDirection: "positive" | "negative" | null;
   sortOrder: number | null;
 }
 ```
@@ -57,7 +58,7 @@ Regras:
 - um `code` não pode aparecer duas vezes no mesmo resultado;
 - `label` contém o rótulo apresentável, mas não controla regras;
 - `category`, `equipmentGroup` e `specSet` permitem organização futura da UI;
-- itens `binary` e `scale` não possuem unidade;
+- itens `binary` e `scale` não possuem unidade nem direção; itens `numeric` exigem direção;
 - prefixes como `PW_`, `EX_`, `IN_`, `CO_`, `SF_`, `DM_` e `OW_` não determinam tipo, categoria ou arquitetura.
 
 ### Um code, uma linha
@@ -76,7 +77,7 @@ type VehicleComparisonValue =
       vehicleId: VehicleId;
       itemCode: ComparisonItemCode;
       type: "binary" | "scale";
-      present: boolean;
+      present: boolean | null;
     }
   | {
       vehicleId: VehicleId;
@@ -87,8 +88,8 @@ type VehicleComparisonValue =
     };
 ```
 
-- associação presente para `binary` ou `scale` significa `present: true`;
-- associação ausente para `binary` ou `scale` significa `present: false`;
+- `binary` ou `scale` preservam `is_present` como `true`, `false` ou `null`;
+- associação ausente para `binary` ou `scale` significa informação desconhecida (`present: null`);
 - ausência numeric permanece `value: null` e nunca é convertida em zero;
 - `false` e `null` representam estados diferentes;
 - o domínio não formata `Sim`, `Não` ou travessão; essa responsabilidade pertence à apresentação.
@@ -105,14 +106,15 @@ ComparisonResult
     └── rows
         ├── item
         ├── valuesByVehicle
-        └── isDifferent
+        ├── comparisonByVehicle
+        └── hasReferenceAdvantage
 ```
 
-Cada linha corresponde a um único `code` e contém uma célula tipada por veículo. O domínio calcula `isDifferent` por igualdade tipada, mas não aplica filtro visual. Vantagens não são inferidas nesta fase.
+Cada linha corresponde a um único `code` e contém uma célula tipada por veículo. O primeiro veículo é a referência. Para cada concorrente, o domínio produz `advantage`, `disadvantage`, `tie`, `unknown` ou `not-applicable`; `hasReferenceAdvantage` é verdadeiro quando a referência vence ao menos um concorrente.
 
 ## Invariantes implementados
 
-- uma comparação recebe 2 ou 3 IDs distintos;
+- uma comparação recebe 2 ou mais IDs distintos;
 - os veículos precisam existir, estar ativos e públicos;
 - a ordem dos IDs solicitados é preservada;
 - cada linha possui identidade exclusiva por `code`;
@@ -120,7 +122,7 @@ Cada linha corresponde a um único `code` e contém uma célula tipada por veíc
 - valores fora dos veículos ou itens solicitados são rejeitados;
 - valores duplicados para o mesmo par veículo/item são rejeitados;
 - linhas são agrupadas pela categoria normalizada, sem interpretação de prefixo;
-- diferença e vantagem permanecem conceitos separados.
+- `scale` nunca produz vantagem ou desvantagem neste MVP.
 
 ## Categorias
 
@@ -139,9 +141,9 @@ Os conceitos abaixo continuam válidos no modelo conceitual mais amplo, mas não
 - estados comerciais detalhados de equipamentos: série, opcional e pacote;
 - `Price`, `CommercialPolicy`, `DataSource`, `DataFreshness` e snapshots;
 - `Translation`, `BrandTheme` e geração de PDF;
-- `AdvantageRule` e `Advantage`.
+- pesos, score geral e comparação editorial.
 
-Uma vantagem somente poderá existir a partir de regra explícita, versionada e auditável. Ausência de dado nunca cria vantagem ou desvantagem automaticamente.
+As regras explícitas deste MVP são presença em `binary` e direção em `numeric`. Ausência de dado nunca cria vantagem ou desvantagem automaticamente.
 
 ## Backlog pós-MVP
 

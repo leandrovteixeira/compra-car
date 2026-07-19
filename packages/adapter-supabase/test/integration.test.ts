@@ -25,7 +25,8 @@ describe.skipIf(!enabled)('integração read-only com Supabase legado', () => {
     const client = integrationClient();
     const projections = {
       products: 'id,brand,model,version,model_year,production_year,is_active,is_public',
-      specs: 'id,code,type,group_name,equipment_group,spec_set,detail,unit,is_active',
+      specs:
+        'id,code,type,group_name,equipment_group,spec_set,detail,unit,value_direction,is_active',
       product_specs: 'product_id,equipment_id,value,is_present,input_unit',
     } as const;
 

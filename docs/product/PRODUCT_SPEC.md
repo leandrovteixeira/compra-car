@@ -28,7 +28,7 @@ Grupo pequeno de vendedores de uma marca específica, ainda não identificada of
 
 ## Proposta de valor
 
-Permitir que o vendedor selecione 2 ou 3 veículos elegíveis e compare rapidamente suas diferenças, vantagens e equipamentos em uma interface mobile, gerando um PDF completo para compartilhamento.
+Permitir que o vendedor selecione 2 ou mais veículos elegíveis e compare rapidamente suas diferenças, vantagens e equipamentos em uma interface mobile, gerando um PDF completo para compartilhamento.
 
 ## Natureza do MVP
 
@@ -41,7 +41,7 @@ O catálogo público apresentará veículos ativos, revisados para publicação 
 - aplicação mobile-first;
 - funcionamento online;
 - leitura do Supabase atual por uma camada de adaptação;
-- seleção livre de 2 ou 3 veículos ativos, públicos e comparáveis;
+- seleção livre de 2 ou mais veículos ativos, públicos e comparáveis;
 - pesquisa e filtros para localizar veículos;
 - comparação mostrando apenas diferenças;
 - opção para mostrar todos os itens;
@@ -136,7 +136,7 @@ Essas evoluções não devem acoplar o frontend ao modelo legado nem bloquear a 
 
 ## Requisitos funcionais
 
-- **RF-001:** permitir selecionar 2 ou 3 veículos elegíveis para comparação.
+- **RF-001:** permitir selecionar 2 ou mais veículos elegíveis para comparação.
 - **RF-002:** impedir o início da comparação com menos de 2 veículos.
 - **RF-003:** permitir remover ou substituir qualquer veículo selecionado.
 - **RF-004:** impedir a seleção duplicada da mesma versão de veículo.
@@ -232,7 +232,7 @@ As metas, a forma de coleta, a retenção e os responsáveis por estas métricas
 
 - **PENDENTE:** nome definitivo.
 - **PENDENTE:** marca piloto.
-- **PENDENTE:** regra exata de vantagem.
+- A regra de vantagem do MVP cobre `binary` e `numeric`; pesos, score e ranking `scale` permanecem pendentes.
 - **PENDENTE:** escopo das políticas comerciais.
 - **PENDENTE:** estratégia de autenticação.
 - **PENDENTE:** estratégia de compartilhamento.

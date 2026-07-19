@@ -11,5 +11,6 @@ export * from './use-cases/list-available-models';
 export * from './use-cases/list-available-vehicles';
 export * from './value-objects/comparison-item-code';
 export * from './value-objects/comparison-item-type';
+export * from './value-objects/value-direction';
 export * from './value-objects/vehicle-display-name';
 export * from './value-objects/vehicle-id';

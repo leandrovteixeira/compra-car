@@ -42,6 +42,17 @@ export function mapLegacySpecToComparisonItem(row: LegacySpecRow): ComparisonIte
     throw new UnknownLegacySpecTypeError(row.type, row.id);
   }
 
+  let valueDirection: 'positive' | 'negative' | null = null;
+  if (row.type === 'numeric') {
+    if (row.value_direction === 'Positive') valueDirection = 'positive';
+    else if (row.value_direction === 'Negative') valueDirection = 'negative';
+    else {
+      throw new LegacyAdapterMappingError(
+        `Direção de valor inválida para specs.id ${String(row.id)}.`,
+      );
+    }
+  }
+
   return createComparisonItem({
     id: requiredText(row.id, 'specs.id', row.id),
     code: requiredText(row.code, 'specs.code', row.id),
@@ -51,6 +62,7 @@ export function mapLegacySpecToComparisonItem(row: LegacySpecRow): ComparisonIte
     specSet: requiredText(row.spec_set, 'specs.spec_set', row.id),
     label: requiredText(row.detail, 'specs.detail', row.id),
     unit: row.type === 'numeric' && row.unit?.trim() ? row.unit.trim() : null,
+    valueDirection,
     sortOrder: null,
   });
 }
@@ -103,7 +115,7 @@ export function mapLegacyRowsToComparisonValues(
           vehicleId,
           itemCode: item.code,
           type: item.type,
-          present: association !== undefined,
+          present: association?.is_present ?? null,
         });
       }
     }

@@ -25,3 +25,27 @@ html {
 body {
   margin: 0;
 }
+
+.comparison-scroll {
+  scrollbar-color: #475569 #0f172a;
+  scrollbar-width: thin;
+}
+
+.comparison-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.comparison-scroll::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+
+.comparison-scroll::-webkit-scrollbar-thumb {
+  border: 2px solid #0f172a;
+  border-radius: 999px;
+  background: #475569;
+}
+
+.comparison-scroll::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}

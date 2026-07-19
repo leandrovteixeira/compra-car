@@ -19,7 +19,8 @@ import {
 } from './mappers';
 
 const PRODUCT_COLUMNS = 'id,brand,model,version,model_year,production_year,is_active,is_public';
-const SPEC_COLUMNS = 'id,code,type,group_name,equipment_group,spec_set,detail,unit,is_active';
+const SPEC_COLUMNS =
+  'id,code,type,group_name,equipment_group,spec_set,detail,unit,value_direction,is_active';
 const PRODUCT_SPEC_COLUMNS = 'product_id,equipment_id,value,is_present,input_unit';
 
 interface ComparisonBatch {

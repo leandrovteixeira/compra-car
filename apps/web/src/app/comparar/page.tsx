@@ -3,21 +3,31 @@ import Link from 'next/link';
 import { filterComparisonCategories } from '@/application/comparison/comparison-filter';
 import { ComparisonTable } from '@/components/comparison-table';
 import { ComparisonToolbar } from '@/components/comparison-toolbar';
+import { ComparisonState } from '@/components/comparison-state';
 import { loadComparisonPage } from '@/server/comparison-service';
 
 interface ComparisonPageProps {
   readonly searchParams: Promise<{
     readonly vehicles?: string | readonly string[];
-    readonly differences?: string | readonly string[];
+    readonly highlights?: string | readonly string[];
   }>;
 }
 
 function BackToSelection() {
   return (
     <Link
-      className="inline-flex min-h-11 items-center rounded-xl border border-slate-700 px-4 text-sm font-semibold text-slate-200 hover:border-cyan-400 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"
+      className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/70 px-4 text-sm font-semibold text-slate-200 transition hover:border-slate-600 hover:bg-slate-800 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"
       href="/"
     >
+      <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 16 16">
+        <path
+          d="m9.5 3.5-4.5 4.5 4.5 4.5M5 8h8"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.5"
+        />
+      </svg>
       Voltar e alterar seleção
     </Link>
   );
@@ -30,50 +40,48 @@ export default async function ComparisonPage({ searchParams }: ComparisonPagePro
   if (!result.ok) {
     return (
       <main className="flex min-h-dvh items-center justify-center bg-slate-950 px-4 py-8 text-slate-50">
-        <section className="w-full max-w-xl rounded-3xl border border-slate-800 bg-slate-900 p-7 text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-400">
-            Comparação de veículos
-          </p>
-          <h1 className="mt-3 text-2xl font-semibold">Não foi possível comparar</h1>
-          <p className="mt-4 text-slate-300" role="alert">
-            {result.error.message}
-          </p>
-          <div className="mt-7">
-            <BackToSelection />
-          </div>
-        </section>
+        <div className="w-full max-w-xl">
+          <ComparisonState
+            action={<BackToSelection />}
+            description={result.error.message}
+            kind="error"
+            title="Não foi possível comparar"
+          />
+        </div>
       </main>
     );
   }
 
-  const onlyDifferences = params.differences === 'true';
-  const categories = filterComparisonCategories(result.data.categories, onlyDifferences);
+  const onlyHighlights = params.highlights === 'true';
+  const categories = filterComparisonCategories(result.data.categories, onlyHighlights);
 
   return (
-    <main className="min-h-dvh bg-slate-950 px-4 py-8 text-slate-50 sm:px-6 sm:py-12">
-      <div className="mx-auto w-full max-w-7xl">
-        <div className="flex flex-wrap items-start justify-between gap-5">
+    <main className="min-h-dvh bg-[radial-gradient(circle_at_top_left,rgba(8,145,178,0.08),transparent_30rem)] bg-slate-950 px-3 py-6 text-slate-50 sm:px-6 sm:py-10 lg:px-8">
+      <div className="mx-auto w-full max-w-[100rem]">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-cyan-400">
+            <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-400">
               Compra Car
             </p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
               Comparação de veículos
             </h1>
-            <p className="mt-3 text-slate-300">
-              Compare equipamentos e especificações mantendo a ordem da seleção.
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+              O primeiro veículo é a referência. Compare cada detalhe lado a lado.
             </p>
           </div>
-          <BackToSelection />
+          <div className="self-start sm:self-auto">
+            <BackToSelection />
+          </div>
         </div>
 
-        <div className="mt-8">
-          <ComparisonToolbar onlyDifferences={onlyDifferences} />
+        <div className="mt-6">
+          <ComparisonToolbar onlyHighlights={onlyHighlights} />
         </div>
-        <div className="mt-8">
+        <div className="mt-5">
           <ComparisonTable
             categories={categories}
-            onlyDifferences={onlyDifferences}
+            onlyHighlights={onlyHighlights}
             vehicles={result.data.vehicles}
           />
         </div>

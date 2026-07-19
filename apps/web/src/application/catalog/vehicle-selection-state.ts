@@ -39,7 +39,7 @@ export function canAddSelectedVehicle(
   state: VehicleSelectionState,
   availableVehicles: readonly CatalogVehicleDto[],
 ): boolean {
-  if (!state.vehicleId || state.selectedVehicles.length >= 3) return false;
+  if (!state.vehicleId) return false;
 
   return (
     availableVehicles.some((vehicle) => vehicle.id === state.vehicleId) &&
