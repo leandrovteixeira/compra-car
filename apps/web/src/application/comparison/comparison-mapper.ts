@@ -11,6 +11,8 @@ import {
   type ComparisonNumberMetadata,
 } from './comparison-number-formatter';
 
+export const PRESENCE_DISPLAY_VALUE = '●';
+
 export function toComparisonCell(
   value: VehicleComparisonValue,
   comparison: ComparisonOutcome = 'not-applicable',
@@ -19,7 +21,7 @@ export function toComparisonCell(
   if (value.type !== 'numeric') {
     return Object.freeze({
       type: value.type,
-      displayValue: value.present === true ? 'Sim' : '—',
+      displayValue: value.present === true ? PRESENCE_DISPLAY_VALUE : '—',
       comparison,
     });
   }

@@ -346,6 +346,11 @@ describe('CompareVehicles', () => {
     [true, true, 'tie'],
     [false, false, 'tie'],
     [false, true, 'disadvantage'],
+    [true, null, 'advantage'],
+    [false, null, 'tie'],
+    [null, false, 'tie'],
+    [null, null, 'tie'],
+    [null, true, 'disadvantage'],
   ] as const)(
     'compara binary %s × %s como %s',
     async (referencePresent, competitorPresent, expected) => {
@@ -407,7 +412,7 @@ describe('CompareVehicles', () => {
     },
   );
 
-  it('trata informação ausente como unknown e não cria vantagem', async () => {
+  it('trata binary ausente no concorrente como false e cria vantagem', async () => {
     const result = await compare(
       [firstVehicle, secondVehicle],
       [binaryItem],
@@ -422,8 +427,8 @@ describe('CompareVehicles', () => {
     ).execute({ vehicleIds: [firstVehicle.id, secondVehicle.id] });
     const row = allRows(result)[0];
 
-    expect(row?.comparisonByVehicle[secondVehicle.id]).toBe('unknown');
-    expect(row?.hasReferenceAdvantage).toBe(false);
+    expect(row?.comparisonByVehicle[secondVehicle.id]).toBe('advantage');
+    expect(row?.hasReferenceAdvantage).toBe(true);
   });
 
   it('não classifica item scale', async () => {

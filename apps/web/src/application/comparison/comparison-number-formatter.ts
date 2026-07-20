@@ -46,13 +46,19 @@ function isScreenSizeSpec(metadata: string, unit: string | null): boolean {
   return screenUnit || /screen|display|tela/.test(metadata);
 }
 
+function normalizeUnit(unit: string | null): string | null {
+  const normalizedUnit = unit?.trim() || null;
+
+  return normalizedUnit?.toLowerCase() === 'unit' ? null : normalizedUnit;
+}
+
 export function formatComparisonNumber(
   value: number,
   unit: string | null,
   metadata: ComparisonNumberMetadata,
 ): string {
   const normalizedMetadata = normalizeMetadata(metadata);
-  const normalizedUnit = unit?.trim() || null;
+  const normalizedUnit = normalizeUnit(unit);
   const formatter = isSingleDecimalSpec(normalizedMetadata)
     ? SINGLE_DECIMAL_FORMAT
     : isScreenSizeSpec(normalizedMetadata, normalizedUnit)

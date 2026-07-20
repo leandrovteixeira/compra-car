@@ -80,9 +80,11 @@ function compareWithReference(
   if (item.type === 'scale') return 'not-applicable';
 
   if (reference.type === 'binary' && competitor.type === 'binary') {
-    if (reference.present === null || competitor.present === null) return 'unknown';
-    if (reference.present === competitor.present) return 'tie';
-    return reference.present ? 'advantage' : 'disadvantage';
+    const referencePresent = reference.present ?? false;
+    const competitorPresent = competitor.present ?? false;
+
+    if (referencePresent === competitorPresent) return 'tie';
+    return referencePresent ? 'advantage' : 'disadvantage';
   }
 
   if (reference.type === 'numeric' && competitor.type === 'numeric') {

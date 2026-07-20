@@ -8,7 +8,10 @@ import { describe, expect, it } from 'vitest';
 import { formatComparisonNumber } from '../src/application/comparison/comparison-number-formatter';
 import { toPublicComparisonError } from '../src/application/comparison/comparison-errors';
 import { filterComparisonCategories } from '../src/application/comparison/comparison-filter';
-import { toComparisonCell } from '../src/application/comparison/comparison-mapper';
+import {
+  PRESENCE_DISPLAY_VALUE,
+  toComparisonCell,
+} from '../src/application/comparison/comparison-mapper';
 import { parseComparisonRequest } from '../src/application/comparison/comparison-request';
 import {
   COMPARISON_CELL_GRID_CLASS,
@@ -79,17 +82,17 @@ describe('apresentação dos valores', () => {
       vehicleId,
       itemCode: createComparisonItemCode('camera.360'),
       type: 'scale',
-      present: false,
+      present: true,
     };
 
     expect(toComparisonCell(binary)).toEqual({
       type: 'binary',
-      displayValue: 'Sim',
+      displayValue: PRESENCE_DISPLAY_VALUE,
       comparison: 'not-applicable',
     });
     expect(toComparisonCell(scale)).toEqual({
       type: 'scale',
-      displayValue: '—',
+      displayValue: PRESENCE_DISPLAY_VALUE,
       comparison: 'not-applicable',
     });
   });
@@ -170,15 +173,17 @@ describe('formatação numérica da comparação', () => {
     ).toBe(expected);
   });
 
-  it('omite unidade ausente ou composta apenas por espaços', () => {
+  it('omite unidade ausente, composta apenas por espaços ou placeholder unit', () => {
     expect(formatComparisonNumber(1, '   ', { code: 'numeric.without_unit' })).toBe('1');
+    expect(formatComparisonNumber(1, 'unit', { code: 'numeric.without_unit' })).toBe('1');
+    expect(formatComparisonNumber(2, ' UNIT ', { code: 'numeric.without_unit' })).toBe('2');
   });
 });
 
 describe('representação visual das células', () => {
   it('usa bolinha branca para binary true e reserva o check à direita', () => {
     const presentation = getComparisonValuePresentation(
-      { type: 'binary', displayValue: 'Sim', comparison: 'not-applicable' },
+      { type: 'binary', displayValue: PRESENCE_DISPLAY_VALUE, comparison: 'not-applicable' },
       true,
     );
 
@@ -189,6 +194,19 @@ describe('representação visual das células', () => {
     });
     expect(COMPARISON_CELL_GRID_CLASS).toContain('grid-cols-[minmax(0,1fr)_1.25rem]');
     expect(COMPARISON_CHECK_SLOT_CLASS).toContain('justify-self-end');
+  });
+
+  it('usa a mesma bolinha branca para scale true sem classificá-lo', () => {
+    expect(
+      getComparisonValuePresentation(
+        { type: 'scale', displayValue: PRESENCE_DISPLAY_VALUE, comparison: 'not-applicable' },
+        false,
+      ),
+    ).toEqual({
+      displayValue: null,
+      showPresenceDot: true,
+      showAdvantageCheck: false,
+    });
   });
 
   it('mantém o slot vazio sem desenhar traço quando não há vantagem', () => {

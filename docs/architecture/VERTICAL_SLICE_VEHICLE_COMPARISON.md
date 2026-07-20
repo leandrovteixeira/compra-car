@@ -41,7 +41,7 @@ Nenhum componente acessa Supabase ou recalcula regras de comparação.
 
 ## Apresentação e filtro
 
-Itens `binary` e `scale` apresentam `Sim` para `true` e `—` para `false` ou `null`. Valores `numeric` usam formatação `pt-BR`, preservam unidade e apresentam `—` quando `null`. O filtro “Ver destaques” mantém exclusivamente linhas em que a referência vence ao menos um concorrente; categorias vazias são omitidas. Apenas a célula da referência é destacada.
+Itens `binary` e `scale` apresentam um indicador circular claro para `true` e `—` para `false` ou `null`. Valores `numeric` usam formatação `pt-BR`, preservam unidades reais, omitem o placeholder legado `unit` e apresentam `—` quando `null`. O filtro “Ver destaques” mantém exclusivamente linhas em que a referência vence ao menos um concorrente; categorias vazias são omitidas. Apenas a célula da referência é destacada.
 
 A apresentação usa uma superfície tabular única e de densidade compacta, com cabeçalho e coluna de equipamentos fixos dentro de uma região de rolagem bidirecional. Cabeçalhos de veículos, divisores de categoria, estados de loading/vazio/erro e indicação não cromática de vantagem pertencem exclusivamente à camada de UI.
 
@@ -49,7 +49,7 @@ Em larguras de até 768 px, a coluna de equipamentos usa base compacta e cada ve
 
 A formatação numérica de apresentação é centralizada na aplicação web: agrupamento e decimais seguem `pt-BR`; torque e relações peso/potência usam uma casa decimal; telas usam até duas; unidade vazia é omitida. O adapter preserva o número original e não multiplica nem divide cilindrada.
 
-`binary` compara `is_present`; `numeric` compara `value` conforme `value_direction` (`Positive` favorece o maior e `Negative` o menor), sem tolerância. Ausência de informação gera `unknown`. Itens `scale` são exibidos, mas sempre retornam `not-applicable` e nunca produzem vantagem ou desvantagem.
+`binary` compara `is_present` e, temporariamente, trata ausência como `false` somente para a classificação; `numeric` compara `value` conforme `value_direction` (`Positive` favorece o maior e `Negative` o menor), sem tolerância, e continua retornando `unknown` quando falta informação. Itens `scale` são exibidos, mas sempre retornam `not-applicable` e nunca produzem vantagem ou desvantagem.
 
 ## Cache
 

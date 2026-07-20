@@ -40,11 +40,11 @@ export function ComparisonValueCell({ value, isAdvantage }: ComparisonValueCellP
       <span className="min-w-0 justify-self-center truncate text-center">
         {presentation.showPresenceDot ? (
           <span
-            aria-label="Sim"
+            aria-label="Presente"
             className="block size-2 rounded-full bg-slate-100 shadow-[0_0_6px_rgba(248,250,252,0.28)]"
-            data-binary-presence="true"
+            data-presence-value="true"
             role="img"
-            title="Sim"
+            title="Presente"
           />
         ) : (
           presentation.displayValue

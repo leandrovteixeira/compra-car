@@ -70,10 +70,10 @@ Esses estados não podem ser confundidos.
 
 ### Valores
 
-- `binary`/`scale`: `present: boolean`;
+- `binary`/`scale`: `present: boolean | null`;
 - `numeric`: `value: number | null` e `unit: string | null`;
 - numeric ausente nunca vira zero;
-- associação binary/scale ausente resulta em `false`;
+- associação binary/scale ausente resulta em `null`; somente a comparação `binary` a equipara temporariamente a `false`;
 - o domínio não formata `Sim`, `Não` ou travessão.
 
 ## Casos de uso implementados
@@ -84,7 +84,7 @@ Esses estados não podem ser confundidos.
 - `GetVehiclesByIds`;
 - `CompareVehicles`.
 
-`CompareVehicles` aceita 2 ou mais IDs distintos, preserva a ordem, usa o primeiro como referência, completa células tipadas e calcula o resultado contra todos os concorrentes. `binary` usa presença explícita, `numeric` usa direção positiva/negativa e `scale` não é classificado.
+`CompareVehicles` aceita 2 ou mais IDs distintos, preserva a ordem, usa o primeiro como referência, completa células tipadas e calcula o resultado contra todos os concorrentes. `binary` usa presença explícita e temporariamente equipara `null` a `false` apenas ao comparar; `numeric` usa direção positiva/negativa e `scale` não é classificado.
 
 ## Decisões registradas
 

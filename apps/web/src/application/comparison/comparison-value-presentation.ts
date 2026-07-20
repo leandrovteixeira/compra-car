@@ -1,5 +1,7 @@
 import type { ComparisonCellDto, ComparisonOutcome } from '@compra-car/contracts';
 
+import { PRESENCE_DISPLAY_VALUE } from './comparison-mapper';
+
 export const COMPARISON_CELL_GRID_CLASS =
   'grid min-h-7 grid-cols-[minmax(0,1fr)_1.25rem] items-center gap-1.5';
 
@@ -23,7 +25,7 @@ export function getComparisonValuePresentation(
   value: ComparisonCellDto,
   isAdvantage: boolean,
 ): ComparisonValuePresentation {
-  const showPresenceDot = value.type === 'binary' && value.displayValue === 'Sim';
+  const showPresenceDot = value.type !== 'numeric' && value.displayValue === PRESENCE_DISPLAY_VALUE;
 
   return Object.freeze({
     displayValue: showPresenceDot ? null : value.displayValue,
