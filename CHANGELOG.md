@@ -8,6 +8,9 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
 ### Added
 
+- Conclusão da inspeção somente leitura do Supabase legado, com identificação do risco crítico de RLS desativado e grants amplos, documentação do modelo, volumes, functions, índices e dívida técnica, sem qualquer alteração no banco.
+- Validação da semântica de specs, confirmação do histórico mensal que mistura MSRP e políticas comerciais e identificação do produto público ID `750` como único sem preço.
+- Registro da ADR-008 para separar MSRP de políticas comerciais, mantendo temporariamente o modelo legado no MVP e prevendo o redesenho no futuro importador assistido por IA.
 - Criação da documentação do domínio administrativo em `docs/admin`, cobrindo escopo, veículos, preços, comparação e importações assistidas por IA.
 - Registro da ADR-007 para adoção do Appsmith na Fase 1 sem mudança de schema e para a governança entre GitHub, `C:\Dev` e OneDrive.
 - Implementação do domínio puro em `packages/core`, com `Vehicle`, `ComparisonItem`, valores discriminados, resultado agrupado e erros tipados.

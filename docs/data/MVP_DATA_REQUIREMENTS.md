@@ -68,6 +68,8 @@ Cada `code` forma uma linha. Dois codes do mesmo `specSet` não podem ser consol
 
 A implementação preserva nulos, rejeita valores numéricos inválidos e usa `input_unit` com fallback para `specs.unit`. Duplicidades, unidades conflitantes e cobertura no ambiente real ainda devem ser medidas.
 
+A validação do banco confirmou 320 specs — 171 `binary`, 90 `scale` e 59 `numeric` — sem tipo fora do contrato e sem `code` nulo, vazio ou duplicado. Nas 37.251 associações, não há `is_present = false` nem `value` vazio. `Binary` e `scale` usam a presença da associação; `numeric` usa `value`. O adaptador atual está compatível com essa semântica.
+
 ## Categorias e organização
 
 Grupos como `Powertrain`, `Exterior`, `Interior`, `Convenience`, `Safety`, `Dimensions` e `Ownership` devem ser tratados como dados de origem. A taxonomia definitiva permanece no backlog pós-MVP.
@@ -88,17 +90,40 @@ Os itens abaixo continuam relevantes, mas não integram os contratos implementad
 
 Sua ausência não altera as invariantes já implementadas e não autoriza inferências silenciosas.
 
+O histórico existente contém 746 linhas para 287 produtos, originadas de carga histórica de Excel e cobrindo 11 meses, de junho de 2025 a abril de 2026. A tabela mistura preço público/MSRP e política comercial por MMV/MY/PY, identidade representada por `products.id`. `offer_month` é a referência temporal de negócio; `created_at` e `updated_at` são datas técnicas. O contrato público implementado ainda não consome esses dados.
+
+Há duas duplicidades de produto e mês: produto `12` em junho de 2025, ofertas `12` e `37`, com MSRP de 194.800; e produto `13` no mesmo mês, ofertas `13` e `38`, com MSRP de 204.800. Uma linha funciona como base de preço e a outra contém uma combinação de política comercial. Não se recomenda unicidade em `product_id + offer_month` na tabela atual.
+
+`vw_product_value_current` seleciona por maior `created_at`, com `DISTINCT ON (product_id)`, sem `offer_month` ou desempate adicional. Como a carga histórica compartilha o mesmo instante, a escolha pode ser não determinística e não garante o mês comercial mais recente. Além disso, a view filtra produtos ativos, mas não públicos, impedindo seu uso direto como contrato público seguro.
+
+Substituir apenas `created_at` por `offer_month` na view não resolve a mistura de conceitos nem a perda de políticas simultâneas. A separação alvo entre histórico de MSRP, múltiplas políticas e importação assistida por IA está definida na [ADR-008](../architecture/decisions/ADR-008-SEPARACAO-MSRP-POLITICAS-COMERCIAIS.md). Sua implementação está adiada e não é requisito do comparador MVP enquanto preço e política comercial não forem expostos pelo contrato público legado.
+
 Os requisitos do backoffice administrativo, inclusive preços, políticas e monetização de specs, estão em `docs/admin`. Eles não ampliam silenciosamente os contratos TypeScript do MVP público.
 
 ## Segurança e acesso
 
-A inspeção online deverá confirmar RLS, grants e a superfície de leitura necessária ao MVP. Nenhuma chave, URL privada ou dado sensível deve ser incluído nos resultados sanitizados.
+A inspeção confirmou o estado atual de RLS e grants. A superfície de leitura necessária ao MVP e o hardening permanecem pendentes. Nenhuma chave, URL privada ou dado sensível deve ser incluído nos resultados sanitizados.
 
-## Status
+## Decisão provisória após inspeção
+
+O modelo atual é suficiente para o MVP e não requer reestruturação ampla antes da interface. O Appsmith permanece como backoffice temporário. O frontend público, porém, não deve receber acesso direto irrestrito ao schema atual: RLS está desativado em praticamente todas as tabelas, não foram encontradas policies e há grants amplos para `anon` e `authenticated`.
+
+O contrato definitivo de leitura do MVP será definido em uma etapa específica de segurança. Essa etapa deve separar leitura pública, administração autenticada e processos server-side com `service_role`, que nunca pode ser usado no navegador. Grants e RLS só devem mudar depois do mapeamento de Appsmith, scripts e integrações, com testes, migration de hardening e rollback preparados.
+
+## Validações de dados e segurança
+
+- validar com o negócio a chave lógica de `products` coberta por `unique_product`;
+- projetar e testar a separação entre MSRP e ofertas, incluindo vigência, desempate determinístico e filtro público;
+- confirmar a action e a assinatura de `duplicate_product_simple` usada no Appsmith;
+- identificar consumidores de `anon`, `authenticated` e `service_role`;
+- validar quais tabelas staging ainda são utilizadas;
+- desenhar o hardening de RLS e grants;
+- definir a superfície e o contrato de leitura do MVP.
+
+## Status consolidado
 
 - **CONFIRMADO NO REPOSITÓRIO:** superfície mínima e mapeamentos usados pelo adaptador.
-- **PENDENTE:** validar online os mapeamentos no ambiente autorizado.
-- **PENDENTE:** validar `isActive`, `isPublic` e comparabilidade com dados reais.
-- **PENDENTE:** confirmar unicidade e estabilidade de `ComparisonItem.code`.
-- **PENDENTE:** medir cobertura e qualidade dos valores.
-- **PENDENTE:** confirmar como `product_specs.is_present = false` afeta presença, validade e comparabilidade.
+- **CONFIRMADO NA INSPEÇÃO:** schema de negócio `public`, objetos, volumes aproximados, functions, índices, ausência de triggers de aplicação e estado atual de RLS e grants.
+- **CONFIRMADO NOS DADOS:** 42 produtos ativos e públicos, todos com itens comparáveis; mínimo 105, máximo 182 e média 139,64 itens sob a regra validada.
+- **CONFIRMADO NOS DADOS:** unicidade de `ComparisonItem.code` e semântica de `binary`, `scale`, `numeric` e `is_present` compatíveis com o adaptador.
+- **CONFIRMADO NOS DADOS:** 746 políticas mensais para 287 produtos; o produto público ID `750` é o único sem oferta e não bloqueia o comparador atual.
