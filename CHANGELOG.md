@@ -8,7 +8,9 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
 ### Added
 
-- 2026-07-18: implementação do domínio puro em `packages/core`, com `Vehicle`, `ComparisonItem`, valores discriminados, resultado agrupado e erros tipados.
+- Criação da documentação do domínio administrativo em `docs/admin`, cobrindo escopo, veículos, preços, comparação e importações assistidas por IA.
+- Registro da ADR-007 para adoção do Appsmith na Fase 1 sem mudança de schema e para a governança entre GitHub, `C:\Dev` e OneDrive.
+- Implementação do domínio puro em `packages/core`, com `Vehicle`, `ComparisonItem`, valores discriminados, resultado agrupado e erros tipados.
 - Implementação dos casos de uso `ListAvailableBrands`, `ListAvailableModels`, `ListAvailableVehicles`, `GetVehiclesByIds` e `CompareVehicles`.
 - Definição de `VehicleRepository` e `ComparisonRepository` como portas normalizadas, sem dependência do Supabase.
 - Criação de DTOs e reexportações públicas em `packages/contracts`, sem duplicar os tipos do core.
@@ -33,8 +35,11 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
 ### Changed
 
+- Consolidação do estado real do repositório, separando o comparador público implementado do comparador administrativo planejado.
+- Atualização das pendências de dados para distinguir o mapeamento confirmado no repositório da validação ainda necessária no Supabase e no Appsmith atuais.
+- Atualização do roadmap e do checklist para incorporar as Fases 1 e 2 do backoffice administrativo.
 - Consolidação de `Vehicle` como combinação comercial de marca, modelo, versão, ano-modelo e ano de produção.
-- Catálogo público condicionado a `isActive`, `isPublic` e existência de ao menos um item comparável.
+- Catálogo público condicionado a `isActive`, `isPublic` e existência de ao menos um item comparável com valor válido conforme a semântica confirmada de `product_specs`.
 - Cada `ComparisonItem.code` passa a identificar uma linha independente; itens `scale` não possuem cardinalidade no MVP.
 - Registro do backlog pós-MVP para cardinalidade, agrupamento visual, combinações, taxonomia, importador e prefixes legados.
 - Atualização da documentação para refletir o monorepo, o domínio implementado e a separação entre core e infraestrutura.

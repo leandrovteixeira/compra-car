@@ -9,7 +9,9 @@ Vigência comercial e revisão editorial respondem a perguntas diferentes. Um ve
 
 ## Decisão
 
-`isActive` representa vigência comercial. `isPublic` representa revisão e liberação editorial. O catálogo público exige ambos e pelo menos um item comparável.
+`isActive` representa vigência comercial. `isPublic` representa revisão e liberação editorial. O catálogo público exige ambos e pelo menos um item comparável com valor válido conforme a semântica confirmada de `product_specs`.
+
+Permanece **PENDENTE** confirmar como `product_specs.is_present = false` afeta presença, validade e comparabilidade; a existência da associação não encerra essa decisão.
 
 ## Consequências
 

@@ -1,5 +1,7 @@
 # Compra Car — Checklist de Preparação
 
+Este é um checklist reutilizável para preparar ambientes e sessões de trabalho. As caixas não representam necessariamente o estado do notebook atual; cada operador deve verificá-las no ambiente em uso.
+
 ## Contas
 
 - [ ] GitHub
@@ -29,6 +31,14 @@ pnpm build
 ```
 
 Não é necessário instalar Turborepo globalmente. O workspace usa a versão fixada no `package.json` e no `pnpm-lock.yaml`.
+
+## Fluxo entre notebooks
+
+- [ ] Trabalhar em clone próprio em `C:\Dev\compra-car`
+- [ ] Executar `git pull` antes de iniciar mudanças aprovadas
+- [ ] Comparar branch, commit e working tree com o outro notebook quando aplicável
+- [ ] Usar o GitHub como fonte oficial versionada
+- [ ] Usar OneDrive apenas como espelho periódico, nunca como diretório de desenvolvimento
 
 ## Estrutura vigente
 
@@ -64,6 +74,19 @@ CompraCar/
 - [ ] Três veículos-piloto
 - [ ] Texto legal provisório
 - [ ] Identidade visual provisória
+- [ ] Inventário sanitizado de tabelas, views, functions/RPCs, constraints, RLS e grants
+- [ ] Modelo real de preços, políticas, vigência e moeda
+- [ ] Coluna e semântica do valor monetário master de specs
+- [ ] Constraint da chave `marca + modelo + versão + MY + PY`
+
+## Backoffice administrativo
+
+- [ ] Confirmar que o export do Appsmith representa a aplicação atual
+- [ ] Definir datasource e papéis sem expor chave privilegiada no cliente
+- [ ] Confirmar operações de escrita permitidas na Fase 1
+- [ ] Versionar páginas, queries e JS Objects pelo mecanismo aprovado
+- [ ] Preservar o schema atual durante toda a Fase 1
+- [ ] Validar estratégia de concorrência, auditoria e invalidação do cache do Next.js
 
 A nova carga do Excel não é requisito para iniciar a implementação do domínio ou concluir o MVP.
 

@@ -13,6 +13,7 @@ Criar rapidamente um MVP mobile-first para vendedores de concessionárias, permi
 - **CONCLUÍDO:** mapeamento da superfície mínima de `products`, `specs` e `product_specs`, com dívidas conhecidas registradas.
 - **CONCLUÍDO:** Legacy Supabase Adapter server-only e somente leitura, com DTOs, mappers, consultas em lote e testes unitários/integração opt-in.
 - **CONCLUÍDO:** vertical slices de seleção e comparação, conectando UI, camada web, casos de uso e adaptador legado.
+- **CONCLUÍDO:** auditoria documental do repositório e definição do domínio administrativo da Fase 1, sem mudança de schema.
 
 ## Semana 1 — MVP
 
@@ -30,25 +31,31 @@ Criar rapidamente um MVP mobile-first para vendedores de concessionárias, permi
 - [x] Conectar a aplicação Next.js ao adaptador no runtime do servidor.
 - [x] Implementar seleção e comparação sobre contratos estáveis, sem acesso direto ao legado.
 - [ ] Garantir que o MVP disponibilize todos os veículos ativos, públicos e comparáveis encontrados no Supabase atual.
-- [ ] Manter Appsmith como backoffice provisório.
 - [x] Implementar seleção e comparação de 2 ou 3 veículos, incluindo filtro de diferenças.
 - [ ] Implementar vantagens e identidade visual flexível por marca.
 - [ ] Gerar e compartilhar PDF completo com aviso legal.
 - [ ] Publicar a aplicação no Railway.
 - [ ] Validar com os primeiros vendedores.
 
-## Semana 2 — Exportação e auditoria
+## Fase 1 administrativa — sem mudança de schema
 
-- Exportar Supabase e Appsmith.
-- Reunir scripts, planilhas, relatórios e documentos.
-- Criar inventário técnico e mapear dependências.
-- Documentar arquitetura atual e arquitetura-alvo.
-- Classificar objetos: KEEP, REFACTOR, MIGRATE, MERGE, ARCHIVE, DELETE, UNKNOWN.
-- Normalizar a base de equipamentos.
-- Aplicar correções de dados e normalizações gradualmente, com base no aprendizado do piloto.
-- Ajustar o importador Excel para respeitar a estrutura vigente do Supabase atual.
-- Planejar cargas futuras controladas sem bloquear o MVP ou o piloto.
-- Preparar plano de migração.
+- [ ] Comparar os clones dos dois notebooks e confirmar a base oficial.
+- [ ] Obter o export oficial do Appsmith e o inventário sanitizado do Supabase.
+- [ ] Confirmar permissões, constraints, preços, políticas, vigência e monetização de specs.
+- [ ] Implementar a página inicial administrativa.
+- [ ] Implementar criação, edição, clonagem e validação de duplicidade de veículos.
+- [ ] Implementar gestão de preços e políticas exclusivamente em grade.
+- [ ] Implementar comparador administrativo com indicadores financeiros e todos os specs.
+- [ ] Implementar exportação de uma comparação com bloco financeiro e specs.
+- [ ] Versionar export e documentação operacional do Appsmith sem incluir segredos.
+
+## Fase 2 administrativa — importações assistidas por IA
+
+- [ ] Importar cartas comerciais em staging com saída estruturada.
+- [ ] Importar fichas técnicas em staging e associar nomenclaturas a spec codes.
+- [ ] Exigir revisão humana antes da promoção para tabelas definitivas.
+- [ ] Registrar termos originais, mapeamentos e correções aprovadas.
+- [ ] Avaliar fine-tuning somente após medir a abordagem híbrida inicial.
 
 ## Backlog pós-MVP
 
@@ -59,7 +66,9 @@ Criar rapidamente um MVP mobile-first para vendedores de concessionárias, permi
 - Substituir ou evoluir o importador Excel para a estrutura vigente.
 - Revisar os prefixes legados sem usá-los como fundamento arquitetural.
 
-## Semana 3 — Nova arquitetura
+## Fase futura — Supabase V2 e arquitetura definitiva
+
+Esta fase não representa compromisso imediato de calendário. Ela depende dos resultados do piloto, da validação dos fluxos administrativos e de uma decisão arquitetural explícita que confirme escopo, riscos e estratégia de migração.
 
 - Criar Supabase Staging V2 e schema canônico.
 - Criar ou evoluir importadores para a estrutura V2.
@@ -78,7 +87,9 @@ Criar rapidamente um MVP mobile-first para vendedores de concessionárias, permi
 - `isActive` e `isPublic` possuem significados distintos.
 - Nenhuma nova carga do Excel ou alteração estrutural ampla do banco é pré-requisito para o MVP.
 - O Excel será adaptado posteriormente à estrutura vigente do Supabase atual.
-- Appsmith permanece temporariamente como backoffice.
+- Appsmith é a tecnologia escolhida para o backoffice da Fase 1, não o domínio administrativo.
+- A Fase 1 administrativa não altera schema.
+- GitHub é a fonte oficial; `C:\Dev\compra-car` é o ambiente local; OneDrive é somente espelho.
 - O MVP deve validar uso real antes da reconstrução completa.
 - O aviso legal deve aparecer na aplicação e no PDF.
 - O sistema não deve sugerir vínculo oficial com montadoras sem autorização.

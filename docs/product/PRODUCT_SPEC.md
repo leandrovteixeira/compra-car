@@ -34,7 +34,7 @@ Permitir que o vendedor selecione 2 ou 3 veículos elegíveis e compare rapidame
 
 O MVP não será uma demonstração com poucos veículos fictícios. A unidade selecionável e comparável é `Vehicle`: uma combinação comercial específica de marca, modelo, versão, ano-modelo e ano de produção.
 
-O catálogo público apresentará veículos ativos, revisados para publicação e com pelo menos um item comparável. O MVP deverá operar sobre os dados disponíveis no Supabase atual, sem exigir uma nova carga do Excel ou uma reestruturação prévia do banco.
+O catálogo público apresentará veículos ativos, revisados para publicação e com pelo menos um item comparável com valor válido conforme a semântica confirmada de `product_specs`. O MVP deverá operar sobre os dados disponíveis no Supabase atual, sem exigir uma nova carga do Excel ou uma reestruturação prévia do banco.
 
 ## Escopo do MVP
 
@@ -53,9 +53,9 @@ O catálogo público apresentará veículos ativos, revisados para publicação 
 - compartilhamento do PDF;
 - aviso legal na interface e no PDF;
 - identidade visual flexível por marca;
-- Appsmith mantido como backoffice temporário;
+- Appsmith adotado como tecnologia do backoffice administrativo da Fase 1;
 - Railway previsto para publicação;
-- Next.js previsto para o frontend.
+- Next.js como frontend do MVP, com seleção e comparação técnica já implementadas.
 
 ## Escopo condicionado à validação
 
@@ -70,9 +70,17 @@ A comparação de políticas comerciais é desejável, mas não bloqueia o MVP. 
 
 O requisito `RF-016` somente será habilitado depois dessas condições. Caso não sejam satisfeitas, o restante do MVP seguirá sem políticas comerciais.
 
+## Backoffice administrativo
+
+O backoffice é um módulo interno separado da experiência pública. Sua Fase 1 cobre manutenção de veículos, preços e políticas em grade e comparação administrativa, sem alteração de schema. Appsmith é a tecnologia escolhida atualmente, mas as regras pertencem ao domínio administrativo descrito em `docs/admin`.
+
+O comparador administrativo não aplica vencedor, perdedor ou vantagem visual. Ele usa um veículo de referência, múltiplos comparados, todos os specs e os indicadores financeiros aprovados. Essa decisão não altera o comparador público atual, que continua limitado aos contratos já implementados.
+
+A Fase 2 prevê importações assistidas por IA para cartas comerciais e fichas técnicas, sempre por staging, revisão humana e promoção controlada. A IA nunca grava diretamente nas tabelas definitivas.
+
 ## Sequência inicial de implementação
 
-O Supabase atual já contém os dados necessários para iniciar o MVP. A implementação deve seguir esta sequência:
+Esta foi a sequência originalmente definida para iniciar o MVP. A inspeção mínima, o mapeamento do adaptador e a implementação inicial da UI já foram executados; as validações com dados reais, a conclusão do MVP e o piloto permanecem pendentes. A sequência técnica original é preservada:
 
 ```text
 inspeção mínima do Supabase atual
@@ -101,11 +109,10 @@ Essas evoluções não devem acoplar o frontend ao modelo legado nem bloquear a 
 
 ## Fora do escopo inicial
 
-- novo backoffice;
 - reconstrução completa do banco;
 - pagamentos;
 - cadastro público irrestrito;
-- inteligência artificial generativa;
+- importação por IA na Fase 1;
 - recomendações automáticas complexas;
 - múltiplos idiomas;
 - histórico completo de preços;
@@ -133,7 +140,7 @@ Essas evoluções não devem acoplar o frontend ao modelo legado nem bloquear a 
 - **RF-002:** impedir o início da comparação com menos de 2 veículos.
 - **RF-003:** permitir remover ou substituir qualquer veículo selecionado.
 - **RF-004:** impedir a seleção duplicada da mesma versão de veículo.
-- **RF-005:** disponibilizar para seleção somente veículos com `isActive = true`, `isPublic = true` e pelo menos um item de comparação.
+- **RF-005:** disponibilizar para seleção somente veículos com `isActive = true`, `isPublic = true` e pelo menos um item comparável com valor válido conforme a semântica confirmada de `product_specs`.
 - **RF-006:** permitir pesquisa por marca, modelo, versão e ano.
 - **RF-007:** permitir filtros combináveis para localizar veículos. As combinações exatas estão **PENDENTE**.
 - **RF-008:** mostrar somente diferenças por padrão ao abrir a comparação.
@@ -233,3 +240,5 @@ As metas, a forma de coleta, a retenção e os responsáveis por estas métricas
 - **PENDENTE:** identidade visual autorizada.
 - **PENDENTE:** data da carga mais recente.
 - **PENDENTE:** lista de modelos do catálogo e de versões efetivamente ativas.
+- **PENDENTE:** objetos e permissões reais do Supabase e do Appsmith necessários ao backoffice.
+- **PENDENTE:** efeito de `product_specs.is_present = false` sobre presença, validade e comparabilidade.

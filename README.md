@@ -2,7 +2,7 @@
 
 O Compra Car é uma aplicação mobile-first para apoiar vendedores de concessionárias na comparação clara de veículos durante o atendimento.
 
-Este repositório contém a infraestrutura técnica, o núcleo de domínio, o adaptador somente leitura do Supabase atual e os vertical slices de seleção e comparação de veículos. PDF e autenticação ainda não foram implementados.
+Este repositório contém a infraestrutura técnica, o núcleo de domínio, o adaptador somente leitura do Supabase atual e os vertical slices de seleção e comparação de veículos. Também documenta o domínio aprovado para o backoffice administrativo da Fase 1. PDF, autenticação e funções administrativas ainda não foram implementados neste repositório.
 
 ## Arquitetura atual
 
@@ -18,6 +18,7 @@ packages/
   shared/              Utilitários compartilhados e agnósticos de negócio
   ui/                  Primitivos visuais compartilhados futuros
 docs/                  Documentação técnica e de produto
+  admin/               Domínio e escopo do backoffice administrativo
 supabase/              Artefatos de inspeção e evolução controlada
 Legacy/                Materiais históricos protegidos
 ```
@@ -67,7 +68,11 @@ Configure `SUPABASE_URL` e `SUPABASE_SERVER_KEY` apenas nas variáveis privadas 
 
 ## Estado do MVP
 
-O MVP consumirá diretamente os dados existentes no Supabase atual, sem depender de nova carga do Excel ou de reestruturação prévia do banco. A ordem autoritativa continua sendo: inspeção mínima do Supabase atual, mapeamento do adaptador legado, validação dos contratos com dados reais existentes, implementação da UI, MVP e piloto.
+O MVP público já possui seleção e comparação técnica implementadas sobre o Supabase atual. A validação opt-in com dados reais, preços, políticas comerciais, PDF, publicação e piloto continuam pendentes.
+
+Em paralelo, a Fase 1 do backoffice administrativo será implementada sem alterações de schema. O domínio administrativo abrange manutenção de veículos, gestão de preços em grade e comparação administrativa. Appsmith é a tecnologia escolhida para esta fase, não uma fronteira do domínio. Consulte [`docs/admin`](docs/admin/README.md) e a [ADR-007](docs/architecture/decisions/ADR-007-ADMIN-BACKOFFICE-PHASE1.md).
+
+O GitHub é a fonte oficial versionada. Cada notebook trabalha em seu próprio clone em `C:\Dev\compra-car`; o OneDrive serve somente como espelho periódico para consulta e contingência.
 
 Consulte [START.md](START.md), [AI_CONTEXT.md](AI_CONTEXT.md) e [ROADMAP_MASTER.md](ROADMAP_MASTER.md) antes de iniciar a próxima fase.
 

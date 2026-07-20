@@ -23,12 +23,13 @@ O Compra Car apoia vendedores de concessionárias em comparações claras entre 
 - Railway com configuração em `railway.json`;
 - PWA instalável em modo `standalone`, sem service worker ou offline;
 - Supabase atual como fonte inicial de dados via adaptador somente leitura;
-- Appsmith como backoffice temporário.
+- domínio administrativo documentado em `docs/admin`;
+- Appsmith como tecnologia do backoffice administrativo da Fase 1.
 
 ## Estrutura arquitetural
 
 ```text
-apps/web                     apresentação futura
+apps/web                     aplicação Next.js com seleção e comparação implementadas
 packages/contracts           DTOs e contratos públicos
 packages/core                domínio, portas e casos de uso puros
 packages/adapter-supabase    adaptador server-only e somente leitura do legado
@@ -54,7 +55,7 @@ Um veículo integra o catálogo público somente quando:
 
 1. `isActive = true` — vigência comercial;
 2. `isPublic = true` — revisão e liberação editorial;
-3. possui ao menos um item comparável.
+3. possui ao menos um item comparável com valor válido conforme a semântica confirmada de `product_specs`.
 
 Esses estados não podem ser confundidos.
 
@@ -93,6 +94,7 @@ Esses estados não podem ser confundidos.
 - ADR-004: `isActive` e `isPublic` têm significados distintos.
 - ADR-005: autenticação simples, sem RBAC, será implementada em fase posterior.
 - ADR-006: o legado é traduzido por DTOs/mappers em um adaptador server-only e somente leitura.
+- ADR-007: Appsmith é adotado no backoffice da Fase 1, sem mudança de schema; GitHub, `C:\Dev` e OneDrive possuem papéis distintos.
 - Diferença e vantagem são conceitos separados.
 - Uma vantagem futura exige regra explícita, versionada e auditável.
 - O MVP usa o Supabase atual sem depender de nova carga do Excel.
@@ -107,9 +109,13 @@ Esses estados não podem ser confundidos.
 - não acessar Supabase fora do adaptador legado;
 - não colocar regras de negócio em `shared` ou na UI;
 - não implementar vantagem sem regra documentada;
-- não implementar autenticação, PDF ou offline nesta fase concluída.
+- não tratar autenticação ou PDF como implementados; ambos permanecem em fases posteriores do roadmap;
+- suporte offline não integra o escopo atual, e a PWA instalável não implica funcionamento offline;
+- não alterar schema na Fase 1 do backoffice;
+- não acoplar o domínio administrativo ao Appsmith;
+- não permitir que importações por IA gravem diretamente em tabelas definitivas.
 
-## Estado atual — 2026-07-18
+## Estado atual — 2026-07-20
 
 A infraestrutura do monorepo, o núcleo de domínio, o adaptador legado e os vertical slices de seleção e comparação estão implementados. `packages/core` contém entidades, value objects, erros, portas e os cinco casos de uso centrais. `packages/contracts` contém aliases, reexportações e DTOs públicos sem duplicação estrutural. `packages/adapter-supabase` implementa as duas portas sobre `products`, `specs` e `product_specs`, sem escrita. `apps/web` conecta seleção e comparação aos casos de uso por camada server-only, `unstable_cache` e composition root.
 
@@ -119,14 +125,20 @@ Os testes do core usam repositórios in-memory. Os mappers do adaptador são tes
 
 A superfície mínima e o mapeamento físico fornecidos para a fase estão registrados em `SUPABASE_INSPECTION_RESULTS.md` e `LEGACY_SUPABASE_MAP.md`. A validação online permanece pendente quando não houver credenciais opt-in e não bloqueia o código ou o MVP.
 
+O backoffice administrativo está em planejamento documentado, sem implementação versionada. A Fase 1 cobre página inicial, gestão de veículos, preços e políticas em grade e comparador administrativo. Não haverá alteração de schema. Appsmith é a tecnologia selecionada, mas as regras estão descritas como domínio em `docs/admin`.
+
+O repositório contém apenas infraestrutura Docker e recomendações históricas para Appsmith em `Legacy`; não contém export atual de páginas, queries, widgets ou JS Objects. Preços, políticas, monetização de specs, vigência e permissões de escrita dependem de validação no Supabase e no Appsmith atuais.
+
 ## Próximos passos
 
 1. Executar o teste de integração opt-in no ambiente autorizado.
 2. Validar cobertura e desempenho com 2 ou 3 veículos reais.
-3. Conectar o Next.js ao adaptador apenas no runtime do servidor.
-4. Implementar a UI de negócio sobre os casos de uso.
-5. Concluir MVP e piloto.
-8. Após o piloto, evoluir dados, importador e arquitetura gradualmente.
+3. Comparar este clone com o `C:\Dev\compra-car` do outro notebook.
+4. Obter e versionar de forma segura o export oficial do Appsmith atual.
+5. Validar no Supabase os objetos necessários ao backoffice, sem alterar o schema.
+6. Implementar a Fase 1 administrativa em blocos pequenos e revisáveis.
+7. Concluir PDF, publicação e piloto do MVP público.
+8. Após o piloto, evoluir dados, importadores e arquitetura gradualmente.
 
 ## Backlog pós-MVP
 
@@ -146,5 +158,9 @@ A superfície mínima e o mapeamento físico fornecidos para a fase estão regis
 - **PENDENTE:** texto jurídico final.
 - **PENDENTE:** marca e participantes do piloto.
 - **PENDENTE:** identidade visual autorizada.
-- **PENDENTE:** preço, políticas comerciais e referência temporal.
+- **PENDENTE:** objetos reais de preço, políticas comerciais, moeda, vigência e referência temporal.
+- **PENDENTE:** coluna e semântica do valor monetário master de specs.
+- **PENDENTE:** export, permissões e estrutura do Appsmith atual.
+- **PENDENTE:** constraint física da chave de negócio de veículos no Supabase atual.
+- **PENDENTE:** confirmar como `product_specs.is_present = false` afeta presença, validade e comparabilidade.
 - **PENDENTE:** estratégia de autenticação posterior e revisão de RLS.
