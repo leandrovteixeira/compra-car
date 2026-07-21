@@ -138,7 +138,7 @@ Continuam planejados, mas não fazem parte desta entrega:
 - preços, políticas comerciais e snapshots;
 - tema de marca;
 - entrada autocontida para PDF;
-- autenticação e autorização;
+- autenticação e autorização, planejadas em `docs/architecture/AUTHENTICATION_ARCHITECTURE.md` e ainda sem contratos implementados;
 - paginação e cache.
 
 Nenhum schema de validação externo foi adicionado. As validações atuais são funções e factories TypeScript do próprio core.

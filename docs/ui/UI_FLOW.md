@@ -19,7 +19,7 @@ Apresentar o produto, contextualizar a experiência da marca e oferecer uma entr
 ### Ações
 
 - iniciar uma nova comparação;
-- prosseguir para autenticação, caso ela seja exigida;
+- prosseguir para login quando não houver sessão válida;
 - consultar o aviso de independência e informações essenciais.
 
 ### Validações
@@ -34,7 +34,9 @@ Apresentar o produto, contextualizar a experiência da marca e oferecer uma entr
 - pronta para iniciar;
 - tema indisponível com fallback neutro;
 - falha de configuração;
-- **PENDENTE:** autenticado, não autenticado ou acesso controlado por outro mecanismo.
+- sessão autenticada e profile ativo;
+- não autenticado, com redirecionamento planejado para `/login`;
+- acesso desativado para profile inativo.
 
 ### Comportamento mobile
 
@@ -45,7 +47,7 @@ Apresentar o produto, contextualizar a experiência da marca e oferecer uma entr
 
 ### Pendências
 
-- **PENDENTE:** autenticação;
+- **PENDENTE:** implementar as telas e estados definidos em `docs/architecture/AUTHENTICATION_ARCHITECTURE.md`;
 - **PENDENTE:** nome, logo e tema autorizados;
 - **PENDENTE:** conteúdo e posição finais do aviso de independência.
 
@@ -412,7 +414,7 @@ Uma vantagem deverá usar ícone, texto ou outro sinal além de cor. O arranjo p
 - **PENDENTE:** nome final.
 - **PENDENTE:** paleta.
 - **PENDENTE:** tipografia.
-- **PENDENTE:** autenticação.
+- **PENDENTE:** implementação da arquitetura de autenticação aprovada.
 - **PENDENTE:** regras de vantagem.
 - **PENDENTE:** compartilhamento.
 - **PENDENTE:** estrutura visual para 3 veículos.

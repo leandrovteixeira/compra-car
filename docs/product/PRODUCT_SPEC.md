@@ -174,6 +174,7 @@ Essas evoluções não devem acoplar o frontend ao modelo legado nem bloquear a 
 - **RNF-005:** revisar o RLS de toda superfície de dados utilizada pelo MVP antes da publicação.
 - **RNF-006:** atender critérios básicos de acessibilidade, incluindo navegação, foco, contraste e rótulos claros.
 - **RNF-007:** privilegiar clareza visual e leitura rápida durante o atendimento.
+- **RNF-008:** exigir login em toda a aplicação, exceto nos fluxos públicos de autenticação planejados.
 - **RNF-008:** preservar a rastreabilidade da fonte e da atualização dos dados quando possível.
 - **RNF-009:** desacoplar a aplicação do banco legado por contratos, serviços e adaptadores.
 - **RNF-010:** preferir mudanças pequenas, reversíveis e verificáveis.
@@ -234,7 +235,7 @@ As metas, a forma de coleta, a retenção e os responsáveis por estas métricas
 - **PENDENTE:** marca piloto.
 - A regra de vantagem do MVP cobre `binary` e `numeric`; pesos, score e ranking `scale` permanecem pendentes.
 - **PENDENTE:** escopo das políticas comerciais.
-- **PENDENTE:** estratégia de autenticação.
+- A arquitetura de autenticação está aprovada em `docs/architecture/AUTHENTICATION_ARCHITECTURE.md`; sua implementação permanece pendente.
 - **PENDENTE:** estratégia de compartilhamento.
 - **PENDENTE:** texto jurídico final.
 - **PENDENTE:** identidade visual autorizada.

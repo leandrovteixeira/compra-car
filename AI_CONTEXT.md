@@ -92,8 +92,9 @@ Esses estados não podem ser confundidos.
 - ADR-002: itens `scale` não têm cardinalidade no MVP.
 - ADR-003: o frontend não acessa o banco legado diretamente.
 - ADR-004: `isActive` e `isPublic` têm significados distintos.
-- ADR-005: autenticação simples, sem RBAC, será implementada em fase posterior.
+- ADR-005: decisão histórica de postergar autenticação, substituída pelo ADR-007.
 - ADR-006: o legado é traduzido por DTOs/mappers em um adaptador server-only e somente leitura.
+- ADR-007: Supabase Auth, cookies SSR, convite fechado e roles `admin`/`vendedor`; arquitetura aprovada, ainda não implementada.
 - ADR-007: Appsmith é adotado no backoffice da Fase 1, sem mudança de schema; GitHub, `C:\Dev` e OneDrive possuem papéis distintos.
 - O resultado distingue vantagem, desvantagem, empate, informação desconhecida e item não aplicável.
 - Apenas vantagens da referência são destacadas nesta versão.
@@ -109,11 +110,8 @@ Esses estados não podem ser confundidos.
 - não acessar Supabase fora do adaptador legado;
 - não colocar regras de negócio em `shared` ou na UI;
 - não implementar novas regras de vantagem sem documentação;
-- não tratar autenticação ou PDF como implementados; ambos permanecem em fases posteriores do roadmap;
-- suporte offline não integra o escopo atual, e a PWA instalável não implica funcionamento offline;
-- não alterar schema na Fase 1 do backoffice;
-- não acoplar o domínio administrativo ao Appsmith;
-- não permitir que importações por IA gravem diretamente em tabelas definitivas.
+- não tratar a arquitetura de autenticação aprovada como funcionalidade já implementada;
+- não implementar PDF ou offline nesta fase concluída.
 
 ## Estado atual — 2026-07-20
 
@@ -124,6 +122,8 @@ A URL de comparação é `/comparar?vehicles=id1,id2[,id3,...]`. A página valid
 Os testes do core usam repositórios in-memory. Os mappers do adaptador são testados sem rede e a integração real é opt-in por variáveis exclusivas. A UI de negócio e `Legacy` permanecem sem alteração nesta fase.
 
 A superfície mínima e o mapeamento físico fornecidos para a fase estão registrados em `SUPABASE_INSPECTION_RESULTS.md` e `LEGACY_SUPABASE_MAP.md`. A validação online permanece pendente quando não houver credenciais opt-in e não bloqueia o código ou o MVP.
+
+A arquitetura planejada de autenticação e autorização está em `docs/architecture/AUTHENTICATION_ARCHITECTURE.md`. Ela define Supabase Auth, sessão SSR em cookies, convite fechado, profiles ativos e roles `admin`/`vendedor`; nenhum desses componentes foi implementado nesta sprint documental.
 
 O backoffice administrativo está em planejamento documentado, sem implementação versionada. A Fase 1 cobre página inicial, gestão de veículos, preços e políticas em grade e comparador administrativo. Não haverá alteração de schema. Appsmith é a tecnologia selecionada, mas as regras estão descritas como domínio em `docs/admin`.
 
@@ -163,4 +163,4 @@ O repositório contém apenas infraestrutura Docker e recomendações histórica
 - **PENDENTE:** export, permissões e estrutura do Appsmith atual.
 - **PENDENTE:** constraint física da chave de negócio de veículos no Supabase atual.
 - **PENDENTE:** confirmar como `product_specs.is_present = false` afeta presença, validade e comparabilidade.
-- **PENDENTE:** estratégia de autenticação posterior e revisão de RLS.
+- **PENDENTE:** implementar a arquitetura de autenticação aprovada e auditar grants/RLS na Sprint 2.

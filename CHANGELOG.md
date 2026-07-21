@@ -8,6 +8,7 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
 ### Added
 
+- 2026-07-19: definição documental da arquitetura de autenticação e autorização com Supabase Auth, cookies SSR, convite fechado, roles `admin`/`vendedor`, profiles ativos, RLS e plano das Sprints 2 a 4.
 - 2026-07-19: implementação do MVP do motor de comparação com o primeiro veículo como referência, resultados completos para `binary` e `numeric`, estados de empate/desconhecido e exclusão explícita de ranking `scale`.
 - Adição do filtro “Ver destaques”, destaque exclusivo das vantagens da referência e suporte à seleção de dois ou mais veículos.
 - Adição da migration de dados que define `specs.value_direction = 'Positive'` para o item numeric `Power windows`.
