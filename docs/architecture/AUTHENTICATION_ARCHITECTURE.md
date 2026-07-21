@@ -4,6 +4,7 @@
 
 - **Estado:** arquitetura aprovada; implementação ainda não iniciada
 - **Data:** 2026-07-19
+- **Atualização:** 2026-07-20
 - **Decisão relacionada:** [ADR-007](decisions/ADR-007-SUPABASE-AUTH-AND-ROLE-BASED-AUTHORIZATION.md)
 - **Substitui:** a postergação registrada no [ADR-005](decisions/ADR-005-AUTHENTICATION-AFTER-DOMAIN.md)
 
@@ -20,7 +21,7 @@ O repositório usa Next.js `15.5.20`. Nesta versão, a convenção aplicável é
 - autenticar por e-mail e senha com Supabase Auth;
 - manter sessão SSR em cookies por `@supabase/ssr`;
 - proteger toda a aplicação, exceto rotas de autenticação;
-- autorizar por profile atual, papel e estado ativo;
+- autorizar por profile atual, papel e status explícito;
 - oferecer convite fechado e recuperação de senha sem enumerar contas;
 - aplicar defesa em profundidade no browser, Next.js Server e banco;
 - separar clientes Supabase de browser, servidor por usuário e administrativo;
@@ -41,13 +42,15 @@ O repositório usa Next.js `15.5.20`. Nesta versão, a convenção aplicável é
 1. Todo o Compra Car exige login. Somente `/login`, `/aceitar-convite`, `/esqueci-senha`, `/redefinir-senha` e o callback técnico estritamente necessário serão públicos.
 2. Não existe cadastro público nem `signUp` aberto. Contas nascem por convite administrativo.
 3. Os únicos papéis do MVP são `admin` e `vendedor`.
-4. Todos os usuários ativos veem o mesmo catálogo. Papel não segmenta dados de catálogo no MVP.
-5. `profiles.is_active = false` bloqueia acesso sem excluir `auth.users` ou o profile.
+4. Todos os usuários com status `active` veem o mesmo catálogo. Papel não segmenta dados de catálogo no MVP.
+5. O status do profile segue o ciclo `pending` → `active` → `disabled`, com reativação de `disabled` para `active`.
 6. Supabase Auth é o provedor de identidade e proprietário de e-mail, senha e sessão.
 7. Autorização final ocorre perto do recurso, no servidor e/ou banco; a UI e o Middleware não bastam.
 8. Recuperação de senha termina com encerramento da sessão do fluxo e retorno a `/login`.
 9. Destinos de retorno aceitam apenas caminhos relativos internos previamente validados.
-10. Falta de profile, role inválida ou profile inativo falha de forma fechada.
+10. Falta de profile, role inválida ou status diferente de `active` falha de forma fechada.
+11. Todo profile novo nasce obrigatoriamente com `role = vendedor` e `status = pending`; nenhuma entrada de usuário ou metadado pode promover automaticamente a `admin`.
+12. `profiles` é a fonte de autorização. `user_metadata` pode transportar dados auxiliares, mas não é fonte confiável para privilégios.
 
 ## 6. Visão geral da solução
 
@@ -66,7 +69,7 @@ flowchart LR
   Legacy --> DB
 ```
 
-O cliente administrativo e o adaptador legado podem usar credencial privilegiada somente no servidor. Como essa credencial pode ignorar RLS, toda operação que a use deve ser precedida de autorização explícita e restringir entrada, operação e resultado.
+O cliente administrativo e o adaptador legado podem usar credencial privilegiada somente no servidor. Como essa credencial pode ignorar RLS, toda operação que a use deve ser precedida de validação explícita de identidade, profile, status, role e escopo, além de restringir entrada, operação e resultado.
 
 ## 7. Componentes
 
@@ -80,7 +83,7 @@ Cliente `@supabase/ssr` criado com os cookies da requisição. Identifica o cham
 
 ### Cliente administrativo server-only
 
-Cliente separado, importável apenas por módulos com `server-only`, sem persistência ou refresh de sessão do usuário. Será usado para convite e administração após revalidação de `admin` ativo. Nunca compartilha o cliente SSR, pois uma sessão do usuário pode substituir seu cabeçalho de autorização.
+Cliente separado, importável apenas por módulos com `server-only`, sem persistência ou refresh de sessão do usuário. Será usado para convite e administração após revalidação explícita de `admin` com status `active`. Nunca compartilha o cliente SSR, pois uma sessão do usuário pode substituir seu cabeçalho de autorização. Toda operação com Service Role valida ator, status, role, entrada e escopo antes de executar; RLS não é a única barreira de operações administrativas.
 
 ### Camada de autenticação e autorização
 
@@ -88,7 +91,7 @@ Serviço server-only centraliza `requireAuthenticatedUser`, `requireActiveProfil
 
 ### Middleware
 
-Em Next.js 15, `middleware.ts` renova cookies e faz redirecionamentos otimistas. Não consulta autorização detalhada nem substitui validações no servidor ou RLS. Ao migrar para Next.js 16+, passa a `proxy.ts`.
+Em Next.js 15, `middleware.ts` apenas lê ou atualiza a sessão, renova cookies e faz redirecionamentos otimistas. Não consulta o banco, não decide autorização detalhada nem substitui validações no servidor ou RLS. Ao migrar para Next.js 16+, passa a `proxy.ts`.
 
 ### Supabase
 
@@ -102,7 +105,7 @@ Autorização responde “o usuário pode realizar esta ação agora?”. Cada d
 
 - usuário Auth autenticado;
 - profile existente;
-- `is_active = true` no estado atual do banco;
+- `status = active` no estado atual de `profiles`;
 - papel permitido;
 - RLS/grants ou validação server-side junto ao recurso.
 
@@ -117,8 +120,12 @@ public.profiles
   id uuid primary key references auth.users(id) on delete cascade
   full_name text not null
   role text not null check (role in ('admin', 'vendedor'))
-  is_active boolean not null default true
+  status text not null check (status in ('pending', 'active', 'disabled'))
   invited_by uuid null references auth.users(id)
+  disabled_by uuid null references auth.users(id)
+  invited_at timestamptz not null
+  accepted_at timestamptz null
+  disabled_at timestamptz null
   created_at timestamptz not null
   updated_at timestamptz not null
 ```
@@ -128,28 +135,43 @@ public.profiles
 - e-mail permanece em Supabase Auth e não é duplicado no profile;
 - profile não contém senha, hash, token ou segredo;
 - `invited_by` registra o administrador quando conhecido e aceita `null` para bootstrap;
+- todo novo profile recebe obrigatoriamente `role = vendedor` e `status = pending`;
+- `accepted_at` é preenchido quando o convite é aceito e a senha é definida;
+- `disabled_by` e `disabled_at` são preenchidos na desativação e limpos na reativação;
+- `last_login_at` não integra o modelo nesta fase;
 - roles adicionais exigem nova decisão arquitetural.
 
-Identidade existente, sessão válida, profile ativo e operação autorizada são estados independentes. A ausência de qualquer condição necessária nega acesso.
+`profiles` é a fonte confiável para role e status. Claims ou `user_metadata` não concedem privilégios. Identidade existente, sessão válida, profile com status `active` e operação autorizada são estados independentes. A ausência de qualquer condição necessária nega acesso.
+
+### Ciclo de status
+
+| Evento | Status resultante | Metadados de ciclo de vida |
+|---|---|---|
+| Convite enviado | `pending` | registra `invited_by` e `invited_at` |
+| Convite aceito e senha definida | `active` | registra `accepted_at` |
+| Desativação administrativa | `disabled` | registra `disabled_by` e `disabled_at` |
+| Reativação administrativa | `active` | limpa `disabled_by` e `disabled_at` |
+
+Não há transição automática para `admin`. A mudança de papel é uma operação administrativa distinta, explícita e auditável.
 
 ## 10. Papéis e matriz de permissões
 
 | Recurso/Ação | Admin | Vendedor |
 |---|---:|---:|
-| Entrar na aplicação | Sim, se ativo | Sim, se ativo |
+| Entrar na aplicação | Sim, se `active` | Sim, se `active` |
 | Ler catálogo | Sim | Sim |
 | Comparar veículos | Sim | Sim |
 | Criar/editar catálogo | Sim, futuramente | Não |
 | Listar usuários | Sim | Não |
 | Convidar usuários | Sim | Não |
-| Ativar/desativar usuários | Sim | Não |
+| Desativar/reativar usuários | Sim | Não |
 | Alterar papel | Sim | Não |
 | Ler próprio perfil | Sim | Sim |
 | Alterar próprio nome | Sim | Sim |
 | Alterar o próprio papel | Não | Não |
 | Reativar a si próprio | Não | Não |
 
-Administração de catálogo continua futura. O catálogo de leitura é compartilhado entre todos os profiles ativos.
+Administração de catálogo continua futura. O catálogo de leitura é compartilhado entre todos os profiles com status `active`.
 
 ## 11. Estratégia de sessão SSR
 
@@ -162,12 +184,12 @@ Ciclo conceitual:
 3. Cookies atualizados são propagados na resposta.
 4. Server Component, Route Handler ou Server Action cria seu cliente por requisição.
 5. Servidor valida a identidade por `getClaims()` ou busca atual por `getUser()` e carrega o profile atual.
-6. A operação valida atividade e papel perto do recurso.
+6. A operação valida `status = active` e papel perto do recurso.
 7. RLS/grants aplicam a barreira de banco quando o cliente do usuário acessa a Data API.
 
 `getSession()` pode ser usado quando o token bruto for realmente necessário, mas o objeto de usuário carregado diretamente dos cookies não fundamenta decisão de identidade ou autorização. Middleware e servidor validam o token conforme a orientação vigente do Supabase.
 
-Conteúdo autenticado e respostas que renovam cookies não podem entrar em cache público. Profile, sessão e HTML personalizado nunca usam cache global. O cache de catálogo compartilhado pode permanecer apenas porque o conjunto de dados é idêntico para todos os usuários ativos, mas a rota e cada operação continuam protegidas.
+Conteúdo autenticado e respostas que renovam cookies não podem entrar em cache público. Profile, sessão e HTML personalizado nunca usam cache global. O cache de catálogo compartilhado pode permanecer apenas porque o conjunto de dados é idêntico para todos os usuários com status `active`, mas a rota e cada operação continuam protegidas.
 
 ## 12. Proteção de rotas
 
@@ -187,8 +209,8 @@ O Middleware faz a triagem de navegação e renova cookies. Cada carregamento pr
 
 ```text
 UI otimista
-→ Middleware: sessão e redirect de conveniência
-→ DAL/serviço server-only: usuário + profile atual + atividade + role
+→ Middleware: leitura/atualização de sessão e redirect de conveniência, sem consulta ao banco
+→ DAL/serviço server-only: usuário + profile atual + status + role
 → caso de uso/handler: permissão da operação
 → grants + RLS: permissão efetiva no banco
 ```
@@ -209,16 +231,16 @@ sequenceDiagram
   N->>A: Autentica por e-mail e senha
   A-->>N: Sessão Supabase
   N->>D: Carrega profile atual
-  D-->>N: role e is_active
-  alt profile ativo
+  D-->>N: role e status
+  alt status active
     N-->>B: Define cookies e redireciona para destino seguro
-  else ausente ou inativo
+  else ausente, pending ou disabled
     N->>A: Encerra sessão quando apropriado
     N-->>B: Estado de acesso desativado ou negado
   end
 ```
 
-Erros de credencial são genéricos. O destino original é restaurado somente após validação local. Login de profile ausente ou inativo é recusado pela aplicação.
+Erros de credencial são genéricos. O destino original é restaurado somente após validação local. Login de profile ausente ou com status diferente de `active` é recusado pela aplicação.
 
 ## 15. Fluxo de logout
 
@@ -237,22 +259,20 @@ sequenceDiagram
   participant P as profiles
   participant A as Supabase Auth Admin
   participant E as E-mail
-  ADM->>N: Solicita convite com nome, e-mail e role
-  N->>P: Revalida admin ativo
+  ADM->>N: Solicita convite com nome e e-mail
+  N->>P: Revalida admin com status active
   P-->>N: Autorizado
-  N->>A: inviteUserByEmail com metadados mínimos
-  A->>P: Trigger cria profile
+  N->>A: Cria usuário e envia convite
+  A->>P: Cria profile vendedor/pending
+  N->>P: Registra invited_by e invited_at
   A-->>E: Envia convite
   A-->>N: Usuário convidado
-  opt role selecionada é admin
-    N->>P: Aplica promoção administrativa validada
-  end
   N-->>ADM: Resultado seguro e auditável
 ```
 
-O cliente administrativo fica no servidor. Até a Sprint 4, o Dashboard do Supabase ou ferramenta administrativa controlada pode enviar convites. Nunca se usa chave privilegiada no navegador.
+O cliente administrativo fica no servidor. Todo convite cria uma identidade no Supabase Auth e um profile com `role = vendedor`, `status = pending`, `invited_by` e `invited_at`. Nenhum parâmetro do convite, `user_metadata`, trigger ou valor padrão pode criar um admin. Até a Sprint 4, o Dashboard do Supabase ou ferramenta administrativa controlada pode enviar convites, desde que o profile e os metadados obrigatórios sejam mantidos pelo procedimento aprovado. Nunca se usa chave privilegiada no navegador.
 
-Estados obrigatórios: convite expirado, utilizado, usuário existente, profile ausente, inativo, falha de envio, falha transacional, reenvio e limite de taxa. Reenvio deve ser idempotente do ponto de vista da interface administrativa e não criar profiles duplicados.
+Estados obrigatórios: convite expirado, utilizado, usuário existente, profile ausente, `pending`, `active`, `disabled`, falha de envio, falha transacional, reenvio e limite de taxa. Reenvio deve ser idempotente do ponto de vista da interface administrativa e não criar profiles duplicados.
 
 ## 17. Fluxo de aceitação de convite
 
@@ -260,9 +280,10 @@ Estados obrigatórios: convite expirado, utilizado, usuário existente, profile 
 2. Callback troca o código pelo estado de sessão e valida o tipo do fluxo.
 3. `/aceitar-convite` exige contexto de convite válido.
 4. Usuário define sua senha; a aplicação nunca armazena nem cria o hash.
-5. Servidor carrega o profile e exige `is_active = true`.
-6. Conta ativa segue para a aplicação; profile ausente/inativo falha fechado.
-7. Link expirado ou já utilizado mostra recuperação segura sem revelar dados da conta.
+5. Servidor carrega o profile e exige `status = pending` para concluir o aceite.
+6. Após a senha ser definida, o servidor altera o status para `active` e registra `accepted_at`.
+7. Conta com status `active` segue para a aplicação; profile ausente ou em estado incompatível falha fechado.
+8. Link expirado ou já utilizado mostra recuperação segura sem revelar dados da conta.
 
 ## 18. Fluxo de recuperação de senha
 
@@ -289,20 +310,23 @@ sequenceDiagram
 
 A resposta pública será: “Caso exista uma conta para este e-mail, você receberá as instruções.” Link expirado ou token inválido gera estado recuperável. Redirects usam allow-list local e do Supabase. A Sprint 3 deve validar o comportamento efetivo de invalidação das demais sessões; até lá, não se assume invalidação instantânea de access tokens já emitidos.
 
-## 19. Tratamento de usuário inativo
+## 19. Desativação e reativação
 
-`is_active` é verificado no carregamento seguro de páginas protegidas e novamente em Server Actions, Route Handlers, serviços de dados e operações administrativas. Não se consulta somente no login.
+O status atual é verificado no carregamento seguro de páginas protegidas e novamente em Server Actions, Route Handlers, serviços de dados e operações administrativas. Não se consulta somente no login.
 
-Quando `false`:
+Na desativação, uma operação administrativa explícita altera o status para `disabled` e registra `disabled_by` e `disabled_at`. Nesse estado:
 
 - `auth.users` e `profiles` permanecem existentes;
 - novas entradas são recusadas pela aplicação;
-- sessões existentes deixam de autorizar operações na próxima verificação server-side/banco;
+- sessões existentes deixam de autorizar operações na próxima verificação server-side ou no banco;
+- o servidor nega acesso e RLS também deve negar o acesso aplicável;
 - a interface mostra um estado de acesso desativado;
 - logout é executado quando apropriado;
 - nenhuma exclusão física é usada como desativação.
 
-Para recursos acessados por RLS, policies devem incorporar atividade atual ou chamar função segura que a verifique. Para caminhos que usam credencial com bypass de RLS, a validação server-side atual é obrigatória.
+Na reativação, uma operação administrativa explícita altera o status para `active` e limpa `disabled_by` e `disabled_at`. Ela não muda o papel do usuário nem substitui as validações normais de autorização.
+
+Para recursos acessados por RLS, policies devem incorporar `status = active` ou chamar função segura que o verifique. Para caminhos que usam credencial com bypass de RLS, a validação server-side atual é obrigatória antes da execução. RLS complementa, mas não substitui, a validação administrativa no servidor.
 
 ## 20. Estratégia de criação de profile
 
@@ -314,8 +338,8 @@ Controles obrigatórios:
 
 - função `security definer` com owner e grants mínimos;
 - `search_path` fixo e seguro, referências qualificadas por schema;
-- trigger sempre cria `vendedor`, sem confiar em role de `user_metadata`;
-- quando o convite selecionar `admin`, o servidor aplica promoção explícita depois de receber a identidade e revalidar o ator; falha parcial deixa o usuário no menor privilégio;
+- trigger sempre cria `vendedor`/`pending`, sem confiar em role ou status de `user_metadata`;
+- promoção para `admin` nunca faz parte do convite ou do aceite e exige operação manual ou administrativa separada, explícita e auditável;
 - `full_name` validado sem confiar em campos arbitrários;
 - idempotência e telemetria de falhas;
 - teste transacional e procedimento de reconciliação.
@@ -332,14 +356,14 @@ Adotar a opção A na Sprint 2. A consistência transacional e a negação por f
 
 Procedimento temporário e auditável:
 
-1. criar ou convidar uma identidade pelo Dashboard do Supabase;
-2. aplicar o profile `admin` por migration versionada ou script server-side controlado da Sprint 2;
-3. confirmar `is_active = true` e integridade do vínculo;
+1. convidar uma identidade pelo Dashboard do Supabase, com `invited_by = null` apenas para este bootstrap;
+2. confirmar que o profile foi criado como `vendedor`/`pending` e concluir o aceite para torná-lo `active`;
+3. promover o profile para `admin` por uma operação manual, explícita, controlada e registrada fora do fluxo automático;
 4. testar login e autorização;
 5. registrar a execução fora do repositório sem dados pessoais;
 6. remover o mecanismo temporário.
 
-Nenhum e-mail, credencial ou usuário real integra a documentação versionada.
+Nenhum e-mail, credencial ou usuário real integra a documentação versionada. A implementação futura deverá definir o runbook e o mecanismo exatos; esta decisão documental não cria migration, SQL ou script.
 
 ## 21. Estratégia de RLS
 
@@ -349,13 +373,13 @@ Para `profiles`:
 
 - usuário autenticado pode ler somente o próprio profile;
 - pode atualizar somente `full_name`, com allow-list de colunas;
-- não pode alterar `role`, `is_active` ou `invited_by`;
+- não pode alterar `role`, `status`, `invited_by`, `disabled_by` ou timestamps de ciclo de vida;
 - não pode listar outros profiles;
-- administração ocorre por Server Action/Route Handler com revalidação de admin ativo e cliente administrativo isolado.
+- administração ocorre por Server Action/Route Handler com revalidação de `admin`/`active` e cliente administrativo isolado.
 
-Para o catálogo, admin e vendedor ativos têm leitura compartilhada; vendedor não tem escrita. Grants limitam quais operações alcançam cada objeto e RLS limita linhas. Tabelas expostas pela Data API exigem ambas as camadas.
+Para o catálogo, admin e vendedor com status `active` têm leitura compartilhada; vendedor não tem escrita. Grants limitam quais operações alcançam cada objeto e RLS limita linhas. Tabelas expostas pela Data API exigem ambas as camadas.
 
-Secret/service-role ignora RLS. Seu uso é exceção server-only e requer autorização antes da query, DTO de saída e teste de negação. O nome atual `SUPABASE_SERVER_KEY` não prova seu privilégio e deve ser classificado na Sprint 2 sem alterar o valor ou expô-lo.
+Secret/service-role ignora RLS. Seu uso é exceção server-only e requer validação explícita de identidade, profile atual, `status = active`, role, entrada e escopo antes da execução, além de DTO de saída e teste de negação. RLS nunca é a única barreira para operações administrativas. O nome atual `SUPABASE_SERVER_KEY` não prova seu privilégio e deve ser classificado na Sprint 2 sem alterar o valor ou expô-lo.
 
 ## 22. Gestão de chaves
 
@@ -379,7 +403,7 @@ Nenhum segredo recebe prefixo `NEXT_PUBLIC_`, entra em Client Component, log, er
 - convite diferencia conflitos apenas para admin autorizado e sem vazar segredo;
 - links expirados ou inválidos oferecem recomeço seguro;
 - erros públicos não incluem stack, resposta bruta do Supabase, token ou e-mail de terceiro;
-- profile ausente, role inválida e inatividade negam acesso por padrão;
+- profile ausente, role inválida e status diferente de `active` negam acesso por padrão;
 - falha parcial de administração gera evento correlacionável para reconciliação.
 
 ## 24. Observabilidade e auditoria
@@ -389,12 +413,47 @@ Registrar eventos estruturados sem tokens ou credenciais:
 - login bem-sucedido/falho com identificador de correlação, sem senha;
 - logout;
 - convite solicitado, enviado, reenviado ou falho;
-- alteração de role ou atividade, com ator, alvo, antes/depois e data;
-- negação por inatividade, falta de profile ou role;
+- alteração de role ou status, com ator, alvo, antes/depois e data;
+- negação por status `pending`/`disabled`, falta de profile ou role;
 - falha do trigger e reconciliação;
 - uso de operação administrativa privilegiada.
 
 Política de retenção, destino dos logs e correlação com auditoria do Supabase permanecem pendentes. E-mail deve ser minimizado ou mascarado conforme necessidade operacional e privacidade.
+
+### Tabela futura `audit_log`
+
+Uma tabela de auditoria é evolução futura e não será implementada nesta sprint. Seu modelo conceitual é:
+
+```text
+public.audit_log
+  id uuid primary key
+  actor_user_id uuid null
+  action text not null
+  entity_type text not null
+  entity_id uuid null
+  before_data jsonb null
+  after_data jsonb null
+  ip_address inet null
+  user_agent text null
+  created_at timestamptz not null
+```
+
+Eventos futuros mínimos:
+
+- `user.invited`;
+- `user.invite_resent`;
+- `user.activated`;
+- `user.disabled`;
+- `user.reactivated`;
+- `user.role_changed`;
+- `user.password_reset_requested`;
+- `admin.mfa_enabled`.
+
+O desenho físico, retenção, proteção de dados, acesso de leitura e estratégia para registrar eventos sem permitir adulteração permanecem **PENDENTE**.
+
+### MFA futuro
+
+MFA não será implementado nesta sprint. Em fase posterior, será obrigatório para `admin`; para `vendedor`, não será obrigatório no MVP. A fase futura deverá definir enrollment, recuperação, fatores aceitos e comportamento de bloqueio antes da implementação.
 
 ## 25. Ameaças e mitigações
 
@@ -402,8 +461,8 @@ Política de retenção, destino dos logs e correlação com auditoria do Supaba
 |---|---|
 | Chave privilegiada no browser | Cliente administrativo `server-only`; nenhum segredo `NEXT_PUBLIC_` |
 | Autorização apenas no frontend | Revalidação server-side e RLS perto do recurso |
-| Confiança apenas no Middleware | Middleware é triagem otimista; DAL/handler/banco revalidam |
-| Usuário inativo com sessão válida | Consultar profile atual em toda operação sensível e nas policies aplicáveis |
+| Confiança apenas no Middleware | Middleware não consulta o banco; DAL/handler/banco revalidam |
+| Usuário `disabled` com sessão válida | Consultar profile atual em toda operação sensível e nas policies aplicáveis |
 | Alteração indevida de `role` | Coluna fora do update comum; constraint; operação admin auditada |
 | Mass assignment de profile | DTO e allow-list somente de `full_name` |
 | Enumeração de e-mails | Resposta neutra de recuperação e erros genéricos |
@@ -429,7 +488,7 @@ Rate limiting para login, recuperação, convite e reenvio deve combinar control
 - versionar migration de `profiles`, constraints, FK, trigger seguro e policies;
 - definir clientes browser, SSR e admin e variáveis de ambiente;
 - criar bootstrap controlado do primeiro admin;
-- testar trigger, RLS, inatividade e negação por role;
+- testar trigger, RLS, estados `pending`/`active`/`disabled` e negação por role;
 - documentar rollback e reconciliação.
 
 ### Sprint 3 — autenticação e proteção da aplicação
@@ -439,12 +498,12 @@ Rate limiting para login, recuperação, convite e reenvio deve combinar control
 - implementar aceitação de convite e recuperação de senha;
 - criar camada server-only de sessão/profile/autorização;
 - proteger páginas, Server Actions, Route Handlers e carregamento de dados;
-- testar open redirect, cache, links inválidos e usuário inativo.
+- testar open redirect, cache, links inválidos e usuário `disabled`.
 
 ### Sprint 4 — administração de usuários
 
 - implementar UI e operações server-side para listar, convidar e reenviar;
-- ativar/desativar e alterar role com auditoria;
+- desativar/reativar e alterar role com auditoria;
 - adicionar idempotência, rate limiting e tratamento de falhas parciais;
 - validar a matriz de permissões ponta a ponta;
 - remover o mecanismo temporário de bootstrap.
@@ -454,24 +513,25 @@ Rate limiting para login, recuperação, convite e reenvio deve combinar control
 - toda rota não Auth é protegida;
 - não existe cadastro público;
 - roles são somente `admin` e `vendedor`;
-- profile ausente/inativo falha fechado;
+- profile ausente ou status diferente de `active` falha fechado;
 - cookies SSR usam a integração oficial;
-- Middleware não é a barreira final;
-- operações sensíveis revalidam sessão, profile, atividade e role;
+- Middleware apenas lê/atualiza sessão e redireciona, sem consultar o banco;
+- operações sensíveis revalidam sessão, profile, status e role;
 - RLS/grants cobrem toda superfície exposta;
 - cliente administrativo nunca chega ao browser;
 - convite e recuperação tratam redirects e erros com segurança;
-- testes negativos cobrem vendedor, inativo, profile ausente e bypass privilegiado;
+- testes negativos cobrem vendedor, `pending`, `disabled`, profile ausente e bypass privilegiado;
 - documentação permanece sincronizada com o estado implementado.
 
 ## 28. Questões futuras
 
 - **PENDENTE:** nomes finais das novas variáveis públicas e administrativas após classificar `SUPABASE_SERVER_KEY`;
 - **PENDENTE:** caminho definitivo do callback Auth;
-- **PENDENTE:** política de senha, MFA e proteção contra credenciais comprometidas;
+- **PENDENTE:** política de senha e proteção contra credenciais comprometidas;
+- **PENDENTE:** implementação futura de MFA obrigatório para admin, sem obrigatoriedade para vendedor no MVP;
 - **PENDENTE:** limites de taxa por fluxo e infraestrutura;
 - **PENDENTE:** SMTP de produção, remetente, templates e expiração de links de convite/recuperação;
-- **PENDENTE:** retenção e destino da auditoria;
+- **PENDENTE:** desenho físico, retenção e destino da futura `audit_log`;
 - **PENDENTE:** comportamento verificado de sessões anteriores após redefinição de senha;
 - **PENDENTE:** procedimento operacional de reconciliação Auth/profile;
 - **PENDENTE:** migração de `middleware.ts` para `proxy.ts` ao adotar Next.js 16+;

@@ -34,9 +34,20 @@ Apresentar o produto, contextualizar a experiência da marca e oferecer uma entr
 - pronta para iniciar;
 - tema indisponível com fallback neutro;
 - falha de configuração;
-- sessão autenticada e profile ativo;
+- sessão autenticada e profile com status `active`;
 - não autenticado, com redirecionamento planejado para `/login`;
-- acesso desativado para profile inativo.
+- convite pendente, direcionado ao aceite e à definição de senha;
+- acesso desativado para profile com status `disabled`.
+
+### Estados futuros de autenticação
+
+- convite enviado: profile `vendedor`/`pending`;
+- convite aceito e senha definida: profile `active`;
+- desativação por administrador: profile `disabled` e acesso negado;
+- reativação: profile novamente `active`;
+- promoção para admin: ação administrativa separada, nunca automática.
+
+A UI apenas representa esses estados e oculta ações indisponíveis como conveniência. A autorização efetiva permanece no servidor e no banco. O Middleware não consulta o banco; apenas lê ou atualiza sessão e redireciona.
 
 ### Comportamento mobile
 

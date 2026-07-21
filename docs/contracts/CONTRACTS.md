@@ -138,7 +138,9 @@ Continuam planejados, mas não fazem parte desta entrega:
 - preços, políticas comerciais e snapshots;
 - tema de marca;
 - entrada autocontida para PDF;
-- autenticação e autorização, planejadas em `docs/architecture/AUTHENTICATION_ARCHITECTURE.md` e ainda sem contratos implementados;
+- autenticação e autorização, planejadas em `docs/architecture/AUTHENTICATION_ARCHITECTURE.md` e ainda sem contratos implementados. O futuro contrato de profile terá roles `admin`/`vendedor`, status `pending`/`active`/`disabled` e os campos conceituais `id`, `full_name`, `role`, `status`, `invited_by`, `disabled_by`, `invited_at`, `accepted_at`, `disabled_at`, `created_at` e `updated_at`, sem `last_login_at` nesta fase;
 - paginação e cache.
+
+Para os contratos futuros de administração, todo convite produzirá `vendedor`/`pending`; aceite produzirá `active` e registrará `accepted_at`; desativação produzirá `disabled` e registrará ator/data; reativação produzirá `active` e limpará os dados de desativação. Promoção para `admin` será uma operação explícita, separada do convite e do aceite. Os contratos não confiarão em `user_metadata` para privilégios e não exporão operações administrativas sem autorização server-side anterior ao uso de Service Role.
 
 Nenhum schema de validação externo foi adicionado. As validações atuais são funções e factories TypeScript do próprio core.

@@ -94,7 +94,7 @@ Esses estados não podem ser confundidos.
 - ADR-004: `isActive` e `isPublic` têm significados distintos.
 - ADR-005: decisão histórica de postergar autenticação, substituída pelo ADR-007.
 - ADR-006: o legado é traduzido por DTOs/mappers em um adaptador server-only e somente leitura.
-- ADR-007: Supabase Auth, cookies SSR, convite fechado e roles `admin`/`vendedor`; arquitetura aprovada, ainda não implementada.
+- ADR-007: Supabase Auth, cookies SSR, convite fechado, roles `admin`/`vendedor` e status `pending`/`active`/`disabled`; arquitetura aprovada, ainda não implementada.
 - ADR-007: Appsmith é adotado no backoffice da Fase 1, sem mudança de schema; GitHub, `C:\Dev` e OneDrive possuem papéis distintos.
 - O resultado distingue vantagem, desvantagem, empate, informação desconhecida e item não aplicável.
 - Apenas vantagens da referência são destacadas nesta versão.
@@ -111,6 +111,8 @@ Esses estados não podem ser confundidos.
 - não colocar regras de negócio em `shared` ou na UI;
 - não implementar novas regras de vantagem sem documentação;
 - não tratar a arquitetura de autenticação aprovada como funcionalidade já implementada;
+- não usar `user_metadata` como fonte de privilégios nem permitir promoção automática para `admin`;
+- não fazer o Middleware consultar o banco ou assumir que RLS é a única barreira administrativa;
 - não implementar PDF ou offline nesta fase concluída.
 
 ## Estado atual — 2026-07-20
@@ -123,7 +125,7 @@ Os testes do core usam repositórios in-memory. Os mappers do adaptador são tes
 
 A superfície mínima e o mapeamento físico fornecidos para a fase estão registrados em `SUPABASE_INSPECTION_RESULTS.md` e `LEGACY_SUPABASE_MAP.md`. A validação online permanece pendente quando não houver credenciais opt-in e não bloqueia o código ou o MVP.
 
-A arquitetura planejada de autenticação e autorização está em `docs/architecture/AUTHENTICATION_ARCHITECTURE.md`. Ela define Supabase Auth, sessão SSR em cookies, convite fechado, profiles ativos e roles `admin`/`vendedor`; nenhum desses componentes foi implementado nesta sprint documental.
+A arquitetura planejada de autenticação e autorização está em `docs/architecture/AUTHENTICATION_ARCHITECTURE.md`. Ela define Supabase Auth, sessão SSR em cookies, convite fechado, roles `admin`/`vendedor` e ciclo de profile `pending` → `active` → `disabled`, com reativação para `active`. Todo usuário novo nasce `vendedor`/`pending`; nenhuma promoção a admin é automática, e o primeiro admin exige operação manual, explícita e documentada. `profiles` é a fonte de autorização; Middleware não consulta o banco; servidor e RLS negam acesso a status não ativo. MFA obrigatório para admin e a tabela `audit_log` são evoluções futuras. Nenhum desses componentes foi implementado nesta sprint documental.
 
 O backoffice administrativo está em planejamento documentado, sem implementação versionada. A Fase 1 cobre página inicial, gestão de veículos, preços e políticas em grade e comparador administrativo. Não haverá alteração de schema. Appsmith é a tecnologia selecionada, mas as regras estão descritas como domínio em `docs/admin`.
 
@@ -163,4 +165,4 @@ O repositório contém apenas infraestrutura Docker e recomendações histórica
 - **PENDENTE:** export, permissões e estrutura do Appsmith atual.
 - **PENDENTE:** constraint física da chave de negócio de veículos no Supabase atual.
 - **PENDENTE:** confirmar como `product_specs.is_present = false` afeta presença, validade e comparabilidade.
-- **PENDENTE:** implementar a arquitetura de autenticação aprovada e auditar grants/RLS na Sprint 2.
+- **PENDENTE:** implementar a arquitetura de autenticação aprovada e auditar grants/RLS na Sprint 2, incluindo validação explícita anterior a qualquer operação com Service Role.

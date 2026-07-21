@@ -175,13 +175,21 @@ Essas evoluções não devem acoplar o frontend ao modelo legado nem bloquear a 
 - **RNF-006:** atender critérios básicos de acessibilidade, incluindo navegação, foco, contraste e rótulos claros.
 - **RNF-007:** privilegiar clareza visual e leitura rápida durante o atendimento.
 - **RNF-008:** exigir login em toda a aplicação, exceto nos fluxos públicos de autenticação planejados.
-- **RNF-008:** preservar a rastreabilidade da fonte e da atualização dos dados quando possível.
-- **RNF-009:** desacoplar a aplicação do banco legado por contratos, serviços e adaptadores.
-- **RNF-010:** preferir mudanças pequenas, reversíveis e verificáveis.
-- **RNF-011:** produzir logs de erro úteis sem expor segredos ou dados sensíveis.
-- **RNF-012:** tratar os estados de disponibilidade dos dados sem perda semântica.
-- **RNF-013:** manter regras de vantagem conhecidas, auditáveis e separadas da apresentação.
-- **RNF-014:** garantir que o PDF seja produzido a partir de um contrato pronto, sem acesso direto ao banco.
+- **RNF-009:** preservar a rastreabilidade da fonte e da atualização dos dados quando possível.
+- **RNF-010:** desacoplar a aplicação do banco legado por contratos, serviços e adaptadores.
+- **RNF-011:** preferir mudanças pequenas, reversíveis e verificáveis.
+- **RNF-012:** produzir logs de erro úteis sem expor segredos ou dados sensíveis.
+- **RNF-013:** tratar os estados de disponibilidade dos dados sem perda semântica.
+- **RNF-014:** manter regras de vantagem conhecidas, auditáveis e separadas da apresentação.
+- **RNF-015:** garantir que o PDF seja produzido a partir de um contrato pronto, sem acesso direto ao banco.
+
+## Autenticação e gestão de acesso planejadas
+
+A arquitetura aprovada exige convite fechado e exatamente os papéis `admin` e `vendedor`. Todo novo usuário nasce como `vendedor`/`pending`; ao aceitar o convite e definir a senha passa a `active`; uma desativação administrativa passa a `disabled`; uma reativação retorna a `active`. Nenhum usuário se torna admin automaticamente, e o primeiro admin será promovido por operação manual, explícita e documentada.
+
+`profiles` é a fonte de autorização. `user_metadata` não é confiável para privilégios. O Middleware somente lê ou atualiza sessão e redireciona, sem consultar o banco; autorização ocorre no servidor e no banco. Operações com Service Role exigem validação explícita antes da execução, e RLS não é a única barreira administrativa.
+
+MFA não integra esta sprint: será obrigatório para admin em fase posterior e não obrigatório para vendedor no MVP. A futura `audit_log` registrará eventos críticos do ciclo de usuários, mas também não será implementada nesta fase.
 
 ## Critérios de sucesso do MVP
 
@@ -235,7 +243,7 @@ As metas, a forma de coleta, a retenção e os responsáveis por estas métricas
 - **PENDENTE:** marca piloto.
 - A regra de vantagem do MVP cobre `binary` e `numeric`; pesos, score e ranking `scale` permanecem pendentes.
 - **PENDENTE:** escopo das políticas comerciais.
-- A arquitetura de autenticação está aprovada em `docs/architecture/AUTHENTICATION_ARCHITECTURE.md`; sua implementação permanece pendente.
+- A arquitetura de autenticação está aprovada em `docs/architecture/AUTHENTICATION_ARCHITECTURE.md`, incluindo ciclo de status, bootstrap manual do primeiro admin, MFA e auditoria futuros; sua implementação permanece pendente.
 - **PENDENTE:** estratégia de compartilhamento.
 - **PENDENTE:** texto jurídico final.
 - **PENDENTE:** identidade visual autorizada.
