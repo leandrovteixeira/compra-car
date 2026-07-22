@@ -20,6 +20,10 @@ Lista tabelas com RLS, políticas, expressões declaradas, grants de leitura e v
 
 Fornece modelos comentados para perfilar objetos candidatos depois da revisão dos inventários. Por padrão, não contém consulta executável e usa placeholders deliberadamente inválidos.
 
+### `05_baseline_readiness.sql`
+
+Complementa o inventário para preparação de baseline com extensões, schemas e ACLs, enums/domains, definições de views, privilégios completos, default privileges, publications e FKs de `public` para outros schemas. Consulta somente metadados e não altera nenhum objeto.
+
 ## Ordem de execução
 
 1. Confirmar visualmente o projeto e o ambiente corretos no painel do Supabase.
@@ -32,6 +36,8 @@ Fornece modelos comentados para perfilar objetos candidatos depois da revisão d
 8. Somente depois disso, copiar os modelos necessários de `04_candidate_data_profile.sql`, substituir placeholders confirmados e submetê-los a revisão.
 9. Executar apenas os blocos do arquivo `04` que tiverem sido revisados.
 10. Consolidar descobertas em `docs/data/SUPABASE_INSPECTION_RESULTS.md`.
+
+Para a Sprint 2.2, execute `05_baseline_readiness.sql` somente depois de autorização explícita para consultar o ambiente remoto e trate sua saída com a mesma sanitização dos demais inventários.
 
 ## Como executar no SQL Editor
 
