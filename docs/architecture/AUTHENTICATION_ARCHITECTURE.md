@@ -2,13 +2,13 @@
 
 ## 1. Status
 
-- **Estado:** arquitetura aprovada; implementação ainda não iniciada
+- **Estado:** fundação de dados da Sprint 2.1 versionada; aplicação e fluxos de autenticação ainda pendentes
 - **Data:** 2026-07-19
-- **Atualização:** 2026-07-20
-- **Decisão relacionada:** [ADR-007](decisions/ADR-007-SUPABASE-AUTH-AND-ROLE-BASED-AUTHORIZATION.md)
+- **Atualização:** 2026-07-21
+- **Decisão relacionada:** [ADR-008](decisions/ADR-008-SUPABASE-AUTH-AND-ROLE-BASED-AUTHORIZATION.md)
 - **Substitui:** a postergação registrada no [ADR-005](decisions/ADR-005-AUTHENTICATION-AFTER-DOMAIN.md)
 
-Este documento é a fonte autoritativa da arquitetura planejada. Ele não afirma que autenticação, autorização, `profiles`, RLS ou as rotas descritas já existam.
+Este documento é a fonte autoritativa da arquitetura. A migration de `profiles`, enums, triggers, grants e policies está versionada em `supabase/migrations/20260721222256_create_auth_profiles.sql`, mas não foi aplicada a banco local ou remoto nesta entrega. Clientes, rotas e fluxos de autenticação continuam planejados.
 
 ## 2. Contexto
 
@@ -29,8 +29,9 @@ O repositório usa Next.js `15.5.20`. Nesta versão, a convenção aplicável é
 
 ## 4. Não objetivos
 
-- implementar autenticação nesta sprint;
-- criar migration, tabela, policy, usuário ou dependência;
+- implementar clientes, telas ou fluxos de autenticação nesta sprint;
+- aplicar a migration versionada a banco local ou remoto;
+- criar usuário real ou dependência de aplicação;
 - criar autenticação ou armazenamento de senha próprios;
 - oferecer cadastro público, login social ou acesso anônimo;
 - implementar multi-tenant, escopo por concessionária, marca, equipe ou usuário;
@@ -113,31 +114,36 @@ Ocultar controles no frontend é apenas UX. Nunca concede nem revoga autoridade.
 
 ## 9. Modelo conceitual de dados
 
-Tabela futura, sem migration nesta sprint:
+Modelo físico versionado na Sprint 2.1:
 
 ```text
+public.app_role enum ('admin', 'vendedor')
+public.user_status enum ('pending', 'active', 'disabled')
+
 public.profiles
   id uuid primary key references auth.users(id) on delete cascade
-  full_name text not null
-  role text not null check (role in ('admin', 'vendedor'))
-  status text not null check (status in ('pending', 'active', 'disabled'))
-  invited_by uuid null references auth.users(id)
-  disabled_by uuid null references auth.users(id)
-  invited_at timestamptz not null
+  full_name text null
+  role public.app_role not null default 'vendedor'
+  status public.user_status not null default 'pending'
+  invited_by uuid null references public.profiles(id) on delete set null
+  disabled_by uuid null references public.profiles(id) on delete set null
+  invited_at timestamptz null
   accepted_at timestamptz null
   disabled_at timestamptz null
-  created_at timestamptz not null
-  updated_at timestamptz not null
+  created_at timestamptz not null default now()
+  updated_at timestamptz not null default now()
 ```
 
 - `profiles.id` é igual ao `auth.users.id`;
 - timestamps são UTC e `updated_at` deve ser mantido de forma confiável;
 - e-mail permanece em Supabase Auth e não é duplicado no profile;
 - profile não contém senha, hash, token ou segredo;
-- `invited_by` registra o administrador quando conhecido e aceita `null` para bootstrap;
+- `full_name` aceita `null` quando os metadados de apresentação `full_name` e `name` não contêm texto válido;
+- `invited_by` registra o profile do administrador quando conhecido e aceita `null` para bootstrap;
 - todo novo profile recebe obrigatoriamente `role = vendedor` e `status = pending`;
 - `accepted_at` é preenchido quando o convite é aceito e a senha é definida;
 - `disabled_by` e `disabled_at` são preenchidos na desativação e limpos na reativação;
+- a exclusão do profile de um ator limpa `disabled_by` e `disabled_at` juntos antes do `ON DELETE SET NULL`, preservando a constraint do par;
 - `last_login_at` não integra o modelo nesta fase;
 - roles adicionais exigem nova decisão arquitetural.
 
@@ -341,7 +347,7 @@ Controles obrigatórios:
 - trigger sempre cria `vendedor`/`pending`, sem confiar em role ou status de `user_metadata`;
 - promoção para `admin` nunca faz parte do convite ou do aceite e exige operação manual ou administrativa separada, explícita e auditável;
 - `full_name` validado sem confiar em campos arbitrários;
-- idempotência e telemetria de falhas;
+- unicidade obrigatória, tratamento explícito de colisões e telemetria de falhas; não usar `ON CONFLICT DO NOTHING` nem ocultar profile duplicado, pois a operação deve falhar de forma fechada e seguir o procedimento de reconciliação;
 - teste transacional e procedimento de reconciliação.
 
 ### Opção B — operação administrativa coordenada
@@ -350,7 +356,7 @@ Envia convite, recebe o usuário e cria o profile pelo servidor. Tem fluxo expl�
 
 ### Decisão
 
-Adotar a opção A na Sprint 2. A consistência transacional e a negação por falta de profile pesam mais que a simplicidade do fluxo coordenado. Observabilidade e reconciliação continuam obrigatórias. Se testes reais mostrarem incompatibilidade com o fluxo de convite, a troca para B exige atualizar este documento e o ADR antes da implementação.
+Adotar a opção A na Sprint 2. A migration da Sprint 2.1 implementa o trigger transacional com `role = vendedor`, `status = pending` e nome opcional obtido somente de `raw_user_meta_data.full_name` ou, como fallback, `raw_user_meta_data.name`. Metadados de autorização nunca são lidos. Observabilidade e reconciliação continuam obrigatórias. Se testes reais mostrarem incompatibilidade com o fluxo de convite, a troca para B exige atualizar este documento e o ADR antes da implementação.
 
 ### Bootstrap do primeiro admin
 

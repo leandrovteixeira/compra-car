@@ -1,6 +1,6 @@
 # ADR-005 — Autenticação simples em fase posterior
 
-- **Status:** substituído pelo ADR-007 em 2026-07-19
+- **Status:** substituído pelo ADR-008 em 2026-07-19
 - **Data:** 2026-07-18
 
 ## Contexto
@@ -19,4 +19,4 @@ Nenhuma autenticação será implementada nesta fase. Uma autenticação simples
 
 ## Superação
 
-Os requisitos de autenticação e papéis foram aprovados posteriormente. O [ADR-007](ADR-007-SUPABASE-AUTH-AND-ROLE-BASED-AUTHORIZATION.md) e a [arquitetura de autenticação](../AUTHENTICATION_ARCHITECTURE.md) passam a ser autoritativos; este ADR permanece apenas como registro da decisão daquela fase.
+Os requisitos de autenticação e papéis foram aprovados posteriormente. O [ADR-008](ADR-008-SUPABASE-AUTH-AND-ROLE-BASED-AUTHORIZATION.md) e a [arquitetura de autenticação](../AUTHENTICATION_ARCHITECTURE.md) passam a ser autoritativos; este ADR permanece apenas como registro da decisão daquela fase.

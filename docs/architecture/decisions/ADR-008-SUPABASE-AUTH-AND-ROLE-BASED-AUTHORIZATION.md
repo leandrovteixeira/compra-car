@@ -1,8 +1,8 @@
-# ADR-007 — Supabase Auth e autorização baseada em papéis
+# ADR-008 — Supabase Auth e autorização baseada em papéis
 
 - **Status:** aceito
 - **Data:** 2026-07-19
-- **Atualização:** 2026-07-20
+- **Atualização:** 2026-07-21
 - **Substitui:** ADR-005
 
 ## Contexto
@@ -13,7 +13,7 @@ O Compra Car precisa proteger toda a aplicação, impedir cadastro público e di
 
 Usar Supabase Auth com e-mail e senha, convite administrativo e recuperação de senha. A sessão SSR usará `@supabase/ssr` e cookies oficiais, sem tokens gerenciados manualmente em `localStorage`.
 
-Uma futura `public.profiles`, vinculada por `id` a `auth.users`, manterá `id`, `full_name`, `role`, `status`, `invited_by`, `disabled_by`, `invited_at`, `accepted_at`, `disabled_at`, `created_at` e `updated_at`. `status` terá somente `pending`, `active` e `disabled`; `last_login_at` não integra esta fase. Não haverá cadastro público. Toda rota não relacionada a Auth exigirá login.
+`public.profiles`, vinculada por `id` a `auth.users`, manterá `id`, `full_name`, `role`, `status`, `invited_by`, `disabled_by`, `invited_at`, `accepted_at`, `disabled_at`, `created_at` e `updated_at`. `role` e `status` usam enums PostgreSQL com os valores aprovados; `full_name` é opcional enquanto o convite não fornecer um nome de apresentação válido. `last_login_at` não integra esta fase. Não haverá cadastro público. Toda rota não relacionada a Auth exigirá login.
 
 Todo novo usuário receberá obrigatoriamente `role = vendedor` e `status = pending`. O aceite do convite e a definição de senha mudarão o status para `active`; desativação administrativa mudará para `disabled`; reativação retornará a `active`. Nenhum usuário poderá tornar-se `admin` automaticamente. O primeiro admin será promovido por uma operação manual, explícita, controlada e documentada.
 
@@ -26,7 +26,7 @@ Os detalhes operacionais e o plano incremental estão em [AUTHENTICATION_ARCHITE
 ## Consequências
 
 - ADR-005 permanece histórico, mas sua postergação e ausência de RBAC foram superadas por requisitos aprovados;
-- `profiles`, trigger, grants e policies dependerão de migration futura e auditoria prévia do Supabase;
+- `profiles`, enums, trigger, grants e policies possuem migration versionada na Sprint 2.1; sua aplicação a qualquer ambiente continua dependente de auditoria e autorização explícitas;
 - Next.js 15 usará `middleware.ts`, com migração futura para `proxy.ts` em Next.js 16+;
 - qualquer falta de profile, role inválida ou status diferente de `active` negará acesso;
 - chaves secret/service-role nunca poderão chegar ao browser;
