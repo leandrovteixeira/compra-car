@@ -40,7 +40,8 @@ A Fase 2 introduz importações assistidas por IA, staging obrigatório, revisã
 
 ## Dependências pendentes
 
-- export oficial e estrutura do Appsmith atual;
+- **CONFIRMADO:** export oficial e estrutura de edição do Appsmith atual;
+- permissões, role efetiva, prepared statements e comportamento transacional do datasource;
 - permissões de leitura e escrita, RLS e grants;
 - constraints reais da chave de negócio dos veículos;
 - objetos de preço, política, vigência e moeda;

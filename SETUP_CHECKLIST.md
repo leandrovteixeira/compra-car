@@ -69,7 +69,7 @@ CompraCar/
 ## Materiais para as próximas fases
 
 - [ ] Resultados sanitizados da validação somente leitura do Supabase atual
-- [ ] Export do Appsmith
+- [x] Export do Appsmith localizado e auditado em `appsmith/exports/Compra Car App MVP.json`
 - [ ] Regras atuais de comparação
 - [ ] Três veículos-piloto
 - [ ] Texto legal provisório
@@ -81,7 +81,8 @@ CompraCar/
 
 ## Backoffice administrativo
 
-- [ ] Confirmar que o export do Appsmith representa a aplicação atual
+- [x] Confirmar a estrutura de edição representada pelo export do Appsmith
+- [ ] Confirmar na instância quais páginas estão efetivamente publicadas
 - [ ] Definir datasource e papéis sem expor chave privilegiada no cliente
 - [ ] Confirmar operações de escrita permitidas na Fase 1
 - [ ] Versionar páginas, queries e JS Objects pelo mecanismo aprovado

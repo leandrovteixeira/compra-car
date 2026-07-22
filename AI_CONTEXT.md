@@ -127,21 +127,27 @@ A superfície mínima e o mapeamento físico fornecidos para a fase estão regis
 
 A arquitetura de autenticação e autorização está em `docs/architecture/AUTHENTICATION_ARCHITECTURE.md`. Ela define Supabase Auth, sessão SSR em cookies, convite fechado, roles `admin`/`vendedor` e ciclo de profile `pending` → `active` → `disabled`, com reativação para `active`. A Sprint 2.1 versionou enums, `public.profiles`, triggers, grants, RLS, policies e testes SQL; nenhum banco recebeu a migration nesta entrega. Todo usuário novo nasce `vendedor`/`pending`; nenhuma promoção a admin é automática, e o primeiro admin exige operação manual, explícita e documentada. `profiles` é a fonte de autorização; Middleware não consulta o banco; servidor e RLS negam acesso funcional a status não ativo. MFA obrigatório para admin e a tabela `audit_log` continuam evoluções futuras. Clientes, rotas e fluxos da aplicação ainda não foram implementados.
 
-O backoffice administrativo está em planejamento documentado, sem implementação versionada. A Fase 1 cobre página inicial, gestão de veículos, preços e políticas em grade e comparador administrativo. Não haverá alteração de schema. Appsmith é a tecnologia selecionada, mas as regras estão descritas como domínio em `docs/admin`.
+O backoffice administrativo possui um export Appsmith auditado e uma implementação parcial: `Admin Modelos` lista produtos, altera atividade e duplica; `Análise de Valor` contém consultas de análise. Criação, edição geral, `product_specs`, preços e demais fluxos da Fase 1 ainda não estão implementados. Não haverá alteração de schema, e as regras permanecem descritas como domínio em `docs/admin`.
 
-O repositório contém apenas infraestrutura Docker e recomendações históricas para Appsmith em `Legacy`; não contém export atual de páginas, queries, widgets ou JS Objects. Preços, políticas, monetização de specs, vigência e permissões de escrita dependem de validação no Supabase e no Appsmith atuais.
+O export atual do Appsmith está versionável em `appsmith/exports/Compra Car App MVP.json` e foi auditado sem alteração do original. Ele contém três páginas, 27 widgets, 11 actions PostgreSQL, um datasource e nenhum JS Object. Permissões, role efetiva, comportamento transacional, preços, políticas, monetização de specs e vigência ainda dependem de validação no Supabase e na instância Appsmith.
 
 ## Próximos passos
 
 1. Executar o teste de integração opt-in no ambiente autorizado.
 2. Validar cobertura e desempenho com 2 ou 3 veículos reais.
 3. Comparar este clone com o `C:\Dev\compra-car` do outro notebook.
-4. Obter e versionar de forma segura o export oficial do Appsmith atual.
+4. Validar permissões, role efetiva, prepared statements e comportamento transacional do datasource Appsmith, sem alterar o schema.
 5. Validar no Supabase os objetos necessários ao backoffice, sem alterar o schema.
 6. Conectar o Next.js ao adaptador apenas no runtime do servidor.
 7. Implementar a UI de negócio sobre os casos de uso.
 8. Concluir MVP e piloto.
 9. Após o piloto, evoluir dados, importador e arquitetura gradualmente.
+
+## MVP-a — Sprint 1 de Gestão de Produtos (planejamento em 2026-07-22)
+
+O inventário e o plano executável da Sprint 1 estão em `docs/admin/SPRINT_1_PRODUCT_MANAGEMENT.md`. O export JSON nativo `appsmith/exports/Compra Car App MVP.json`, recebido em 2026-07-22, contém três páginas, 27 widgets, 11 actions PostgreSQL, um datasource e nenhum JS Object. A auditoria não encontrou credencial preenchida; o hostname Supabase foi tratado como metadado de infraestrutura. `Admin Modelos` lista produtos, altera `is_active` e duplica por `duplicate_product_simple`, mas não implementa criação, edição geral nem `product_specs`. As páginas funcionais aparecem apenas como rascunho no pacote.
+
+O escopo da Sprint 1 fica limitado a `products` e `product_specs`, usando `specs` somente como master de metadados e regras de Market Value. Não haverá manutenção de `specs`, `unit_perceived_value` ou `relative_value`, nem Preços, Comparador ou Exportação Excel. O export confirma o nome `duplicate_product_simple`, mas não a sobrecarga porque a action não usa casts; permanece recomendada a chamada explícita `duplicate_product_simple(integer, smallint, smallint, boolean)`, que copia produto e specs sem copiar preços/políticas.
 
 ## Backlog pós-MVP
 
@@ -162,7 +168,8 @@ O repositório contém apenas infraestrutura Docker e recomendações histórica
 - **PENDENTE:** identidade visual autorizada.
 - **PENDENTE:** objetos reais de preço, políticas comerciais, moeda, vigência e referência temporal.
 - **PENDENTE:** coluna e semântica do valor monetário master de specs.
-- **PENDENTE:** export, permissões e estrutura do Appsmith atual.
+- **CONFIRMADO:** export e estrutura do Appsmith atual, inventariados em `docs/admin/SPRINT_1_PRODUCT_MANAGEMENT.md`.
+- **PENDENTE:** permissões, role efetiva, prepared statements e comportamento transacional do datasource Appsmith.
 - **PENDENTE:** constraint física da chave de negócio de veículos no Supabase atual.
 - **PENDENTE:** confirmar como `product_specs.is_present = false` afeta presença, validade e comparabilidade.
 - **PENDENTE:** validar e aplicar a migration de profiles em ambiente autorizado, auditar grants/RLS do catálogo legado e implementar clientes/fluxos de autenticação, incluindo validação explícita anterior a qualquer operação com Service Role.

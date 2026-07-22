@@ -40,14 +40,15 @@ Criar rapidamente um MVP mobile-first para vendedores de concessionárias, permi
 ## Fase 1 administrativa — sem mudança de schema
 
 - [ ] Comparar os clones dos dois notebooks e confirmar a base oficial.
-- [ ] Obter o export oficial do Appsmith e o inventário sanitizado do Supabase.
+- [x] Obter e auditar o export oficial do Appsmith.
+- [ ] Concluir o inventário sanitizado do Supabase e validar role/transações do datasource Appsmith.
 - [ ] Confirmar permissões, constraints, preços, políticas, vigência e monetização de specs.
 - [ ] Implementar a página inicial administrativa.
 - [ ] Implementar criação, edição, clonagem e validação de duplicidade de veículos.
 - [ ] Implementar gestão de preços e políticas exclusivamente em grade.
 - [ ] Implementar comparador administrativo com indicadores financeiros e todos os specs.
 - [ ] Implementar exportação de uma comparação com bloco financeiro e specs.
-- [ ] Versionar export e documentação operacional do Appsmith sem incluir segredos.
+- [x] Preparar o export auditado e a documentação operacional do Appsmith sem incluir segredos.
 
 ## Fase 2 administrativa — importações assistidas por IA
 

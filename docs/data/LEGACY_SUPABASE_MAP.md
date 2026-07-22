@@ -95,4 +95,4 @@ Trocar apenas `created_at` por `offer_month` não corrige o problema conceitual:
 
 ## Consumo pelo Appsmith
 
-Foi encontrada uma única ocorrência de `duplicate_product_simple`, principal candidata a function consumida pelo Appsmith. A confirmação depende do registro da action, do contexto e da assinatura exata. A rotina copia produto e specs, mas não a política comercial mensal, coerentemente com o cadastro ou importação separada de preços.
+O export auditado confirmou que a action `dup_product`, em `Admin Modelos`, chama `duplicate_product_simple` com produto, novo MY/PY e flag de atividade. Como a action atual não usa casts, a sobrecarga resolvida em runtime ainda precisa ser confirmada ou tornada explícita. A rotina copia produto e specs, mas não a política comercial mensal, coerentemente com o cadastro ou importação separada de preços.

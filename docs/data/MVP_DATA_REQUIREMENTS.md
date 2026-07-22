@@ -114,7 +114,7 @@ O contrato definitivo de leitura do MVP será definido em uma etapa específica 
 
 - validar com o negócio a chave lógica de `products` coberta por `unique_product`;
 - projetar e testar a separação entre MSRP e ofertas, incluindo vigência, desempate determinístico e filtro público;
-- confirmar a action e a assinatura de `duplicate_product_simple` usada no Appsmith;
+- o export confirma que a action `dup_product` chama `duplicate_product_simple` sem casts; confirmar em runtime a sobrecarga resolvida até que a action use tipos explícitos;
 - identificar consumidores de `anon`, `authenticated` e `service_role`;
 - validar quais tabelas staging ainda são utilizadas;
 - desenhar o hardening de RLS e grants;

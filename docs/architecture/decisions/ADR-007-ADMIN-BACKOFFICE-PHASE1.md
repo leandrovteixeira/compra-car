@@ -2,10 +2,11 @@
 
 - **Status:** aceito
 - **Data:** 2026-07-20
+- **Atualização:** 2026-07-22 — export e estrutura do Appsmith confirmados
 
 ## Contexto
 
-O Compra Car precisa manter veículos, preços e políticas e oferecer comparação administrativa antes de uma eventual arquitetura definitiva. O Supabase e o Appsmith atuais ainda precisam ser inventariados integralmente, e o trabalho ocorre em dois notebooks com clones locais independentes.
+Na data desta decisão, o Compra Car precisava manter veículos, preços e políticas e oferecer comparação administrativa antes de uma eventual arquitetura definitiva, enquanto Supabase e Appsmith ainda aguardavam inventário integral. O export Appsmith foi posteriormente auditado em 2026-07-22; permissões, role e transações permanecem pendentes. O trabalho ocorre em dois notebooks com clones locais independentes.
 
 ## Decisão
 
@@ -28,7 +29,7 @@ O GitHub é a fonte oficial versionada. Cada notebook mantém seu próprio clone
 
 ## Pendências
 
-- confirmar o export oficial do Appsmith atual;
+- confirmar permissões, role efetiva, prepared statements, comportamento transacional e estado publicado da instância Appsmith;
 - confirmar objetos, constraints, RLS, grants e permissões de escrita no Supabase;
 - confirmar a viabilidade de veículos, preços, políticas e comparação sem mudança de schema;
 - definir auditoria, concorrência e invalidação de cache;

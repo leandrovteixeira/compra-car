@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-07-22 — Planejamento da Sprint 1 do MVP-a
+
+- Inventariado o repositório em busca do export atual do Appsmith; confirmada apenas infraestrutura histórica, sem páginas, queries, widgets ou JS Objects exportados.
+- Documentados escopo, contrato de dados, mapeamento físico, análise das funções de duplicação, SQL proposto, plano de testes e configuração dos widgets para Gestão de Produtos.
+- Recomendada, de forma condicionada à confirmação do export, a sobrecarga explícita `duplicate_product_simple(integer, smallint, smallint, boolean)`, sem cópia de preços ou políticas.
+- Nenhuma tela, migration, query remota ou alteração no Supabase foi executada.
+- Auditado o export nativo `appsmith/exports/Compra Car App MVP.json` sem alterar o original: três páginas, 27 widgets, 11 actions PostgreSQL, um datasource e nenhum JS Object.
+- Confirmado que `Admin Modelos` lista produtos, altera apenas `is_active` e chama `duplicate_product_simple` sem casts; criação, edição geral e gestão de `product_specs` ainda não existem.
+- A varredura não encontrou credenciais preenchidas; foi registrada apenas uma referência de hostname Supabase, sem segredo de autenticação.
+- Corrigidas referências documentais obsoletas sobre a ausência do export e separadas as confirmações de export/estrutura das pendências de permissão, role e transações.
+- Preparado o roteiro do primeiro lote de `Admin Modelos`: listagem com `is_public`/`spec_count`, pesquisa, filtros e duplicação tipada com validação e tratamento de erro, sem alterar o export ou o Supabase.
+
 - 2026-07-21: Sprint 2.1 versiona a fundação de autenticação no Supabase com enums de role/status, `public.profiles`, criação transacional de profiles, manutenção de ciclo de vida, grants mínimos, RLS, policies de autosserviço e testes SQL; nenhum banco local ou remoto recebeu a migration nesta entrega. A numeração documental da decisão de autenticação foi corrigida para ADR-008.
 
 Todas as mudanças relevantes deste projeto serão documentadas neste arquivo.

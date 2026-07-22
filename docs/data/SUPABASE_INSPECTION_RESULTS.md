@@ -71,7 +71,7 @@ Foram identificadas:
 
 `duplicate_product_simple` cria o produto e copia `product_specs`. `duplicate_product_model_year` também copia a oferta mais recente de `product_price_offers`. Existem versões com assinaturas baseadas em `integer`/`smallint` e `bigint`/`integer`, indicando evolução histórica e dívida técnica. Nenhuma function deve ser removida ou consolidada antes da identificação e validação dos consumidores atuais.
 
-Foi encontrada uma única ocorrência de `duplicate_product_simple` no Appsmith, tornando-a a principal candidata a function atualmente consumida pelo backoffice. Isso ainda não é confirmação definitiva: é necessário registrar a action, o contexto e a assinatura exata da chamada. Essa function copia produto e specs, mas não a política comercial mensal, coerentemente com preços cadastrados ou importados separadamente.
+O export auditado em 2026-07-22 confirmou que a action `dup_product`, na página `Admin Modelos`, chama `duplicate_product_simple` com produto, novo MY, novo PY e flag de atividade. A action não usa casts; portanto, confirma o nome e o contexto, mas a sobrecarga resolvida em runtime permanece pendente até a correção tipada. Essa function copia produto e specs, mas não a política comercial mensal, coerentemente com preços cadastrados ou importados separadamente.
 
 ## Triggers
 
@@ -207,7 +207,7 @@ Há mistura histórica de IDs `integer` e `bigint`. `products` e `registrations`
 
 - validar a chave lógica de `products`;
 - desenhar e testar a separação futura entre histórico de MSRP e múltiplas ofertas comerciais;
-- confirmar a action e a assinatura de `duplicate_product_simple` usada no Appsmith;
+- confirmar em runtime a sobrecarga de `duplicate_product_simple` enquanto `dup_product` não possuir casts explícitos;
 - identificar consumidores de `anon`, `authenticated` e `service_role`;
 - validar quais tabelas staging ainda são utilizadas;
 - desenhar o hardening de RLS e grants;

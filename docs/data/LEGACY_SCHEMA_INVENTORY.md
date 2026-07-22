@@ -74,7 +74,7 @@ Não há materialized view própria documentada, mas a ausência precisa ser rec
 - `duplicate_product_model_year`;
 - duas sobrecargas de `duplicate_product_simple`.
 
-As assinaturas exatas, owners, `search_path`, grants e corpos precisam ser recapturados. A ocorrência de `duplicate_product_simple` no Appsmith é evidência de possível consumo, não confirmação da sobrecarga utilizada.
+As assinaturas, owners, `search_path` e grants foram recapturados na extração posterior; os corpos completos permanecem nos artefatos brutos. O export Appsmith auditado em 2026-07-22 confirma que `dup_product` chama `duplicate_product_simple`, mas a ausência de casts ainda não confirma a sobrecarga resolvida em runtime.
 
 ### Triggers, RLS e grants
 
