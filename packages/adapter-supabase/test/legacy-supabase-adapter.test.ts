@@ -15,6 +15,9 @@ interface FakeCall {
 }
 
 class FakeQuery implements PromiseLike<FakeResponse> {
+  private readonly equalityFilters: Array<readonly [string, unknown]> = [];
+  private readonly inclusionFilters: Array<readonly [string, readonly unknown[]]> = [];
+
   constructor(
     private readonly response: FakeResponse,
     readonly call: FakeCall,
@@ -27,11 +30,13 @@ class FakeQuery implements PromiseLike<FakeResponse> {
 
   eq(column: string, value: unknown): this {
     this.call.operations.push(`eq:${column}:${String(value)}`);
+    this.equalityFilters.push([column, value]);
     return this;
   }
 
   in(column: string, values: readonly unknown[]): this {
     this.call.operations.push(`in:${column}:${values.join(',')}`);
+    this.inclusionFilters.push([column, values]);
     return this;
   }
 
@@ -39,7 +44,20 @@ class FakeQuery implements PromiseLike<FakeResponse> {
     onfulfilled?: ((value: FakeResponse) => TResult1 | PromiseLike<TResult1>) | null,
     onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
   ): PromiseLike<TResult1 | TResult2> {
-    return Promise.resolve(this.response).then(onfulfilled, onrejected);
+    const filteredData = this.response.data?.filter((row) => {
+      if (!row || typeof row !== 'object') return false;
+      const record = row as Readonly<Record<string, unknown>>;
+      return (
+        this.equalityFilters.every(([column, value]) => record[column] === value) &&
+        this.inclusionFilters.every(([column, values]) =>
+          values.some((value) => String(value) === String(record[column])),
+        )
+      );
+    });
+    return Promise.resolve({ ...this.response, data: filteredData ?? null }).then(
+      onfulfilled,
+      onrejected,
+    );
   }
 }
 
@@ -74,6 +92,29 @@ const product = {
 };
 
 describe('LegacySupabaseAdapter', () => {
+  it('lista todos os veículos para administração sem aplicar filtros do catálogo público', async () => {
+    const inactive = { ...product, id: 2, is_active: false, version: 'Inativo' };
+    const privateProduct = { ...product, id: 3, is_public: false, version: 'Privado' };
+    const { client, calls } = fakeClient({
+      products: [[product, inactive, privateProduct]],
+    });
+    const adapter = new LegacySupabaseAdapter(client);
+
+    await expect(adapter.listAdministrativeVehicles()).resolves.toEqual([
+      expect.objectContaining({ id: '1', isActive: true, isPublic: true }),
+      expect.objectContaining({ id: '2', isActive: false, isPublic: true }),
+      expect.objectContaining({ id: '3', isActive: true, isPublic: false }),
+    ]);
+    expect(calls).toEqual([
+      {
+        table: 'products',
+        operations: [
+          'select:id,brand,model,version,model_year,production_year,is_active,is_public',
+        ],
+      },
+    ]);
+  });
+
   it('aceita catálogo público vazio sem consultar associações', async () => {
     const { client, calls } = fakeClient({ products: [[]] });
     const adapter = new LegacySupabaseAdapter(client);
@@ -97,7 +138,7 @@ describe('LegacySupabaseAdapter', () => {
     const { client, calls } = fakeClient({
       products: [[product]],
       product_specs: [[{ product_id: 1, equipment_id: 10 }]],
-      specs: [[{ id: 10 }]],
+      specs: [[{ id: 10, is_active: true }]],
     });
     const adapter = new LegacySupabaseAdapter(client);
 
@@ -119,11 +160,38 @@ describe('LegacySupabaseAdapter', () => {
 
   it('preserva a ordem dos IDs solicitados', async () => {
     const second = { ...product, id: 2, version: 'Versão 2' };
-    const { client } = fakeClient({ products: [[product, second]] });
+    const { client, calls } = fakeClient({ products: [[product, second]] });
     const adapter = new LegacySupabaseAdapter(client);
 
     const vehicles = await adapter.getVehiclesByIds([createVehicleId('2'), createVehicleId('1')]);
     expect(vehicles.map((vehicle) => vehicle.id)).toEqual(['2', '1']);
+    expect(calls[0]?.operations).toEqual(
+      expect.arrayContaining(['eq:is_active:true', 'eq:is_public:true']),
+    );
+  });
+
+  it('filtra por comportamento produtos inativos, não públicos e IDs inexistentes', async () => {
+    const activePublic = product;
+    const inactive = { ...product, id: 2, is_active: false, version: 'Inativo' };
+    const privateProduct = { ...product, id: 3, is_public: false, version: 'Privado' };
+    const { client } = fakeClient({
+      products: [[activePublic, inactive, privateProduct]],
+    });
+    const adapter = new LegacySupabaseAdapter(client);
+
+    const vehicles = await adapter.getVehiclesByIds([
+      createVehicleId('3'),
+      createVehicleId('1'),
+      createVehicleId('999'),
+      createVehicleId('2'),
+    ]);
+
+    expect(vehicles).toEqual([
+      expect.objectContaining({ id: '1', version: 'Versão', isActive: true, isPublic: true }),
+    ]);
+    expect(vehicles.map((vehicle) => vehicle.id)).not.toContain('2');
+    expect(vehicles.map((vehicle) => vehicle.id)).not.toContain('3');
+    expect(vehicles.map((vehicle) => vehicle.id)).not.toContain('999');
   });
 
   it('compartilha o lote concorrente de comparação e evita N+1', async () => {

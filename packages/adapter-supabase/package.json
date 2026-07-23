@@ -14,7 +14,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@compra-car/contracts": "workspace:*",
     "@compra-car/core": "workspace:*",
+    "@supabase/ssr": "^0.12.3",
     "@supabase/supabase-js": "2.110.7"
   },
   "devDependencies": {

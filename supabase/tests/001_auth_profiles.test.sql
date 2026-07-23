@@ -11,7 +11,7 @@ select is(
           from pg_enum
          where enumtypid = 'public.app_role'::regtype
     ),
-    '{admin,vendedor}',
+    '{admin,seller}',
     'app_role has only the approved values in order'
 );
 select ok(to_regtype('public.user_status') is not null, 'public.user_status exists');
@@ -56,8 +56,8 @@ select ok(
     'profiles.full_name is nullable'
 );
 select ok(
-    (select column_default like '%vendedor%' from information_schema.columns where table_schema = 'public' and table_name = 'profiles' and column_name = 'role'),
-    'profiles.role defaults to vendedor'
+    (select column_default like '%seller%' from information_schema.columns where table_schema = 'public' and table_name = 'profiles' and column_name = 'role'),
+    'profiles.role defaults to seller'
 );
 select ok(
     (select column_default like '%pending%' from information_schema.columns where table_schema = 'public' and table_name = 'profiles' and column_name = 'status'),
@@ -163,7 +163,7 @@ select is(
 );
 select is(
     (select role::text from public.profiles where id = '11111111-1111-4111-8111-111111111111'),
-    'vendedor',
+    'seller',
     'malicious role metadata is ignored'
 );
 select is(
@@ -272,7 +272,7 @@ select is((select count(*) from public.profiles), 1::bigint, 'authenticated read
 select is(
     (select count(*) from public.profiles where id = '22222222-2222-4222-8222-222222222222'),
     0::bigint,
-    'vendedor cannot list another profile'
+    'seller cannot list another profile'
 );
 with changed as (
     update public.profiles

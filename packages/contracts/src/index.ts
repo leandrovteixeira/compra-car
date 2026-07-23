@@ -79,6 +79,19 @@ export type CatalogActionResultDto<T> =
   | { readonly ok: true; readonly data: T }
   | { readonly ok: false; readonly error: CatalogActionErrorDto };
 
+export const APP_ROLES = ['seller', 'admin'] as const;
+export const USER_STATUSES = ['pending', 'active', 'disabled'] as const;
+
+export type AppRole = (typeof APP_ROLES)[number];
+export type UserStatus = (typeof USER_STATUSES)[number];
+
+export interface AuthProfile {
+  readonly id: string;
+  readonly fullName: string | null;
+  readonly role: AppRole;
+  readonly status: UserStatus;
+}
+
 export interface ComparisonVehiclePresentationDto {
   readonly id: string;
   readonly brand: string;

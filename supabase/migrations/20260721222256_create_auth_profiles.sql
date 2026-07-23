@@ -64,7 +64,7 @@ $$;
 
 create type public.app_role as enum (
     'admin',
-    'vendedor'
+    'seller'
 );
 
 create type public.user_status as enum (
@@ -76,7 +76,7 @@ create type public.user_status as enum (
 create table public.profiles (
     id uuid primary key,
     full_name text null,
-    role public.app_role not null default 'vendedor',
+    role public.app_role not null default 'seller',
     status public.user_status not null default 'pending',
     invited_by uuid null,
     disabled_by uuid null,
@@ -198,7 +198,7 @@ begin
     values (
         new.id,
         profile_full_name,
-        'vendedor'::public.app_role,
+        'seller'::public.app_role,
         'pending'::public.user_status,
         pg_catalog.now()
     );
@@ -212,7 +212,7 @@ revoke all on function public.handle_new_auth_user()
     from public, anon, authenticated;
 
 comment on function public.handle_new_auth_user() is
-    'Owned by postgres. Trigger-only Auth hook. It reads only full_name/name presentation metadata and always creates vendedor/pending profiles.';
+    'Owned by postgres. Trigger-only Auth hook. It reads only full_name/name presentation metadata and always creates seller/pending profiles.';
 
 create trigger on_auth_user_created_create_profile
 after insert on auth.users

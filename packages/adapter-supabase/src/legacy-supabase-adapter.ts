@@ -67,6 +67,13 @@ export class LegacySupabaseAdapter implements VehicleRepository, ComparisonRepos
     return this.listPublicEligibleVehicles(filters);
   }
 
+  async listAdministrativeVehicles(): Promise<readonly Vehicle[]> {
+    const { data, error } = await this.client.from('products').select(PRODUCT_COLUMNS);
+    if (error) throw queryError('products administrativos', error);
+
+    return ((data ?? []) as unknown as LegacyProductRow[]).map(mapLegacyProductToVehicle);
+  }
+
   async listPublicEligibleVehicles(
     filters: AvailableVehicleFilters = {},
   ): Promise<readonly Vehicle[]> {
@@ -124,6 +131,8 @@ export class LegacySupabaseAdapter implements VehicleRepository, ComparisonRepos
     const { data, error } = await this.client
       .from('products')
       .select(PRODUCT_COLUMNS)
+      .eq('is_active', true)
+      .eq('is_public', true)
       .in('id', legacyIds);
     if (error) throw queryError('products por ids', error);
 

@@ -1,9 +1,9 @@
 import Link from 'next/link';
 
 import { filterComparisonCategories } from '@/application/comparison/comparison-filter';
+import { ComparisonState } from '@/components/comparison-state';
 import { ComparisonTable } from '@/components/comparison-table';
 import { ComparisonToolbar } from '@/components/comparison-toolbar';
-import { ComparisonState } from '@/components/comparison-state';
 import { loadComparisonPage } from '@/server/comparison-service';
 
 interface ComparisonPageProps {
@@ -39,7 +39,7 @@ export default async function ComparisonPage({ searchParams }: ComparisonPagePro
 
   if (!result.ok) {
     return (
-      <main className="flex min-h-dvh items-center justify-center bg-slate-950 px-4 py-8 text-slate-50">
+      <main className="flex min-h-[calc(100dvh-4.5rem)] items-center justify-center bg-slate-950 px-4 py-8 text-slate-50">
         <div className="w-full max-w-xl">
           <ComparisonState
             action={<BackToSelection />}
@@ -56,7 +56,7 @@ export default async function ComparisonPage({ searchParams }: ComparisonPagePro
   const categories = filterComparisonCategories(result.data.categories, onlyHighlights);
 
   return (
-    <main className="min-h-dvh bg-[radial-gradient(circle_at_top_left,rgba(8,145,178,0.08),transparent_30rem)] bg-slate-950 px-3 py-6 text-slate-50 sm:px-6 sm:py-10 lg:px-8">
+    <main className="min-h-[calc(100dvh-4.5rem)] bg-[radial-gradient(circle_at_top_left,rgba(8,145,178,0.08),transparent_30rem)] bg-slate-950 px-3 py-6 text-slate-50 sm:px-6 sm:py-10 lg:px-8">
       <div className="mx-auto w-full max-w-[100rem]">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
