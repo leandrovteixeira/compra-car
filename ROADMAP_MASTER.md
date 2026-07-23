@@ -15,6 +15,9 @@ Criar rapidamente um MVP mobile-first para vendedores de concessionárias, permi
 - **CONCLUÍDO:** vertical slices de seleção e comparação, conectando UI, camada web, casos de uso e adaptador legado.
 - **CONCLUÍDO:** auditoria documental do repositório e definição do domínio administrativo da Fase 1, sem mudança de schema.
 - **CONCLUÍDO:** decisão arquitetural de concentrar as áreas `seller` e `admin` na mesma aplicação Next.js e preservar o Appsmith apenas como referência histórica.
+- **CONCLUÍDO:** autenticação SSR, roles `seller`/`admin`, área seller e proteção server-side.
+- **CONCLUÍDO:** shell administrativo persistente, navegação responsiva e visão geral `/admin`.
+- **CONCLUÍDO:** `/admin/products` com listagem administrativa somente leitura e estados de dados, vazio e erro.
 
 ## Semana 1 — MVP
 
@@ -44,11 +47,16 @@ Criar rapidamente um MVP mobile-first para vendedores de concessionárias, permi
 - [x] Obter e auditar o export oficial do Appsmith.
 - [x] Descontinuar o Appsmith como arquitetura-alvo, preservando exports e documentação histórica.
 - [ ] Concluir o inventário sanitizado do Supabase e mapear os consumidores das integrações históricas antes de qualquer remoção.
-- [ ] Implementar autenticação e autorização planejadas com roles `seller` e `admin`.
-- [ ] Proteger as áreas `seller` e `admin` na mesma aplicação Next.js.
+- [x] Implementar fundação mínima de autenticação e autorização com roles `seller` e `admin`.
+- [x] Proteger as áreas `seller` e `admin` na mesma aplicação Next.js.
 - [ ] Confirmar permissões, constraints, preços, políticas, vigência e monetização de specs.
-- [ ] Implementar `/admin` no aplicativo Next.js.
-- [ ] Implementar criação, edição, clonagem e validação de duplicidade de veículos.
+- [x] Implementar shell persistente, navegação e visão geral protegida de `/admin`.
+- [x] Implementar `/admin/products` com listagem somente leitura.
+- [ ] Sprint 5 — Cadastro de veículos (Create).
+- [ ] Sprint 6 — Edição de veículos.
+- [ ] Sprint 7 — Duplicação de veículos.
+- [ ] Sprint 8 — Cadastro de equipamentos (`product_specs`).
+- [ ] Sprint 9 — Preços.
 - [ ] Implementar gestão de preços e políticas exclusivamente em grade.
 - [ ] Implementar comparador administrativo com indicadores financeiros e todos os specs.
 - [ ] Implementar exportação de uma comparação com bloco financeiro e specs.

@@ -23,6 +23,7 @@ O Compra Car apoia vendedores de concessionárias em comparações claras entre 
 - Railway com configuração em `railway.json`;
 - PWA instalável em modo `standalone`, sem service worker ou offline;
 - Supabase atual como fonte inicial de dados via adaptador somente leitura;
+- Supabase Auth integrado por `@supabase/ssr`, com cookies e clients Auth separados do adapter legado;
 - domínio administrativo documentado em `docs/admin`;
 - uma única aplicação Next.js como arquitetura-alvo para as áreas `seller` e `admin`;
 - Appsmith preservado somente como referência histórica, sem novas implementações.
@@ -95,7 +96,7 @@ Esses estados não podem ser confundidos.
 - ADR-004: `isActive` e `isPublic` têm significados distintos.
 - ADR-005: decisão histórica de postergar autenticação, substituída pelo ADR-008.
 - ADR-006: o legado é traduzido por DTOs/mappers em um adaptador server-only e somente leitura.
-- ADR-008: Supabase Auth, cookies SSR, convite fechado, roles `admin`/`seller` e status `pending`/`active`/`disabled`; a fundação SQL de profiles está versionada, mas ainda não foi aplicada e ainda usa o valor histórico `vendedor`.
+- ADR-008: Supabase Auth, cookies SSR, roles `admin`/`seller` e status `pending`/`active`/`disabled`; a fundação SQL de profiles usa `seller`, foi aplicada pela primeira vez no projeto remoto auditado e passou pela validação estrutural e pelo teste pgTAP.
 - ADR-007: registro histórico da adoção do Appsmith na Fase 1, posteriormente substituída parcialmente pelo ADR-010.
 - ADR-010: uma única aplicação Next.js contém as áreas `seller` e `admin`; `admin` também acessa `seller`; o Supabase é compartilhado e o Appsmith deixa a arquitetura-alvo.
 - O resultado distingue vantagem, desvantagem, empate, informação desconhecida e item não aplicável.
@@ -112,15 +113,19 @@ Esses estados não podem ser confundidos.
 - não acessar Supabase fora do adaptador legado;
 - não colocar regras de negócio em `shared` ou na UI;
 - não implementar novas regras de vantagem sem documentação;
-- não tratar a arquitetura de autenticação aprovada como funcionalidade já implementada;
+- não confundir a fundação Auth implementada com os fluxos ainda ausentes de convite, recuperação de senha e gestão de usuários;
 - não usar `user_metadata` como fonte de privilégios nem permitir promoção automática para `admin`;
 - não fazer o Middleware consultar o banco ou assumir que RLS é a única barreira administrativa;
 - não iniciar novas implementações no Appsmith nem remover seus artefatos ou integrações sem decisão específica;
 - não implementar PDF ou offline nesta fase concluída.
 
-## Estado atual — 2026-07-21
+## Estado atual — 2026-07-23
 
 A infraestrutura do monorepo, o núcleo de domínio, o adaptador legado e os vertical slices de seleção e comparação estão implementados. `packages/core` contém entidades, value objects, erros, portas e os cinco casos de uso centrais. `packages/contracts` contém aliases, reexportações e DTOs públicos sem duplicação estrutural. `packages/adapter-supabase` implementa as duas portas sobre `products`, `specs` e `product_specs`, sem escrita. `apps/web` conecta seleção e comparação aos casos de uso por camada server-only, `unstable_cache` e composition root.
+
+A fundação Auth está implementada. `@supabase/ssr` mantém a sessão em cookies; o Middleware renova a sessão e redireciona usuários não autenticados; páginas e Server Actions repetem a validação no servidor. `/login` usa e-mail/senha e redirect interno seguro, e o logout é server-side. `public.profiles` é a fonte de role/status; `admin` também acessa a área `seller`; profile ausente, não ativo ou inválido falha fechado.
+
+O MVP-a possui shell administrativo persistente em `/admin/*`, sidebar desktop, menu mobile, navegação, visão geral e `/admin/products`. A listagem de veículos é server-rendered, somente leitura, usa `LegacySupabaseAdapter.listAdministrativeVehicles()` após `requireRole('admin')` e distingue dados, lista vazia e falha. Exibe somente `id`, marca, modelo, versão, anos e flags de atividade/publicação confirmados no adapter. Não existem Create, edição, duplicação, exclusão, cadastro de equipamentos ou preços.
 
 A URL de comparação é `/comparar?vehicles=id1,id2[,id3,...]`. A página valida IDs, preserva sua ordem, executa `CompareVehicles`, apresenta categorias e usa `hasReferenceAdvantage` no filtro “Ver destaques”. A UI usa uma única superfície tabular com cabeçalho e primeira coluna fixos, rolagem bidirecional, células com slot estável para checks e estados dedicados de loading, vazio e erro. O domínio e o adapter não conhecem componentes ou parâmetros de URL.
 
@@ -128,7 +133,7 @@ Os testes do core usam repositórios in-memory. Os mappers do adaptador são tes
 
 A superfície mínima e o mapeamento físico fornecidos para a fase estão registrados em `SUPABASE_INSPECTION_RESULTS.md` e `LEGACY_SUPABASE_MAP.md`. A validação online permanece pendente quando não houver credenciais opt-in e não bloqueia o código ou o MVP.
 
-A arquitetura de autenticação e autorização está em `docs/architecture/AUTHENTICATION_ARCHITECTURE.md`. Ela define Supabase Auth, sessão SSR em cookies, convite fechado, roles `admin`/`seller` e ciclo de profile `pending` → `active` → `disabled`, com reativação para `active`. A Sprint 2.1 versionou enums, `public.profiles`, triggers, grants, RLS, policies e testes SQL; nenhum banco recebeu a migration nesta entrega. A migration ainda usa `vendedor` e deve ser reconciliada com `seller` antes de qualquer aplicação. Todo usuário novo deverá nascer `seller`/`pending`; nenhuma promoção a `admin` será automática, e o primeiro `admin` exigirá operação manual, explícita e documentada. `profiles` será a fonte de autorização; Middleware não consultará o banco; servidor e RLS negarão acesso funcional a status não ativo. MFA obrigatório para `admin` e a tabela `audit_log` continuam evoluções futuras. Clientes, routes e fluxos da aplicação ainda não foram implementados.
+A arquitetura de autenticação e autorização está em `docs/architecture/AUTHENTICATION_ARCHITECTURE.md`. A migration `20260721222256_create_auth_profiles.sql` foi aplicada uma única vez no projeto remoto Compra Car App, onde `auth.users` e `public.profiles` estavam vazios. Enums, tabela, functions, triggers, policies, RLS e grants foram validados; o teste `supabase/tests/001_auth_profiles.test.sql` passou após a habilitação exclusiva de pgTAP, com rollback das fixtures. Todo usuário novo nasce `seller`/`pending`; nenhuma promoção a `admin` é automática. MFA, `audit_log`, convites, recuperação de senha e gestão de usuários continuam futuros.
 
 O trabalho histórico do Appsmith possui export auditado e implementação parcial: `Admin Modelos` lista produtos, altera atividade e duplica; `Análise de Valor` contém consultas de análise. Essa implementação não é mais o backoffice oficial e não receberá novas mudanças. Criação, edição geral, `product_specs`, preços e demais fluxos administrativos ainda não estão implementados no Next.js. As regras permanecem descritas como domínio em `docs/admin`.
 
@@ -139,12 +144,12 @@ O export histórico do Appsmith permanece versionado em `appsmith/exports/Compra
 1. Executar o teste de integração opt-in no ambiente autorizado.
 2. Validar cobertura e desempenho com 2 ou 3 veículos reais.
 3. Comparar este clone com o `C:\Dev\compra-car` do outro notebook.
-4. Reconciliar `vendedor` com `seller` na migration e nos testes antes de qualquer aplicação.
-5. Validar no Supabase os objetos necessários à área `admin`, sem alterar o schema nesta etapa.
-6. Conectar o Next.js ao adaptador apenas no runtime do servidor.
-7. Implementar a UI de negócio sobre os casos de uso.
-8. Concluir MVP e piloto.
-9. Após o piloto, evoluir dados, importador e arquitetura gradualmente.
+4. Implementar a Sprint 5: cadastro de veículos (Create).
+5. Implementar a Sprint 6: edição de veículos.
+6. Implementar a Sprint 7: duplicação de veículos.
+7. Implementar a Sprint 8: cadastro de equipamentos em `product_specs`.
+8. Implementar a Sprint 9: preços.
+9. Concluir MVP e piloto; depois evoluir dados, importador e arquitetura gradualmente.
 
 ## Registro histórico — Sprint 1 de Gestão de Produtos no Appsmith (planejamento em 2026-07-22)
 
@@ -177,4 +182,6 @@ O escopo da Sprint 1 fica limitado a `products` e `product_specs`, usando `specs
 - **PENDENTE:** mapear consumidores e dependências das integrações históricas antes de eventual remoção.
 - **PENDENTE:** constraint física da chave de negócio de veículos no Supabase atual.
 - **PENDENTE:** confirmar como `product_specs.is_present = false` afeta presença, validade e comparabilidade.
-- **PENDENTE:** reconciliar a migration de profiles com as roles `seller`/`admin`, validá-la em ambiente autorizado, auditar grants/RLS do catálogo legado e implementar clientes/fluxos de autenticação, incluindo validação explícita anterior a qualquer operação com Service Role.
+- **PENDENTE:** para `getVehiclesByIds`, a rodada Auth mantém elegibilidade restrita a `is_active = true` e `is_public = true`; decidir em `/admin/products` e no catálogo se a consulta por IDs também exigirá specs ativas.
+- **CONCLUÍDO:** migration de profiles aplicada e validada no projeto remoto auditado, incluindo pgTAP e rollback das fixtures de teste.
+- **PENDENTE:** auditar grants/RLS do catálogo legado e formalizar o runbook operacional de usuários administrativos.

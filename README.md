@@ -2,7 +2,7 @@
 
 O Compra Car é uma aplicação mobile-first para apoiar vendedores de concessionárias na comparação clara de veículos durante o atendimento.
 
-Este repositório contém a infraestrutura técnica, o núcleo de domínio, o adaptador somente leitura do Supabase atual e os vertical slices de seleção e comparação de veículos. A arquitetura-alvo possui uma única aplicação Next.js, com áreas `seller` e `admin` planejadas e separadas por autenticação e autorização. PDF, autenticação e os fluxos administrativos completos ainda não foram implementados.
+Este repositório contém a infraestrutura técnica, o núcleo de domínio, o adaptador somente leitura do Supabase atual e os vertical slices de seleção e comparação de veículos. Uma única aplicação Next.js contém as áreas `seller` e `admin`, agora protegidas pela fundação mínima de autenticação e autorização. PDF e os fluxos administrativos completos ainda não foram implementados.
 
 ## Arquitetura atual
 
@@ -31,7 +31,7 @@ O domínio implementa `Vehicle`, `ComparisonItem`, valores discriminados, elegib
 - Next.js 15 com App Router, React 19 e TypeScript 5;
 - Tailwind CSS 4;
 - ESLint 9 e Prettier 3;
-- Supabase JS 2 no adaptador privado do servidor;
+- Supabase JS 2 no adaptador privado do servidor e `@supabase/ssr` para Auth com cookies;
 - Vitest 4 para testes unitários do domínio e do adaptador;
 - Railway com Railpack e configuração versionada em `railway.json`;
 - PWA instalável com manifesto, ícones e modo `standalone`, sem service worker ou funcionalidades offline.
@@ -64,13 +64,17 @@ O comando `pnpm start` executa o build já gerado em modo de produção.
 
 O arquivo `railway.json` define o build e o start da aplicação web. No Railway, o serviço deve usar a raiz do repositório; o Railpack instalará as dependências a partir do lockfile e executará apenas o escopo necessário da aplicação.
 
-Configure `SUPABASE_URL` e `SUPABASE_SERVER_KEY` apenas nas variáveis privadas do serviço Railway. Nunca use prefixo `NEXT_PUBLIC_` para a chave do servidor. Consulte `.env.example` para desenvolvimento e testes opt-in; arquivos `.env` reais nunca são versionados.
+Configure `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` para Supabase Auth no browser e no SSR. A publishable key é pública por definição e não pode ser substituída por secret/service-role. Mantenha `SUPABASE_URL` e `SUPABASE_SERVER_KEY` apenas nas variáveis privadas do serviço Railway para o adapter legado. Nunca use prefixo `NEXT_PUBLIC_` para a chave do servidor. Consulte `.env.example`; arquivos `.env` reais nunca são versionados.
 
 ## Estado do MVP
 
 O MVP público já possui seleção e comparação técnica implementadas sobre o Supabase atual. A validação opt-in com dados reais, preços, políticas comerciais, PDF, publicação e piloto continuam pendentes.
 
-A área administrativa será desenvolvida incrementalmente no mesmo aplicativo Next.js do MVP-u. A área `seller` abrangerá a comparação; a área `admin` reunirá os fluxos administrativos aprovados, e usuários com `role = admin` também poderão acessar a área `seller`. Ambas usarão o mesmo Supabase, com autenticação e autorização ainda em planejamento.
+A autenticação está implementada com Supabase Auth, sessão SSR em cookies, `/login`, logout server-side e proteção redundante por Middleware e servidor. A autorização lê `public.profiles`, aceita somente roles `seller`/`admin` com status `active`, permite que `admin` acesse a área `seller` e protege `/admin/*` no layout server-side.
+
+O MVP-a possui shell administrativo persistente, navegação responsiva, visão geral e `/admin/products`. A listagem de veículos é server-rendered e somente leitura, com estados de dados, vazio e erro. Não existem cadastro, edição, duplicação, exclusão, gestão de `product_specs` ou preços.
+
+A migration de `profiles` foi aplicada uma única vez no projeto remoto Compra Car App e validada estruturalmente. O teste SQL pgTAP passou com rollback das fixtures. Os valores persistidos de role são `seller` e `admin`; novos profiles nascem `seller`/`pending`.
 
 O Appsmith deixou de ser o backoffice oficial e não receberá novas implementações. Seus exports e documentos permanecem preservados como referência histórica, sem autorizar remoção de arquivos ou integrações existentes. Consulte [`docs/admin`](docs/admin/README.md), a [ADR-007 histórica](docs/architecture/decisions/ADR-007-ADMIN-BACKOFFICE-PHASE1.md) e a [ADR-010](docs/architecture/decisions/ADR-010-SINGLE-NEXTJS-APPLICATION-AND-APPSMITH-RETIREMENT.md).
 

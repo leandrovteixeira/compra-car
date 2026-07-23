@@ -129,7 +129,11 @@ O adaptador legado traduz falhas técnicas em erros próprios sem expor credenci
 - O repositório não pode retornar valores fora da seleção nem pares duplicados.
 - Atividade comercial (`isActive`) e liberação editorial (`isPublic`) não são equivalentes.
 
-## Contratos futuros não implementados
+## Contratos implementados e futuros
+
+Auth está implementado em `packages/contracts`: `AppRole` aceita `admin`/`seller`, `UserStatus` aceita `pending`/`active`/`disabled` e `AuthProfile` expõe `id`, `fullName`, `role` e `status`. As factories e consultas Auth ficam em `packages/adapter-supabase`; cookies, redirects e proteção de routes ficam em `apps/web`. A autorização não usa `user_metadata`.
+
+A listagem administrativa usa um DTO local e estreito, `AdminProductListItem`, em `apps/web/src/server/admin-product-service.ts`. Ele transporta somente os campos renderizados: `id`, `brand`, `model`, `version`, `modelYear`, `productionYear`, `isActive` e `isPublic`. Esse DTO não é um contrato público do domínio e não expõe a resposta bruta do Supabase.
 
 Continuam planejados, mas não fazem parte desta entrega:
 
@@ -138,10 +142,11 @@ Continuam planejados, mas não fazem parte desta entrega:
 - preços, políticas comerciais e snapshots;
 - tema de marca;
 - entrada autocontida para PDF;
-- autenticação e autorização, planejadas em `docs/architecture/AUTHENTICATION_ARCHITECTURE.md` e ainda sem contratos implementados. O futuro contrato de profile terá roles `admin`/`seller`, status `pending`/`active`/`disabled` e os campos conceituais `id`, `full_name`, `role`, `status`, `invited_by`, `disabled_by`, `invited_at`, `accepted_at`, `disabled_at`, `created_at` e `updated_at`, sem `last_login_at` nesta fase;
+- operações de criação, edição e duplicação de veículos;
+- cadastro de equipamentos em `product_specs`;
 - paginação e cache.
 
-Para os contratos futuros de administração, todo convite produzirá `seller`/`pending`; aceite produzirá `active` e registrará `accepted_at`; desativação produzirá `disabled` e registrará ator/data; reativação produzirá `active` e limpará os dados de desativação. Promoção para `admin` será uma operação explícita, separada do convite e do aceite. Os contratos não confiarão em `user_metadata` para privilégios e não exporão operações administrativas sem autorização server-side anterior ao uso de Service Role.
+Convite, aceite, desativação administrativa e promoção de role continuam fora da implementação atual.
 
 Os contratos futuros atenderão às áreas `seller` e `admin` da mesma aplicação Next.js. `admin` inclui acesso aos casos de uso permitidos a `seller`, mas cada operação administrativa continuará exigindo autorização explícita. Appsmith, seus widgets e suas queries não constituem contratos e permanecem somente como referência histórica.
 

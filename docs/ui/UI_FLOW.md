@@ -35,8 +35,8 @@ Apresentar o produto, contextualizar a experiência da marca e oferecer uma entr
 - tema indisponível com fallback neutro;
 - falha de configuração;
 - sessão autenticada e profile com status `active`;
-- não autenticado, com redirecionamento planejado para `/login`;
-- convite pendente, direcionado ao aceite e à definição de senha;
+- não autenticado, com redirecionamento implementado para `/login`;
+- convite pendente, sem fluxo de aceite implementado nesta fase;
 - acesso desativado para profile com status `disabled`.
 
 ### Estados futuros de autenticação
@@ -47,15 +47,15 @@ Apresentar o produto, contextualizar a experiência da marca e oferecer uma entr
 - reativação: profile novamente `active`;
 - promoção para admin: ação administrativa separada, nunca automática.
 
-### Áreas planejadas da aplicação única
+### Áreas da aplicação única
 
 - a área `seller` contém os fluxos de seleção e comparação do MVP-u;
-- a área `admin` será construída no mesmo aplicativo Next.js;
+- a área `admin` está no mesmo aplicativo Next.js e possui shell persistente, visão geral e listagem read-only em `/admin/products`;
 - `admin` também pode acessar a área `seller`;
 - a UI pode exibir “Vendedor” e “Administrador”, mas contratos, routes e valores persistidos usam `seller` e `admin`;
 - o Appsmith não é uma superfície vigente e permanece apenas como referência histórica.
 
-Essas áreas e suas proteções ainda estão em planejamento. A existência desta definição não declara login, layouts protegidos, `/admin` ou autorização como implementados.
+Login, logout, proteção das áreas, shell administrativo e listagem read-only estão implementados. Cadastro, edição, duplicação, exclusão, convite, recuperação de senha e gestão de usuários permanecem ausentes.
 
 A UI apenas representa esses estados e oculta ações indisponíveis como conveniência. A autorização efetiva permanece no servidor e no banco. O Middleware não consulta o banco; apenas lê ou atualiza sessão e redireciona.
 
@@ -68,7 +68,7 @@ A UI apenas representa esses estados e oculta ações indisponíveis como conven
 
 ### Pendências
 
-- **PENDENTE:** implementar as telas e estados definidos em `docs/architecture/AUTHENTICATION_ARCHITECTURE.md`;
+- **PENDENTE:** implementar convite, recuperação de senha e gestão de usuários definidos em `docs/architecture/AUTHENTICATION_ARCHITECTURE.md`;
 - **PENDENTE:** nome, logo e tema autorizados;
 - **PENDENTE:** conteúdo e posição finais do aviso de independência.
 

@@ -1,5 +1,36 @@
 # Changelog
 
+## 2026-07-23 — Auth, áreas autenticadas e listagem administrativa
+
+- Consolidada a autenticação SSR com Supabase Auth, cookies, Middleware, login e logout server-side.
+- Protegidas as áreas `seller` e `admin` por profile, status e role, com `admin` herdando acesso seller.
+- Adicionada navegação autenticada reutilizável para seller e shell administrativo persistente e responsivo.
+- Implementadas a visão geral `/admin` e a listagem somente leitura `/admin/products`, sem Create, edição, duplicação ou exclusão.
+- Adicionados DTO, serviço server-side, estados de dados/vazio/erro e consulta administrativa estreita pelo adapter legado.
+- Aplicada e validada a migration `20260721222256_create_auth_profiles.sql`; o teste pgTAP passou sem persistir fixtures.
+- Validações do marco: lint, typecheck, 135 testes e build de produção aprovados antes do commit `75edb4b`.
+
+## 2026-07-23 — Correções bloqueantes de Auth
+
+- Corrigida a preservação dos cookies emitidos pelo Supabase SSR em respostas normais e redirects do Middleware.
+- Separados explicitamente os clients Auth server-side read-only e mutável; falhas de escrita deixam de ser ignoradas em Server Actions.
+- Corrigido o logout para validar `signOut`, falhar sem falso redirect de sucesso e registrar apenas mensagem segura.
+- Fortalecidos testes de cookies, Middleware, logout, redirects internos e filtros comportamentais de `getVehiclesByIds`.
+- Registrado o congelamento operacional da migration de profiles, a necessidade de migration forward-only se `vendedor` já existir e a pendência de usuários Auth preexistentes; nenhum SQL foi alterado ou executado nesta rodada.
+- Mantida como pendência funcional a decisão futura de exigir specs ativas em `getVehiclesByIds`.
+
+## 2026-07-23 — Fundação mínima de Auth
+
+- Adicionado `@supabase/ssr` com clients Auth browser e server separados do client legado.
+- Implementados sessão SSR em cookies, renovação por `middleware.ts`, `/login`, logout server-side e redirect interno seguro por role.
+- Implementada autorização server-only por `public.profiles`, com falha fechada para profile ausente, `pending`, `disabled` ou role inválida.
+- Protegidos `/`, `/comparar`, `/admin` e as Server Actions do catálogo; `admin` também acessa a área `seller`.
+- Criado somente o esqueleto de `/admin`, sem CRUD administrativo.
+- Corrigida a consulta direta de veículos por IDs para exigir `is_active = true` e `is_public = true`.
+- Corrigidos migration, trigger e testes SQL não aplicados de `vendedor` para `seller`.
+- Adicionados contratos Auth mínimos e testes de capabilities, route policy, redirects, validação de usuário/profile e elegibilidade do catálogo.
+- Nenhuma migration foi executada, nenhum banco remoto foi alterado e nenhum usuário real foi criado.
+
 ## 2026-07-23 — Aplicação Next.js única
 
 - Registrado no ADR-010 que o Compra Car terá uma única aplicação Next.js, com áreas `seller` e `admin` sobre o mesmo Supabase.
