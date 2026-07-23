@@ -72,7 +72,7 @@ O requisito `RF-016` somente será habilitado depois dessas condições. Caso n�
 
 ## Backoffice administrativo
 
-O backoffice é um módulo interno separado da experiência pública. Sua Fase 1 cobre manutenção de veículos, preços e políticas em grade e comparação administrativa, sem alteração de schema. Appsmith é a tecnologia escolhida atualmente, mas as regras pertencem ao domínio administrativo descrito em `docs/admin`.
+A área `admin` é um módulo lógico interno da mesma aplicação Next.js que contém a área `seller`. Seu escopo documentado cobre manutenção de veículos, preços e políticas em grade e comparação administrativa, mas esses fluxos ainda não estão implementados. Appsmith foi descontinuado como arquitetura-alvo pelo ADR-010 e permanece somente como referência histórica; as regras pertencem ao domínio administrativo descrito em `docs/admin`.
 
 O comparador administrativo não aplica vencedor, perdedor ou vantagem visual. Ele usa um veículo de referência, múltiplos comparados, todos os specs e os indicadores financeiros aprovados. Essa decisão não altera o comparador público atual, que continua limitado aos contratos já implementados.
 

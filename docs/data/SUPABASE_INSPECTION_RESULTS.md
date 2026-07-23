@@ -8,7 +8,7 @@ Este documento consolida os resultados já analisados dos scripts somente leitur
 
 O schema de negócio atual é `public`, e `products` é o agregado central do domínio. O modelo existente é suficiente para sustentar o MVP, sem uma reestruturação ampla antes da interface. Contudo, RLS desativado e grants amplos para `anon` e `authenticated` constituem risco crítico: o frontend público não deve receber acesso direto irrestrito ao schema atual.
 
-Appsmith permanece como backoffice temporário. A estratégia definitiva de acesso será decidida em uma etapa específica de segurança, após o mapeamento de consumidores e com testes e rollback preparados.
+Na data da inspeção, o Appsmith era tratado como backoffice temporário. O ADR-010 posteriormente o descontinuou como arquitetura-alvo; seus consumidores e integrações ainda precisam ser mapeados antes de qualquer remoção. A estratégia de acesso da área `admin` será implementada na mesma aplicação Next.js, após auditoria de segurança, testes e rollback.
 
 ## Inventário do schema de negócio
 
@@ -201,7 +201,7 @@ Há mistura histórica de IDs `integer` e `bigint`. `products` e `registrations`
 - nenhuma reestruturação ampla deve preceder a interface;
 - o frontend público não deve receber acesso direto irrestrito ao schema atual;
 - a estratégia definitiva de acesso será decidida em uma etapa específica de segurança;
-- Appsmith permanece como backoffice temporário.
+- o Appsmith, considerado temporário na data da inspeção, foi posteriormente descontinuado como arquitetura-alvo pelo ADR-010 e permanece apenas como referência histórica.
 
 ## Próximas validações
 

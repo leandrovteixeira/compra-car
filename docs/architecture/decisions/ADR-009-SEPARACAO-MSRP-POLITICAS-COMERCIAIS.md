@@ -1,4 +1,4 @@
-# ADR-008 — Separação entre MSRP e políticas comerciais
+# ADR-009 — Separação entre MSRP e políticas comerciais
 
 - **Status:** aceito
 - **Data:** 2026-07-20

@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-O backoffice permite operar o catálogo e produzir comparações administrativas sem acoplar o domínio à tecnologia de interface. Na Fase 1, Appsmith implementará as telas sobre os objetos existentes e confirmados do Supabase.
+A área `admin` permitirá operar o catálogo e produzir comparações administrativas sem acoplar o domínio à tecnologia de interface. Ela será construída na mesma aplicação Next.js da área `seller`, sobre o Supabase compartilhado. Esta definição não declara os fluxos administrativos como implementados.
 
 ## Fase 1
 
@@ -28,7 +28,7 @@ Inserts e updates nos objetos existentes poderão ocorrer somente depois da vali
 
 ## Limites
 
-- Appsmith não define o domínio e pode ser substituído;
+- Appsmith não define o domínio, foi descontinuado como arquitetura-alvo e permanece somente como referência histórica;
 - nomes físicos confirmados ficam documentados na camada de dados ou nas queries da ferramenta, não nos conceitos de negócio;
 - nenhuma alteração será feita em `Legacy`;
 - autenticação, autorização, concorrência, auditoria e invalidação de cache precisam ser verificadas antes da operação real;
@@ -40,8 +40,8 @@ A Fase 2 introduz importações assistidas por IA, staging obrigatório, revisã
 
 ## Dependências pendentes
 
-- **CONFIRMADO:** export oficial e estrutura de edição do Appsmith atual;
-- permissões, role efetiva, prepared statements e comportamento transacional do datasource;
+- **CONFIRMADO:** export e estrutura de edição históricos do Appsmith, preservados como referência;
+- consumidores e dependências das integrações históricas, antes de eventual remoção;
 - permissões de leitura e escrita, RLS e grants;
 - constraints reais da chave de negócio dos veículos;
 - objetos de preço, política, vigência e moeda;

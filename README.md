@@ -2,7 +2,7 @@
 
 O Compra Car é uma aplicação mobile-first para apoiar vendedores de concessionárias na comparação clara de veículos durante o atendimento.
 
-Este repositório contém a infraestrutura técnica, o núcleo de domínio, o adaptador somente leitura do Supabase atual e os vertical slices de seleção e comparação de veículos. Também documenta o domínio aprovado e contém o export auditado da implementação parcial do backoffice Appsmith da Fase 1. PDF, autenticação e os fluxos administrativos completos ainda não foram implementados.
+Este repositório contém a infraestrutura técnica, o núcleo de domínio, o adaptador somente leitura do Supabase atual e os vertical slices de seleção e comparação de veículos. A arquitetura-alvo possui uma única aplicação Next.js, com áreas `seller` e `admin` planejadas e separadas por autenticação e autorização. PDF, autenticação e os fluxos administrativos completos ainda não foram implementados.
 
 ## Arquitetura atual
 
@@ -18,7 +18,7 @@ packages/
   shared/              Utilitários compartilhados e agnósticos de negócio
   ui/                  Primitivos visuais compartilhados futuros
 docs/                  Documentação técnica e de produto
-  admin/               Domínio e escopo do backoffice administrativo
+  admin/               Domínio administrativo e referências históricas
 supabase/              Artefatos de inspeção e evolução controlada
 Legacy/                Materiais históricos protegidos
 ```
@@ -70,7 +70,9 @@ Configure `SUPABASE_URL` e `SUPABASE_SERVER_KEY` apenas nas variáveis privadas 
 
 O MVP público já possui seleção e comparação técnica implementadas sobre o Supabase atual. A validação opt-in com dados reais, preços, políticas comerciais, PDF, publicação e piloto continuam pendentes.
 
-Em paralelo, a Fase 1 do backoffice administrativo evoluirá incrementalmente, sem alterações de schema, a partir da página Appsmith existente `Admin Modelos`. O domínio administrativo abrange manutenção de veículos, gestão de preços em grade e comparação administrativa. Appsmith é a tecnologia escolhida para esta fase, não uma fronteira do domínio. Consulte [`docs/admin`](docs/admin/README.md) e a [ADR-007](docs/architecture/decisions/ADR-007-ADMIN-BACKOFFICE-PHASE1.md).
+A área administrativa será desenvolvida incrementalmente no mesmo aplicativo Next.js do MVP-u. A área `seller` abrangerá a comparação; a área `admin` reunirá os fluxos administrativos aprovados, e usuários com `role = admin` também poderão acessar a área `seller`. Ambas usarão o mesmo Supabase, com autenticação e autorização ainda em planejamento.
+
+O Appsmith deixou de ser o backoffice oficial e não receberá novas implementações. Seus exports e documentos permanecem preservados como referência histórica, sem autorizar remoção de arquivos ou integrações existentes. Consulte [`docs/admin`](docs/admin/README.md), a [ADR-007 histórica](docs/architecture/decisions/ADR-007-ADMIN-BACKOFFICE-PHASE1.md) e a [ADR-010](docs/architecture/decisions/ADR-010-SINGLE-NEXTJS-APPLICATION-AND-APPSMITH-RETIREMENT.md).
 
 O GitHub é a fonte oficial versionada. Cada notebook trabalha em seu próprio clone em `C:\Dev\compra-car`; o OneDrive serve somente como espelho periódico para consulta e contingência.
 

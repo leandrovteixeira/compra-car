@@ -93,6 +93,6 @@ Entre os 42 produtos ativos e públicos, somente o ID `750` — Omoda C5, Luxury
 
 Trocar apenas `created_at` por `offer_month` não corrige o problema conceitual: a view mistura MSRP e política e elimina múltiplas políticas simultâneas. A [ADR-008](../architecture/decisions/ADR-008-SEPARACAO-MSRP-POLITICAS-COMERCIAIS.md) é a fonte da decisão sobre o modelo alvo e o futuro importador assistido por IA. A implementação está adiada e não bloqueia o comparador MVP enquanto preços e políticas permanecerem fora do contrato público legado.
 
-## Consumo pelo Appsmith
+## Consumo histórico pelo Appsmith
 
-O export auditado confirmou que a action `dup_product`, em `Admin Modelos`, chama `duplicate_product_simple` com produto, novo MY/PY e flag de atividade. Como a action atual não usa casts, a sobrecarga resolvida em runtime ainda precisa ser confirmada ou tornada explícita. A rotina copia produto e specs, mas não a política comercial mensal, coerentemente com o cadastro ou importação separada de preços.
+O export auditado confirmou que a action histórica `dup_product`, em `Admin Modelos`, chama `duplicate_product_simple` com produto, novo MY/PY e flag de atividade. Como a action não usa casts, a sobrecarga resolvida em runtime ainda precisa ser confirmada antes de reutilizar esse conhecimento. A rotina copia produto e specs, mas não a política comercial mensal. O Appsmith não integra mais a arquitetura-alvo; este registro é apenas evidência para o futuro desenho da área `admin` no Next.js.

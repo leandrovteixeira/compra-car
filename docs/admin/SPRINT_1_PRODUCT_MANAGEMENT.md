@@ -1,5 +1,7 @@
 # MVP-a — Sprint 1: Gestão de Produtos
 
+> **REGISTRO HISTÓRICO:** este plano foi preparado para o Appsmith antes do ADR-010. Não executar nem continuar sua implementação no Appsmith. O conteúdo é preservado como referência para requisitos, riscos e regras que deverão ser reavaliados na área `admin` da aplicação Next.js.
+
 ## Status e limites
 
 Este documento consolida o inventário disponível em 2026-07-22 e o plano de implementação da Sprint 1. Nenhuma tela, query no ambiente remoto, migration ou alteração de schema foi executada nesta etapa.

@@ -1,8 +1,10 @@
 # ADR-007 — Backoffice administrativo da Fase 1 e governança do ambiente
 
-- **Status:** aceito
+- **Status:** substituído parcialmente pelo ADR-010 em 2026-07-23
 - **Data:** 2026-07-20
 - **Atualização:** 2026-07-22 — export e estrutura do Appsmith confirmados
+
+> Registro histórico: a adoção do Appsmith descrita abaixo refletia a direção aprovada nesta data. O [ADR-010](ADR-010-SINGLE-NEXTJS-APPLICATION-AND-APPSMITH-RETIREMENT.md) posteriormente definiu uma única aplicação Next.js e descontinuou o Appsmith como arquitetura-alvo. Exports e documentos existentes permanecem preservados apenas como referência; não haverá novas implementações no Appsmith.
 
 ## Contexto
 

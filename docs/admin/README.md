@@ -1,6 +1,8 @@
 # Domínio Administrativo
 
-Este diretório documenta o domínio do backoffice administrativo do Compra Car. As regras permanecem independentes da ferramenta de interface; Appsmith é a tecnologia escolhida para a Fase 1, não parte do modelo de domínio.
+Este diretório documenta o domínio da área `admin` do Compra Car. A arquitetura-alvo usa a mesma aplicação Next.js do MVP-u para as áreas `seller` e `admin`; `admin` também acessa a área `seller`. As regras permanecem independentes da ferramenta de interface.
+
+Os documentos e exports do Appsmith registram uma direção anterior e permanecem preservados apenas como referência histórica. Eles não são planos vigentes e não receberão novas implementações.
 
 ## Documentos
 
@@ -9,12 +11,12 @@ Este diretório documenta o domínio do backoffice administrativo do Compra Car.
 - [`PRICE_MANAGEMENT.md`](PRICE_MANAGEMENT.md): preços e políticas comerciais em grade;
 - [`ADMIN_COMPARISON.md`](ADMIN_COMPARISON.md): comparação técnica e financeira administrativa;
 - [`AI_IMPORTS.md`](AI_IMPORTS.md): importações assistidas por IA previstas para a Fase 2.
-- [`SPRINT_1_PRODUCT_MANAGEMENT.md`](SPRINT_1_PRODUCT_MANAGEMENT.md): inventário, contrato, SQL, testes e configuração proposta para a Sprint 1 do MVP-a.
-- [`SPRINT_1_BATCH_1_APPSMITH.md`](SPRINT_1_BATCH_1_APPSMITH.md): instruções exatas do primeiro lote incremental sobre a página real `Admin Modelos`.
+- [`SPRINT_1_PRODUCT_MANAGEMENT.md`](SPRINT_1_PRODUCT_MANAGEMENT.md): registro histórico do inventário, contrato, SQL, testes e configuração que foram propostos para a Sprint 1 no Appsmith.
+- [`SPRINT_1_BATCH_1_APPSMITH.md`](SPRINT_1_BATCH_1_APPSMITH.md): roteiro histórico do primeiro lote que havia sido planejado para `Admin Modelos`; não executar.
 
 ## Estado
 
-A documentação registra decisões aprovadas e o inventário do export Appsmith atual. Permanecem pendentes as permissões e role efetiva do datasource, seu comportamento transacional, os objetos de preços e políticas e a monetização de specs.
+A documentação registra o domínio aprovado e o inventário histórico do export Appsmith. Autenticação, autorização e a área `admin` no Next.js ainda estão planejadas. Permanecem pendentes a auditoria de grants/RLS, os objetos de preços e políticas e a monetização de specs.
 
 ## Princípios
 

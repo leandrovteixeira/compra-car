@@ -106,7 +106,7 @@ A inspeção confirmou o estado atual de RLS e grants. A superfície de leitura 
 
 ## Decisão provisória após inspeção
 
-O modelo atual é suficiente para o MVP e não requer reestruturação ampla antes da interface. O Appsmith permanece como backoffice temporário. O frontend público, porém, não deve receber acesso direto irrestrito ao schema atual: RLS está desativado em praticamente todas as tabelas, não foram encontradas policies e há grants amplos para `anon` e `authenticated`.
+O modelo atual é suficiente para o MVP e não requer reestruturação ampla antes da interface. A área `admin` será construída na mesma aplicação Next.js da área `seller`; o Appsmith permanece somente como referência histórica. O frontend, porém, não deve receber acesso direto irrestrito ao schema atual: RLS está desativado em praticamente todas as tabelas, não foram encontradas policies e há grants amplos para `anon` e `authenticated`.
 
 O contrato definitivo de leitura do MVP será definido em uma etapa específica de segurança. Essa etapa deve separar leitura pública, administração autenticada e processos server-side com `service_role`, que nunca pode ser usado no navegador. Grants e RLS só devem mudar depois do mapeamento de Appsmith, scripts e integrações, com testes, migration de hardening e rollback preparados.
 

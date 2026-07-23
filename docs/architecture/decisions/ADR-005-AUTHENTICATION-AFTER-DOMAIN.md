@@ -19,4 +19,4 @@ Nenhuma autenticação será implementada nesta fase. Uma autenticação simples
 
 ## Superação
 
-Os requisitos de autenticação e papéis foram aprovados posteriormente. O [ADR-008](ADR-008-SUPABASE-AUTH-AND-ROLE-BASED-AUTHORIZATION.md) e a [arquitetura de autenticação](../AUTHENTICATION_ARCHITECTURE.md) passam a ser autoritativos; este ADR permanece apenas como registro da decisão daquela fase.
+Os requisitos de autenticação e roles foram aprovados posteriormente. O [ADR-008](ADR-008-SUPABASE-AUTH-AND-ROLE-BASED-AUTHORIZATION.md), o [ADR-010](ADR-010-SINGLE-NEXTJS-APPLICATION-AND-APPSMITH-RETIREMENT.md) e a [arquitetura de autenticação](../AUTHENTICATION_ARCHITECTURE.md) passam a ser autoritativos; este ADR permanece apenas como registro da decisão daquela fase. A autenticação continua planejada e ainda não deve ser tratada como implementada.

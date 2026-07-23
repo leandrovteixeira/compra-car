@@ -14,6 +14,7 @@ Criar rapidamente um MVP mobile-first para vendedores de concessionárias, permi
 - **CONCLUÍDO:** Legacy Supabase Adapter server-only e somente leitura, com DTOs, mappers, consultas em lote e testes unitários/integração opt-in.
 - **CONCLUÍDO:** vertical slices de seleção e comparação, conectando UI, camada web, casos de uso e adaptador legado.
 - **CONCLUÍDO:** auditoria documental do repositório e definição do domínio administrativo da Fase 1, sem mudança de schema.
+- **CONCLUÍDO:** decisão arquitetural de concentrar as áreas `seller` e `admin` na mesma aplicação Next.js e preservar o Appsmith apenas como referência histórica.
 
 ## Semana 1 — MVP
 
@@ -37,18 +38,22 @@ Criar rapidamente um MVP mobile-first para vendedores de concessionárias, permi
 - [ ] Publicar a aplicação no Railway.
 - [ ] Validar com os primeiros vendedores.
 
-## Fase 1 administrativa — sem mudança de schema
+## Área administrativa no Next.js
 
 - [ ] Comparar os clones dos dois notebooks e confirmar a base oficial.
 - [x] Obter e auditar o export oficial do Appsmith.
-- [ ] Concluir o inventário sanitizado do Supabase e validar role/transações do datasource Appsmith.
+- [x] Descontinuar o Appsmith como arquitetura-alvo, preservando exports e documentação histórica.
+- [ ] Concluir o inventário sanitizado do Supabase e mapear os consumidores das integrações históricas antes de qualquer remoção.
+- [ ] Implementar autenticação e autorização planejadas com roles `seller` e `admin`.
+- [ ] Proteger as áreas `seller` e `admin` na mesma aplicação Next.js.
 - [ ] Confirmar permissões, constraints, preços, políticas, vigência e monetização de specs.
-- [ ] Implementar a página inicial administrativa.
+- [ ] Implementar `/admin` no aplicativo Next.js.
 - [ ] Implementar criação, edição, clonagem e validação de duplicidade de veículos.
 - [ ] Implementar gestão de preços e políticas exclusivamente em grade.
 - [ ] Implementar comparador administrativo com indicadores financeiros e todos os specs.
 - [ ] Implementar exportação de uma comparação com bloco financeiro e specs.
 - [x] Preparar o export auditado e a documentação operacional do Appsmith sem incluir segredos.
+- [ ] Manter os artefatos Appsmith somente como referência, sem novas implementações.
 
 ## Fase 2 administrativa — importações assistidas por IA
 
@@ -74,8 +79,8 @@ Esta fase não representa compromisso imediato de calendário. Ela depende dos r
 - Criar Supabase Staging V2 e schema canônico.
 - Criar ou evoluir importadores para a estrutura V2.
 - Migrar dados de forma controlada.
-- Criar autenticação simples, inicialmente sem RBAC.
-- Iniciar novo backoffice e criar adaptador V2.
+- Evoluir a autenticação e autorização existentes sem criar uma segunda aplicação.
+- Evoluir a área `admin` do Next.js e criar adaptador V2 quando aprovado.
 - Preservar o frontend Next.js por meio de contratos estáveis.
 - Preparar ambiente de produção.
 
@@ -88,21 +93,21 @@ Esta fase não representa compromisso imediato de calendário. Ela depende dos r
 - `isActive` e `isPublic` possuem significados distintos.
 - Nenhuma nova carga do Excel ou alteração estrutural ampla do banco é pré-requisito para o MVP.
 - O Excel será adaptado posteriormente à estrutura vigente do Supabase atual.
-- Appsmith é a tecnologia escolhida para o backoffice da Fase 1, não o domínio administrativo.
+- Next.js é a única aplicação técnica e contém as áreas `seller` e `admin`.
+- `admin` também possui acesso à área `seller`.
+- Appsmith está descontinuado como arquitetura-alvo e é preservado apenas como referência histórica.
 - A Fase 1 administrativa não altera schema.
 - GitHub é a fonte oficial; `C:\Dev\compra-car` é o ambiente local; OneDrive é somente espelho.
 - O MVP deve validar uso real antes da reconstrução completa.
 - O aviso legal deve aparecer na aplicação e no PDF.
 - O sistema não deve sugerir vínculo oficial com montadoras sem autorização.
 
-## Arquitetura transitória
+## Arquitetura-alvo atual
 
-Supabase atual → Adaptador Legacy → contratos normalizados → casos de uso → Next.js MVP
+Supabase atual → adapters → contratos normalizados → casos de uso → aplicação Next.js
 
-Supabase atual → Appsmith para operação interna
+Aplicação Next.js → área `seller` + área `admin` → autenticação e autorização compartilhadas
 
 ## Arquitetura futura
 
-Supabase V2 → Adaptador V2 → contratos normalizados → casos de uso → Next.js
-
-Supabase V2 → Novo backoffice
+Supabase V2 → Adaptador V2 → contratos normalizados → casos de uso → mesma aplicação Next.js

@@ -1,5 +1,7 @@
 # Sprint 1 — Lote 1 no Appsmith `Admin Modelos`
 
+> **REGISTRO HISTÓRICO — NÃO EXECUTAR:** o ADR-010 descontinuou o Appsmith como arquitetura-alvo. Este roteiro permanece preservado apenas como evidência do plano anterior e não autoriza novas implementações.
+
 ## Objetivo e limites
 
 Este roteiro deve ser aplicado manualmente na página existente `Admin Modelos`. Ele não cria uma página concorrente, não altera o Supabase, não executa migration e não implementa `product_specs`.

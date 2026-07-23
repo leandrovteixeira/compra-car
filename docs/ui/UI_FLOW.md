@@ -41,11 +41,21 @@ Apresentar o produto, contextualizar a experiência da marca e oferecer uma entr
 
 ### Estados futuros de autenticação
 
-- convite enviado: profile `vendedor`/`pending`;
+- convite enviado: profile `seller`/`pending`;
 - convite aceito e senha definida: profile `active`;
 - desativação por administrador: profile `disabled` e acesso negado;
 - reativação: profile novamente `active`;
 - promoção para admin: ação administrativa separada, nunca automática.
+
+### Áreas planejadas da aplicação única
+
+- a área `seller` contém os fluxos de seleção e comparação do MVP-u;
+- a área `admin` será construída no mesmo aplicativo Next.js;
+- `admin` também pode acessar a área `seller`;
+- a UI pode exibir “Vendedor” e “Administrador”, mas contratos, routes e valores persistidos usam `seller` e `admin`;
+- o Appsmith não é uma superfície vigente e permanece apenas como referência histórica.
+
+Essas áreas e suas proteções ainda estão em planejamento. A existência desta definição não declara login, layouts protegidos, `/admin` ou autorização como implementados.
 
 A UI apenas representa esses estados e oculta ações indisponíveis como conveniência. A autorização efetiva permanece no servidor e no banco. O Middleware não consulta o banco; apenas lê ou atualiza sessão e redireciona.
 

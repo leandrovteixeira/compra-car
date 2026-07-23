@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-07-23 — Aplicação Next.js única
+
+- Registrado no ADR-010 que o Compra Car terá uma única aplicação Next.js, com áreas `seller` e `admin` sobre o mesmo Supabase.
+- Definido que `admin` também acessa a área `seller` e que a interface pode apresentar as roles como “Administrador” e “Vendedor”.
+- Appsmith descontinuado como arquitetura-alvo; exports, inventários, roteiros e integrações existentes permanecem preservados somente como referência histórica, sem novas implementações.
+- ADR-007 mantido como registro da decisão anterior e marcado como parcialmente substituído.
+- Corrigido o título interno do ADR de separação entre MSRP e políticas comerciais de ADR-008 para ADR-009, alinhando-o ao nome do arquivo e eliminando a colisão com o ADR de autenticação.
+- Registrada a inconsistência entre a role `seller` agora aprovada e o valor `vendedor` ainda presente na migration e nos testes SQL não aplicados; a reconciliação é obrigatória antes de qualquer aplicação.
+- Autenticação, `/admin`, clients SSR e autorização permanecem planejados e não foram declarados como implementados.
+- Nenhum código funcional, banco, migration ou export histórico foi alterado.
+
 ## 2026-07-22 — Planejamento da Sprint 1 do MVP-a
 
 - Inventariado o repositório em busca do export atual do Appsmith; confirmada apenas infraestrutura histórica, sem páginas, queries, widgets ou JS Objects exportados.
@@ -22,7 +33,7 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
 ### Added
 
-- 2026-07-19: definição documental da arquitetura de autenticação e autorização com Supabase Auth, cookies SSR, convite fechado, roles `admin`/`vendedor`, profiles autorizáveis, RLS e plano das Sprints 2 a 4; o ciclo explícito de status foi refinado posteriormente.
+- 2026-07-19: definição documental histórica da arquitetura de autenticação e autorização com Supabase Auth, cookies SSR, convite fechado, roles então nomeadas `admin`/`vendedor`, profiles autorizáveis, RLS e plano das Sprints 2 a 4; o ciclo explícito de status e o nome `seller` foram refinados posteriormente.
 - 2026-07-19: implementação do MVP do motor de comparação com o primeiro veículo como referência, resultados completos para `binary` e `numeric`, estados de empate/desconhecido e exclusão explícita de ranking `scale`.
 - Adição do filtro “Ver destaques”, destaque exclusivo das vantagens da referência e suporte à seleção de dois ou mais veículos.
 - Adição da migration de dados que define `specs.value_direction = 'Positive'` para o item numeric `Power windows`.
@@ -54,7 +65,7 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
 ### Changed
 
-- 2026-07-20: refinamento documental da autenticação antes da Sprint 2: profiles passam a usar status `pending`/`active`/`disabled`; novos usuários são sempre `vendedor`/`pending`; promoção a admin é explícita; fluxos de convite, aceite, desativação e reativação registram seus atores e timestamps; MFA de admin e `audit_log` permanecem evoluções futuras, sem implementação.
+- 2026-07-20: registro histórico do refinamento documental da autenticação antes da Sprint 2: profiles usariam status `pending`/`active`/`disabled`; novos usuários eram então nomeados `vendedor`/`pending`; promoção a `admin` era explícita; fluxos de convite, aceite, desativação e reativação registrariam seus atores e timestamps; MFA de `admin` e `audit_log` permaneciam evoluções futuras, sem implementação.
 - Consolidação do estado real do repositório, separando o comparador público implementado do comparador administrativo planejado.
 - Atualização das pendências de dados para distinguir o mapeamento confirmado no repositório da validação ainda necessária no Supabase e no Appsmith atuais.
 - Atualização do roadmap e do checklist para incorporar as Fases 1 e 2 do backoffice administrativo.
