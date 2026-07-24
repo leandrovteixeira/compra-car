@@ -79,12 +79,20 @@ export function AdminProductList({ products }: AdminProductListProps) {
                   </StatusBadge>
                 </td>
                 <td className="px-4 py-4">
-                  <Link
-                    className="inline-flex min-h-11 items-center rounded-xl border border-slate-700 px-3 font-semibold text-sky-300 transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-300"
-                    href={`/admin/products/${product.id}/edit`}
-                  >
-                    Editar
-                  </Link>
+                  <div className="flex flex-wrap gap-2">
+                    <Link
+                      className="inline-flex min-h-11 items-center rounded-xl border border-slate-700 px-3 font-semibold text-sky-300 transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                      href={`/admin/products/${product.id}/edit`}
+                    >
+                      Editar
+                    </Link>
+                    <Link
+                      className="inline-flex min-h-11 items-center rounded-xl border border-slate-700 px-3 font-semibold text-slate-200 transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                      href={`/admin/products/${product.id}/duplicate`}
+                    >
+                      Duplicar
+                    </Link>
+                  </div>
                 </td>
               </tr>
             ))}

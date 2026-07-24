@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-07-24 — Sprint 7: duplicação administrativa de veículos
+
+- Implementada `/admin/products/[id]/duplicate` como um novo Create preenchido, com leitura
+  server-side da origem, `notFound()` e sem transportar o ID original.
+- Reutilizados formulário, Server Action, normalização, validação, caso de uso, repository e adapter
+  do Create; nenhuma persistência ou API de clone foi adicionada.
+- Adicionada ação Duplicar na listagem e modo visual com título e botão “Criar veículo”.
+- Mantidos o conflito normal de duplicidade, as regras Public/Active e o modal de criação apontando
+  para o novo veículo.
+- Confirmado por desenho e testes que specs, preços, imagens, documentos e histórico não são
+  copiados.
+- Adicionada cobertura da rota, origem, valores iniciais, ausência do ID, conflito, criação,
+  normalização, status, navegação e limites de dados relacionados.
+- Nenhuma migration, alteração de schema, escrita remota, commit, push ou deploy foi realizada.
+
 ## 2026-07-23 — Sprint 6: edição administrativa de veículos
 
 - Implementada `/admin/products/[id]/edit` com carregamento server-side, `notFound()` para produto

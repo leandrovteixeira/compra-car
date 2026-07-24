@@ -28,6 +28,8 @@ type AdminProductFormAction = (
   formData: FormData,
 ) => Promise<AdministrativeVehicleActionStateDto>;
 
+export type AdminProductFormMode = 'create' | 'duplicate' | 'edit';
+
 function FieldError({ messages }: { readonly messages?: readonly string[] }) {
   if (!messages?.length) return null;
   return <p className="mt-1 text-sm text-rose-300">{messages[0]}</p>;
@@ -94,7 +96,7 @@ function SuccessDialog({ productId }: { readonly productId: string }) {
 interface ProductFieldsProps {
   readonly action: (formData: FormData) => void;
   readonly currentYear: number;
-  readonly mode: 'create' | 'edit';
+  readonly mode: AdminProductFormMode;
   readonly pending: boolean;
   readonly state: AdministrativeVehicleActionStateDto;
 }
@@ -127,7 +129,7 @@ function ProductFields({ action, currentYear, mode, pending, state }: ProductFie
       action={action}
       className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 sm:p-7"
     >
-      <fieldset disabled={pending || (mode === 'create' && state.status === 'success')}>
+      <fieldset disabled={pending || (mode !== 'edit' && state.status === 'success')}>
         {state.status === 'error' && state.message ? (
           <div
             className="mb-6 rounded-xl border border-rose-800 bg-rose-950/40 p-4 text-sm text-rose-200"
@@ -274,7 +276,13 @@ function ProductFields({ action, currentYear, mode, pending, state }: ProductFie
             disabled={pending}
             type="submit"
           >
-            {pending ? 'Salvando…' : mode === 'edit' ? 'Salvar alterações' : 'Salvar'}
+            {pending
+              ? 'Salvando…'
+              : mode === 'edit'
+                ? 'Salvar alterações'
+                : mode === 'duplicate'
+                  ? 'Criar veículo'
+                  : 'Salvar'}
           </button>
         </div>
       </fieldset>
@@ -286,7 +294,7 @@ interface AdminProductFormProps {
   readonly action: AdminProductFormAction;
   readonly currentYear: number;
   readonly initialValues?: AdministrativeVehicleFormValuesDto;
-  readonly mode: 'create' | 'edit';
+  readonly mode: AdminProductFormMode;
 }
 
 export function AdminProductForm({
@@ -322,7 +330,7 @@ export function AdminProductForm({
         pending={pending}
         state={state}
       />
-      {mode === 'create' && state.status === 'success' ? (
+      {mode !== 'edit' && state.status === 'success' ? (
         <SuccessDialog productId={state.id} />
       ) : null}
     </>

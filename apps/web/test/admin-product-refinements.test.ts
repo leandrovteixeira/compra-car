@@ -110,7 +110,7 @@ describe('administrative product filters', () => {
     expect(filters).not.toContain('supabase');
     expect(list).toContain('Editar');
     expect(list).not.toContain('Excluir');
-    expect(list).not.toContain('Duplicar');
+    expect(list).toContain('Duplicar');
   });
 
   it('keeps the boolean controls close without reducing their interaction area', () => {

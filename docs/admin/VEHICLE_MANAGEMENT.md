@@ -42,16 +42,20 @@ alterados. Como as inspeções registradas em `docs/data/SUPABASE_INSPECTION_RES
 `docs/data/LEGACY_BASELINE_EXTRACTION_RESULTS.md` não encontraram trigger de aplicação, o adapter
 define `updated_at` explicitamente em toda atualização. Nenhuma migration foi necessária.
 
-## Clonagem
+## Duplicação
 
-Clonar significa usar um veículo existente como origem para criar outro registro, normalmente para novo MY ou PY.
+Duplicar significa iniciar um novo Create em `/admin/products/[id]/duplicate`, usando somente os
+sete campos editáveis do veículo de origem como valores iniciais. O ID original não integra o
+formulário nem a criação, e o registro de origem permanece inalterado.
 
-- o registro original permanece inalterado;
-- a nova chave deve ser informada e validada;
-- specs elegíveis podem ser copiadas após confirmação do usuário;
-- a operação deve apresentar previamente o que será copiado;
-- falhas parciais não podem ser apresentadas como sucesso completo;
-- preços e políticas não são copiados implicitamente.
+Não existe clone direto no banco, SQL de cópia ou persistência exclusiva. O fluxo reutiliza a
+Server Action, o caso de uso, a normalização, a validação, o repository e o adapter do Create. A
+validação normal de duplicidade impede salvar uma cópia idêntica; o administrador deve alterar ao
+menos um componente da chave de negócio.
+
+`product_specs`, preços, imagens, documentos e histórico não são carregados nem copiados. A
+duplicação cria exclusivamente um novo registro principal de veículo após confirmação no
+formulário.
 
 ## Specs e comparabilidade
 

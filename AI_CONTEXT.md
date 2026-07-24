@@ -120,7 +120,7 @@ Esses estados não podem ser confundidos.
 - não iniciar novas implementações no Appsmith nem remover seus artefatos ou integrações sem decisão específica;
 - não implementar PDF ou offline nesta fase concluída.
 
-## Estado atual — 2026-07-23
+## Estado atual — 2026-07-24
 
 A infraestrutura do monorepo, o núcleo de domínio, o adaptador legado e os vertical slices de seleção e comparação estão implementados. `packages/core` contém entidades, value objects, erros, portas e casos de uso, inclusive Create/Update administrativos. `packages/contracts` contém aliases, reexportações e DTOs públicos sem duplicação estrutural. `packages/adapter-supabase` implementa as portas de leitura sobre `products`, `specs` e `product_specs` e restringe as escritas administrativas aprovadas a `products`. `apps/web` conecta seleção, comparação e administração aos casos de uso por camada server-only e composition root.
 
@@ -136,8 +136,12 @@ duplicidade, payload explícito no adapter, Server Action autorizada e diálogo 
 Create, exclui o próprio ID da checagem de duplicidade e persiste apenas os sete campos editáveis.
 Como a inspeção do banco não encontrou trigger de aplicação, a atualização define `updated_at`
 explicitamente no adapter.
+`/admin/products/[id]/duplicate` carrega o produto server-side e inicia um novo Create com os sete
+campos preenchidos, sem transportar o ID original. O fluxo reutiliza integralmente a Server Action,
+o caso de uso e a persistência do Create; a duplicidade normal impede cópia idêntica e nenhum
+`product_specs`, preço, imagem, documento ou histórico é copiado.
 `/admin/products` transporta filtros por search params e os aplica server-side no adapter, com
-sticky acumulado no desktop e oferece uma ação Editar por linha. Não existem duplicação, exclusão,
+sticky acumulado no desktop e oferece ações Editar e Duplicar por linha. Não existem exclusão,
 cadastro de equipamentos ou preços.
 
 A URL de comparação é `/comparar?vehicles=id1,id2[,id3,...]`. A página valida IDs, preserva sua ordem, executa `CompareVehicles`, apresenta categorias e usa `hasReferenceAdvantage` no filtro “Ver destaques”. A UI usa uma única superfície tabular com cabeçalho e primeira coluna fixos, rolagem bidirecional, células com slot estável para checks e estados dedicados de loading, vazio e erro. O domínio e o adapter não conhecem componentes ou parâmetros de URL.
@@ -158,10 +162,9 @@ O export histórico do Appsmith permanece versionado em `appsmith/exports/Compra
 2. Validar cobertura e desempenho com 2 ou 3 veículos reais.
 3. Comparar este clone com o `C:\Dev\compra-car` do outro notebook.
 4. Avaliar com o negócio as três divergências estruturais de specs encontradas na Sprint 5.
-5. Implementar a Sprint 7: duplicação de veículos.
-6. Implementar a Sprint 8: cadastro de equipamentos em `product_specs`.
-7. Implementar a Sprint 9: preços.
-8. Concluir MVP e piloto; depois evoluir dados, importador e arquitetura gradualmente.
+5. Implementar a Sprint 8: cadastro de equipamentos em `product_specs`.
+6. Implementar a Sprint 9: preços.
+7. Concluir MVP e piloto; depois evoluir dados, importador e arquitetura gradualmente.
 
 ## Registro histórico — Sprint 1 de Gestão de Produtos no Appsmith (planejamento em 2026-07-22)
 

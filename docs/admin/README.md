@@ -17,13 +17,15 @@ Os documentos e exports do Appsmith registram uma direção anterior e permanece
   fronteiras e riscos do cadastro de veículos no Next.js.
 - [`SPRINT_6_PRODUCT_EDITING.md`](SPRINT_6_PRODUCT_EDITING.md): implementação, persistência,
   feedback e riscos da edição de veículos no Next.js.
+- [`SPRINT_7_PRODUCT_DUPLICATION.md`](SPRINT_7_PRODUCT_DUPLICATION.md): duplicação como um novo
+  Create preenchido, sem clone de dados relacionados.
 
 ## Estado
 
 A documentação registra o domínio aprovado e o inventário histórico do export Appsmith.
-Autenticação, autorização, shell, listagem, criação e edição de veículos estão implementados no
-Next.js. Permanecem pendentes duplicação, specs, preços, a auditoria de grants/RLS e a monetização
-de specs.
+Autenticação, autorização, shell, listagem, criação, edição e duplicação de veículos estão
+implementados no Next.js. Permanecem pendentes specs, preços, a auditoria de grants/RLS e a
+monetização de specs.
 
 ## Princípios
 

@@ -67,12 +67,12 @@ describe('admin foundation', () => {
     expect(page).not.toContain('supabase');
   });
 
-  it('exposes edit while keeping deletion and duplication unavailable in the list', () => {
+  it('exposes edit and duplication while keeping deletion unavailable in the list', () => {
     const list = source('../src/components/admin/admin-product-list.tsx');
 
     expect(list).toContain('Editar');
     expect(list).not.toContain('Excluir');
-    expect(list).not.toContain('Duplicar');
+    expect(list).toContain('Duplicar');
     expect(list).toContain('<Link');
   });
 
