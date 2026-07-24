@@ -10,6 +10,10 @@ export interface AdministrativeVehicleInput {
   readonly isPublic: boolean;
 }
 
+export interface AdministrativeVehicle extends AdministrativeVehicleInput {
+  readonly id: string;
+}
+
 export interface AdministrativeVehicleFilters {
   readonly brand?: string;
   readonly model?: string;

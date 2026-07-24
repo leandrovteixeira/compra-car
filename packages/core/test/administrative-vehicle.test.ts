@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   CreateAdministrativeVehicle,
+  UpdateAdministrativeVehicle,
   normalizeVehicleText,
   validateAdministrativeVehicle,
   type AdministrativeVehicleInput,
@@ -23,6 +24,7 @@ function repository(
     readonly duplicate?: boolean;
     readonly creation?:
       { readonly status: 'created'; readonly id: string } | { readonly status: 'duplicate' };
+    readonly update?: 'updated' | 'not_found' | 'duplicate';
   } = {},
 ): AdministrativeVehicleRepository {
   return {
@@ -30,6 +32,10 @@ function repository(
     createAdministrativeVehicle: vi.fn(
       async () => options.creation ?? ({ status: 'created', id: '42' } as const),
     ),
+    getAdministrativeVehicleById: vi.fn(async () => null),
+    updateAdministrativeVehicle: vi.fn(async () => ({
+      status: options.update ?? 'updated',
+    })),
   };
 }
 
@@ -44,6 +50,74 @@ describe('vehicle text normalization', () => {
     ['iX', 'IX'],
   ])('normalizes %j without destructive title case', (source, expected) => {
     expect(normalizeVehicleText(source)).toBe(expected);
+  });
+});
+
+describe('UpdateAdministrativeVehicle', () => {
+  it('normalizes and excludes the current product from duplicate lookup', async () => {
+    const target = repository();
+    const result = await new UpdateAdministrativeVehicle(target).execute('42', {
+      ...validInput,
+      brand: '  toyota ',
+      model: 'corolla   cross',
+      version: 'xrx',
+    });
+
+    const normalized = {
+      ...validInput,
+      brand: 'Toyota',
+      model: 'Corolla cross',
+      version: 'Xrx',
+    };
+    expect(result).toEqual({ ok: true, data: normalized });
+    expect(target.findAdministrativeVehicleDuplicate).toHaveBeenCalledWith(normalized, '42');
+    expect(target.updateAdministrativeVehicle).toHaveBeenCalledWith('42', normalized);
+  });
+
+  it('allows saving an unchanged identity when no other product matches', async () => {
+    const target = repository();
+    await expect(
+      new UpdateAdministrativeVehicle(target).execute('42', validInput),
+    ).resolves.toEqual({ ok: true, data: validInput });
+    expect(target.findAdministrativeVehicleDuplicate).toHaveBeenCalledWith(validInput, '42');
+  });
+
+  it('rejects a conflict with another product', async () => {
+    const target = repository({ duplicate: true });
+    await expect(
+      new UpdateAdministrativeVehicle(target).execute('42', validInput),
+    ).resolves.toEqual({
+      ok: false,
+      code: 'DUPLICATE',
+      message: 'Já existe um veículo Toyota Corolla Cross XRX 2026/2025 cadastrado.',
+    });
+    expect(target.updateAdministrativeVehicle).not.toHaveBeenCalled();
+  });
+
+  it('preserves shared validation rules and reports a missing product', async () => {
+    const target = repository({ update: 'not_found' });
+    const invalid = await new UpdateAdministrativeVehicle(target).execute('42', {
+      ...validInput,
+      productionYear: 2023,
+    });
+    expect(invalid).toEqual(expect.objectContaining({ ok: false, code: 'VALIDATION_ERROR' }));
+    expect(target.updateAdministrativeVehicle).not.toHaveBeenCalled();
+
+    await expect(
+      new UpdateAdministrativeVehicle(target).execute('42', validInput),
+    ).resolves.toEqual({
+      ok: false,
+      code: 'NOT_FOUND',
+    });
+  });
+
+  it('translates a concurrent unique conflict into a duplicate result', async () => {
+    await expect(
+      new UpdateAdministrativeVehicle(repository({ update: 'duplicate' })).execute(
+        '42',
+        validInput,
+      ),
+    ).resolves.toEqual(expect.objectContaining({ ok: false, code: 'DUPLICATE' }));
   });
 });
 

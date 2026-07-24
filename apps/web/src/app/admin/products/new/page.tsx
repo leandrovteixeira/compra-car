@@ -1,4 +1,5 @@
 import { requireRole } from '@/auth/authorization';
+import { createAdminProductAction } from '@/app/admin/products/new/actions';
 import { AdminProductForm } from '@/components/admin/admin-product-form';
 import { PageHeader } from '@/components/admin/page-header';
 
@@ -13,7 +14,11 @@ export default async function NewAdminProductPage() {
         title="Novo veículo"
       />
       <div className="mt-8">
-        <AdminProductForm currentYear={new Date().getFullYear()} />
+        <AdminProductForm
+          action={createAdminProductAction}
+          currentYear={new Date().getFullYear()}
+          mode="create"
+        />
       </div>
     </>
   );

@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-07-23 — Sprint 6: edição administrativa de veículos
+
+- Implementada `/admin/products/[id]/edit` com carregamento server-side, `notFound()` para produto
+  inexistente, valores iniciais e permanência na página após salvar.
+- Generalizado `admin-product-form.tsx` para Create/Edit sem duplicar campos ou regras; a edição
+  exibe confirmação inline, valores normalizados e bloqueio durante submissão.
+- Adicionados caso de uso de atualização no core, Server Action exclusiva e métodos mínimos de
+  leitura/atualização na porta administrativa e no adapter Supabase.
+- A duplicidade normalizada exclui o próprio ID e continua protegida pelo tratamento de conflito
+  exato do índice único.
+- Confirmada em inspeções versionadas a ausência de trigger de aplicação; `updated_at` passou a ser
+  definido explicitamente pelo adapter, sem migration.
+- Adicionados links Editar na listagem e no modal pós-criação.
+- Ampliados testes de carregamento, inexistência, preenchimento, normalização, validação,
+  duplicidade, atualização, `updated_at` e navegação.
+- Duplicação, specs, preços, imagens, exclusão, auditoria histórica e mudanças de schema permanecem
+  fora do escopo.
+
 ## 2026-07-23 — Sprint 5: criação administrativa de veículos
 
 - Implementada `/admin/products/new` com os sete campos aprovados, layout responsivo e defaults

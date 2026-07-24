@@ -15,12 +15,14 @@ Os documentos e exports do Appsmith registram uma direção anterior e permanece
 - [`SPRINT_1_BATCH_1_APPSMITH.md`](SPRINT_1_BATCH_1_APPSMITH.md): roteiro histórico do primeiro lote que havia sido planejado para `Admin Modelos`; não executar.
 - [`SPRINT_5_PRODUCT_CREATION.md`](SPRINT_5_PRODUCT_CREATION.md): implementação, regras,
   fronteiras e riscos do cadastro de veículos no Next.js.
+- [`SPRINT_6_PRODUCT_EDITING.md`](SPRINT_6_PRODUCT_EDITING.md): implementação, persistência,
+  feedback e riscos da edição de veículos no Next.js.
 
 ## Estado
 
 A documentação registra o domínio aprovado e o inventário histórico do export Appsmith.
-Autenticação, autorização, shell, listagem e criação de veículos estão implementados no Next.js.
-Permanecem pendentes edição, duplicação, specs, preços, a auditoria de grants/RLS e a monetização
+Autenticação, autorização, shell, listagem, criação e edição de veículos estão implementados no
+Next.js. Permanecem pendentes duplicação, specs, preços, a auditoria de grants/RLS e a monetização
 de specs.
 
 ## Princípios

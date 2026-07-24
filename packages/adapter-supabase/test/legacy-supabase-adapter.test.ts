@@ -16,6 +16,7 @@ interface FakeCall {
 
 class FakeQuery implements PromiseLike<FakeResponse> {
   private readonly equalityFilters: Array<readonly [string, unknown]> = [];
+  private readonly inequalityFilters: Array<readonly [string, unknown]> = [];
   private readonly ilikeFilters: Array<readonly [string, string]> = [];
   private readonly inclusionFilters: Array<readonly [string, readonly unknown[]]> = [];
 
@@ -35,6 +36,12 @@ class FakeQuery implements PromiseLike<FakeResponse> {
     return this;
   }
 
+  neq(column: string, value: unknown): this {
+    this.call.operations.push(`neq:${column}:${String(value)}`);
+    this.inequalityFilters.push([column, value]);
+    return this;
+  }
+
   ilike(column: string, pattern: string): this {
     this.call.operations.push(`ilike:${column}:${pattern}`);
     this.ilikeFilters.push([column, pattern]);
@@ -47,6 +54,11 @@ class FakeQuery implements PromiseLike<FakeResponse> {
     return this;
   }
 
+  async maybeSingle(): Promise<{ readonly data: unknown | null; readonly error: null }> {
+    const response = await this;
+    return { data: response.data?.[0] ?? null, error: null };
+  }
+
   then<TResult1 = FakeResponse, TResult2 = never>(
     onfulfilled?: ((value: FakeResponse) => TResult1 | PromiseLike<TResult1>) | null,
     onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
@@ -56,6 +68,7 @@ class FakeQuery implements PromiseLike<FakeResponse> {
       const record = row as Readonly<Record<string, unknown>>;
       return (
         this.equalityFilters.every(([column, value]) => record[column] === value) &&
+        this.inequalityFilters.every(([column, value]) => record[column] !== value) &&
         this.ilikeFilters.every(([column, pattern]) => {
           const term = pattern
             .slice(1, -1)
@@ -185,6 +198,49 @@ describe('LegacySupabaseAdapter', () => {
     );
   });
 
+  it('carrega um produto administrativo por ID e retorna null quando ele não existe', async () => {
+    const existing = fakeClient({ products: [[product]] });
+    await expect(
+      new LegacySupabaseAdapter(existing.client).getAdministrativeVehicleById('1'),
+    ).resolves.toEqual({
+      id: '1',
+      brand: 'Marca',
+      model: 'Modelo',
+      version: 'Versão',
+      modelYear: 2026,
+      productionYear: 2025,
+      isActive: true,
+      isPublic: true,
+    });
+    expect(existing.calls[0]?.operations).toContain('eq:id:1');
+
+    const missing = fakeClient({ products: [[]] });
+    await expect(
+      new LegacySupabaseAdapter(missing.client).getAdministrativeVehicleById('999'),
+    ).resolves.toBeNull();
+  });
+
+  it('exclui o próprio ID ao verificar duplicidade na edição', async () => {
+    const ownProduct = { ...product, brand: 'Toyota', model: 'Corolla', version: 'XRX' };
+    const { client, calls } = fakeClient({ products: [[ownProduct]] });
+
+    await expect(
+      new LegacySupabaseAdapter(client).findAdministrativeVehicleDuplicate(
+        {
+          brand: 'Toyota',
+          model: 'Corolla',
+          version: 'XRX',
+          modelYear: 2026,
+          productionYear: 2025,
+          isActive: true,
+          isPublic: true,
+        },
+        '1',
+      ),
+    ).resolves.toBe(false);
+    expect(calls[0]?.operations).toContain('neq:id:1');
+  });
+
   it('persiste somente o payload explícito e retorna o ID gerado', async () => {
     const inserted: unknown[] = [];
     const writeClient = {
@@ -256,6 +312,56 @@ describe('LegacySupabaseAdapter', () => {
         isPublic: false,
       }),
     ).resolves.toEqual({ status: 'duplicate' });
+  });
+
+  it('atualiza os campos editáveis e updated_at explicitamente', async () => {
+    const payloads: Array<Readonly<Record<string, unknown>>> = [];
+    const writeClient = {
+      from(table: string) {
+        expect(table).toBe('products');
+        return {
+          update(payload: Readonly<Record<string, unknown>>) {
+            payloads.push(payload);
+            return this;
+          },
+          eq(column: string, value: unknown) {
+            expect([column, value]).toEqual(['id', 1]);
+            return this;
+          },
+          select(columns: string) {
+            expect(columns).toBe('id');
+            return this;
+          },
+          maybeSingle: async () => ({ data: { id: 1 }, error: null }),
+        };
+      },
+    } as unknown as SupabaseClient;
+
+    await expect(
+      new LegacySupabaseAdapter(writeClient).updateAdministrativeVehicle('1', {
+        brand: 'Toyota',
+        model: 'Corolla',
+        version: 'XRX',
+        modelYear: 2026,
+        productionYear: 2025,
+        isActive: true,
+        isPublic: false,
+      }),
+    ).resolves.toEqual({ status: 'updated' });
+
+    expect(payloads[0]).toEqual(
+      expect.objectContaining({
+        brand: 'Toyota',
+        model: 'Corolla',
+        version: 'XRX',
+        model_year: 2026,
+        production_year: 2025,
+        is_active: true,
+        is_public: false,
+        updated_at: expect.any(String),
+      }),
+    );
+    expect(Number.isNaN(Date.parse(String(payloads[0]?.updated_at)))).toBe(false);
   });
 
   it('aceita catálogo público vazio sem consultar associações', async () => {

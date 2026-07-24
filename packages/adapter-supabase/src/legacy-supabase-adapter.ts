@@ -1,4 +1,5 @@
 import type {
+  AdministrativeVehicle,
   AdministrativeVehicleInput,
   AdministrativeVehicleFilters,
   AdministrativeVehicleRepository,
@@ -42,12 +43,35 @@ function queryError(operation: string, error: PostgrestError): LegacyAdapterQuer
   });
 }
 
-function parseLegacyId(id: VehicleId): number {
+function parseLegacyId(id: VehicleId | string): number {
   const parsed = Number(String(id));
   if (!Number.isSafeInteger(parsed) || parsed < 0) {
     throw new LegacyAdapterMappingError(`VehicleId incompatível com products.id: ${String(id)}.`);
   }
   return parsed;
+}
+
+function parseAdministrativeProductId(id: string): number | null {
+  const parsed = Number(id);
+  return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
+}
+
+function mapLegacyProductToAdministrativeVehicle(row: LegacyProductRow): AdministrativeVehicle {
+  if (row.brand === null || row.model === null || row.version === null) {
+    throw new LegacyAdapterMappingError(
+      `Product administrativo ${row.id} possui identidade incompleta.`,
+    );
+  }
+  return {
+    id: String(row.id),
+    brand: row.brand,
+    model: row.model,
+    version: row.version,
+    modelYear: Number(row.model_year),
+    productionYear: Number(row.production_year),
+    isActive: row.is_active === true,
+    isPublic: row.is_public === true,
+  };
 }
 
 export class LegacySupabaseAdapter
@@ -93,12 +117,18 @@ export class LegacySupabaseAdapter
     return ((data ?? []) as unknown as LegacyProductRow[]).map(mapLegacyProductToVehicle);
   }
 
-  async findAdministrativeVehicleDuplicate(input: AdministrativeVehicleInput): Promise<boolean> {
-    const { data, error } = await this.client
+  async findAdministrativeVehicleDuplicate(
+    input: AdministrativeVehicleInput,
+    excludeId?: string,
+  ): Promise<boolean> {
+    let query = this.client
       .from('products')
       .select(PRODUCT_COLUMNS)
       .eq('model_year', input.modelYear)
       .eq('production_year', input.productionYear);
+    if (excludeId !== undefined) query = query.neq('id', parseLegacyId(excludeId));
+
+    const { data, error } = await query;
     if (error) throw queryError('duplicidade de product', error);
 
     const identity = administrativeVehicleIdentity(input);
@@ -116,6 +146,20 @@ export class LegacySupabaseAdapter
         }) === identity
       );
     });
+  }
+
+  async getAdministrativeVehicleById(id: string): Promise<AdministrativeVehicle | null> {
+    const productId = parseAdministrativeProductId(id);
+    if (productId === null) return null;
+    const { data, error } = await this.client
+      .from('products')
+      .select(PRODUCT_COLUMNS)
+      .eq('id', productId)
+      .maybeSingle();
+    if (error) throw queryError('product administrativo por id', error);
+    return data
+      ? mapLegacyProductToAdministrativeVehicle(data as unknown as LegacyProductRow)
+      : null;
   }
 
   async createAdministrativeVehicle(
@@ -146,6 +190,38 @@ export class LegacySupabaseAdapter
       throw new LegacyAdapterMappingError('A criação de product não retornou um ID válido.');
     }
     return { status: 'created', id: String(id) };
+  }
+
+  async updateAdministrativeVehicle(
+    id: string,
+    input: AdministrativeVehicleInput,
+  ): Promise<
+    | { readonly status: 'updated' }
+    | { readonly status: 'not_found' }
+    | { readonly status: 'duplicate' }
+  > {
+    const productId = parseAdministrativeProductId(id);
+    if (productId === null) return { status: 'not_found' };
+    const payload = {
+      brand: input.brand,
+      model: input.model,
+      version: input.version,
+      model_year: input.modelYear,
+      production_year: input.productionYear,
+      is_active: input.isActive,
+      is_public: input.isPublic,
+      updated_at: new Date().toISOString(),
+    };
+    const { data, error } = await this.client
+      .from('products')
+      .update(payload)
+      .eq('id', productId)
+      .select('id')
+      .maybeSingle();
+
+    if (error?.code === '23505') return { status: 'duplicate' };
+    if (error) throw queryError('atualização de product', error);
+    return data ? { status: 'updated' } : { status: 'not_found' };
   }
 
   async listPublicEligibleVehicles(

@@ -31,6 +31,8 @@ function repository(
       if (options.fail) throw new Error('raw Supabase and SQL detail');
       return { status: 'created', id: '77' } as const;
     }),
+    getAdministrativeVehicleById: vi.fn(async () => null),
+    updateAdministrativeVehicle: vi.fn(async () => ({ status: 'updated' as const })),
   };
 }
 

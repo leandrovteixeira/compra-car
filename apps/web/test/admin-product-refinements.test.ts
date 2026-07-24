@@ -108,7 +108,7 @@ describe('administrative product filters', () => {
     );
     expect(filters).not.toContain("'use client'");
     expect(filters).not.toContain('supabase');
-    expect(list).not.toContain('Editar');
+    expect(list).toContain('Editar');
     expect(list).not.toContain('Excluir');
     expect(list).not.toContain('Duplicar');
   });

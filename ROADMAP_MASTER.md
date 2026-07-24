@@ -53,7 +53,7 @@ Criar rapidamente um MVP mobile-first para vendedores de concessionárias, permi
 - [x] Implementar shell persistente, navegação e visão geral protegida de `/admin`.
 - [x] Implementar `/admin/products` com listagem somente leitura.
 - [x] Sprint 5 — Cadastro de veículos (Create).
-- [ ] Sprint 6 — Edição de veículos.
+- [x] Sprint 6 — Edição de veículos.
 - [ ] Sprint 7 — Duplicação de veículos.
 - [ ] Sprint 8 — Cadastro de equipamentos (`product_specs`).
 - [ ] Sprint 9 — Preços.

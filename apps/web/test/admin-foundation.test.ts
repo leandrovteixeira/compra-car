@@ -67,13 +67,13 @@ describe('admin foundation', () => {
     expect(page).not.toContain('supabase');
   });
 
-  it('keeps edit, deletion and duplication unavailable in the list', () => {
+  it('exposes edit while keeping deletion and duplication unavailable in the list', () => {
     const list = source('../src/components/admin/admin-product-list.tsx');
 
-    expect(list).not.toContain('Editar');
+    expect(list).toContain('Editar');
     expect(list).not.toContain('Excluir');
     expect(list).not.toContain('Duplicar');
-    expect(list).not.toContain('<Link');
+    expect(list).toContain('<Link');
   });
 
   it('protects the creation route and exposes the reusable seven-field form', () => {
@@ -99,7 +99,7 @@ describe('admin foundation', () => {
     expect(form).toContain('Editar veículo');
     expect(form.match(/disabled/g)?.length).toBeGreaterThanOrEqual(2);
     expect(form).not.toContain('/specs');
-    expect(form).not.toContain('/edit');
+    expect(form).toContain('href={`/admin/products/${productId}/edit`}');
     expect(form).not.toContain('supabase');
     expect(form).not.toContain('createClient');
   });

@@ -9,6 +9,7 @@ import type {
 } from '@compra-car/core';
 
 export type {
+  AdministrativeVehicle,
   AdministrativeVehicleField,
   AdministrativeVehicleFieldErrors,
   AdministrativeVehicleFilters,
@@ -41,7 +42,7 @@ export interface AdministrativeVehicleFormValuesDto {
   readonly isPublic: boolean;
 }
 
-export type CreateAdministrativeVehicleActionStateDto =
+export type AdministrativeVehicleActionStateDto =
   | {
       readonly status: 'idle';
       readonly values: AdministrativeVehicleFormValuesDto;
@@ -58,7 +59,11 @@ export type CreateAdministrativeVehicleActionStateDto =
       readonly id: string;
       readonly values: AdministrativeVehicleFormValuesDto;
       readonly fieldErrors: AdministrativeVehicleFieldErrors;
+      readonly message?: string;
     };
+
+export type CreateAdministrativeVehicleActionStateDto = AdministrativeVehicleActionStateDto;
+export type UpdateAdministrativeVehicleActionStateDto = AdministrativeVehicleActionStateDto;
 
 export type VehicleDto = Vehicle;
 export type ComparisonItemDto = ComparisonItem;

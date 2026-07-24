@@ -1,5 +1,12 @@
 import { LegacySupabaseAdapter } from '@compra-car/adapter-supabase';
-import type { AdministrativeVehicleFilters, Vehicle } from '@compra-car/contracts';
+import type {
+  AdministrativeVehicle,
+  AdministrativeVehicleFilters,
+  AdministrativeVehicleFormValuesDto,
+  Vehicle,
+} from '@compra-car/contracts';
+
+import { toAdministrativeVehicleFormValues } from '../application/admin/administrative-vehicle-form';
 
 export interface AdminProductListItem {
   readonly brand: string;
@@ -19,6 +26,10 @@ export interface AdminProductReader {
   listAdministrativeVehicles(filters?: AdministrativeVehicleFilters): Promise<readonly Vehicle[]>;
 }
 
+export interface AdminProductEditorReader {
+  getAdministrativeVehicleById(id: string): Promise<AdministrativeVehicle | null>;
+}
+
 function toAdminProductListItem(vehicle: Vehicle): AdminProductListItem {
   return Object.freeze({
     id: String(vehicle.id),
@@ -30,6 +41,14 @@ function toAdminProductListItem(vehicle: Vehicle): AdminProductListItem {
     isActive: vehicle.isActive,
     isPublic: vehicle.isPublic,
   });
+}
+
+export async function loadAdminProductForEditing(
+  id: string,
+  reader: AdminProductEditorReader = new LegacySupabaseAdapter(),
+): Promise<AdministrativeVehicleFormValuesDto | null> {
+  const product = await reader.getAdministrativeVehicleById(id);
+  return product ? toAdministrativeVehicleFormValues(product) : null;
 }
 
 export async function loadAdminProducts(

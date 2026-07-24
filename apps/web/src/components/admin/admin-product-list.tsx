@@ -1,4 +1,5 @@
 import type { AdminProductListItem } from '@/server/admin-product-service';
+import Link from 'next/link';
 
 interface AdminProductListProps {
   readonly products: readonly AdminProductListItem[];
@@ -50,6 +51,9 @@ export function AdminProductList({ products }: AdminProductListProps) {
               <th className="px-4 py-3 font-semibold" scope="col">
                 Publicação
               </th>
+              <th className="px-4 py-3 font-semibold" scope="col">
+                Ações
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800">
@@ -73,6 +77,14 @@ export function AdminProductList({ products }: AdminProductListProps) {
                   <StatusBadge positive={product.isPublic}>
                     {product.isPublic ? 'Público' : 'Privado'}
                   </StatusBadge>
+                </td>
+                <td className="px-4 py-4">
+                  <Link
+                    className="inline-flex min-h-11 items-center rounded-xl border border-slate-700 px-3 font-semibold text-sky-300 transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                    href={`/admin/products/${product.id}/edit`}
+                  >
+                    Editar
+                  </Link>
                 </td>
               </tr>
             ))}

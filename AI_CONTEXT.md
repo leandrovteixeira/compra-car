@@ -22,7 +22,8 @@ O Compra Car apoia vendedores de concessionárias em comparações claras entre 
 - Vitest 4 para testes unitários do domínio;
 - Railway com configuração em `railway.json`;
 - PWA instalável em modo `standalone`, sem service worker ou offline;
-- Supabase atual como fonte inicial de dados via adaptador somente leitura;
+- Supabase atual como fonte inicial de dados via adaptador server-only; as escritas administrativas
+  aprovadas ficam restritas a essa fronteira;
 - Supabase Auth integrado por `@supabase/ssr`, com cookies e clients Auth separados do adapter legado;
 - domínio administrativo documentado em `docs/admin`;
 - uma única aplicação Next.js como arquitetura-alvo para as áreas `seller` e `admin`;
@@ -34,7 +35,7 @@ O Compra Car apoia vendedores de concessionárias em comparações claras entre 
 apps/web                     aplicação Next.js com seleção e comparação implementadas
 packages/contracts           DTOs e contratos públicos
 packages/core                domínio, portas e casos de uso puros
-packages/adapter-supabase    adaptador server-only e somente leitura do legado
+packages/adapter-supabase    adaptador server-only; leitura pública e escrita administrativa aprovada
 packages/shared              utilitários genéricos
 packages/ui                  primitivos visuais futuros
 ```
@@ -121,7 +122,7 @@ Esses estados não podem ser confundidos.
 
 ## Estado atual — 2026-07-23
 
-A infraestrutura do monorepo, o núcleo de domínio, o adaptador legado e os vertical slices de seleção e comparação estão implementados. `packages/core` contém entidades, value objects, erros, portas e os cinco casos de uso centrais. `packages/contracts` contém aliases, reexportações e DTOs públicos sem duplicação estrutural. `packages/adapter-supabase` implementa as duas portas sobre `products`, `specs` e `product_specs`, sem escrita. `apps/web` conecta seleção e comparação aos casos de uso por camada server-only, `unstable_cache` e composition root.
+A infraestrutura do monorepo, o núcleo de domínio, o adaptador legado e os vertical slices de seleção e comparação estão implementados. `packages/core` contém entidades, value objects, erros, portas e casos de uso, inclusive Create/Update administrativos. `packages/contracts` contém aliases, reexportações e DTOs públicos sem duplicação estrutural. `packages/adapter-supabase` implementa as portas de leitura sobre `products`, `specs` e `product_specs` e restringe as escritas administrativas aprovadas a `products`. `apps/web` conecta seleção, comparação e administração aos casos de uso por camada server-only e composition root.
 
 A fundação Auth está implementada. `@supabase/ssr` mantém a sessão em cookies; o Middleware renova a sessão e redireciona usuários não autenticados; páginas e Server Actions repetem a validação no servidor. `/login` usa e-mail/senha e redirect interno seguro, e o logout é server-side. `public.profiles` é a fonte de role/status; `admin` também acessa a área `seller`; profile ausente, não ativo ou inválido falha fechado.
 
@@ -131,9 +132,13 @@ navegação, visão geral e `/admin/products`. A listagem de veículos é server
 `/admin/products/new` implementa a criação exclusiva do registro principal em `products`, com
 normalização e validação puras no core, selects dependentes de anos, checagem normalizada de
 duplicidade, payload explícito no adapter, Server Action autorizada e diálogo de sucesso.
+`/admin/products/[id]/edit` carrega o produto server-side, reutiliza o formulário e as regras do
+Create, exclui o próprio ID da checagem de duplicidade e persiste apenas os sete campos editáveis.
+Como a inspeção do banco não encontrou trigger de aplicação, a atualização define `updated_at`
+explicitamente no adapter.
 `/admin/products` transporta filtros por search params e os aplica server-side no adapter, com
-sticky acumulado no desktop. Não existem edição, duplicação, exclusão, cadastro de equipamentos ou
-preços.
+sticky acumulado no desktop e oferece uma ação Editar por linha. Não existem duplicação, exclusão,
+cadastro de equipamentos ou preços.
 
 A URL de comparação é `/comparar?vehicles=id1,id2[,id3,...]`. A página valida IDs, preserva sua ordem, executa `CompareVehicles`, apresenta categorias e usa `hasReferenceAdvantage` no filtro “Ver destaques”. A UI usa uma única superfície tabular com cabeçalho e primeira coluna fixos, rolagem bidirecional, células com slot estável para checks e estados dedicados de loading, vazio e erro. O domínio e o adapter não conhecem componentes ou parâmetros de URL.
 
@@ -143,7 +148,7 @@ A superfície mínima e o mapeamento físico fornecidos para a fase estão regis
 
 A arquitetura de autenticação e autorização está em `docs/architecture/AUTHENTICATION_ARCHITECTURE.md`. A migration `20260721222256_create_auth_profiles.sql` foi aplicada uma única vez no projeto remoto Compra Car App, onde `auth.users` e `public.profiles` estavam vazios. Enums, tabela, functions, triggers, policies, RLS e grants foram validados; o teste `supabase/tests/001_auth_profiles.test.sql` passou após a habilitação exclusiva de pgTAP, com rollback das fixtures. Todo usuário novo nasce `seller`/`pending`; nenhuma promoção a `admin` é automática. MFA, `audit_log`, convites, recuperação de senha e gestão de usuários continuam futuros.
 
-O trabalho histórico do Appsmith possui export auditado e implementação parcial: `Admin Modelos` lista produtos, altera atividade e duplica; `Análise de Valor` contém consultas de análise. Essa implementação não é mais o backoffice oficial e não receberá novas mudanças. Criação, edição geral, `product_specs`, preços e demais fluxos administrativos ainda não estão implementados no Next.js. As regras permanecem descritas como domínio em `docs/admin`.
+O trabalho histórico do Appsmith possui export auditado e implementação parcial: `Admin Modelos` lista produtos, altera atividade e duplica; `Análise de Valor` contém consultas de análise. Essa implementação não é mais o backoffice oficial e não receberá novas mudanças. Criação e edição geral estão implementadas no Next.js; `product_specs`, preços e demais fluxos administrativos continuam pendentes. As regras permanecem descritas como domínio em `docs/admin`.
 
 O export histórico do Appsmith permanece versionado em `appsmith/exports/Compra Car App MVP.json` e foi auditado sem alteração do original. Ele contém três páginas, 27 widgets, 11 actions PostgreSQL, um datasource e nenhum JS Object. Esses artefatos são evidência histórica, não plano executável. Integrações existentes não serão removidas até que seus consumidores e riscos sejam auditados.
 
@@ -153,11 +158,10 @@ O export histórico do Appsmith permanece versionado em `appsmith/exports/Compra
 2. Validar cobertura e desempenho com 2 ou 3 veículos reais.
 3. Comparar este clone com o `C:\Dev\compra-car` do outro notebook.
 4. Avaliar com o negócio as três divergências estruturais de specs encontradas na Sprint 5.
-5. Implementar a Sprint 6: edição de veículos.
-6. Implementar a Sprint 7: duplicação de veículos.
-7. Implementar a Sprint 8: cadastro de equipamentos em `product_specs`.
-8. Implementar a Sprint 9: preços.
-9. Concluir MVP e piloto; depois evoluir dados, importador e arquitetura gradualmente.
+5. Implementar a Sprint 7: duplicação de veículos.
+6. Implementar a Sprint 8: cadastro de equipamentos em `product_specs`.
+7. Implementar a Sprint 9: preços.
+8. Concluir MVP e piloto; depois evoluir dados, importador e arquitetura gradualmente.
 
 ## Registro histórico — Sprint 1 de Gestão de Produtos no Appsmith (planejamento em 2026-07-22)
 

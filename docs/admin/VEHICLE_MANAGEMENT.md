@@ -32,6 +32,16 @@ proteção normalizada no banco.
 
 A edição altera apenas o registro selecionado e os campos autorizados. A interface deve apresentar a chave completa e distinguir `isActive` de `isPublic`. Mudanças que afetem a identidade comercial exigem nova validação de duplicidade.
 
+A rota implementada é `/admin/products/[id]/edit`. Ela carrega o registro no servidor, reutiliza o
+mesmo formulário e as mesmas regras do Create e retorna `notFound()` quando o ID não corresponde a
+um produto. A busca de duplicidade exclui o próprio ID, permitindo salvar a chave sem alterações,
+mas continua bloqueando conflito com qualquer outro produto.
+
+Somente `brand`, `model`, `version`, `model_year`, `production_year`, `is_active` e `is_public` são
+alterados. Como as inspeções registradas em `docs/data/SUPABASE_INSPECTION_RESULTS.md` e
+`docs/data/LEGACY_BASELINE_EXTRACTION_RESULTS.md` não encontraram trigger de aplicação, o adapter
+define `updated_at` explicitamente em toda atualização. Nenhuma migration foi necessária.
+
 ## Clonagem
 
 Clonar significa usar um veículo existente como origem para criar outro registro, normalmente para novo MY ou PY.
