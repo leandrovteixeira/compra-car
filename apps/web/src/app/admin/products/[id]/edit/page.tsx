@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 
 import { updateAdminProductAction } from './actions';
 
@@ -20,6 +21,14 @@ export default async function EditAdminProductPage({ params }: EditAdminProductP
   return (
     <>
       <PageHeader
+        actions={
+          <Link
+            className="flex min-h-11 items-center rounded-xl border border-slate-700 px-4 text-sm font-semibold text-emerald-300 hover:bg-slate-800"
+            href={`/admin/products/${id}/specs`}
+          >
+            Especificações e equipamentos
+          </Link>
+        }
         description="Atualize os dados principais do veículo."
         eyebrow="Catálogo"
         title="Editar veículo"

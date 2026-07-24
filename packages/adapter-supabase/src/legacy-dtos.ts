@@ -23,11 +23,19 @@ export interface LegacySpecRow {
 }
 
 export interface LegacyProductSpecRow {
+  readonly id?: number;
   readonly product_id: number;
   readonly equipment_id: number;
   readonly value: string | number | null;
   readonly is_present: boolean | null;
   readonly input_unit: string | null;
+}
+
+export interface LegacyUnitConversionRow {
+  readonly unit_from: string;
+  readonly unit_to: string;
+  readonly multiplier: string | number;
+  readonly offset_value: string | number;
 }
 
 export interface LegacyComparisonJoinRow {

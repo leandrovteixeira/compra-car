@@ -18,4 +18,7 @@ export * from './value-objects/value-direction';
 export * from './value-objects/vehicle-display-name';
 export * from './value-objects/vehicle-id';
 export * from './admin/administrative-vehicle';
+export * from './admin/administrative-product-specs';
 export * from './admin/vehicle-text-normalization';
+export * from './use-cases/load-administrative-product-specs';
+export * from './use-cases/save-administrative-product-specs';

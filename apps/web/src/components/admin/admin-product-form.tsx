@@ -66,14 +66,13 @@ function SuccessDialog({ productId }: { readonly productId: string }) {
         <p className="mt-1 text-xs text-slate-500">Identificador criado: {productId}</p>
 
         <div className="mt-6 grid gap-3">
-          <button
-            className="min-h-12 cursor-not-allowed rounded-xl border border-slate-700 bg-slate-800 px-4 text-left text-slate-400"
-            disabled
-            type="button"
+          <Link
+            className="min-h-12 rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-left text-slate-100 transition hover:bg-slate-700"
+            href={`/admin/products/${productId}/specs`}
           >
             <span className="block font-semibold">Cadastrar equipamentos</span>
-            <span className="text-xs">Disponível em breve</span>
-          </button>
+            <span className="text-xs text-slate-400">Abrir ficha técnica</span>
+          </Link>
           <Link
             className="flex min-h-12 items-center rounded-xl border border-slate-700 bg-slate-800 px-4 text-left text-slate-100 transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-300"
             href={`/admin/products/${productId}/edit`}

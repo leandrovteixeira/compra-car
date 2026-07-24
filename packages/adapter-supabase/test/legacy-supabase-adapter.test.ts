@@ -12,6 +12,7 @@ interface FakeResponse {
 interface FakeCall {
   readonly table: string;
   readonly operations: string[];
+  payloads?: unknown[];
 }
 
 class FakeQuery implements PromiseLike<FakeResponse> {
@@ -27,6 +28,22 @@ class FakeQuery implements PromiseLike<FakeResponse> {
 
   select(columns: string): this {
     this.call.operations.push(`select:${columns}`);
+    return this;
+  }
+
+  order(column: string): this {
+    this.call.operations.push(`order:${column}`);
+    return this;
+  }
+
+  upsert(payload: unknown, options: { readonly onConflict?: string }): this {
+    this.call.operations.push(`upsert:${options.onConflict ?? ''}`);
+    (this.call.payloads ??= []).push(payload);
+    return this;
+  }
+
+  delete(): this {
+    this.call.operations.push('delete');
     return this;
   }
 
@@ -100,7 +117,7 @@ function fakeClient(responses: Readonly<Record<string, readonly (readonly unknow
     from(table: string) {
       const offset = offsets.get(table) ?? 0;
       offsets.set(table, offset + 1);
-      const call = { table, operations: [] };
+      const call: FakeCall = { table, operations: [] };
       calls.push(call);
       return new FakeQuery({ data: responses[table]?.[offset] ?? [], error: null }, call);
     },
@@ -121,6 +138,95 @@ const product = {
 };
 
 describe('LegacySupabaseAdapter', () => {
+  it('maps the active spec catalog, product values and unit conversions', async () => {
+    const { client } = fakeClient({
+      specs: [
+        [
+          {
+            id: 25,
+            code: 'PW_0012',
+            type: 'numeric',
+            group_name: 'Powertrain',
+            equipment_group: 'Combustion engine',
+            spec_set: 'Max torque',
+            detail: 'Max torque',
+            unit: 'Nm',
+            value_direction: 'Positive',
+            is_active: true,
+          },
+        ],
+      ],
+      product_specs: [
+        [
+          {
+            product_id: 1,
+            equipment_id: 25,
+            value: 200.2,
+            is_present: null,
+            input_unit: 'Nm',
+          },
+        ],
+      ],
+      unit_conversions: [
+        [
+          {
+            unit_from: 'kgfm',
+            unit_to: 'Nm',
+            multiplier: 9.80665,
+            offset_value: 0,
+          },
+        ],
+      ],
+    });
+    const adapter = new LegacySupabaseAdapter(client);
+
+    await expect(adapter.listActiveAdministrativeSpecs()).resolves.toEqual([
+      expect.objectContaining({ id: '25', code: 'PW_0012', unit: 'Nm' }),
+    ]);
+    await expect(adapter.listAdministrativeProductSpecValues('1')).resolves.toEqual([
+      { specId: '25', value: 200.2, isPresent: null, inputUnit: 'Nm' },
+    ]);
+    await expect(adapter.listUnitConversions()).resolves.toEqual([
+      { unitFrom: 'kgfm', unitTo: 'Nm', multiplier: 9.80665, offset: 0 },
+    ]);
+  });
+
+  it('uses collective upsert/delete operations with the product/spec unique key', async () => {
+    const { client, calls } = fakeClient({ product_specs: [[], []] });
+    const adapter = new LegacySupabaseAdapter(client);
+    await adapter.saveAdministrativeProductSpecs('7', {
+      upserts: [
+        { specId: '25', value: 180, isPresent: null, inputUnit: 'Nm' },
+        { specId: '34', value: null, isPresent: false, inputUnit: null },
+      ],
+      deleteSpecIds: ['36', '38'],
+    });
+
+    expect(calls[0]).toEqual({
+      table: 'product_specs',
+      operations: ['upsert:product_id,equipment_id'],
+      payloads: [
+        [
+          {
+            product_id: 7,
+            equipment_id: 25,
+            value: 180,
+            is_present: null,
+            input_unit: 'Nm',
+          },
+          {
+            product_id: 7,
+            equipment_id: 34,
+            value: null,
+            is_present: false,
+            input_unit: null,
+          },
+        ],
+      ],
+    });
+    expect(calls[1]?.operations).toEqual(['delete', 'eq:product_id:7', 'in:equipment_id:36,38']);
+  });
+
   it('lista todos os veículos para administração sem aplicar filtros do catálogo público', async () => {
     const inactive = { ...product, id: 2, is_active: false, version: 'Inativo' };
     const privateProduct = { ...product, id: 3, is_public: false, version: 'Privado' };

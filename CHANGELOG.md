@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-07-24 — Sprint 8: administração de equipamentos e especificações
+
+- Criada `/admin/products/[id]/specs` com ficha contínua, hierarquia real, busca client-side,
+  grupos recolhíveis, contadores e edição inline de numeric, binary e scale.
+- Adicionados modelo, porta e casos de uso no core para merge do catálogo, validação numeric,
+  exclusividade scale, conversões e lote de persistência.
+- Numeric aceita vírgula/ponto e duas casas; vazio remove a associação. Binary marcado/desmarcado é
+  válido e scale usa dropdown único com `-`.
+- Torque aceita entrada Nm/kgfm e persiste apenas Nm usando os fatores lidos de
+  `unit_conversions`; `PW_0036` permanece `kg/Nm`.
+- O adapter passou a ler specs/valores/conversões e executar upsert/delete coletivos sem acesso
+  Supabase na UI, migration ou alteração remota.
+- Adicionados acessos pela lista, edição e modal pós-criação, testes de domínio/adapter/UI e
+  documentação da limitação transacional e do MVP-u.
+
 ## 2026-07-24 — Sprint 7: duplicação administrativa de veículos
 
 - Implementada `/admin/products/[id]/duplicate` como um novo Create preenchido, com leitura

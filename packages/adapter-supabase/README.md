@@ -30,7 +30,8 @@ const repository = new LegacySupabaseAdapter();
   `is_active` e `is_public`;
 - a criação só pode ser acionada depois de `requireRole('admin')` na aplicação.
 
-O pacote não contém migrations, escrita em `product_specs`, RPC, UI ou acesso ao Excel. O vínculo
+O pacote não contém migrations, RPC, UI ou acesso ao Excel. A escrita administrativa aprovada em
+`product_specs` usa lotes explícitos de upsert/delete e permanece isolada no adapter. O vínculo
 `product_specs.product_id → products.id` é lógico e sua ausência de FK está documentada.
 
 ## Testes

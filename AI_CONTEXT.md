@@ -122,7 +122,7 @@ Esses estados não podem ser confundidos.
 
 ## Estado atual — 2026-07-24
 
-A infraestrutura do monorepo, o núcleo de domínio, o adaptador legado e os vertical slices de seleção e comparação estão implementados. `packages/core` contém entidades, value objects, erros, portas e casos de uso, inclusive Create/Update administrativos. `packages/contracts` contém aliases, reexportações e DTOs públicos sem duplicação estrutural. `packages/adapter-supabase` implementa as portas de leitura sobre `products`, `specs` e `product_specs` e restringe as escritas administrativas aprovadas a `products`. `apps/web` conecta seleção, comparação e administração aos casos de uso por camada server-only e composition root.
+A infraestrutura do monorepo, o núcleo de domínio, o adaptador legado e os vertical slices de seleção e comparação estão implementados. `packages/core` contém entidades, value objects, erros, portas e casos de uso, inclusive Create/Update administrativos. `packages/contracts` contém aliases, reexportações e DTOs públicos sem duplicação estrutural. `packages/adapter-supabase` implementa as portas de leitura sobre `products`, `specs`, `product_specs` e `unit_conversions` e restringe as escritas administrativas aprovadas a `products` e `product_specs`. `apps/web` conecta seleção, comparação e administração aos casos de uso por camada server-only e composition root.
 
 A fundação Auth está implementada. `@supabase/ssr` mantém a sessão em cookies; o Middleware renova a sessão e redireciona usuários não autenticados; páginas e Server Actions repetem a validação no servidor. `/login` usa e-mail/senha e redirect interno seguro, e o logout é server-side. `public.profiles` é a fonte de role/status; `admin` também acessa a área `seller`; profile ausente, não ativo ou inválido falha fechado.
 
@@ -140,6 +140,10 @@ explicitamente no adapter.
 campos preenchidos, sem transportar o ID original. O fluxo reutiliza integralmente a Server Action,
 o caso de uso e a persistência do Create; a duplicidade normal impede cópia idêntica e nenhum
 `product_specs`, preço, imagem, documento ou histórico é copiado.
+`/admin/products/[id]/specs` carrega todos os specs ativos e associações do produto, monta no core
+uma ficha por hierarquia real e salva numeric, binary e scale em lotes. Torque aceita Nm/kgfm, usa
+`unit_conversions` e persiste somente Nm; `PW_0036` permanece `kg/Nm`. Não houve migration. A
+atomicidade estrita entre upsert e delete e a exibição kgfm no MVP-u permanecem evoluções futuras.
 `/admin/products` transporta filtros por search params e os aplica server-side no adapter, com
 sticky acumulado no desktop e oferece ações Editar e Duplicar por linha. Não existem exclusão,
 cadastro de equipamentos ou preços.
@@ -162,9 +166,8 @@ O export histórico do Appsmith permanece versionado em `appsmith/exports/Compra
 2. Validar cobertura e desempenho com 2 ou 3 veículos reais.
 3. Comparar este clone com o `C:\Dev\compra-car` do outro notebook.
 4. Avaliar com o negócio as três divergências estruturais de specs encontradas na Sprint 5.
-5. Implementar a Sprint 8: cadastro de equipamentos em `product_specs`.
-6. Implementar a Sprint 9: preços.
-7. Concluir MVP e piloto; depois evoluir dados, importador e arquitetura gradualmente.
+5. Implementar a Sprint 9: preços.
+6. Concluir MVP e piloto; depois evoluir dados, importador e arquitetura gradualmente.
 
 ## Registro histórico — Sprint 1 de Gestão de Produtos no Appsmith (planejamento em 2026-07-22)
 

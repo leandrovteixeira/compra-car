@@ -3,6 +3,10 @@ import type {
   AdministrativeVehicleInput,
   AdministrativeVehicleFilters,
   AdministrativeVehicleRepository,
+  AdministrativeProductSpecsRepository,
+  AdministrativeProductSpecValue,
+  AdministrativeSpecCatalogItem,
+  AdministrativeProductSpecsBatch,
   AvailableVehicleFilters,
   ComparisonItem,
   ComparisonRepository,
@@ -10,13 +14,19 @@ import type {
   VehicleComparisonValue,
   VehicleId,
   VehicleRepository,
+  UnitConversion,
 } from '@compra-car/core';
 import { administrativeVehicleIdentity } from '@compra-car/core';
 import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js';
 
 import { assertLegacyServerRuntime, createLegacySupabaseClientFromEnv } from './client';
 import { LegacyAdapterMappingError, LegacyAdapterQueryError } from './errors';
-import type { LegacyProductRow, LegacyProductSpecRow, LegacySpecRow } from './legacy-dtos';
+import type {
+  LegacyProductRow,
+  LegacyProductSpecRow,
+  LegacySpecRow,
+  LegacyUnitConversionRow,
+} from './legacy-dtos';
 import {
   mapLegacyProductToVehicle,
   mapLegacyRowsToComparisonValues,
@@ -75,7 +85,11 @@ function mapLegacyProductToAdministrativeVehicle(row: LegacyProductRow): Adminis
 }
 
 export class LegacySupabaseAdapter
-  implements VehicleRepository, ComparisonRepository, AdministrativeVehicleRepository
+  implements
+    VehicleRepository,
+    ComparisonRepository,
+    AdministrativeVehicleRepository,
+    AdministrativeProductSpecsRepository
 {
   private readonly comparisonBatches = new Map<string, Promise<ComparisonBatch>>();
 
@@ -222,6 +236,100 @@ export class LegacySupabaseAdapter
     if (error?.code === '23505') return { status: 'duplicate' };
     if (error) throw queryError('atualização de product', error);
     return data ? { status: 'updated' } : { status: 'not_found' };
+  }
+
+  async listActiveAdministrativeSpecs(): Promise<readonly AdministrativeSpecCatalogItem[]> {
+    const { data, error } = await this.client
+      .from('specs')
+      .select(SPEC_COLUMNS)
+      .eq('is_active', true)
+      .order('id');
+    if (error) throw queryError('catálogo administrativo de specs', error);
+    return ((data ?? []) as unknown as LegacySpecRow[]).map((row) => {
+      if (
+        !row.code ||
+        !row.group_name ||
+        !row.equipment_group ||
+        !row.spec_set ||
+        !row.detail ||
+        !['numeric', 'binary', 'scale'].includes(row.type ?? '')
+      ) {
+        throw new LegacyAdapterMappingError(`Spec administrativo ${row.id} inválido.`);
+      }
+      return {
+        id: String(row.id),
+        code: row.code,
+        type: row.type as AdministrativeSpecCatalogItem['type'],
+        groupName: row.group_name,
+        equipmentGroup: row.equipment_group,
+        specSet: row.spec_set,
+        detail: row.detail,
+        unit: row.unit?.trim() || null,
+      };
+    });
+  }
+
+  async listAdministrativeProductSpecValues(
+    productId: string,
+  ): Promise<readonly AdministrativeProductSpecValue[]> {
+    const parsedId = parseAdministrativeProductId(productId);
+    if (parsedId === null) return [];
+    const { data, error } = await this.client
+      .from('product_specs')
+      .select(PRODUCT_SPEC_COLUMNS)
+      .eq('product_id', parsedId);
+    if (error) throw queryError('valores administrativos de specs', error);
+    return ((data ?? []) as unknown as LegacyProductSpecRow[]).map((row) => ({
+      specId: String(row.equipment_id),
+      value: row.value === null ? null : Number(row.value),
+      isPresent: row.is_present,
+      inputUnit: row.input_unit?.trim() || null,
+    }));
+  }
+
+  async listUnitConversions(): Promise<readonly UnitConversion[]> {
+    const { data, error } = await this.client
+      .from('unit_conversions')
+      .select('unit_from,unit_to,multiplier,offset_value')
+      .order('id');
+    if (error) throw queryError('conversões de unidade', error);
+    return ((data ?? []) as unknown as LegacyUnitConversionRow[]).map((row) => ({
+      unitFrom: row.unit_from,
+      unitTo: row.unit_to,
+      multiplier: Number(row.multiplier),
+      offset: Number(row.offset_value),
+    }));
+  }
+
+  async saveAdministrativeProductSpecs(
+    productId: string,
+    batch: AdministrativeProductSpecsBatch,
+  ): Promise<void> {
+    const parsedId = parseAdministrativeProductId(productId);
+    if (parsedId === null) throw new LegacyAdapterMappingError('ID de produto inválido.');
+
+    if (batch.upserts.length > 0) {
+      const payload = batch.upserts.map((item) => ({
+        product_id: parsedId,
+        equipment_id: parseLegacyId(item.specId),
+        value: item.value,
+        is_present: item.isPresent,
+        input_unit: item.inputUnit,
+      }));
+      const { error } = await this.client
+        .from('product_specs')
+        .upsert(payload, { onConflict: 'product_id,equipment_id' });
+      if (error) throw queryError('upsert em lote de product_specs', error);
+    }
+
+    if (batch.deleteSpecIds.length > 0) {
+      const { error } = await this.client
+        .from('product_specs')
+        .delete()
+        .eq('product_id', parsedId)
+        .in('equipment_id', batch.deleteSpecIds.map(parseLegacyId));
+      if (error) throw queryError('remoção em lote de product_specs', error);
+    }
   }
 
   async listPublicEligibleVehicles(

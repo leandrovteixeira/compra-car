@@ -98,7 +98,7 @@ describe('admin foundation', () => {
     expect(form).toContain('Cadastrar equipamentos');
     expect(form).toContain('Editar veículo');
     expect(form.match(/disabled/g)?.length).toBeGreaterThanOrEqual(2);
-    expect(form).not.toContain('/specs');
+    expect(form).toContain('href={`/admin/products/${productId}/specs`}');
     expect(form).toContain('href={`/admin/products/${productId}/edit`}');
     expect(form).not.toContain('supabase');
     expect(form).not.toContain('createClient');

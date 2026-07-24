@@ -92,6 +92,12 @@ export function AdminProductList({ products }: AdminProductListProps) {
                     >
                       Duplicar
                     </Link>
+                    <Link
+                      className="inline-flex min-h-11 items-center rounded-xl border border-slate-700 px-3 font-semibold text-emerald-300 transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                      href={`/admin/products/${product.id}/specs`}
+                    >
+                      Especificações
+                    </Link>
                   </div>
                 </td>
               </tr>
