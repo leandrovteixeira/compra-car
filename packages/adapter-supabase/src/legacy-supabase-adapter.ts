@@ -1,4 +1,7 @@
 import type {
+  AdministrativeVehicleInput,
+  AdministrativeVehicleFilters,
+  AdministrativeVehicleRepository,
   AvailableVehicleFilters,
   ComparisonItem,
   ComparisonRepository,
@@ -7,6 +10,7 @@ import type {
   VehicleId,
   VehicleRepository,
 } from '@compra-car/core';
+import { administrativeVehicleIdentity } from '@compra-car/core';
 import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js';
 
 import { assertLegacyServerRuntime, createLegacySupabaseClientFromEnv } from './client';
@@ -22,6 +26,10 @@ const PRODUCT_COLUMNS = 'id,brand,model,version,model_year,production_year,is_ac
 const SPEC_COLUMNS =
   'id,code,type,group_name,equipment_group,spec_set,detail,unit,value_direction,is_active';
 const PRODUCT_SPEC_COLUMNS = 'product_id,equipment_id,value,is_present,input_unit';
+
+function escapedIlikeContains(value: string): string {
+  return `%${value.replace(/[\\%_]/gu, '\\$&')}%`;
+}
 
 interface ComparisonBatch {
   readonly specs: readonly LegacySpecRow[];
@@ -42,7 +50,9 @@ function parseLegacyId(id: VehicleId): number {
   return parsed;
 }
 
-export class LegacySupabaseAdapter implements VehicleRepository, ComparisonRepository {
+export class LegacySupabaseAdapter
+  implements VehicleRepository, ComparisonRepository, AdministrativeVehicleRepository
+{
   private readonly comparisonBatches = new Map<string, Promise<ComparisonBatch>>();
 
   constructor(private readonly client: SupabaseClient = createLegacySupabaseClientFromEnv()) {
@@ -67,11 +77,75 @@ export class LegacySupabaseAdapter implements VehicleRepository, ComparisonRepos
     return this.listPublicEligibleVehicles(filters);
   }
 
-  async listAdministrativeVehicles(): Promise<readonly Vehicle[]> {
-    const { data, error } = await this.client.from('products').select(PRODUCT_COLUMNS);
+  async listAdministrativeVehicles(
+    filters: AdministrativeVehicleFilters = {},
+  ): Promise<readonly Vehicle[]> {
+    let query = this.client.from('products').select(PRODUCT_COLUMNS);
+    if (filters.model) query = query.ilike('model', escapedIlikeContains(filters.model));
+    if (filters.brand) query = query.ilike('brand', escapedIlikeContains(filters.brand));
+    if (filters.version) query = query.ilike('version', escapedIlikeContains(filters.version));
+    if (filters.isActive !== undefined) query = query.eq('is_active', filters.isActive);
+    if (filters.isPublic !== undefined) query = query.eq('is_public', filters.isPublic);
+
+    const { data, error } = await query;
     if (error) throw queryError('products administrativos', error);
 
     return ((data ?? []) as unknown as LegacyProductRow[]).map(mapLegacyProductToVehicle);
+  }
+
+  async findAdministrativeVehicleDuplicate(input: AdministrativeVehicleInput): Promise<boolean> {
+    const { data, error } = await this.client
+      .from('products')
+      .select(PRODUCT_COLUMNS)
+      .eq('model_year', input.modelYear)
+      .eq('production_year', input.productionYear);
+    if (error) throw queryError('duplicidade de product', error);
+
+    const identity = administrativeVehicleIdentity(input);
+    return ((data ?? []) as unknown as LegacyProductRow[]).some((row) => {
+      if (row.brand === null || row.model === null || row.version === null) return false;
+      return (
+        administrativeVehicleIdentity({
+          brand: row.brand,
+          model: row.model,
+          version: row.version,
+          modelYear: Number(row.model_year),
+          productionYear: Number(row.production_year),
+          isActive: row.is_active === true,
+          isPublic: row.is_public === true,
+        }) === identity
+      );
+    });
+  }
+
+  async createAdministrativeVehicle(
+    input: AdministrativeVehicleInput,
+  ): Promise<
+    { readonly status: 'created'; readonly id: string } | { readonly status: 'duplicate' }
+  > {
+    const payload = {
+      brand: input.brand,
+      model: input.model,
+      version: input.version,
+      model_year: input.modelYear,
+      production_year: input.productionYear,
+      is_active: input.isActive,
+      is_public: input.isPublic,
+    };
+    const { data, error } = await this.client
+      .from('products')
+      .insert(payload)
+      .select('id')
+      .single();
+
+    if (error?.code === '23505') return { status: 'duplicate' };
+    if (error) throw queryError('criação de product', error);
+
+    const id = (data as { readonly id?: unknown } | null)?.id;
+    if (typeof id !== 'number' && typeof id !== 'string') {
+      throw new LegacyAdapterMappingError('A criação de product não retornou um ID válido.');
+    }
+    return { status: 'created', id: String(id) };
   }
 
   async listPublicEligibleVehicles(

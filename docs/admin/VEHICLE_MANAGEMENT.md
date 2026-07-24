@@ -8,7 +8,10 @@ Um veículo representa uma combinação comercial específica de:
 marca + modelo + versão + MY + PY
 ```
 
-Essa combinação é a chave de negócio aprovada. O identificador técnico permanece separado e é atribuído pelo objeto físico existente. A constraint equivalente aparece apenas em evidência histórica de `Legacy`; sua existência no Supabase atual permanece pendente.
+Essa combinação é a chave de negócio aprovada. O identificador técnico permanece separado e é
+atribuído pelo objeto físico existente. O índice único `unique_product` foi confirmado no Supabase
+atual sobre `(brand, model, version, model_year, production_year)`. Por ser exato, ele não substitui
+a comparação normalizada para diferenças de caixa e espaços.
 
 ## Criação
 
@@ -21,7 +24,9 @@ A criação deve:
 5. registrar claramente sucesso, conflito ou falha;
 6. permitir configurar os estados existentes de atividade e publicação sem confundi-los.
 
-A consulta prévia reduz erros, mas não substitui uma constraint física em cenários concorrentes.
+A consulta prévia normalizada reduz erros. O índice físico cobre concorrência para valores exatos;
+variações simultâneas apenas de caixa ou espaços ainda representam risco residual até existir uma
+proteção normalizada no banco.
 
 ## Edição
 

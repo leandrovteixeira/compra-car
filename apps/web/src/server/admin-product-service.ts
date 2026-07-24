@@ -1,5 +1,5 @@
 import { LegacySupabaseAdapter } from '@compra-car/adapter-supabase';
-import type { Vehicle } from '@compra-car/contracts';
+import type { AdministrativeVehicleFilters, Vehicle } from '@compra-car/contracts';
 
 export interface AdminProductListItem {
   readonly brand: string;
@@ -16,7 +16,7 @@ export type AdminProductListResult =
   { readonly ok: true; readonly data: readonly AdminProductListItem[] } | { readonly ok: false };
 
 export interface AdminProductReader {
-  listAdministrativeVehicles(): Promise<readonly Vehicle[]>;
+  listAdministrativeVehicles(filters?: AdministrativeVehicleFilters): Promise<readonly Vehicle[]>;
 }
 
 function toAdminProductListItem(vehicle: Vehicle): AdminProductListItem {
@@ -33,10 +33,11 @@ function toAdminProductListItem(vehicle: Vehicle): AdminProductListItem {
 }
 
 export async function loadAdminProducts(
+  filters: AdministrativeVehicleFilters = {},
   reader: AdminProductReader = new LegacySupabaseAdapter(),
 ): Promise<AdminProductListResult> {
   try {
-    const vehicles = await reader.listAdministrativeVehicles();
+    const vehicles = await reader.listAdministrativeVehicles(filters);
     return {
       ok: true,
       data: vehicles

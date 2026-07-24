@@ -9,6 +9,7 @@
   },
   "types": "./src/index.ts",
   "scripts": {
+    "audit:specs": "node scripts/audit-spec-structure.mjs",
     "lint": "eslint src test --max-warnings=0",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"

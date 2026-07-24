@@ -54,6 +54,14 @@ Corpos de functions podem conter logica sensivel, senhas, tokens, chaves, connec
 - `13_product_specs_semantics.sql`: valida tipos, `is_present`, values, codes e unidades;
 - `14_price_model_validation.sql`: valida cobertura, histórico e relação com as views de preço;
 - `15_public_catalog_validation.sql`: valida o funil real de elegibilidade pública e o impacto de `is_present = false`.
+- `16_specs_structure_audit.sql`: audita `detail = spec_set` em `numeric`/`binary`,
+  a distinção de opções `scale` por trio e suas identidades, sem escrita.
+
+A mesma regra pode ser executada pela API somente leitura com
+`pnpm --filter @compra-car/adapter-supabase audit:specs`. Na execução de 2026-07-23 foram
+inspecionados 59 `numeric`, 171 `binary` e 26 grupos `scale` (90 opções). Não houve `detail`
+repetido em grupo `scale` nem identidade ausente; `CO_0044`, `CO_0045` e `PW_0042` divergiram de
+`detail = spec_set`. Nenhuma correção automática foi feita.
 
 Execute cada script individualmente no SQL Editor. Salve ou copie integralmente os resultados de cada consulta para preservar as evidências da validação. Nenhum desses scripts altera o banco. Resultados de exemplo são limitados a 100 linhas e ordenados de forma determinística, mas as contagens são completas e não usam limite para esconder problemas.
 

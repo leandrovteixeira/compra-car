@@ -1,6 +1,8 @@
 # `@compra-car/adapter-supabase`
 
-Adaptador somente leitura que implementa `VehicleRepository` e `ComparisonRepository` sobre o Supabase atual. A tradução passa por DTOs e mapeadores internos; nenhum nome físico alcança o core ou o frontend.
+Adaptador server-only que implementa as portas de catálogo/comparação e a porta administrativa
+estreita de veículos sobre o Supabase atual. A tradução passa por DTOs e mapeadores internos;
+nenhum nome físico alcança o core ou o frontend.
 
 ## Configuração do servidor
 
@@ -15,10 +17,21 @@ const repository = new LegacySupabaseAdapter();
 ## Consultas autorizadas
 
 - `products`: projeção de identidade comercial e flags, com filtros exatos;
+- a listagem administrativa aceita filtros textuais case-insensitive de modelo, marca e versão e
+  filtros exatos de atividade/publicação, combinados com AND;
 - `product_specs`: associações dos IDs em lote;
 - `specs`: metadados ativos dos equipamentos em lote.
 
-O pacote não contém escrita, migrations, RPC, autenticação, UI ou acesso ao Excel. O vínculo `product_specs.product_id → products.id` é lógico e sua ausência de FK está documentada.
+## Escrita administrativa autorizada
+
+- `products`: checagem normalizada de duplicidade por anos e insert com projeção de retorno
+  limitada a `id`;
+- o payload contém somente `brand`, `model`, `version`, `model_year`, `production_year`,
+  `is_active` e `is_public`;
+- a criação só pode ser acionada depois de `requireRole('admin')` na aplicação.
+
+O pacote não contém migrations, escrita em `product_specs`, RPC, UI ou acesso ao Excel. O vínculo
+`product_specs.product_id → products.id` é lógico e sua ausência de FK está documentada.
 
 ## Testes
 

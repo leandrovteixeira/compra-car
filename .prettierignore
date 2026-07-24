@@ -1,6 +1,7 @@
 .git/
 .next/
 .turbo/
+appsmith/exports/
 Legacy/
 coverage/
 data/

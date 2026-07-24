@@ -125,7 +125,15 @@ A infraestrutura do monorepo, o núcleo de domínio, o adaptador legado e os ver
 
 A fundação Auth está implementada. `@supabase/ssr` mantém a sessão em cookies; o Middleware renova a sessão e redireciona usuários não autenticados; páginas e Server Actions repetem a validação no servidor. `/login` usa e-mail/senha e redirect interno seguro, e o logout é server-side. `public.profiles` é a fonte de role/status; `admin` também acessa a área `seller`; profile ausente, não ativo ou inválido falha fechado.
 
-O MVP-a possui shell administrativo persistente em `/admin/*`, sidebar desktop, menu mobile, navegação, visão geral e `/admin/products`. A listagem de veículos é server-rendered, somente leitura, usa `LegacySupabaseAdapter.listAdministrativeVehicles()` após `requireRole('admin')` e distingue dados, lista vazia e falha. Exibe somente `id`, marca, modelo, versão, anos e flags de atividade/publicação confirmados no adapter. Não existem Create, edição, duplicação, exclusão, cadastro de equipamentos ou preços.
+O MVP-a possui shell administrativo persistente em `/admin/*`, sidebar desktop, menu mobile,
+navegação, visão geral e `/admin/products`. A listagem de veículos é server-rendered e usa
+`LegacySupabaseAdapter.listAdministrativeVehicles()` após `requireRole('admin')`.
+`/admin/products/new` implementa a criação exclusiva do registro principal em `products`, com
+normalização e validação puras no core, selects dependentes de anos, checagem normalizada de
+duplicidade, payload explícito no adapter, Server Action autorizada e diálogo de sucesso.
+`/admin/products` transporta filtros por search params e os aplica server-side no adapter, com
+sticky acumulado no desktop. Não existem edição, duplicação, exclusão, cadastro de equipamentos ou
+preços.
 
 A URL de comparação é `/comparar?vehicles=id1,id2[,id3,...]`. A página valida IDs, preserva sua ordem, executa `CompareVehicles`, apresenta categorias e usa `hasReferenceAdvantage` no filtro “Ver destaques”. A UI usa uma única superfície tabular com cabeçalho e primeira coluna fixos, rolagem bidirecional, células com slot estável para checks e estados dedicados de loading, vazio e erro. O domínio e o adapter não conhecem componentes ou parâmetros de URL.
 
@@ -144,7 +152,7 @@ O export histórico do Appsmith permanece versionado em `appsmith/exports/Compra
 1. Executar o teste de integração opt-in no ambiente autorizado.
 2. Validar cobertura e desempenho com 2 ou 3 veículos reais.
 3. Comparar este clone com o `C:\Dev\compra-car` do outro notebook.
-4. Implementar a Sprint 5: cadastro de veículos (Create).
+4. Avaliar com o negócio as três divergências estruturais de specs encontradas na Sprint 5.
 5. Implementar a Sprint 6: edição de veículos.
 6. Implementar a Sprint 7: duplicação de veículos.
 7. Implementar a Sprint 8: cadastro de equipamentos em `product_specs`.
@@ -180,7 +188,11 @@ O escopo da Sprint 1 fica limitado a `products` e `product_specs`, usando `specs
 - **PENDENTE:** coluna e semântica do valor monetário master de specs.
 - **CONFIRMADO:** export e estrutura históricos do Appsmith, inventariados em `docs/admin/SPRINT_1_PRODUCT_MANAGEMENT.md`.
 - **PENDENTE:** mapear consumidores e dependências das integrações históricas antes de eventual remoção.
-- **PENDENTE:** constraint física da chave de negócio de veículos no Supabase atual.
+- **CONFIRMADO:** índice único exato `unique_product` na chave de negócio de veículos; proteção
+  normalizada contra concorrência com variações de caixa/espaços permanece pendente.
+- **CONFIRMADO COM RESSALVAS:** auditoria remota somente leitura inspecionou 59 `numeric`, 171
+  `binary` e 26 grupos `scale`; encontrou divergências `detail != spec_set` em `CO_0044`, `CO_0045`
+  e `PW_0042`, sem duplicidade de `detail` nos grupos `scale` nem identidade ausente.
 - **PENDENTE:** confirmar como `product_specs.is_present = false` afeta presença, validade e comparabilidade.
 - **PENDENTE:** para `getVehiclesByIds`, a rodada Auth mantém elegibilidade restrita a `is_active = true` e `is_public = true`; decidir em `/admin/products` e no catálogo se a consulta por IDs também exigirá specs ativas.
 - **CONCLUÍDO:** migration de profiles aplicada e validada no projeto remoto auditado, incluindo pgTAP e rollback das fixtures de teste.

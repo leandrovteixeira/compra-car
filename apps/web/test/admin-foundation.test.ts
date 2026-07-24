@@ -50,15 +50,15 @@ describe('admin foundation', () => {
     expect(account).toContain('<AppLogoutControl');
   });
 
-  it('loads products only after explicit admin authorization and keeps creation unavailable', () => {
+  it('loads products only after explicit admin authorization and links to creation', () => {
     const page = source('../src/app/admin/products/page.tsx');
 
     expect(page.indexOf("await requireRole('admin')")).toBeLessThan(
-      page.indexOf('await loadAdminProducts()'),
+      page.indexOf('await loadAdminProducts(parsed.filters)'),
     );
     expect(page).toContain('title="Veículos"');
     expect(page).toContain('Novo veículo');
-    expect(page).toContain('disabled');
+    expect(page).toContain('href="/admin/products/new"');
     expect(page).toContain('<AdminProductList products={result.data}');
     expect(page).toContain('Nenhum veículo cadastrado');
     expect(page).toContain('<AdminProductError');
@@ -67,14 +67,40 @@ describe('admin foundation', () => {
     expect(page).not.toContain('supabase');
   });
 
-  it('does not add CRUD controls or links to nonexistent product actions', () => {
-    const page = source('../src/app/admin/products/page.tsx');
+  it('keeps edit, deletion and duplication unavailable in the list', () => {
     const list = source('../src/components/admin/admin-product-list.tsx');
 
-    expect(page).not.toMatch(/href=["']\/admin\/products\/(?:new|\$\{)/);
     expect(list).not.toContain('Editar');
     expect(list).not.toContain('Excluir');
     expect(list).not.toContain('Duplicar');
     expect(list).not.toContain('<Link');
+  });
+
+  it('protects the creation route and exposes the reusable seven-field form', () => {
+    const page = source('../src/app/admin/products/new/page.tsx');
+    const form = source('../src/components/admin/admin-product-form.tsx');
+
+    expect(page).toContain("await requireRole('admin')");
+    expect(page).toContain('<AdminProductForm');
+    for (const field of [
+      'name="brand"',
+      'name="model"',
+      'name="version"',
+      'name="modelYear"',
+      'name="productionYear"',
+      'name="isActive"',
+      'name="isPublic"',
+    ]) {
+      expect(form).toContain(field);
+    }
+    expect(form).toContain('href="/admin/products"');
+    expect(form).toContain('Veículo cadastrado com sucesso.');
+    expect(form).toContain('Cadastrar equipamentos');
+    expect(form).toContain('Editar veículo');
+    expect(form.match(/disabled/g)?.length).toBeGreaterThanOrEqual(2);
+    expect(form).not.toContain('/specs');
+    expect(form).not.toContain('/edit');
+    expect(form).not.toContain('supabase');
+    expect(form).not.toContain('createClient');
   });
 });

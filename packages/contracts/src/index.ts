@@ -1,4 +1,5 @@
 import type {
+  AdministrativeVehicleFieldErrors,
   AvailableVehicleFilters,
   ComparisonItem,
   ComparisonOutcome,
@@ -8,6 +9,10 @@ import type {
 } from '@compra-car/core';
 
 export type {
+  AdministrativeVehicleField,
+  AdministrativeVehicleFieldErrors,
+  AdministrativeVehicleFilters,
+  AdministrativeVehicleInput,
   AvailableVehicleFilters,
   ComparisonCategory,
   ComparisonItem,
@@ -25,6 +30,35 @@ export type {
   VehicleId,
   VehicleRepository,
 } from '@compra-car/core';
+
+export interface AdministrativeVehicleFormValuesDto {
+  readonly brand: string;
+  readonly model: string;
+  readonly version: string;
+  readonly modelYear: string;
+  readonly productionYear: string;
+  readonly isActive: boolean;
+  readonly isPublic: boolean;
+}
+
+export type CreateAdministrativeVehicleActionStateDto =
+  | {
+      readonly status: 'idle';
+      readonly values: AdministrativeVehicleFormValuesDto;
+      readonly fieldErrors: AdministrativeVehicleFieldErrors;
+    }
+  | {
+      readonly status: 'error';
+      readonly values: AdministrativeVehicleFormValuesDto;
+      readonly fieldErrors: AdministrativeVehicleFieldErrors;
+      readonly message?: string;
+    }
+  | {
+      readonly status: 'success';
+      readonly id: string;
+      readonly values: AdministrativeVehicleFormValuesDto;
+      readonly fieldErrors: AdministrativeVehicleFieldErrors;
+    };
 
 export type VehicleDto = Vehicle;
 export type ComparisonItemDto = ComparisonItem;

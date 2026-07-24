@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-07-23 — Sprint 5: criação administrativa de veículos
+
+- Implementada `/admin/products/new` com os sete campos aprovados, layout responsivo e defaults
+  privados/inativos.
+- Adicionados normalização, validação, porta e caso de uso reutilizáveis para criação, edição e
+  duplicação futuras.
+- Ampliado o adapter server-only com busca normalizada de duplicidade e insert explícito somente em
+  `products`, retornando o ID gerado e traduzindo conflito único sem expor erro bruto.
+- Preservada autorização `admin` antes da construção do adapter privilegiado; a listagem é
+  revalidada após sucesso.
+- Adicionado diálogo acessível de sucesso; edição e equipamentos permanecem visíveis, desabilitados
+  e sem links para rotas futuras.
+- Adicionados testes de regras, segurança, persistência e estrutura da interface.
+- Adicionados consulta SQL e script versionável para auditoria somente leitura de specs. A execução
+  remota inspecionou 59 `numeric`, 171 `binary` e 26 grupos `scale`; encontrou três divergências de
+  `detail = spec_set`, sem duplicidade de opção `scale` ou identidade ausente.
+- Nenhuma migration, escrita remota de teste, edição/duplicação/exclusão, spec, preço ou imagem foi
+  incluída.
+- Refinamento final: anos convertidos em selects dependentes e dinâmicos, controles Ativo/Público
+  simplificados, filtros administrativos por search params e consulta server-side com AND.
+- Cabeçalhos administrativo, da página/filtros e da tabela mantidos visíveis no desktop por offsets
+  sticky acumulados; no mobile, o conteúdo adicional permanece no fluxo normal.
+
 ## 2026-07-23 — Auth, áreas autenticadas e listagem administrativa
 
 - Consolidada a autenticação SSR com Supabase Auth, cookies, Middleware, login e logout server-side.
