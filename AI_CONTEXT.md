@@ -100,6 +100,12 @@ Esses estados não podem ser confundidos.
 - ADR-008: Supabase Auth, cookies SSR, roles `admin`/`seller` e status `pending`/`active`/`disabled`; a fundação SQL de profiles usa `seller`, foi aplicada pela primeira vez no projeto remoto auditado e passou pela validação estrutural e pelo teste pgTAP.
 - ADR-007: registro histórico da adoção do Appsmith na Fase 1, posteriormente substituída parcialmente pelo ADR-010.
 - ADR-010: uma única aplicação Next.js contém as áreas `seller` e `admin`; `admin` também acessa `seller`; o Supabase é compartilhado e o Appsmith deixa a arquitetura-alvo.
+- ADR-009: preços públicos e políticas comerciais são conceitos separados; o legado misto permanece
+  temporariamente.
+- ADR-011: detalha o modelo alvo com preço por produto/data, política com valor congelado por
+  aplicação/produto, acumuladores explícitos, parâmetros financeiros versionados, imports
+  revisáveis, auditoria, RLS e migração incremental forward-only. Cada aplicação separa
+  `input_monetary_value` opcional do `monetary_value` final obrigatório e congelado.
 - O resultado distingue vantagem, desvantagem, empate, informação desconhecida e item não aplicável.
 - Apenas vantagens da referência são destacadas nesta versão.
 - O MVP usa o Supabase atual sem depender de nova carga do Excel.
@@ -120,7 +126,7 @@ Esses estados não podem ser confundidos.
 - não iniciar novas implementações no Appsmith nem remover seus artefatos ou integrações sem decisão específica;
 - não implementar PDF ou offline nesta fase concluída.
 
-## Estado atual — 2026-07-24
+## Estado atual — 2026-07-25
 
 A infraestrutura do monorepo, o núcleo de domínio, o adaptador legado e os vertical slices de seleção e comparação estão implementados. `packages/core` contém entidades, value objects, erros, portas e casos de uso, inclusive Create/Update administrativos. `packages/contracts` contém aliases, reexportações e DTOs públicos sem duplicação estrutural. `packages/adapter-supabase` implementa as portas de leitura sobre `products`, `specs`, `product_specs` e `unit_conversions` e restringe as escritas administrativas aprovadas a `products` e `product_specs`. `apps/web` conecta seleção, comparação e administração aos casos de uso por camada server-only e composition root.
 
@@ -159,6 +165,112 @@ delete e a exibição kgfm no MVP-u permanecem evoluções futuras.
 sticky acumulado no desktop e oferece ações Editar e Duplicar por linha. Não existem exclusão,
 cadastro de equipamentos ou preços.
 
+A Sprint 9 começou com investigação somente leitura. O inventário em
+`docs/data/PRICE_AND_COMMERCIAL_POLICY_INVENTORY.md` confirma que o comparador MVP-u Next.js ainda
+não lê preço: seu fluxo termina em `products`, `product_specs` e `specs`. A página histórica
+`Análise de Valor` do Appsmith é o único consumidor localizado de
+`vw_product_value_current.public_price`; não há CRUD de preço/política no MVP-a.
+
+Na fotografia remota somente leitura de 2026-07-25 existem 292 produtos e 746 linhas em
+`product_price_offers`, com 287 produtos cobertos, duas duplicidades produto/mês, um preço zero,
+nenhum preço nulo/negativo e meses de junho de 2025 a abril de 2026. Os 746 registros compartilham
+o mesmo `created_at`, embora a view “current” ordene por esse timestamp. O modelo mistura MSRP e
+política, não possui vigência completa, RLS/policies ou índices temporais, e mantém grants amplos.
+A arquitetura da Sprint 9 foi aceita no ADR-011 e detalhada em
+`docs/data/PRICE_AND_POLICY_TARGET_SCHEMA.md`, `docs/data/PRICE_AND_POLICY_MIGRATION_PLAN.md` e
+`docs/data/PRICE_AND_POLICY_CALCULATION_RULES.md`. O alvo preserva o legado e separa
+`product_public_prices`, políticas, aplicações com valor BRL congelado por produto, acumuladores,
+parâmetros CDI/spread versionados, importação/revisão e auditoria. Preço não armazena fim: o próximo
+`starts_on` encerra o período anterior. Política isolada é sempre válida; apenas acumulador publicado
+autoriza soma. IA/API entram em draft/needs_review e nunca publicam.
+
+A revisão final pré-migration diferencia input monetário e resultado econômico. Bônus de varejo,
+trade-in, wallbox e `other` persistem input por aplicação e congelam o mesmo valor como resultado;
+seguro, IPVA, emplacamento e financiamento mantêm input monetário nulo e calculam o resultado. Os
+oito tipos iniciais permanecem enum; tipos administráveis não pertencem ao MVP e benefícios novos
+usam `other + manual_amount`. Zero só pode permanecer em draft/needs_review; ausência de preço
+publicado é ausência de registro. CDI/spread sem fonte/governança final não bloqueiam tabelas ou
+drafts, mas impedem publicar `subsidized_financing` sem parameter set manual versionado e published.
+
+A primeira etapa estrutural foi versionada em
+`supabase/migrations/20260725172755_create_pricing_types_and_core_tables.sql`: cinco enums e sete
+tabelas centrais, com constraints locais e índices, sem dados, backfill, views, RLS, policies,
+grants específicos, funções ou triggers. `source_import_row_id` permanece sem FK até a migration de
+importação.
+
+`supabase/migrations/20260725175159_secure_pricing_core_schema.sql` protege exclusivamente esse
+core: RLS está habilitado nas sete tabelas, `public`/`anon`/`authenticated` não possuem ACLs nas
+tabelas ou nas seis sequences identity e nenhuma policy foi criada. `service_role` possui somente
+SELECT/INSERT/UPDATE nas tabelas e USAGE/SELECT nas sequences, sem DELETE, TRUNCATE, REFERENCES,
+TRIGGER, MAINTAIN ou UPDATE de sequence. As duas migrations foram aplicadas por
+`db reset --local --no-seed`
+e a suíte SQL completa passou localmente com 129 testes; nenhum banco remoto foi acessado ou
+alterado. Importação/auditoria, validações transacionais, cálculos, views e backfill continuam
+pendentes e separados.
+
+Os default privileges globais da baseline permanecem inalterados e ainda concederão ACLs amplas a
+objetos futuros criados por `postgres`. Cada migration futura no schema `public` deve revogar
+explicitamente os privilégios herdados de seus próprios objetos, sem depender desta proteção do
+core e sem alterar defaults de outros domínios.
+
+`supabase/migrations/20260725180750_create_pricing_import_and_audit_tables.sql` adiciona os quatro
+enums e as cinco tabelas de batches, rows, outputs, revisão humana e auditoria, além das três FKs
+RESTRICT adiadas de `source_import_row_id` para `pricing_import_rows`. A mesma migration habilita
+RLS, remove ACLs de browser e concede ao `service_role` SELECT/INSERT/UPDATE nas quatro tabelas
+operacionais e somente SELECT/INSERT na auditoria append-only; sequences recebem USAGE/SELECT.
+Nenhuma policy, função, trigger, view, backfill ou dado foi criado. `pricing_audit_action.update`
+representa correção auditável e exige `reason`, assim como reject/archive. O reset local e os 176
+testes SQL passaram; nenhum ambiente remoto foi acessado.
+
+`supabase/migrations/20260725182545_create_pricing_lifecycle_and_audit_triggers.sql` adiciona quatro
+funções `SECURITY INVOKER` e 23 triggers para lifecycle e proteção de estados terminais. Sete
+tabelas passam a manter `updated_at` e incrementar `lock_version` exatamente uma vez por update;
+auditoria é append-only inclusive contra DML do owner; registros published/archived/promoted não
+podem regredir para estado mutável nem ser apagados e seus campos econômicos, materiais ou de origem
+ficam congelados. Aplicações e
+filhos de acumulador respeitam o estado do pai. As funções usam `search_path = ''` e tiveram
+`EXECUTE` direto revogado de `public`, `anon`, `authenticated` e `service_role`, sem impedir a
+execução indireta pelos triggers. Não foi criado writer genérico de auditoria, publicação,
+cálculo, view, policy, backfill ou bypass de sessão. Reset limpo e 219 testes SQL passaram somente
+na stack local; nenhum ambiente remoto foi acessado.
+
+`supabase/migrations/20260725184656_create_pricing_validation_and_publication_functions.sql` cria
+quatro funções transacionais `SECURITY DEFINER` para publicar preço público, parameter set, política
+e acumulador. Somente `service_role` recebe `EXECUTE`; cada chamada trava a linha, valida
+`lock_version`, correlation ID e `p_actor_id` consultando `profiles` com `role = admin` e
+`status = active`, executa todas as mutações antes do status terminal e grava auditoria na mesma
+transação. Seis helpers `SECURITY INVOKER` permanecem sem execução operacional direta. Um trigger
+impede publicação direta pelo `service_role` sem variável de sessão, e outro protege rows de batches
+promovidos/arquivados, outputs de rows promovidas e reviews append-only.
+
+Políticas publicadas usam `scope_snapshot` v1 com `productIds` numéricos, distintos e exatamente
+iguais às aplicações. Os oito tipos são validados por método, input, MSRP publicado, parameter set e
+snapshot. Cálculos usam `numeric`, HALF_UP em centavos e tolerância máxima de `1e-10` apenas para
+intermediários não arredondados; financiamento preserva principal, PMT, taxa de referência, PV e
+versão dos parâmetros. Acumuladores calculam `policy_ids:<ids ordenados>`, materializam apenas a
+interseção de produtos e somam valores já congelados. Reset limpo e 293 testes SQL passaram somente
+na stack local; não foram criadas views, backfill, seed financeiro real, promoção automática ou
+acesso de browser, e nenhum ambiente remoto foi acessado.
+
+`supabase/migrations/20260725191747_create_pricing_read_views.sql` cria cinco views server-only com
+`security_invoker = true`: períodos publicados, preço vigente, aplicações de políticas vigentes,
+valores materializados de acumuladores e `vw_product_value_current_v2`. ACLs herdadas foram
+revogadas de `public`, `anon`, `authenticated` e `service_role`; somente SELECT foi concedido ao
+`service_role`. A v2 preserva nomes, ordem e tipos das oito colunas legadas, usa o novo preço atual e
+mantém o cálculo legado de `perceived_value_total` sobre specs, pois não há equivalente seguro no
+novo modelo. `vw_product_value_current` permaneceu inalterada. Reset limpo e 326 testes SQL passaram
+somente localmente; não houve backfill, troca de consumidor ou acesso remoto.
+
+O pacote `@compra-car/pricing-dry-run` implementa a inspeção pré-backfill sem migration e sem escrita
+no banco. Aceita URL PostgreSQL local explícita, output, versão do algoritmo, cutoff e modo estrito de
+mudança de fotografia; rejeita hosts/portas fora da stack local e confirma transação `REPEATABLE READ
+READ ONLY`. Classifica preços, componentes e sugestões de combinação com `decimal.js`, hashes
+canônicos e 16 issue codes, sem desempate por `created_at`, sem converter rebates ou publicar
+acumuladores. Gera dez artefatos JSON/CSV/README. A fixture produziu 5 candidatos de preço, 1
+conflito, 9 candidatos de política, 1 sugestão de acumulador e 11 itens de revisão. O banco local
+recriado sem seed permaneceu com todas as fontes em zero e status `SOURCE_CHANGED`; isso valida a
+ferramenta, não substitui o dry-run futuro sobre uma fotografia local autorizada do legado real.
+
 A URL de comparação é `/comparar?vehicles=id1,id2[,id3,...]`. A página valida IDs, preserva sua ordem, executa `CompareVehicles`, apresenta categorias e usa `hasReferenceAdvantage` no filtro “Ver destaques”. A UI usa uma única superfície tabular com cabeçalho e primeira coluna fixos, rolagem bidirecional, células com slot estável para checks e estados dedicados de loading, vazio e erro. O domínio e o adapter não conhecem componentes ou parâmetros de URL.
 
 Os testes do core usam repositórios in-memory. Os mappers do adaptador são testados sem rede e a integração real é opt-in por variáveis exclusivas. A UI de negócio e `Legacy` permanecem sem alteração nesta fase.
@@ -184,7 +296,8 @@ O export histórico do Appsmith permanece versionado em `appsmith/exports/Compra
 2. Validar cobertura e desempenho com 2 ou 3 veículos reais.
 3. Comparar este clone com o `C:\Dev\compra-car` do outro notebook.
 4. Avaliar com o negócio as três divergências estruturais de specs encontradas na Sprint 5.
-5. Implementar a Sprint 9: preços.
+5. Continuar a Sprint 9 pelas migrations/subtarefas restantes do ADR-011, preservando as decisões
+   financeiras pendentes como bloqueio de publicação, não da estrutura.
 6. Concluir MVP e piloto; depois evoluir dados, importador e arquitetura gradualmente.
 
 ## Registro histórico — Sprint 1 de Gestão de Produtos no Appsmith (planejamento em 2026-07-22)
@@ -212,7 +325,14 @@ O escopo da Sprint 1 fica limitado a `products` e `product_specs`, usando `specs
 - **PENDENTE:** texto jurídico final.
 - **PENDENTE:** marca e participantes do piloto.
 - **PENDENTE:** identidade visual autorizada.
-- **PENDENTE:** objetos reais de preço, políticas comerciais, moeda, vigência e referência temporal.
+- **CONFIRMADO COM RESSALVAS:** o legado usa `product_price_offers.public_price` e `offer_month`,
+  misturando MSRP e política; moeda, vigência completa e regra de preço atual permanecem pendentes.
+- **CONFIRMADO:** ADR-011 define BRL, preço por `product_id + starts_on`, fim derivado, políticas
+  isoladas, aplicações monetárias por produto, acumuladores explícitos e revisão humana obrigatória.
+- **PENDENTE:** fonte/convenção do CDI mensal, spread inicial, regra regional de emplacamento,
+  correção de preço publicado e escopo futuro por canal/região/concessionária.
+- **CONFIRMADO:** pendências de CDI/spread não bloqueiam migrations estruturais; bloqueiam somente a
+  publicação real de financiamento subsidiado até existir parameter set revisado e published.
 - **PENDENTE:** coluna e semântica do valor monetário master de specs.
 - **CONFIRMADO:** export e estrutura históricos do Appsmith, inventariados em `docs/admin/SPRINT_1_PRODUCT_MANAGEMENT.md`.
 - **PENDENTE:** mapear consumidores e dependências das integrações históricas antes de eventual remoção.

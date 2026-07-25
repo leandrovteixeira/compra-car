@@ -1,0 +1,205 @@
+{
+  "databaseIdentity": "fixture://pricing-legacy-dry-run",
+  "offers": [
+    {
+      "id": "1",
+      "productId": "101",
+      "offerMonth": "2026-01-01",
+      "publicPrice": "100000.00",
+      "retailBonus": "1000.00",
+      "retailRebate": "250.00",
+      "tradeInBonus": "2000.00",
+      "tradeInRebate": "0.00",
+      "subsidizedRateMonthly": "0.99",
+      "downPaymentPercent": "40.00",
+      "installments": 24,
+      "rateRebate": "0.00",
+      "insuranceYears": "1.00",
+      "ipvaIncluded": true,
+      "othersBonus": "500.00",
+      "totalCustomerBenefit": "9999.99",
+      "totalDealerRebate": "300.00",
+      "notes": "Wallbox estimado ou bônus adicional / condição alternativa",
+      "isActive": true
+    },
+    {
+      "id": "2",
+      "productId": "101",
+      "offerMonth": "2026-01-01",
+      "publicPrice": "100000.00",
+      "retailBonus": "0.00",
+      "retailRebate": "0.00",
+      "tradeInBonus": "0.00",
+      "tradeInRebate": "0.00",
+      "subsidizedRateMonthly": null,
+      "downPaymentPercent": null,
+      "installments": null,
+      "rateRebate": "0.00",
+      "insuranceYears": "0.00",
+      "ipvaIncluded": false,
+      "othersBonus": "0.00",
+      "totalCustomerBenefit": "0.00",
+      "totalDealerRebate": "0.00",
+      "notes": null,
+      "isActive": true
+    },
+    {
+      "id": "3",
+      "productId": "101",
+      "offerMonth": "2026-02-01",
+      "publicPrice": "110000.00",
+      "retailBonus": "0.00",
+      "retailRebate": "0.00",
+      "tradeInBonus": "0.00",
+      "tradeInRebate": "0.00",
+      "subsidizedRateMonthly": null,
+      "downPaymentPercent": null,
+      "installments": null,
+      "rateRebate": "0.00",
+      "insuranceYears": "0.00",
+      "ipvaIncluded": false,
+      "othersBonus": "0.00",
+      "totalCustomerBenefit": null,
+      "totalDealerRebate": null,
+      "notes": null,
+      "isActive": true
+    },
+    {
+      "id": "4",
+      "productId": "101",
+      "offerMonth": "2026-02-01",
+      "publicPrice": "115000.00",
+      "retailBonus": "0.00",
+      "retailRebate": "0.00",
+      "tradeInBonus": "0.00",
+      "tradeInRebate": "0.00",
+      "subsidizedRateMonthly": null,
+      "downPaymentPercent": null,
+      "installments": null,
+      "rateRebate": "0.00",
+      "insuranceYears": "0.00",
+      "ipvaIncluded": false,
+      "othersBonus": "0.00",
+      "totalCustomerBenefit": null,
+      "totalDealerRebate": null,
+      "notes": null,
+      "isActive": true
+    },
+    {
+      "id": "5",
+      "productId": "102",
+      "offerMonth": "2026-01-01",
+      "publicPrice": "0.00",
+      "retailBonus": "0.00",
+      "retailRebate": "0.00",
+      "tradeInBonus": "0.00",
+      "tradeInRebate": "0.00",
+      "subsidizedRateMonthly": null,
+      "downPaymentPercent": null,
+      "installments": null,
+      "rateRebate": "0.00",
+      "insuranceYears": "0.00",
+      "ipvaIncluded": false,
+      "othersBonus": "0.00",
+      "totalCustomerBenefit": "0.00",
+      "totalDealerRebate": null,
+      "notes": null,
+      "isActive": true
+    },
+    {
+      "id": "6",
+      "productId": "102",
+      "offerMonth": "2026-02-01",
+      "publicPrice": "-1.00",
+      "retailBonus": "0.00",
+      "retailRebate": "0.00",
+      "tradeInBonus": "0.00",
+      "tradeInRebate": "0.00",
+      "subsidizedRateMonthly": null,
+      "downPaymentPercent": null,
+      "installments": null,
+      "rateRebate": "0.00",
+      "insuranceYears": "0.00",
+      "ipvaIncluded": false,
+      "othersBonus": "0.00",
+      "totalCustomerBenefit": "-100.00",
+      "totalDealerRebate": null,
+      "notes": null,
+      "isActive": true
+    },
+    {
+      "id": "7",
+      "productId": "999",
+      "offerMonth": null,
+      "publicPrice": null,
+      "retailBonus": "0.00",
+      "retailRebate": "0.00",
+      "tradeInBonus": "0.00",
+      "tradeInRebate": "0.00",
+      "subsidizedRateMonthly": null,
+      "downPaymentPercent": null,
+      "installments": null,
+      "rateRebate": "0.00",
+      "insuranceYears": "0.00",
+      "ipvaIncluded": false,
+      "othersBonus": "250.00",
+      "totalCustomerBenefit": null,
+      "totalDealerRebate": null,
+      "notes": null,
+      "isActive": true
+    }
+  ],
+  "products": [
+    { "id": "101", "isActive": true },
+    { "id": "102", "isActive": true }
+  ],
+  "imports": [
+    { "id": "1", "validFrom": "2026-01-01", "validTo": "2026-01-31", "status": "pending" }
+  ],
+  "importRows": [
+    {
+      "id": "1",
+      "importId": "1",
+      "productId": null,
+      "publicPrice": "100000.00",
+      "rawText": "fixture row",
+      "status": "pending"
+    }
+  ],
+  "stagingRows": [
+    { "brand": "Fixture", "model": "One", "offer_month_code": "2026-01", "msrp": "100000" }
+  ],
+  "productSpecs": [
+    {
+      "product_id": "101",
+      "equipment_id": "1",
+      "value": "1",
+      "is_present": true,
+      "input_unit": null
+    },
+    {
+      "product_id": "102",
+      "equipment_id": "1",
+      "value": "1",
+      "is_present": true,
+      "input_unit": null
+    }
+  ],
+  "specs": [
+    {
+      "id": "1",
+      "code": "FIXTURE",
+      "type": "numeric",
+      "is_active": true,
+      "unit_perceived_value": "1",
+      "relative_value": "0"
+    }
+  ],
+  "legacyViewProductIds": ["101"],
+  "v2ViewProductIds": [],
+  "sprint9ObjectCounts": {
+    "product_public_prices": 0,
+    "commercial_policies": 0,
+    "commercial_policy_accumulators": 0
+  }
+}
