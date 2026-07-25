@@ -138,6 +138,21 @@ locais em zero e, portanto, divergência integral da baseline. A fotografia real
 executada somente quando houver fonte local autorizada. Detalhes em
 `docs/data/PRICING_LEGACY_DRY_RUN.md`.
 
+### 5.2 Preparação da fotografia local autorizada
+
+`scripts/pricing` implementa o gate operacional anterior ao dry-run real, sem criar uma etapa de
+backfill. O pipeline recebe um dump data-only e SHA-256 previamente autorizados, valida formato e
+allowlist, recusa conteúdo destrutivo e restaura somente as sete origens necessárias em uma stack
+local vazia. O alvo é fail-closed para qualquer host fora de `localhost`, `127.0.0.1` e `::1` ou porta
+diferente da local configurada.
+
+Após restauração local bem-sucedida, o orquestrador executa obrigatoriamente o dry-run com versão do
+algoritmo, cutoff, hash sem `executedAt` e saída verbosa, gerando um manifesto sanitizado. Dump,
+relatórios e manifesto são artefatos locais não versionáveis. A infraestrutura não coleta a
+fotografia, não acessa banco remoto, não altera schema, não executa migration e não promove qualquer
+candidato. Uma falha exige descartar/recriar a stack antes de repetir; não existe limpeza automática
+das tabelas.
+
 Antes de qualquer DML futuro:
 
 1. congelar uma fotografia de contagens e hashes lógicos, sem bloquear o legado ainda;
@@ -146,9 +161,10 @@ Antes de qualquer DML futuro:
 4. validar migrations estruturais em banco descartável/local;
 5. confirmar que a estrutura aceita parameter sets manuais versionados, sem definir CDI/spread real;
 6. fechar a regra operacional de correção de preço publicado; zero já permanece needs_review;
-7. gerar relatório dry-run sem persistência;
-8. revisar amostras de cada classe e todos os casos needs_review esperados;
-9. obter aprovação para a migration de dados separada.
+7. validar SHA/allowlist e restaurar uma fotografia autorizada exclusivamente na stack local vazia;
+8. gerar relatório dry-run sem persistência e manifesto sanitizado;
+9. revisar amostras de cada classe e todos os casos needs_review esperados;
+10. obter aprovação para a migration de dados separada.
 
 ## 6. Estratégia de backfill
 

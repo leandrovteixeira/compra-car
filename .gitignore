@@ -39,5 +39,18 @@ venv/
 supabase/.temp/
 supabase/.branches/
 
+# Fotografias locais autorizadas de pricing (nunca versionar dados reais)
+.local-dumps/
+.local-snapshots/
+.local-reports/
+dumps/
+snapshots/
+*.dump
+*.backup
+*.restored.sql
+*.pricing-snapshot.sql
+snapshot-manifest.json
+pricing-snapshot-tmp/
+
 # TypeScript build cache
 *.tsbuildinfo

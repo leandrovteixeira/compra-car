@@ -271,6 +271,14 @@ conflito, 9 candidatos de política, 1 sugestão de acumulador e 11 itens de rev
 recriado sem seed permaneceu com todas as fontes em zero e status `SOURCE_CHANGED`; isso valida a
 ferramenta, não substitui o dry-run futuro sobre uma fotografia local autorizada do legado real.
 
+`scripts/pricing` prepara essa futura fotografia sem buscar ou acessar a origem remota. O pipeline
+valida dump data-only autorizado por diretório, extensão, tamanho, SHA-256, conteúdo e allowlist das
+sete tabelas legadas necessárias; rejeita DDL, comandos destrutivos, owners/objetos inesperados e
+qualquer alvo fora de `localhost`/`127.0.0.1`/`::1` na porta local explícita. A restauração exige
+confirmação, tabelas locais vazias, transação única e clientes PostgreSQL; depois executa
+obrigatoriamente o pricing dry-run e gera `snapshot-manifest.json` sanitizado. Não existe bypass
+remoto, limpeza automática, backfill, migration, publicação ou escrita em tabelas da Sprint 9.
+
 A URL de comparação é `/comparar?vehicles=id1,id2[,id3,...]`. A página valida IDs, preserva sua ordem, executa `CompareVehicles`, apresenta categorias e usa `hasReferenceAdvantage` no filtro “Ver destaques”. A UI usa uma única superfície tabular com cabeçalho e primeira coluna fixos, rolagem bidirecional, células com slot estável para checks e estados dedicados de loading, vazio e erro. O domínio e o adapter não conhecem componentes ou parâmetros de URL.
 
 Os testes do core usam repositórios in-memory. Os mappers do adaptador são testados sem rede e a integração real é opt-in por variáveis exclusivas. A UI de negócio e `Legacy` permanecem sem alteração nesta fase.

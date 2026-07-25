@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-07-25 — Preparação de fotografia local do legado de pricing
+
+- Criados três scripts PowerShell e um módulo comum para validar dump autorizado, restringir o alvo
+  à stack local, restaurar somente as sete tabelas legadas necessárias e encadear automaticamente o
+  pricing dry-run.
+- Implementadas validações fail-closed de caminho, tamanho, extensão, SHA-256, formato/TOC,
+  allowlist, owner, comandos destrutivos e argumentos perigosos, sem flag de bypass remoto.
+- A restauração exige confirmação explícita, destino local vazio, transação única e opções data-only;
+  credenciais ficam fora de argumentos, saídas e manifesto.
+- Adicionado manifesto sanitizado com identidade local, contagens, resultado, hash comparável e
+  status, além de regras de `.gitignore` para dumps, snapshots, SQL restaurado e relatórios locais.
+- Criada suíte PowerShell com 11 cenários, incluindo execução do dry-run sobre fixture e validação do
+  manifesto, sem conexão de banco. Nenhuma migration, acesso remoto, backfill ou gravação no domínio
+  de pricing foi realizada nesta etapa.
+
 ## 2026-07-25 — Dry-run local do legado de pricing
 
 - Criado `@compra-car/pricing-dry-run`, com leitura PostgreSQL em transação `REPEATABLE READ READ
