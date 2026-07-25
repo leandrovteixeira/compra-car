@@ -34,7 +34,10 @@ grupos sem resultado somem e os restantes abrem, sem reconstruir o estado local.
 ## Semântica
 
 - numeric preenchido possui `value`; vazio remove a associação e permanece `NULL`, nunca zero;
-- binary sempre tem estado válido; marcado/desmarcado é persistido em `is_present`;
+- binary distingue três estados no core e na UI: `null` sem associação (não informado), `true`
+  possui e `false` não possui;
+- o controle compacto usa `-`, marcado e desmarcado explícito; `null` remove a associação, enquanto
+  `true` e `false` são persistidos em `is_present`;
 - scale conserva um spec por alternativa; o dropdown seleciona no máximo uma associação presente;
 - `-` remove todas as associações do conjunto scale.
 
@@ -43,9 +46,11 @@ administrativa não completa zeros.
 
 ## Contadores e salvamento
 
-Binary conta como preenchido nos dois estados. Numeric vazio e scale sem seleção não contam. A
+Binary conta como preenchido somente quando existe decisão explícita (`true` ou `false`); ausência
+de associação permanece `null` e não conta. Numeric vazio e scale sem seleção também não contam. A
 barra sticky mostra total geral, quantidade de campos modificados, Descartar e Salvar alterações.
-Falhas preservam o estado local; sucesso recarrega o modelo normalizado e permanece na rota.
+Falhas preservam o estado local; descarte restaura inclusive `null`; sucesso recarrega o modelo
+normalizado e permanece na rota.
 
 O adapter usa no máximo um `upsert` coletivo, com conflito
 `product_id,equipment_id`, e um `delete` coletivo. Isso é uma operação lógica única na aplicação,

@@ -59,6 +59,10 @@ export class SaveAdministrativeProductSpecs {
       if (submittedSpecIds.has(spec.id)) throw new Error('Spec enviado mais de uma vez.');
       submittedSpecIds.add(spec.id);
       if (submission.kind === 'binary') {
+        if (submission.present === null) {
+          deleteSpecIds.add(spec.id);
+          continue;
+        }
         upserts.push({
           specId: spec.id,
           value: null,

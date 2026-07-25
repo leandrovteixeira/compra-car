@@ -72,6 +72,12 @@ O MVP público já possui seleção e comparação técnica implementadas sobre 
 
 A autenticação está implementada com Supabase Auth, sessão SSR em cookies, `/login`, logout server-side e proteção redundante por Middleware e servidor. A autorização lê `public.profiles`, aceita somente roles `seller`/`admin` com status `active`, permite que `admin` acesse a área `seller` e protege `/admin/*` no layout server-side.
 
+Na reconstrução local, `supabase/migrations/20260724233325_legacy_baseline.sql` deve ser seguida pelas
+migrations incrementais. A baseline não capturou o trigger de `auth.users` que cria
+`public.profiles`, pois ele pertence a uma relação fora do schema público exportado. A migration
+`20260724235959_restore_auth_profiles_after_baseline.sql` restaura esse vínculo e reconcilia os
+objetos de Auth Profiles de forma idempotente, sem alterar dados válidos nem a baseline gerada.
+
 O MVP-a possui shell administrativo persistente, navegação responsiva, visão geral e `/admin/products`. A listagem de veículos é server-rendered e somente leitura, com estados de dados, vazio e erro. Não existem cadastro, edição, duplicação, exclusão, gestão de `product_specs` ou preços.
 
 A migration de `profiles` foi aplicada uma única vez no projeto remoto Compra Car App e validada estruturalmente. O teste SQL pgTAP passou com rollback das fixtures. Os valores persistidos de role são `seller` e `admin`; novos profiles nascem `seller`/`pending`.

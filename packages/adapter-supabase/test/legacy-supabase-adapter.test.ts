@@ -227,6 +227,90 @@ describe('LegacySupabaseAdapter', () => {
     expect(calls[1]?.operations).toEqual(['delete', 'eq:product_id:7', 'in:equipment_id:36,38']);
   });
 
+  it('reads and inserts an independent duplication snapshot with every functional spec field', async () => {
+    const rows = [
+      {
+        product_id: 1,
+        equipment_id: 25,
+        value: 198.5,
+        is_present: null,
+        input_unit: 'Nm',
+      },
+      {
+        product_id: 1,
+        equipment_id: 34,
+        value: null,
+        is_present: false,
+        input_unit: null,
+      },
+    ];
+    const { client, calls } = fakeClient({ product_specs: [rows, []] });
+    const adapter = new LegacySupabaseAdapter(client);
+
+    const snapshot = await adapter.listAdministrativeProductSpecValues('1');
+    await adapter.saveAdministrativeProductSpecs('84', {
+      upserts: snapshot.map((spec) => ({
+        specId: spec.specId,
+        value: spec.value,
+        isPresent: spec.isPresent,
+        inputUnit: spec.inputUnit,
+      })),
+      deleteSpecIds: [],
+    });
+
+    expect(calls[0]?.operations).toEqual([
+      'select:product_id,equipment_id,value,is_present,input_unit',
+      'eq:product_id:1',
+    ]);
+    expect(calls[1]).toEqual({
+      table: 'product_specs',
+      operations: ['upsert:product_id,equipment_id'],
+      payloads: [
+        [
+          {
+            product_id: 84,
+            equipment_id: 25,
+            value: 198.5,
+            is_present: null,
+            input_unit: 'Nm',
+          },
+          {
+            product_id: 84,
+            equipment_id: 34,
+            value: null,
+            is_present: false,
+            input_unit: null,
+          },
+        ],
+      ],
+    });
+    expect(calls[1]?.payloads?.[0]).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: expect.anything() }),
+        expect.objectContaining({ created_at: expect.anything() }),
+        expect.objectContaining({ updated_at: expect.anything() }),
+      ]),
+    );
+  });
+
+  it('compensates a failed duplication by removing target specs before the exact new product', async () => {
+    const { client, calls } = fakeClient({ product_specs: [[]], products: [[]] });
+    const adapter = new LegacySupabaseAdapter(client);
+
+    await adapter.rollbackAdministrativeVehicleDuplication('84');
+
+    expect(calls).toEqual([
+      {
+        table: 'product_specs',
+        operations: ['delete', 'eq:product_id:84'],
+      },
+      {
+        table: 'products',
+        operations: ['delete', 'eq:id:84'],
+      },
+    ]);
+  });
+
   it('lista todos os veículos para administração sem aplicar filtros do catálogo público', async () => {
     const inactive = { ...product, id: 2, is_active: false, version: 'Inativo' };
     const privateProduct = { ...product, id: 3, is_public: false, version: 'Privado' };

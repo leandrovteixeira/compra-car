@@ -58,7 +58,7 @@ export class LoadAdministrativeProductSpecs {
           specId: spec.id,
           code: spec.code,
           label: spec.detail,
-          present: current?.isPresent === true,
+          present: current?.isPresent ?? null,
         });
       } else {
         fields.push({

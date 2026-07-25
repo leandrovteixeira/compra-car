@@ -128,15 +128,60 @@ describe('administrative product specs', () => {
     );
   });
 
-  it('keeps empty numeric highlighted while unchecked binary remains filled', async () => {
+  it('does not count a binary without an association as filled', async () => {
     const result = await new LoadAdministrativeProductSpecs(repository().target).execute('10');
-    expect(result.filled).toBe(1);
+    expect(result.filled).toBe(0);
     expect(result.groups.flatMap((group) => group.fields)).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ kind: 'numeric', value: '' }),
-        expect.objectContaining({ kind: 'binary', present: false }),
+        expect.objectContaining({ kind: 'binary', present: null }),
       ]),
     );
+  });
+
+  it.each([
+    [true, 1],
+    [false, 1],
+  ])('counts an associated binary with is_present = %s as filled', async (isPresent, filled) => {
+    const result = await new LoadAdministrativeProductSpecs(
+      repository([{ specId: '4', value: null, isPresent, inputUnit: null }]).target,
+    ).execute('10');
+    const safety = result.groups.find((group) => group.name === 'Safety');
+    expect(safety).toMatchObject({ filled, total: 1 });
+    expect(safety?.fields[0]).toMatchObject({ kind: 'binary', present: isPresent });
+  });
+
+  it('shows 0 / 2 for a group containing only two absent binaries', async () => {
+    const source = repository();
+    vi.mocked(source.target.listActiveAdministrativeSpecs).mockResolvedValue([
+      catalog[3]!,
+      { ...catalog[3]!, id: '7', code: 'SA_0002', detail: 'Side airbag' },
+    ]);
+    const result = await new LoadAdministrativeProductSpecs(source.target).execute('10');
+    expect(result.groups).toEqual([
+      expect.objectContaining({ name: 'Safety', filled: 0, total: 2 }),
+    ]);
+    expect(result).toMatchObject({ filled: 0, total: 2 });
+  });
+
+  it('shows zero filled fields for a completely new vehicle', async () => {
+    const result = await new LoadAdministrativeProductSpecs(repository().target).execute('new');
+    expect(result).toMatchObject({ filled: 0, total: 5 });
+    expect(result.groups.every((group) => group.filled === 0)).toBe(true);
+  });
+
+  it('preserves absent and explicit false binary states independently on reload', async () => {
+    const source = repository([{ specId: '4', value: null, isPresent: false, inputUnit: null }]);
+    vi.mocked(source.target.listActiveAdministrativeSpecs).mockResolvedValue([
+      catalog[3]!,
+      { ...catalog[3]!, id: '7', code: 'SA_0002', detail: 'Side airbag' },
+    ]);
+    const result = await new LoadAdministrativeProductSpecs(source.target).execute('10');
+    expect(result.groups[0]?.fields).toEqual([
+      expect.objectContaining({ specId: '4', present: false }),
+      expect.objectContaining({ specId: '7', present: null }),
+    ]);
+    expect(result.groups[0]).toMatchObject({ filled: 1, total: 2 });
   });
 
   it.each([
@@ -190,7 +235,7 @@ describe('administrative product specs', () => {
     ).rejects.toThrow('não encontrada');
   });
 
-  it('persists binary states and an exclusive scale selection in one logical batch', async () => {
+  it('upserts explicit binary false and an exclusive scale selection in one logical batch', async () => {
     const source = repository();
     await new SaveAdministrativeProductSpecs(source.target).execute('10', [
       { kind: 'binary', specId: '4', present: false },
@@ -204,6 +249,14 @@ describe('administrative product specs', () => {
       ],
       deleteSpecIds: ['5'],
     });
+  });
+
+  it('removes an explicit binary association when its state becomes undefined', async () => {
+    const source = repository();
+    await new SaveAdministrativeProductSpecs(source.target).execute('10', [
+      { kind: 'binary', specId: '4', present: null },
+    ]);
+    expect(source.saved()).toEqual({ upserts: [], deleteSpecIds: ['4'] });
   });
 
   it('removes numeric empty values and all options when scale is set to dash', async () => {

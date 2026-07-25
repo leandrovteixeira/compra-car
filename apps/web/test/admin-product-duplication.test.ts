@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import type { AdministrativeVehicleRepository } from '@compra-car/core';
+import type { AdministrativeProductDuplicationRepository } from '@compra-car/core';
 import { describe, expect, it, vi } from 'vitest';
 
-import { executeAdminProductCreation } from '../src/application/admin/create-admin-product';
+import { executeAdminProductDuplication } from '../src/application/admin/duplicate-admin-product';
 import { loadAdminProductForEditing } from '../src/server/admin-product-service';
 
 function source(relativePath: string) {
@@ -26,12 +26,38 @@ function duplicateFormData(overrides: Readonly<Record<string, string>> = {}): Fo
   return data;
 }
 
-function repository(duplicate = false): AdministrativeVehicleRepository {
+function repository(
+  options: {
+    readonly duplicate?: boolean;
+    readonly copyError?: Error;
+  } = {},
+): AdministrativeProductDuplicationRepository {
   return {
-    findAdministrativeVehicleDuplicate: vi.fn(async () => duplicate),
+    findAdministrativeVehicleDuplicate: vi.fn(async () => options.duplicate ?? false),
     createAdministrativeVehicle: vi.fn(async () => ({ status: 'created', id: '84' }) as const),
-    getAdministrativeVehicleById: vi.fn(async () => null),
+    getAdministrativeVehicleById: vi.fn(async (id) =>
+      id === '42'
+        ? {
+            id,
+            brand: 'Toyota',
+            model: 'Corolla Cross',
+            version: 'XRX',
+            modelYear: 2026,
+            productionYear: 2025,
+            isActive: true,
+            isPublic: true,
+          }
+        : null,
+    ),
     updateAdministrativeVehicle: vi.fn(async () => ({ status: 'updated' as const })),
+    listAdministrativeProductSpecValues: vi.fn(async () => [
+      { specId: '10', value: 198.5, isPresent: null, inputUnit: 'Nm' },
+      { specId: '11', value: null, isPresent: false, inputUnit: null },
+    ]),
+    saveAdministrativeProductSpecs: vi.fn(async () => {
+      if (options.copyError) throw options.copyError;
+    }),
+    rollbackAdministrativeVehicleDuplication: vi.fn(async () => undefined),
   };
 }
 
@@ -66,30 +92,29 @@ describe('administrative product duplication', () => {
     await expect(loadAdminProductForEditing('999', reader)).resolves.toBeNull();
   });
 
-  it('uses the Create action and shared form without carrying the source ID', () => {
+  it('uses the duplication action and shared editable form while binding the source ID', () => {
     const page = source('../src/app/admin/products/[id]/duplicate/page.tsx');
     const form = source('../src/components/admin/admin-product-form.tsx');
     const list = source('../src/components/admin/admin-product-list.tsx');
 
-    expect(page).toContain(
-      "import { createAdminProductAction } from '@/app/admin/products/new/actions'",
-    );
+    expect(page).toContain("import { duplicateAdminProductAction } from './actions'");
     expect(page).toContain('if (!values) notFound()');
     expect(page).toContain('title="Duplicar veículo"');
     expect(page).toContain('initialValues={values}');
     expect(page).toContain('mode="duplicate"');
-    expect(page).toContain('action={createAdminProductAction}');
-    expect(page).not.toContain('bind(null, id)');
+    expect(page).toContain('action={duplicateAdminProductAction.bind(null, id)}');
     expect(form).toContain("'Criar veículo'");
     expect(form).toContain("mode !== 'edit' && state.status === 'success'");
     expect(form).toContain('href={`/admin/products/${productId}/edit`}');
+    expect(form).toContain('href={`/admin/products/${productId}/specs`}');
+    expect(form).toContain('Revisar equipamentos copiados');
     expect(list).toContain('href={`/admin/products/${product.id}/duplicate`}');
     expect(list).toContain('Duplicar');
   });
 
   it('returns the normal Create conflict when the business key is unchanged', async () => {
-    const target = repository(true);
-    const result = await executeAdminProductCreation(duplicateFormData(), {
+    const target = repository({ duplicate: true });
+    const result = await executeAdminProductDuplication('42', duplicateFormData(), {
       authorize: vi.fn(async () => undefined),
       createRepository: () => target,
       revalidate: vi.fn(),
@@ -102,11 +127,13 @@ describe('administrative product duplication', () => {
       }),
     );
     expect(target.createAdministrativeVehicle).not.toHaveBeenCalled();
+    expect(target.listAdministrativeProductSpecValues).not.toHaveBeenCalled();
   });
 
-  it('creates a new normalized vehicle after a field changes and copies no related data', async () => {
+  it('creates a normalized vehicle and copies the source specs to the new ID', async () => {
     const target = repository();
-    const result = await executeAdminProductCreation(
+    const result = await executeAdminProductDuplication(
+      '42',
       duplicateFormData({ version: '  xrx   premium ' }),
       {
         authorize: vi.fn(async () => undefined),
@@ -125,17 +152,19 @@ describe('administrative product duplication', () => {
       isActive: true,
       isPublic: true,
     });
-    expect(Object.keys(target).sort()).toEqual([
-      'createAdministrativeVehicle',
-      'findAdministrativeVehicleDuplicate',
-      'getAdministrativeVehicleById',
-      'updateAdministrativeVehicle',
-    ]);
+    expect(target.saveAdministrativeProductSpecs).toHaveBeenCalledWith('84', {
+      upserts: [
+        { specId: '10', value: 198.5, isPresent: null, inputUnit: 'Nm' },
+        { specId: '11', value: null, isPresent: false, inputUnit: null },
+      ],
+      deleteSpecIds: [],
+    });
   });
 
   it('preserves the server-side Public implies Active validation', async () => {
     const target = repository();
-    const result = await executeAdminProductCreation(
+    const result = await executeAdminProductDuplication(
+      '42',
       duplicateFormData({ isActive: 'false', isPublic: 'true' }),
       {
         authorize: vi.fn(async () => undefined),
@@ -151,5 +180,26 @@ describe('administrative product duplication', () => {
       }),
     );
     expect(target.createAdministrativeVehicle).not.toHaveBeenCalled();
+  });
+
+  it('does not report success or revalidate when copying specs fails', async () => {
+    const target = repository({ copyError: new Error('copy failed') });
+    const revalidate = vi.fn();
+    const result = await executeAdminProductDuplication(
+      '42',
+      duplicateFormData({ modelYear: '2027', productionYear: '2026' }),
+      {
+        authorize: vi.fn(async () => undefined),
+        createRepository: () => target,
+        revalidate,
+      },
+    );
+
+    expect(result).toMatchObject({
+      status: 'error',
+      message: expect.stringContaining('ficha técnica'),
+    });
+    expect(target.rollbackAdministrativeVehicleDuplication).toHaveBeenCalledWith('84');
+    expect(revalidate).not.toHaveBeenCalled();
   });
 });

@@ -48,7 +48,7 @@ export interface AdministrativeBinarySpec extends AdministrativeSpecBase {
   readonly specId: string;
   readonly code: string;
   readonly label: string;
-  readonly present: boolean;
+  readonly present: boolean | null;
 }
 
 export interface AdministrativeScaleSpec extends AdministrativeSpecBase {
@@ -86,7 +86,7 @@ export type AdministrativeSpecSubmission =
       readonly value: string;
       readonly inputUnit: string | null;
     }
-  | { readonly kind: 'binary'; readonly specId: string; readonly present: boolean }
+  | { readonly kind: 'binary'; readonly specId: string; readonly present: boolean | null }
   | {
       readonly kind: 'scale';
       readonly specIds: readonly string[];
@@ -125,7 +125,7 @@ export const TORQUE_SPEC_CODES = Object.freeze([
 ] as const);
 
 export function isFilledAdministrativeSpec(field: AdministrativeSpecField): boolean {
-  if (field.kind === 'binary') return true;
+  if (field.kind === 'binary') return field.present !== null;
   if (field.kind === 'scale') return field.selectedSpecId !== null;
   return field.value !== '';
 }

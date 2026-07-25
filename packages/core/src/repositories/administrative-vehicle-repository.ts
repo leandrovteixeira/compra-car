@@ -2,6 +2,7 @@ import type {
   AdministrativeVehicle,
   AdministrativeVehicleInput,
 } from '../admin/administrative-vehicle';
+import type { AdministrativeProductSpecsRepository } from '../admin/administrative-product-specs';
 
 export type AdministrativeVehicleCreation =
   { readonly status: 'created'; readonly id: string } | { readonly status: 'duplicate' };
@@ -24,4 +25,14 @@ export interface AdministrativeVehicleRepository {
     id: string,
     input: AdministrativeVehicleInput,
   ): Promise<AdministrativeVehicleUpdate>;
+}
+
+export interface AdministrativeProductDuplicationRepository
+  extends
+    AdministrativeVehicleRepository,
+    Pick<
+      AdministrativeProductSpecsRepository,
+      'listAdministrativeProductSpecValues' | 'saveAdministrativeProductSpecs'
+    > {
+  rollbackAdministrativeVehicleDuplication(productId: string): Promise<void>;
 }

@@ -126,6 +126,13 @@ A infraestrutura do monorepo, o núcleo de domínio, o adaptador legado e os ver
 
 A fundação Auth está implementada. `@supabase/ssr` mantém a sessão em cookies; o Middleware renova a sessão e redireciona usuários não autenticados; páginas e Server Actions repetem a validação no servidor. `/login` usa e-mail/senha e redirect interno seguro, e o logout é server-side. `public.profiles` é a fonte de role/status; `admin` também acessa a área `seller`; profile ausente, não ativo ou inválido falha fechado.
 
+A baseline legada de 2026-07-24 não capturou o trigger cruzado instalado em `auth.users`, embora
+tenha preservado os objetos públicos de profiles. A migration incremental
+`20260724235959_restore_auth_profiles_after_baseline.sql` deve executar depois da baseline: ela
+restaura o trigger de criação segura do profile e reconcilia funções, triggers públicos,
+constraints, foreign keys, RLS, policies e privilégios sem alterar dados válidos. Alterações futuras
+na baseline gerada continuam proibidas; correções devem permanecer forward-only.
+
 O MVP-a possui shell administrativo persistente em `/admin/*`, sidebar desktop, menu mobile,
 navegação, visão geral e `/admin/products`. A listagem de veículos é server-rendered e usa
 `LegacySupabaseAdapter.listAdministrativeVehicles()` após `requireRole('admin')`.
@@ -137,13 +144,17 @@ Create, exclui o próprio ID da checagem de duplicidade e persiste apenas os set
 Como a inspeção do banco não encontrou trigger de aplicação, a atualização define `updated_at`
 explicitamente no adapter.
 `/admin/products/[id]/duplicate` carrega o produto server-side e inicia um novo Create com os sete
-campos preenchidos, sem transportar o ID original. O fluxo reutiliza integralmente a Server Action,
-o caso de uso e a persistência do Create; a duplicidade normal impede cópia idêntica e nenhum
-`product_specs`, preço, imagem, documento ou histórico é copiado.
+campos preenchidos, sem expor o ID original como campo editável. `DuplicateAdministrativeVehicle`
+reutiliza o Create e copia todas as associações `product_specs` para o novo ID, preservando numeric,
+binary `true`/`false`, scale e `input_unit`. Preços, imagens, documentos e histórico não são
+copiados. Falha da ficha impede sucesso e aciona compensação restrita ao novo produto; sem
+RPC/migration, criação, cópia e compensação não formam uma transação única.
 `/admin/products/[id]/specs` carrega todos os specs ativos e associações do produto, monta no core
 uma ficha por hierarquia real e salva numeric, binary e scale em lotes. Torque aceita Nm/kgfm, usa
-`unit_conversions` e persiste somente Nm; `PW_0036` permanece `kg/Nm`. Não houve migration. A
-atomicidade estrita entre upsert e delete e a exibição kgfm no MVP-u permanecem evoluções futuras.
+`unit_conversions` e persiste somente Nm; `PW_0036` permanece `kg/Nm`. Binary administrativo usa
+`boolean | null`: associação ausente permanece não informada e não conta, enquanto `true` e `false`
+explícitos contam e são preservados. Não houve migration. A atomicidade estrita entre upsert e
+delete e a exibição kgfm no MVP-u permanecem evoluções futuras.
 `/admin/products` transporta filtros por search params e os aplica server-side no adapter, com
 sticky acumulado no desktop e oferece ações Editar e Duplicar por linha. Não existem exclusão,
 cadastro de equipamentos ou preços.
@@ -151,6 +162,13 @@ cadastro de equipamentos ou preços.
 A URL de comparação é `/comparar?vehicles=id1,id2[,id3,...]`. A página valida IDs, preserva sua ordem, executa `CompareVehicles`, apresenta categorias e usa `hasReferenceAdvantage` no filtro “Ver destaques”. A UI usa uma única superfície tabular com cabeçalho e primeira coluna fixos, rolagem bidirecional, células com slot estável para checks e estados dedicados de loading, vazio e erro. O domínio e o adapter não conhecem componentes ou parâmetros de URL.
 
 Os testes do core usam repositórios in-memory. Os mappers do adaptador são testados sem rede e a integração real é opt-in por variáveis exclusivas. A UI de negócio e `Legacy` permanecem sem alteração nesta fase.
+
+`supabase/tests/spec_integrity.sql` protege o domínio de Specs com pgTAP, sem DML ou DDL explícito
+sobre tabelas permanentes. `SET TRANSACTION READ ONLY` não é usado porque `plan()` pode criar
+objetos temporários internos; a execução depende da transação automática revertida por
+`supabase test db` e mantém `ROLLBACK` explícito. A suíte lista violações de scale, binary, codes,
+referências de `product_specs`, duplicidades, tipos, numeric, identidade estrutural do catálogo e
+coerência de tipo por `spec_set`, além de emitir um resumo agregado sem modificar dados permanentes.
 
 A superfície mínima e o mapeamento físico fornecidos para a fase estão registrados em `SUPABASE_INSPECTION_RESULTS.md` e `LEGACY_SUPABASE_MAP.md`. A validação online permanece pendente quando não houver credenciais opt-in e não bloqueia o código ou o MVP.
 

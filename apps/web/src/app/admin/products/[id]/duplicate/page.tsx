@@ -1,10 +1,11 @@
 import { notFound } from 'next/navigation';
 
-import { createAdminProductAction } from '@/app/admin/products/new/actions';
 import { requireRole } from '@/auth/authorization';
 import { AdminProductForm } from '@/components/admin/admin-product-form';
 import { PageHeader } from '@/components/admin/page-header';
 import { loadAdminProductForEditing } from '@/server/admin-product-service';
+
+import { duplicateAdminProductAction } from './actions';
 
 interface DuplicateAdminProductPageProps {
   readonly params: Promise<{ readonly id: string }>;
@@ -21,13 +22,13 @@ export default async function DuplicateAdminProductPage({
   return (
     <>
       <PageHeader
-        description="Use os dados abaixo como base. Ao confirmar, um novo cadastro será criado sem copiar equipamentos, preços ou imagens."
+        description="Use os dados abaixo como base. Ao confirmar, um novo cadastro independente será criado com a ficha técnica da origem."
         eyebrow="Catálogo · Novo cadastro"
         title="Duplicar veículo"
       />
       <div className="mt-8">
         <AdminProductForm
-          action={createAdminProductAction}
+          action={duplicateAdminProductAction.bind(null, id)}
           currentYear={new Date().getFullYear()}
           initialValues={values}
           mode="duplicate"

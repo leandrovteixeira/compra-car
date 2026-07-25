@@ -1,8 +1,8 @@
 import type {
   AdministrativeProductSpecsModel,
-  AdministrativeSpecField,
   AdministrativeSpecSubmission,
 } from '@compra-car/contracts';
+import { isFilledAdministrativeSpec } from '@compra-car/core';
 
 export function filterAdministrativeSpecGroups(
   model: AdministrativeProductSpecsModel,
@@ -21,13 +21,13 @@ export function countAdministrativeSpecs(model: AdministrativeProductSpecsModel)
   readonly total: number;
   readonly byGroup: Readonly<Record<string, { readonly filled: number; readonly total: number }>>;
 } {
-  const filled = (field: AdministrativeSpecField) =>
-    field.kind === 'binary' ||
-    (field.kind === 'numeric' ? field.value !== '' : !!field.selectedSpecId);
   const byGroup = Object.fromEntries(
     model.groups.map((group) => [
       group.name,
-      { filled: group.fields.filter(filled).length, total: group.fields.length },
+      {
+        filled: group.fields.filter(isFilledAdministrativeSpec).length,
+        total: group.fields.length,
+      },
     ]),
   );
   return {

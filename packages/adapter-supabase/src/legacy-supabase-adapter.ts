@@ -3,6 +3,7 @@ import type {
   AdministrativeVehicleInput,
   AdministrativeVehicleFilters,
   AdministrativeVehicleRepository,
+  AdministrativeProductDuplicationRepository,
   AdministrativeProductSpecsRepository,
   AdministrativeProductSpecValue,
   AdministrativeSpecCatalogItem,
@@ -89,6 +90,7 @@ export class LegacySupabaseAdapter
     VehicleRepository,
     ComparisonRepository,
     AdministrativeVehicleRepository,
+    AdministrativeProductDuplicationRepository,
     AdministrativeProductSpecsRepository
 {
   private readonly comparisonBatches = new Map<string, Promise<ComparisonBatch>>();
@@ -236,6 +238,20 @@ export class LegacySupabaseAdapter
     if (error?.code === '23505') return { status: 'duplicate' };
     if (error) throw queryError('atualização de product', error);
     return data ? { status: 'updated' } : { status: 'not_found' };
+  }
+
+  async rollbackAdministrativeVehicleDuplication(productId: string): Promise<void> {
+    const parsedId = parseAdministrativeProductId(productId);
+    if (parsedId === null) throw new LegacyAdapterMappingError('ID de produto inválido.');
+
+    const { error: specsError } = await this.client
+      .from('product_specs')
+      .delete()
+      .eq('product_id', parsedId);
+    if (specsError) throw queryError('compensação de product_specs duplicados', specsError);
+
+    const { error: productError } = await this.client.from('products').delete().eq('id', parsedId);
+    if (productError) throw queryError('compensação de product duplicado', productError);
   }
 
   async listActiveAdministrativeSpecs(): Promise<readonly AdministrativeSpecCatalogItem[]> {

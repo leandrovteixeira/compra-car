@@ -38,7 +38,13 @@ function FieldError({ messages }: { readonly messages?: readonly string[] }) {
 const inputClass =
   'mt-2 min-h-11 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 text-slate-100 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/25';
 
-function SuccessDialog({ productId }: { readonly productId: string }) {
+function SuccessDialog({
+  mode,
+  productId,
+}: {
+  readonly mode: AdminProductFormMode;
+  readonly productId: string;
+}) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const listLinkRef = useRef<HTMLAnchorElement>(null);
 
@@ -70,7 +76,9 @@ function SuccessDialog({ productId }: { readonly productId: string }) {
             className="min-h-12 rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-left text-slate-100 transition hover:bg-slate-700"
             href={`/admin/products/${productId}/specs`}
           >
-            <span className="block font-semibold">Cadastrar equipamentos</span>
+            <span className="block font-semibold">
+              {mode === 'duplicate' ? 'Revisar equipamentos copiados' : 'Cadastrar equipamentos'}
+            </span>
             <span className="text-xs text-slate-400">Abrir ficha técnica</span>
           </Link>
           <Link
@@ -330,7 +338,7 @@ export function AdminProductForm({
         state={state}
       />
       {mode !== 'edit' && state.status === 'success' ? (
-        <SuccessDialog productId={state.id} />
+        <SuccessDialog mode={mode} productId={state.id} />
       ) : null}
     </>
   );

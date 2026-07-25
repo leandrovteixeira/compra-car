@@ -44,18 +44,22 @@ define `updated_at` explicitamente em toda atualização. Nenhuma migration foi 
 
 ## Duplicação
 
-Duplicar significa iniciar um novo Create em `/admin/products/[id]/duplicate`, usando somente os
-sete campos editáveis do veículo de origem como valores iniciais. O ID original não integra o
-formulário nem a criação, e o registro de origem permanece inalterado.
+Duplicar em `/admin/products/[id]/duplicate` usa os sete campos editáveis da origem como valores
+iniciais e cria uma nova identidade comercial. O ID original não integra os campos editáveis e o
+registro de origem permanece inalterado.
 
-Não existe clone direto no banco, SQL de cópia ou persistência exclusiva. O fluxo reutiliza a
-Server Action, o caso de uso, a normalização, a validação, o repository e o adapter do Create. A
-validação normal de duplicidade impede salvar uma cópia idêntica; o administrador deve alterar ao
-menos um componente da chave de negócio.
+Uma Server Action específica chama `DuplicateAdministrativeVehicle`. O caso de uso reutiliza
+`CreateAdministrativeVehicle` e, após obter o novo ID, copia todas as associações técnicas pelo
+contrato `AdministrativeProductDuplicationRepository`. O adapter lê e grava `product_specs`; a UI
+permanece desacoplada da persistência.
 
-`product_specs`, preços, imagens, documentos e histórico não são carregados nem copiados. A
-duplicação cria exclusivamente um novo registro principal de veículo após confirmação no
-formulário.
+A cópia troca apenas `product_id` e deixa o banco gerar identidade e timestamps próprios.
+`equipment_id`, `value`, `is_present` e `input_unit` são preservados, inclusive binary `false`.
+Preços, imagens, documentos, histórico e auditoria não fazem parte do contrato e não são copiados.
+
+Se copiar a ficha falhar, o fluxo não retorna sucesso e tenta remover os specs e o produto
+recém-criados. Como criação, cópia e compensação são operações PostgREST separadas, permanece uma
+janela sem atomicidade estrita; falha da compensação devolve o ID incompleto para revisão.
 
 ## Specs e comparabilidade
 

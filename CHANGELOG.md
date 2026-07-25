@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-07-24 — Restauração de Auth Profiles após a baseline
+
+- Identificada a ausência, na baseline legada, do trigger de `auth.users` que cria exatamente um
+  `public.profiles`; a omissão fazia os 18 testes seguintes falharem em cascata sobre perfis
+  inexistentes.
+- Adicionada migration incremental e idempotente para reconciliar funções, triggers, constraints,
+  foreign keys, RLS, policies e privilégios da fundação Auth sem modificar a baseline ou dados
+  válidos.
+- A migration usa `CREATE OR REPLACE FUNCTION`, recria triggers e policies nominalmente e só
+  adiciona ou substitui constraints e foreign keys quando ausentes ou divergentes.
+
+## 2026-07-24 — Integridade do domínio de Specs
+
+- Adicionada suíte pgTAP read-only em `supabase/tests/spec_integrity.sql` para validar seleção única
+  de scale, modelagem binary, codes, referências, duplicidades, tipos, numeric, catálogo e coerência
+  de `spec_set`.
+- Cada violação inclui diagnóstico contextual e o relatório final agrega o total de inconsistências.
+- Removido `SET TRANSACTION READ ONLY` porque `plan()` pode depender de objetos temporários internos
+  do pgTAP. O arquivo permanece sem DML/DDL explícito sobre tabelas permanentes e depende da
+  transação revertida por `supabase test db`, além do `ROLLBACK` final.
+
 ## 2026-07-24 — Sprint 8: administração de equipamentos e especificações
 
 - Criada `/admin/products/[id]/specs` com ficha contínua, hierarquia real, busca client-side,
@@ -8,6 +29,9 @@
   exclusividade scale, conversões e lote de persistência.
 - Numeric aceita vírgula/ponto e duas casas; vazio remove a associação. Binary marcado/desmarcado é
   válido e scale usa dropdown único com `-`.
+- Corrigido o merge de binary para preservar ausência de associação como `null`, sem confundi-la
+  com `is_present = false`; contadores agora ignoram somente o estado não informado, e a UI usa um
+  controle compacto de três estados que mantém `false` explícito no salvamento e no reload.
 - Torque aceita entrada Nm/kgfm e persiste apenas Nm usando os fatores lidos de
   `unit_conversions`; `PW_0036` permanece `kg/Nm`.
 - O adapter passou a ler specs/valores/conversões e executar upsert/delete coletivos sem acesso
@@ -17,15 +41,19 @@
 
 ## 2026-07-24 — Sprint 7: duplicação administrativa de veículos
 
+- Corrigida a duplicação para copiar `product_specs` de forma independente, preservando
+  `equipment_id`, numeric, binary `true`/`false`, scale e `input_unit`, sem copiar IDs ou timestamps.
+- Adicionado `DuplicateAdministrativeVehicle`, Server Action específica e compensação segura do
+  novo produto quando a cópia da ficha falha; falha de compensação sinaliza o ID incompleto.
+- O diálogo pós-sucesso agora oferece revisão direta da ficha copiada no novo ID.
 - Implementada `/admin/products/[id]/duplicate` como um novo Create preenchido, com leitura
   server-side da origem, `notFound()` e sem transportar o ID original.
-- Reutilizados formulário, Server Action, normalização, validação, caso de uso, repository e adapter
-  do Create; nenhuma persistência ou API de clone foi adicionada.
+- Reutilizados formulário, normalização, validação e criação; persistência de specs permanece
+  isolada no adapter.
 - Adicionada ação Duplicar na listagem e modo visual com título e botão “Criar veículo”.
 - Mantidos o conflito normal de duplicidade, as regras Public/Active e o modal de criação apontando
   para o novo veículo.
-- Confirmado por desenho e testes que specs, preços, imagens, documentos e histórico não são
-  copiados.
+- Confirmado por desenho e testes que preços, imagens, documentos e histórico não são copiados.
 - Adicionada cobertura da rota, origem, valores iniciais, ausência do ID, conflito, criação,
   normalização, status, navegação e limites de dados relacionados.
 - Nenhuma migration, alteração de schema, escrita remota, commit, push ou deploy foi realizada.

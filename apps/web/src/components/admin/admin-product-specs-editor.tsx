@@ -145,8 +145,11 @@ export function AdminProductSpecsEditor({
                   const showEquipment = field.equipmentGroup !== previousEquipment;
                   previousEquipment = field.equipmentGroup;
                   const empty =
-                    field.kind !== 'binary' &&
-                    (field.kind === 'numeric' ? field.value === '' : !field.selectedSpecId);
+                    field.kind === 'binary'
+                      ? field.present === null
+                      : field.kind === 'numeric'
+                        ? field.value === ''
+                        : !field.selectedSpecId;
                   return (
                     <div
                       className={`px-5 py-4 ${empty ? 'bg-amber-950/10' : ''}`}
@@ -196,17 +199,36 @@ export function AdminProductSpecsEditor({
                             )}
                           </div>
                         ) : field.kind === 'binary' ? (
-                          <label className="flex min-h-11 cursor-pointer items-center justify-end gap-3">
-                            <input
-                              checked={field.present}
-                              className="size-5 accent-sky-500"
-                              onChange={(event) =>
-                                update(field, { ...field, present: event.target.checked })
-                              }
-                              type="checkbox"
-                            />
-                            <span className="sr-only">{field.label}</span>
-                          </label>
+                          <div
+                            aria-label={`Estado de ${field.label}`}
+                            className="flex justify-end"
+                            role="radiogroup"
+                          >
+                            {(
+                              [
+                                { value: null, glyph: '-', label: 'Não informado' },
+                                { value: true, glyph: '✓', label: 'Possui' },
+                                { value: false, glyph: '□', label: 'Não possui' },
+                              ] as const
+                            ).map((option) => (
+                              <button
+                                aria-checked={field.present === option.value}
+                                aria-label={`${field.label}: ${option.label}`}
+                                className={`min-h-11 min-w-11 border border-slate-700 text-base first:rounded-l-xl last:rounded-r-xl ${
+                                  field.present === option.value
+                                    ? 'bg-sky-500 font-bold text-slate-950'
+                                    : 'bg-slate-950 text-slate-300'
+                                }`}
+                                key={option.label}
+                                onClick={() => update(field, { ...field, present: option.value })}
+                                role="radio"
+                                title={option.label}
+                                type="button"
+                              >
+                                {option.glyph}
+                              </button>
+                            ))}
+                          </div>
                         ) : (
                           <select
                             className="min-h-11 w-full rounded-xl border border-slate-700 bg-slate-950 px-3"
