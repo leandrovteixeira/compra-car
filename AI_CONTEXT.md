@@ -1,5 +1,38 @@
 # Contexto para agentes de IA
 
+## Marco 2026-07-26 — dealer rebate e policy types finais
+
+- `total_dealer_rebate` agregado é válido no legado. A migração aloca proporcionalmente somente para
+  retail, trade-in e financiamento calculáveis; componentes positivos explícitos são autoritativos.
+- Ausência de base gera `UNALLOCATED_LEGACY_DEALER_REBATE`, nunca policy genérica. Resíduo monetário
+  vai para a última policy na ordem determinística aprovada.
+- Novos cadastros podem usar wallbox BRL 4.000, emplacamento 1% do MSRP, manutenção não monetizada e
+  voucher nominal. Nenhum tipo novo é inferido de `others_bonus`.
+- Schema permanece apenas na migration não aplicada; dry-run continua read-only e sem persistência.
+
+## Marco 2026-07-26 — pricing legacy dry-run 3.0.0
+
+- `commercial_offer` é o agregado pai: uma por linha legacy, em draft, ligada ao MSRP versionado;
+  policies e accumulators referenciam a offer, enquanto `legacy_source_id` é somente auditoria.
+- `NULL/NULL/NULL` e `0/0/0` não representam financiamento. O snapshot local produz 459 policies
+  financeiras completas, usando CDI mensal `0.011553487442` + spread `0.003`.
+- Seguro usa 3% do MSRP por ano; IPVA usa 4% proporcional aos meses restantes. Policies alternativas
+  da mesma offer são OR e somente offers com duas ou mais policies recebem accumulator.
+- Diferenças contra `total_customer_benefit` são informativas por mudança de metodologia. Migration,
+  backfill e publicação permanecem bloqueados e não foram executados.
+
+## Marco 2026-07-26 — pricing legacy dry-run 2.0.0
+
+- Regras confirmadas no simulador: rebates são contribuição da concessionária vinculada à política,
+  IPVA é proporcional aos meses restantes do ano e políticas da mesma oferta começam como OR em
+  draft com origem `legacy_default`.
+- CDI provisório: 14,78% efetivos a.a., convertido para taxa mensal composta em parameter set
+  versionado. O benefício oficial de financiamento preserva `present_value_subsidy`; total pago é
+  diagnóstico comparativo.
+- Zero é valor informado e `NULL` é ausência. Hashes 2.0.0 não são diretamente comparáveis aos 1.0.0.
+- Backfill, publicação e aplicação da migration permanecem bloqueados até revisão dos relatórios e
+  validation samples do snapshot local.
+
 ## Propósito
 
 O Compra Car apoia vendedores de concessionárias em comparações claras entre veículos durante o atendimento e na geração futura de material compartilhável.

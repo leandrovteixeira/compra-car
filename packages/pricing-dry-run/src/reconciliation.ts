@@ -41,76 +41,97 @@ export function reconcileOffers(
     .map((offer) => {
       const price = priceBySource.get(offer.id);
       const sourcePolicies = policiesBySource.get(offer.id) ?? [];
-      const explicit = sourcePolicies.filter(
-        (policy) =>
-          (policy.calculationMethod === 'fixed_amount' ||
-            policy.calculationMethod === 'manual_amount') &&
-          policy.proposedMonetaryValue !== null,
+      const knownPolicies = sourcePolicies.filter(
+        (policy) => policy.proposedPolicyType !== null && policy.proposedMonetaryValue !== null,
       );
-      const calculated = sourcePolicies.filter(
-        (policy) =>
-          policy.calculationMethod === 'percentage_of_msrp' &&
-          policy.proposedMonetaryValue !== null,
-      );
-      const known = [...explicit, ...calculated].reduce(
-        (sum, policy) => sum.plus(policy.proposedMonetaryValue ?? 0),
-        new Decimal(0),
-      );
-      const legacyTotal = decimal(offer.totalCustomerBenefit);
-      const incomplete = sourcePolicies.some(
+      const incompletePolicies = sourcePolicies.filter(
         (policy) => policy.proposedPolicyType !== null && policy.proposedMonetaryValue === null,
       );
+      const values = knownPolicies.map((policy) => new Decimal(policy.proposedMonetaryValue ?? 0));
+      const sum = values.reduce((total, value) => total.plus(value), new Decimal(0));
+      const maximum = values.length === 0 ? null : Decimal.max(...values);
+      const legacyTotal = decimal(offer.totalCustomerBenefit);
       const issues: IssueCode[] = [];
+      const informationalIssues: IssueCode[] = [];
       let absoluteDifference: string | null = null;
       let percentageDifference: string | null = null;
       let status: ReconciliationRow['status'];
       let explanation: string;
+      let reasonNotComparable: string | null = null;
 
       if (legacyTotal === null) {
         status = 'NOT_COMPARABLE';
         explanation = 'Legacy total_customer_benefit is null';
+        reasonNotComparable = 'missing_legacy_total';
+      } else if (maximum === null) {
+        status = 'NOT_COMPARABLE';
+        explanation = 'No policy has a safely calculated customer benefit';
+        reasonNotComparable = 'no_known_policy_value';
       } else {
-        const difference = known.minus(legacyTotal).abs();
+        const difference = maximum.minus(legacyTotal).abs();
         absoluteDifference = money(difference);
-        if (!legacyTotal.isZero()) {
+        if (!legacyTotal.isZero())
           percentageDifference = percentage(difference.div(legacyTotal.abs()).mul(100));
-        }
-        if (!difference.isZero()) issues.push('LEGACY_TOTAL_MISMATCH');
         if (legacyTotal.isNegative()) issues.push('NEGATIVE_ECONOMIC_VALUE');
-
-        if (incomplete) {
+        if (incompletePolicies.length > 0) {
           status = 'PARTIAL';
-          explanation = 'Known components are partial; no equality is forced';
+          explanation =
+            'Maximum known OR alternative is diagnostic; at least one policy value is unavailable';
+          reasonNotComparable = 'incomplete_or_alternatives';
         } else if (difference.isZero()) {
           status = 'MATCH';
-          explanation = 'Known components match the legacy customer total';
+          explanation = 'Maximum alternative policy value matches the legacy customer total';
         } else {
           status = 'MISMATCH';
-          explanation = 'Known components differ from the legacy customer total';
+          explanation = 'Maximum alternative policy value differs from the legacy customer total';
+          informationalIssues.push('LEGACY_CALCULATION_METHOD_DIFFERENCE');
         }
       }
 
+      const policyValues = knownPolicies
+        .map((policy) => `${policy.proposedPolicyType}=${policy.proposedMonetaryValue}`)
+        .sort();
+      const excluded = [
+        ...incompletePolicies.map((policy) => `${policy.proposedPolicyType}=UNAVAILABLE`),
+        ...sourcePolicies
+          .filter((policy) => policy.dealerRebateAmount !== null)
+          .map(
+            (policy) => `${policy.proposedPolicyType}.dealer_rebate=${policy.dealerRebateAmount}`,
+          ),
+      ].sort();
+
       return {
+        commercialOfferCandidateId: `offer-${offer.id}`,
         productId: offer.productId,
         offerMonth: offer.offerMonth,
         sourceId: offer.id,
         legacyPublicPrice: offer.publicPrice,
         proposedPublicPrice: price?.proposedValue ?? null,
-        explicitBenefitInputs: explicit
+        explicitBenefitInputs: knownPolicies
+          .filter((policy) => policy.inputMonetaryValue !== null)
           .map((policy) => `${policy.proposedPolicyType}=${policy.inputMonetaryValue}`)
           .sort()
           .join('|'),
-        safelyCalculatedComponents: calculated
+        safelyCalculatedComponents: knownPolicies
+          .filter((policy) => policy.inputMonetaryValue === null)
           .map((policy) => `${policy.proposedPolicyType}=${policy.proposedMonetaryValue}`)
           .sort()
           .join('|'),
         legacyTotalCustomerBenefit: offer.totalCustomerBenefit,
-        calculatedKnownTotal: money(known),
+        knownPolicyValues: policyValues.join('|'),
+        maximumAlternativePolicyValue: maximum === null ? null : money(maximum),
+        sumOfAllPolicyValues: money(sum),
+        comparableTotal: maximum === null ? null : money(maximum),
+        calculatedKnownTotal: maximum === null ? '0.00' : money(maximum),
         absoluteDifference,
         percentageDifference,
         status,
         explanation,
+        componentsIncluded: policyValues.join('|'),
+        componentsExcluded: excluded.join('|'),
+        reasonNotComparable,
         issueCodes: uniqueIssues(issues),
+        informationalIssueCodes: uniqueIssues(informationalIssues),
       };
     });
 }

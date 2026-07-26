@@ -1,0 +1,50 @@
+begin;
+select plan(42);
+
+select has_table('public', 'commercial_offers');
+select has_column('public', 'commercial_offers', 'product_id');
+select has_column('public', 'commercial_offers', 'public_price_id');
+select has_column('public', 'commercial_offers', 'legacy_source_id');
+select has_column('public', 'commercial_offers', 'valid_from');
+select has_column('public', 'commercial_offers', 'valid_to');
+select has_column('public', 'commercial_offers', 'status');
+select has_fk('public', 'commercial_offers', 'commercial_offers_product_id_fkey');
+select has_fk('public', 'commercial_offers', 'commercial_offers_public_price_id_fkey');
+select has_index('public', 'commercial_offers', 'commercial_offers_product_validity_idx');
+
+select has_column('public', 'product_public_prices', 'price_type');
+select has_column('public', 'product_public_prices', 'ends_on');
+select has_column('public', 'product_public_prices', 'source_reference');
+select has_column('public', 'commercial_policies', 'commercial_offer_id');
+select has_column('public', 'commercial_policies', 'calculation_base_price_id');
+select has_column('public', 'commercial_policies', 'customer_benefit_amount');
+select has_column('public', 'commercial_policies', 'dealer_rebate_amount');
+select has_column('public', 'commercial_policies', 'dealer_rebate_allocation_method');
+select has_column('public', 'commercial_policies', 'dealer_rebate_allocation_base');
+select has_column('public', 'commercial_policies', 'dealer_rebate_allocation_percentage');
+select has_column('public', 'commercial_policies', 'dealer_rebate_rounding_residual');
+select has_column('public', 'commercial_policies', 'legacy_policy_source');
+select has_column('public', 'commercial_policies', 'legacy_offer_id');
+select has_column('public', 'commercial_policies', 'legacy_source_column');
+select has_column('public', 'commercial_policies', 'legacy_dealer_rebate_value');
+select has_column('public', 'commercial_policies', 'fixed_amount');
+select has_column('public', 'commercial_policies', 'percentage_rate');
+select has_column('public', 'commercial_policies', 'voucher_type');
+select has_column('public', 'commercial_policies', 'policy_parameters');
+select has_fk('public', 'commercial_policies', 'commercial_policies_commercial_offer_id_fkey');
+select has_fk('public', 'commercial_policies', 'commercial_policies_calculation_base_price_id_fkey');
+select has_check('public', 'commercial_policies', 'commercial_policies_rebate_allocation_check');
+select has_check('public', 'commercial_policies', 'commercial_policies_parameters_check');
+
+select has_column('public', 'commercial_policy_accumulators', 'commercial_offer_id');
+select has_column('public', 'commercial_policy_accumulators', 'relation_type');
+select has_column('public', 'commercial_policy_accumulators', 'relation_origin');
+select has_column('public', 'financial_parameter_sets', 'annual_cdi_rate');
+select has_column('public', 'financial_parameter_sets', 'monthly_cdi_rate');
+select has_column('public', 'financial_parameter_sets', 'monthly_spread_rate');
+select has_column('public', 'financial_parameter_sets', 'monthly_reference_rate');
+select has_function('public', 'validate_commercial_offer_publication', array[]::text[]);
+select has_function('public', 'validate_legacy_policy_publication', array[]::text[]);
+
+select * from finish();
+rollback;

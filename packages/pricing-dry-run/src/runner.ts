@@ -1,11 +1,21 @@
 import { canonicalJson, logicalHash } from './canonical.js';
+import { allocateDealerRebates } from './dealer-rebate.js';
+import {
+  analyzeFinancing,
+  reconcileDealerRebates,
+  summarizeMissingFinancingFields,
+} from './analysis.js';
 import {
   classifyAccumulatorSuggestions,
   classifyPolicies,
   classifyPublicPrices,
+  linkOfferAggregate,
 } from './classification.js';
-import { decimal } from './money.js';
+import { decimal, money } from './money.js';
+import { LEGACY_CDI_PARAMETER_SET } from './financial-parameters.js';
+import { isRebateEligiblePolicy } from './policy-rules.js';
 import { reconcileOffers } from './reconciliation.js';
+import { buildValidationSamples } from './samples.js';
 import type {
   BaselineDifference,
   CanonicalRow,
@@ -219,6 +229,7 @@ function needsReviewRows(
   policies: DryRunResult['policyCandidates'],
   accumulators: DryRunResult['accumulatorCandidates'],
   reconciliation: DryRunResult['reconciliation'],
+  rebates: DryRunResult['dealerRebateReconciliation'],
 ): CanonicalRow[] {
   return [
     ...prices
@@ -243,15 +254,17 @@ function needsReviewRows(
         evidence: item.evidence,
         fingerprint: item.fingerprint,
       })),
-    ...accumulators.map((item) => ({
-      source_table: 'public.product_price_offers',
-      source_id: item.sourceId,
-      entity_type: 'accumulator_suggestion',
-      classification: 'needs_review',
-      issue_codes: item.issueCodes.join('|'),
-      evidence: item.evidenceText,
-      fingerprint: item.fingerprint,
-    })),
+    ...accumulators
+      .filter((item) => item.issueCodes.length > 0)
+      .map((item) => ({
+        source_table: 'public.product_price_offers',
+        source_id: item.sourceId,
+        entity_type: 'accumulator_suggestion',
+        classification: 'needs_review',
+        issue_codes: item.issueCodes.join('|'),
+        evidence: item.evidenceText,
+        fingerprint: item.fingerprint,
+      })),
     ...reconciliation
       .filter((item) => item.issueCodes.length > 0)
       .map((item) => ({
@@ -263,20 +276,69 @@ function needsReviewRows(
         evidence: item.explanation,
         fingerprint: logicalHash({ sourceId: item.sourceId, status: item.status }),
       })),
+    ...rebates
+      .filter((item) => item.issueCodes.length > 0)
+      .map((item) => ({
+        source_table: 'public.product_price_offers',
+        source_id: item.sourceId,
+        entity_type: 'dealer_rebate_reconciliation',
+        classification: 'needs_review',
+        issue_codes: item.issueCodes.join('|'),
+        evidence: item.explanation,
+        fingerprint: logicalHash({
+          sourceId: item.sourceId,
+          structuredTotal: item.structuredTotal,
+          legacyTotal: item.legacyTotal,
+        }),
+      })),
   ].sort((left, right) => canonicalJson(left).localeCompare(canonicalJson(right)));
 }
 
 export function runDryRun(snapshot: SourceSnapshot, options: DryRunOptions): DryRunResult {
+  const financialParameterSets = options.financialParameterSets ?? [LEGACY_CDI_PARAMETER_SET];
   const knownProducts = new Set(snapshot.products.map((product) => product.id));
   const { candidates: publicPriceCandidates, conflicts: publicPriceConflicts } =
     classifyPublicPrices(snapshot.offers, knownProducts);
-  const policyCandidates = classifyPolicies(
+  const classifiedPolicies = classifyPolicies(
     snapshot.offers,
     options.insurancePercentage,
     knownProducts,
+    financialParameterSets,
   );
+  const rebateAllocation = allocateDealerRebates(snapshot.offers, classifiedPolicies);
+  const policyCandidates = rebateAllocation.policies;
+  const dealerRebateAllocations = rebateAllocation.rows;
+  const commercialOfferCandidates = linkOfferAggregate(
+    snapshot.offers,
+    publicPriceCandidates,
+    policyCandidates,
+  );
+  for (const candidate of commercialOfferCandidates) {
+    if (
+      dealerRebateAllocations.some(
+        (row) =>
+          row.legacyOfferId === candidate.legacySourceId &&
+          row.issueCodes.includes('UNALLOCATED_LEGACY_DEALER_REBATE'),
+      )
+    ) {
+      candidate.blockingIssueCodes = [
+        ...new Set([...candidate.blockingIssueCodes, 'UNALLOCATED_LEGACY_DEALER_REBATE' as const]),
+      ].sort();
+    }
+  }
   const accumulatorCandidates = classifyAccumulatorSuggestions(snapshot.offers, policyCandidates);
   const reconciliation = reconcileOffers(snapshot.offers, publicPriceCandidates, policyCandidates);
+  const dealerRebateReconciliation = reconcileDealerRebates(
+    snapshot.offers,
+    dealerRebateAllocations,
+  );
+  for (const allocation of dealerRebateAllocations) {
+    allocation.reconciliationDifference =
+      dealerRebateReconciliation.find((row) => row.sourceId === allocation.legacyOfferId)
+        ?.absoluteDifference ?? null;
+  }
+  const financingAnalysis = analyzeFinancing(snapshot.offers, policyCandidates);
+  const financingMissingSummary = summarizeMissingFinancingFields(financingAnalysis);
   const baselineActual = actualBaseline(snapshot);
   const baselineDifferences = compareBaseline(baselineActual);
   const evaluationDate =
@@ -293,13 +355,78 @@ export function runDryRun(snapshot: SourceSnapshot, options: DryRunOptions): Dry
     policyCandidates,
     accumulatorCandidates,
     reconciliation,
+    dealerRebateReconciliation,
   );
+  const informationalIssues: CanonicalRow[] = reconciliation
+    .filter((row) => row.informationalIssueCodes.length > 0)
+    .map((row) => ({
+      commercial_offer_candidate_id: row.commercialOfferCandidateId,
+      legacy_source_id: row.sourceId,
+      issue_codes: row.informationalIssueCodes.join('|'),
+      legacy_total_customer_benefit: row.legacyTotalCustomerBenefit,
+      legacy_reference_rate_monthly: '0.0145',
+      new_annual_cdi_rate: financialParameterSets[0]?.annualReferenceRate ?? null,
+      new_monthly_cdi_rate: financialParameterSets[0]?.monthlyReferenceRate ?? null,
+      new_monthly_spread_rate: financialParameterSets[0]?.monthlySpreadRate ?? null,
+      new_monthly_reference_rate: financialParameterSets[0]?.monthlyCombinedReferenceRate ?? null,
+      new_calculation_method: 'discounted_promotional_cash_flow_difference',
+      new_best_policy_benefit: row.maximumAlternativePolicyValue,
+      absolute_difference: row.absoluteDifference,
+      relative_difference: row.percentageDifference,
+      reason: 'methodology_changed',
+    }));
+  const offerPolicySummary = commercialOfferCandidates.map((candidate) => {
+    const offer = snapshot.offers.find((item) => item.id === candidate.legacySourceId);
+    const sourcePolicies = policyCandidates.filter(
+      (item) => item.sourceId === candidate.legacySourceId,
+    );
+    const byType = (type: string) =>
+      sourcePolicies.find((item) => item.proposedPolicyType === type)?.proposedMonetaryValue ??
+      null;
+    const reconciliationRow = reconciliation.find(
+      (item) => item.sourceId === candidate.legacySourceId,
+    );
+    return {
+      offerCandidateId: candidate.candidateOfferId,
+      legacySourceId: candidate.legacySourceId,
+      price:
+        publicPriceCandidates.find(
+          (price) => price.candidatePriceId === candidate.publicPriceCandidateId,
+        )?.proposedValue ?? null,
+      retailBonus: byType('retail_bonus'),
+      tradeInBonus: byType('trade_in_bonus'),
+      subsidizedFinancing: byType('subsidized_financing'),
+      freeIpva: byType('free_ipva'),
+      freeInsurance: byType('free_insurance'),
+      other: byType('other'),
+      policyCount: sourcePolicies.length,
+      relationType: sourcePolicies.length >= 2 ? ('OR' as const) : null,
+      bestCustomerBenefit: reconciliationRow?.maximumAlternativePolicyValue ?? null,
+      legacyTotalCustomerBenefit: offer?.totalCustomerBenefit ?? null,
+      difference: reconciliationRow?.absoluteDifference ?? null,
+      reviewStatus:
+        candidate.blockingIssueCodes.length > 0 ||
+        sourcePolicies.some((policy) => policy.classification === 'needs_review')
+          ? 'needs_review'
+          : 'draft',
+    };
+  });
+  const samples = buildValidationSamples({
+    offers: snapshot.offers,
+    prices: publicPriceCandidates,
+    policies: policyCandidates,
+    accumulators: accumulatorCandidates,
+    rebates: dealerRebateReconciliation,
+    financing: financingAnalysis,
+    reconciliation,
+  });
   const sourceInventory = inventory(snapshot);
   const allIssueLists = [
     ...publicPriceCandidates.map((item) => item.issueCodes),
     ...policyCandidates.map((item) => item.issueCodes),
     ...accumulatorCandidates.map((item) => item.issueCodes),
     ...reconciliation.map((item) => item.issueCodes),
+    ...dealerRebateReconciliation.map((item) => item.issueCodes),
   ];
   const hasBaselineChange = baselineDifferences.length > 0;
   const hasReview = needsReview.length > 0;
@@ -326,6 +453,70 @@ export function runDryRun(snapshot: SourceSnapshot, options: DryRunOptions): Dry
       policies: classificationCounts(policyCandidates),
     },
     issueCounts: issueCounts(allIssueLists),
+    informationalIssueCounts: issueCounts(
+      reconciliation.map((item) => item.informationalIssueCodes),
+    ),
+    dealerRebateAllocation: {
+      methodCounts: dealerRebateAllocations.reduce<Record<string, number>>(
+        (counts, row) => {
+          counts[row.allocationMethod] = (counts[row.allocationMethod] ?? 0) + 1;
+          return counts;
+        },
+        {
+          explicit_legacy_component: 0,
+          proportional_legacy_total: 0,
+          unallocated_legacy_total: 0,
+        },
+      ),
+      offersByEligiblePolicyCount: Object.fromEntries(
+        [1, 2, 3].map((count) => [
+          String(count),
+          snapshot.offers.filter(
+            (offer) =>
+              decimal(offer.totalDealerRebate)?.greaterThan(0) === true &&
+              [offer.retailRebate, offer.tradeInRebate, offer.rateRebate].every(
+                (value) => decimal(value)?.greaterThan(0) !== true,
+              ) &&
+              policyCandidates.filter(
+                (policy) =>
+                  policy.sourceId === offer.id &&
+                  isRebateEligiblePolicy(policy.proposedPolicyType) &&
+                  policy.classification !== 'needs_review' &&
+                  decimal(policy.proposedMonetaryValue)?.greaterThan(0) === true,
+              ).length === count,
+          ).length,
+        ]),
+      ),
+      unallocatableOffers: new Set(
+        dealerRebateAllocations
+          .filter((row) => row.allocationMethod === 'unallocated_legacy_total')
+          .map((row) => row.legacyOfferId),
+      ).size,
+      legacyTotal: money(
+        snapshot.offers.reduce(
+          (sum, offer) => sum.plus(decimal(offer.totalDealerRebate) ?? 0),
+          decimal('0')!,
+        ),
+      ),
+      migratedTotal: money(
+        dealerRebateAllocations.reduce(
+          (sum, row) => sum.plus(decimal(row.dealerRebateAmount) ?? 0),
+          decimal('0')!,
+        ),
+      ),
+      aggregateDifference: money(
+        snapshot.offers
+          .reduce((sum, offer) => sum.plus(decimal(offer.totalDealerRebate) ?? 0), decimal('0')!)
+          .minus(
+            dealerRebateAllocations.reduce(
+              (sum, row) => sum.plus(decimal(row.dealerRebateAmount) ?? 0),
+              decimal('0')!,
+            ),
+          )
+          .abs(),
+      ),
+    },
+    financialParameterSet: financialParameterSets[0] ?? null,
     candidatesByType: Object.fromEntries(
       Object.entries(
         policyCandidates.reduce<Record<string, number>>((counts, candidate) => {
@@ -336,11 +527,25 @@ export function runDryRun(snapshot: SourceSnapshot, options: DryRunOptions): Dry
       ).sort(([left], [right]) => left.localeCompare(right)),
     ),
     candidateCounts: {
+      commercialOffers: commercialOfferCandidates.length,
+      offersWithPrice: commercialOfferCandidates.filter(
+        (item) => item.publicPriceCandidateId !== null,
+      ).length,
+      offersWithoutPrice: commercialOfferCandidates.filter(
+        (item) => item.publicPriceCandidateId === null,
+      ).length,
+      offersWithPolicies: commercialOfferCandidates.filter((item) => item.policyCount > 0).length,
+      offersWithoutPolicies: commercialOfferCandidates.filter((item) => item.policyCount === 0)
+        .length,
       publicPrices: publicPriceCandidates.length,
+      deduplicatedPrices: snapshot.offers.length - publicPriceCandidates.length,
       publicPriceConflicts: publicPriceConflicts.length,
       policies: policyCandidates.length,
       accumulators: accumulatorCandidates.length,
       needsReview: needsReview.length,
+      informationalIssues: informationalIssues.length,
+      blockingIssues: needsReview.length,
+      validationSamples: samples.rows.length,
     },
     viewCoverage: {
       activeProducts: snapshot.products.filter((product) => product.isActive).length,
@@ -365,6 +570,7 @@ export function runDryRun(snapshot: SourceSnapshot, options: DryRunOptions): Dry
 
   return {
     summary,
+    commercialOfferCandidates,
     sourceInventory,
     publicPriceCandidates,
     publicPriceConflicts,
@@ -372,6 +578,14 @@ export function runDryRun(snapshot: SourceSnapshot, options: DryRunOptions): Dry
     accumulatorCandidates,
     needsReview,
     reconciliation,
+    dealerRebateReconciliation,
+    dealerRebateAllocations,
+    financingAnalysis,
+    financingMissingSummary,
+    offerPolicySummary,
+    informationalIssues,
+    validationSamples: samples.rows,
+    validationSampleSummary: samples.summary,
     viewCoverage,
     baselineDifferences,
   };

@@ -1,6 +1,8 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
+import Decimal from 'decimal.js';
+
 import { readLegacySnapshot, validateLocalDatabaseUrl } from './database.js';
 import { writeReports } from './reports.js';
 import { runDryRun } from './runner.js';
@@ -25,9 +27,9 @@ function usage(): string {
   pnpm pricing:dry-run -- --fixture <snapshot.json> --output-dir <directory> [options]
 
 Options:
-  --algorithm-version <version>       Default: 1.0.0
+  --algorithm-version <version>       Default: 3.0.0
   --cutoff-date <YYYY-MM-DD>          Optional source cutoff
-  --insurance-percentage <decimal>    Explicit simulation premise only
+  --insurance-percentage <decimal>    Compatibility option; only 3 is accepted
   --expected-local-port <port>        Default: 54322
   --fail-on-source-change             Exit 2 after reports when baseline changed
   --exclude-executed-at-from-hash     Stable comparison hash across executions
@@ -45,7 +47,7 @@ export function parseArguments(args: string[], environment: NodeJS.ProcessEnv): 
   let databaseUrl: string | null = environment.DATABASE_URL ?? null;
   let fixturePath: string | null = null;
   let outputDirectory: string | null = null;
-  let algorithmVersion = '1.0.0';
+  let algorithmVersion = '3.0.0';
   let cutoffDate: string | null = null;
   let insurancePercentage: string | null = null;
   let expectedLocalPort = 54322;
@@ -110,6 +112,9 @@ export function parseArguments(args: string[], environment: NodeJS.ProcessEnv): 
   }
   if (!Number.isInteger(expectedLocalPort) || expectedLocalPort <= 0) {
     throw new Error('--expected-local-port must be a positive integer');
+  }
+  if (insurancePercentage !== null && new Decimal(insurancePercentage).equals(3) === false) {
+    throw new Error('--insurance-percentage is fixed at 3 by the approved insurance rule');
   }
 
   return {

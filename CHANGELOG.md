@@ -1,5 +1,54 @@
 # Changelog
 
+## 2026-07-26 — Finalização da migration de pricing legado
+
+- Oficializada a alocação auditável de `total_dealer_rebate`: componentes explícitos prevalecem e o
+  total sem detalhamento é rateado por benefício positivo entre retail, trade-in e financiamento,
+  com ordem determinística, resíduo controlado e bloqueio quando não alocável.
+- Adicionados `free_registration`, `free_maintenance`, `fuel_or_recharge_voucher` e suporte final a
+  `free_wallbox`, além de `non_monetized`, parâmetros específicos e validação de publicação por tipo.
+- O dry-run passou a gerar `dealer-rebate-allocation-analysis.csv`; os falsos mismatches agregados
+  foram removidos sem reclassificar `others_bonus` ou criar policy genérica.
+- Migration e testes SQL foram ampliados sem aplicação, escrita, backfill ou publicação.
+
+## 2026-07-26 — Pricing legacy dry-run 3.0.0
+
+- Introduzidos candidatos de `commercial_offers` como agregado pai por linha legacy, com vínculo ao
+  MSRP versionado, policies da mesma offer, accumulators OR somente para duas ou mais policies e
+  relatórios específicos de offers, prices, policies e issues informativos.
+- Corrigidos os 254 falsos financiamentos incompletos: `0/0/0` e `NULL/NULL/NULL` agora significam
+  ausência de financiamento; os 459 casos reais usam CDI mensal composto + spread de 0,30 p.p. e
+  diferença de valores presentes.
+- Confirmados seguro em 3% do MSRP por ano e IPVA proporcional, com base de cálculo versionada;
+  divergência do total histórico passou a `LEGACY_CALCULATION_METHOD_DIFFERENCE` informativa.
+- Ampliada a migration futura, não aplicada, com `commercial_offers`, FKs, índices, constraints,
+  imutabilidade terminal e validação de publicação independente por tipo de policy.
+
+## 2026-07-26 — Pricing legacy dry-run 2.0.0
+
+- Mapeados rebates de varejo, trade-in e taxa para `dealer_rebate_amount`, com reconciliação separada
+  de `total_dealer_rebate`, preservando zero e excluindo rebate do benefício do cliente.
+- Implementados IPVA proporcional pelo mês da oferta, grupos OR provisórios, CDI efetivo anual de
+  14,78% convertido por capitalização composta e financiamento pelo método oficial de valor presente,
+  com comparativo de total pago e rastreabilidade do parameter set.
+- Ampliados reconciliação, análise de termos financeiros e samples determinísticos; criada migration
+  estrutural idempotente, sem execução, backfill ou publicação.
+
+## 2026-07-26 — Pós-validação do restore local de pricing
+
+- Corrigido o falso sucesso do restore: o fallback agora executa `pg_restore` em `postgres:17` com o
+  snapshot montado como somente leitura, `--dbname` obrigatório e sem `--file`; `RESTORED_LOCALLY`
+  só é emitido após validar as sete contagens explícitas esperadas no banco local.
+
+## 2026-07-26 — Correção de bindings Docker do restore de pricing
+
+- A detecção da porta PostgreSQL agora normaliza publicações IPv4 e IPv6 equivalentes para o mesmo
+  mapeamento lógico `54322 -> 5432/tcp`, preservando a rejeição de portas, protocolos, endereços e
+  mapeamentos conflitantes.
+- O preflight local também aceita o IP privado interno exato do container PostgreSQL inspecionado,
+  com normalização IPv4/IPv6 e CIDR, sem aceitar correspondência apenas por sub-rede ou endereço
+  remoto.
+
 ## 2026-07-26 — Exportação oficial do snapshot legado de pricing
 
 - Criado `export-pricing-legacy-snapshot.ps1` para validar origem remota autorizada e somente leitura,

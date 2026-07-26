@@ -21,7 +21,8 @@ select is(
   ),
   array[
     'retail_bonus', 'trade_in_bonus', 'subsidized_financing', 'free_ipva',
-    'free_insurance', 'free_wallbox', 'registration', 'other'
+    'free_insurance', 'free_wallbox', 'registration', 'other',
+    'free_registration', 'free_maintenance', 'fuel_or_recharge_voucher'
   ],
   'commercial_policy_type has the approved values in order'
 );
@@ -40,7 +41,7 @@ select is(
       from pg_enum
      where enumtypid = 'public.policy_calculation_method'::regtype
   ),
-  array['fixed_amount', 'percentage_of_msrp', 'present_value_subsidy', 'manual_amount'],
+  array['fixed_amount', 'percentage_of_msrp', 'present_value_subsidy', 'manual_amount', 'proportional_ipva', 'discounted_promotional_cash_flow_difference', 'non_monetized'],
   'policy_calculation_method has the approved values in order'
 );
 select is(
@@ -70,6 +71,7 @@ select is(
        and table_type = 'BASE TABLE'
   ),
   array[
+    'commercial_offers',
     'commercial_policies',
     'commercial_policy_accumulator_items',
     'commercial_policy_accumulator_values',
@@ -78,7 +80,7 @@ select is(
     'financial_parameter_sets',
     'product_public_prices'
   ],
-  'all seven pricing core tables exist in public'
+  'all eight pricing core tables exist in public'
 );
 
 select is(
@@ -102,7 +104,8 @@ select is(
     'published_at:timestamp with time zone:false:', 'published_by:uuid:false:',
     'created_at:timestamp with time zone:true:', 'created_by:uuid:false:',
     'updated_at:timestamp with time zone:true:', 'updated_by:uuid:false:',
-    'lock_version:integer:true:'
+    'lock_version:integer:true:', 'price_type:text:true:', 'ends_on:date:false:',
+    'source_reference:text:false:', 'legacy_source_id:bigint:false:'
   ],
   'product_public_prices columns match the target schema exactly'
 );
@@ -127,7 +130,10 @@ select is(
     'published_at:timestamp with time zone:false:', 'published_by:uuid:false:',
     'created_at:timestamp with time zone:true:', 'created_by:uuid:false:',
     'updated_at:timestamp with time zone:true:', 'updated_by:uuid:false:',
-    'lock_version:integer:true:'
+    'lock_version:integer:true:', 'annual_cdi_rate:numeric(14,12):false:',
+    'monthly_cdi_rate:numeric(14,12):false:', 'monthly_spread_rate:numeric(14,12):false:',
+    'monthly_reference_rate:numeric(14,12):false:', 'methodology:text:false:',
+    'valid_to:date:false:'
   ],
   'financial_parameter_sets columns match the target schema exactly'
 );
@@ -159,7 +165,20 @@ select is(
     'published_at:timestamp with time zone:false:', 'published_by:uuid:false:',
     'created_at:timestamp with time zone:true:', 'created_by:uuid:false:',
     'updated_at:timestamp with time zone:true:', 'updated_by:uuid:false:',
-    'lock_version:integer:true:'
+    'lock_version:integer:true:', 'commercial_offer_id:bigint:false:',
+    'calculation_base_price_id:bigint:false:', 'customer_benefit_amount:numeric(14,2):false:',
+    'dealer_rebate_amount:numeric(14,2):false:',
+    'dealer_rebate_allocation_method:dealer_rebate_allocation_method:false:',
+    'dealer_rebate_allocation_base:numeric(14,2):false:',
+    'dealer_rebate_allocation_percentage:numeric(12,8):false:',
+    'dealer_rebate_rounding_residual:numeric(14,8):false:',
+    'legacy_policy_source:text:false:', 'legacy_offer_id:bigint:false:',
+    'legacy_source_column:text:false:', 'legacy_dealer_rebate_value:numeric(14,2):false:',
+    'fixed_amount:numeric(14,2):false:', 'percentage_rate:numeric(14,12):false:',
+    'voucher_type:text:false:', 'policy_parameters:jsonb:true:',
+    'annual_rate:numeric(14,12):false:',
+    'coverage_years:numeric(6,2):false:', 'remaining_months:smallint:false:',
+    'offer_month:smallint:false:', 'financed_principal:numeric(14,2):false:'
   ],
   'commercial_policies columns match the target schema exactly'
 );
@@ -205,7 +224,8 @@ select is(
     'reviewed_by:uuid:false:', 'published_at:timestamp with time zone:false:',
     'published_by:uuid:false:', 'created_at:timestamp with time zone:true:',
     'created_by:uuid:false:', 'updated_at:timestamp with time zone:true:',
-    'updated_by:uuid:false:', 'lock_version:integer:true:'
+    'updated_by:uuid:false:', 'lock_version:integer:true:',
+    'commercial_offer_id:bigint:false:', 'relation_type:text:false:', 'relation_origin:text:false:'
   ],
   'commercial_policy_accumulators columns match the target schema exactly'
 );

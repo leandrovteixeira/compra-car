@@ -9,6 +9,51 @@ ONLY`, classifica candidatos em memória e grava apenas relatórios no filesyste
 Ela não cria import batches, não grava nas tabelas da Sprint 9, não chama RPCs, não publica dados e
 não executa migrations.
 
+## Modelo final da versão 3.0.0
+
+Cada linha de `product_price_offers` gera exatamente uma `commercial_offer` candidata em `draft`.
+A offer é o agregado pai: referencia o `product`, o MSRP versionado de `product_public_prices` e
+zero ou mais `commercial_policies`. `legacy_source_id` é somente rastreabilidade; nenhuma relação
+nova depende estruturalmente dele. Duas ou mais policies da mesma offer formam um accumulator
+provisório `OR`, com origem `legacy_default`; zero ou uma policy não gera accumulator.
+
+A vigência é o primeiro e o último dia de `offer_month`. Ano ou mês ausente/inválido não é
+inventado e bloqueia publicação. O MSRP usado por IPVA, seguro e financiamento é o candidato
+versionado ligado à offer, nunca o preço corrente consultado posteriormente.
+
+Regras econômicas confirmadas:
+
+- seguro: `insurance_years × 0,03 × MSRP`, sem proporcionalidade mensal;
+- IPVA: `MSRP × 0,04 × (13 - offer_month) / 12`;
+- financiamento: `NULL/NULL/NULL` e `0/0/0` significam ausência de policy; os demais conjuntos
+  completos exigem parcelas positivas, taxa promocional não negativa e entrada entre 0 e 100%;
+- taxa de referência mensal: `(1 + 0,1478)^(1/12) - 1 + 0,003 = 0,014553487442`;
+- benefício financeiro oficial: `PV(referência) - PV(promocional)`, ambos descontados pela taxa de
+  referência. Diferença nominal de totais pagos é apenas diagnóstica;
+- rebate fica em `dealer_rebate_amount`, reduz custo estimado da montadora e nunca aumenta o
+  benefício bruto do cliente.
+
+`LEGACY_CALCULATION_METHOD_DIFFERENCE` substitui o mismatch bloqueador para a comparação do total
+histórico: é informativo, explica `methodology_changed` e preserva taxas, valores e diferenças para
+auditoria. Rebate agregado divergente continua em diagnóstico separado e não cria policy genérica.
+
+### Alocação do dealer rebate agregado
+
+O legado frequentemente possui os componentes individuais zerados e somente
+`total_dealer_rebate > 0`. Isso não é erro: o dry-run distribui o total proporcionalmente pelo
+benefício positivo de retail, trade-in e financiamento válidos. Componentes individuais positivos
+permanecem autoritativos. IPVA, seguro, wallbox, emplacamento, manutenção, voucher e `other` nunca
+participam.
+
+O relatório `dealer-rebate-allocation-analysis.csv` registra base, percentual, valor final, método,
+resíduo, classificação e reconciliação por policy. Sem base elegível, a offer recebe
+`UNALLOCATED_LEGACY_DEALER_REBATE`; o total permanece auditável, sem policy genérica.
+
+Os tipos `free_wallbox`, `free_registration`, `free_maintenance` e
+`fuel_or_recharge_voucher` são reconhecidos para futuros cadastros, mas jamais inferidos do legado.
+Wallbox usa BRL 4.000,00 por default, emplacamento usa 1% do MSRP, manutenção é `non_monetized` e
+voucher usa valor nominal. O contrato completo está em `PRICING_POLICY_MODEL.md`.
+
 ## Execução
 
 Da raiz do monorepo:
@@ -17,7 +62,7 @@ Da raiz do monorepo:
 $env:DATABASE_URL = '<URL PostgreSQL explícita da stack Supabase local>'
 pnpm pricing:dry-run -- `
   --output-dir .local-reports/pricing `
-  --algorithm-version 1.0.0 `
+  --algorithm-version 3.0.0 `
   --cutoff-date 2026-07-25 `
   --exclude-executed-at-from-hash `
   --verbose
@@ -31,8 +76,8 @@ Opções:
 
 - `--fail-on-source-change`: gera os relatórios e encerra com código 2 se a fotografia divergir da
   baseline de referência;
-- `--insurance-percentage <decimal>`: adota explicitamente uma premissa percentual somente na
-  simulação; sem a opção, seguro permanece sem valor calculado e em revisão;
+- `--insurance-percentage <decimal>`: opção de compatibilidade; somente `3` é aceito, pois a regra
+  aprovada é fixa em 3% por ano;
 - `--exclude-executed-at-from-hash`: exclui o instante do hash comparável;
 - `--expected-local-port`: porta esperada da stack, com default 54322;
 - `--fixture`: executa o mesmo algoritmo sobre uma fotografia JSON local, sem conexão de banco.
@@ -169,13 +214,13 @@ Pré-requisitos:
 - dump data-only autorizado e seu SHA-256 recebido por canal separado.
 
 Não é mais obrigatório instalar PostgreSQL Client Tools no Windows. Os scripts priorizam
-automaticamente `psql` e `pg_restore` encontrados localmente; quando um executável não existe,
-usam `docker exec` no container PostgreSQL local. O nome default é `supabase_db_compra-car` e pode
-ser substituído com `-PostgresContainer '<nome>'`. O fallback exige Docker disponível e recusa
-container inexistente, parado ou com health diferente de `healthy`. Dumps são enviados ao processo
-pelo `stdin`: nenhum arquivo é copiado para o container, nenhuma imagem é alterada e nenhum pacote
-é instalado. No modo Docker, o executor também confirma o mapeamento da porta local autorizada para
-a porta interna do container antes de traduzir o endpoint para o namespace do próprio container.
+automaticamente `psql` e `pg_restore` encontrados localmente. O fallback de `pg_restore` usa
+`docker run postgres:17`, monta o diretório autorizado em `/snapshots:ro` e passa o dump custom como
+arquivo posicional; `--dbname` é obrigatório e `--file` é recusado. O container PostgreSQL esperado
+continua sendo `supabase_db_compra-car`, configurável por `-PostgresContainer`. O preflight recusa
+container inexistente, parado ou sem health, valida o binding lógico da porta e compara exatamente o
+IP respondente com os IPs atuais das redes Docker. Nenhum arquivo é copiado e nenhum pacote é
+instalado.
 
 São aceitos `*.sql` no formato data-only padrão do `pg_dump`, exclusivamente com blocos `COPY`, ou
 arquivos custom PostgreSQL `*.dump`/`*.backup` com assinatura `PGDMP`. SQL com `INSERT`, DDL ou
@@ -195,7 +240,7 @@ de `auth`, `storage`, `profiles`, administração, logs, tokens e demais domíni
 Primeiro, valide sem conexão de banco:
 
 ```powershell
-$snapshot = '.local-snapshots/pricing/legacy-authorized.sql'
+$snapshot = '.local-snapshots/pricing/legacy-pricing.dump'
 $sha256 = '<SHA-256 autorizado com 64 caracteres hexadecimais>'
 
 ./scripts/pricing/validate-pricing-legacy-snapshot.ps1 `
@@ -210,21 +255,32 @@ no manifesto:
 
 ```powershell
 $localDatabaseUrl = '<URL PostgreSQL explícita para 127.0.0.1:54322>'
+$expectedRowCounts = @{
+  products = 292
+  product_price_offers = 746
+  price_offer_imports = 10
+  price_offer_import_rows = 173
+  price_offers_staging = 746
+  product_specs = 37540
+  specs = 320
+}
 
 ./scripts/pricing/run-pricing-snapshot-validation.ps1 `
   -SnapshotPath $snapshot `
   -AllowedSnapshotDirectory '.local-snapshots/pricing' `
   -ExpectedSha256 $sha256 `
   -DatabaseUrl $localDatabaseUrl `
+  -ExpectedRowCounts $expectedRowCounts `
   -CutoffDate '2026-07-25' `
-  -AlgorithmVersion '1.0.0' `
+  -AlgorithmVersion '3.0.0' `
   -OutputDirectory '.local-reports/pricing-snapshots/authorized-run' `
   -PostgresContainer 'supabase_db_compra-car' `
   -ConfirmLocalRestore
 ```
 
 O fluxo valida novamente o dump e o destino, exige que todas as tabelas de destino estejam vazias,
-restaura somente dados em uma transação, roda `pnpm pricing:dry-run` com cutoff, versão,
+restaura somente dados em uma transação e confere as sete contagens explícitas antes de declarar
+sucesso. Depois, roda `pnpm pricing:dry-run` com cutoff, versão,
 `--exclude-executed-at-from-hash` e `--verbose`, e só então grava `snapshot-manifest.json`. Não há
 flag de bypass remoto. `-WhatIf` permite revisar o plano sem conectar, restaurar ou executar o
 dry-run.
@@ -289,20 +345,61 @@ Preço duplicado de mesmo valor gera um candidato lógico com múltiplas origens
 nunca recebem vencedor. Totais legados servem somente à reconciliação. Rebates não viram bônus, e
 qualquer combinação permanece sugestão não publicável.
 
+### Regras da versão 3.0.0
+
+- `retail_rebate`, `trade_in_rebate` e `rate_rebate` alimentam `dealer_rebate_amount` respectivamente
+  em `retail_bonus`, `trade_in_bonus` e `subsidized_financing`. O total legado é somente reconciliado;
+  rebate não aumenta nem reduz o benefício bruto do cliente.
+- IPVA usa o mês de `offer_month`: `public_price × 0.04 × (13 - mês) / 12`, com HALF_UP em duas
+  casas. Preço ausente/não positivo ou mês inválido recebe issue específica.
+- duas ou mais políticas da mesma oferta formam um grupo provisório `OR`,
+  `relation_origin=legacy_default`, em draft. A reconciliação usa o maior benefício alternativo; a
+  soma fica apenas como diagnóstico.
+- o CDI provisório auditável é 14,78% efetivos ao ano. A taxa mensal é
+  `power(1 + 0.1478, 1/12) - 1`, nunca divisão simples por 12.
+- a referência financeira soma ao CDI mensal o spread mensal de `0.003`. O método oficial é
+  `discounted_promotional_cash_flow_difference`: valor presente do fluxo de referência menos valor
+  presente das parcelas promocionais, ambos descontados pela taxa combinada. O relatório também
+  apresenta, sem substituir a regra oficial, pagamentos constantes e
+  `reference_total_paid - promotional_total_paid` para comparação metodológica.
+- seguro usa `insurance_years × 0.03 × MSRP`. `0/0/0` e `NULL/NULL/NULL` significam ausência de
+  financiamento; zero continua válido em taxa ou entrada quando parcelas forem positivas.
+
+Os hashes da versão 3.0.0 incorporam offers, vínculos de preço, a nova detecção financeira e
+relatórios adicionais; não são diretamente comparáveis aos hashes 1.0.0 ou 2.0.0.
+
+### Contrato previsto para futura importação Excel
+
+O importador ainda não foi implementado. O contrato futuro separa:
+
+- **OFFERS:** `source_offer_key`, referência do produto, mês da campanha, `valid_from`, `valid_to`,
+  `public_price` e observações;
+- **POLICIES:** uma linha por `source_offer_key` e política, com `policy_type`,
+  `customer_benefit_amount`, `dealer_rebate_amount`, `subsidized_rate_monthly`,
+  `down_payment_percent`, `installments`, `insurance_years`, `ipva_rate`, `calculation_method`,
+  `relation_group`, `relation_type` e observações.
+
+No contrato, vazio significa `NULL` e zero significa valor informado. Rebate não é benefício do
+cliente; totais agregados não viram políticas; relações podem ser OR/AND; IPVA proporcional e CDI
+versionado permanecem regras externas rastreáveis.
+
 ## Relatórios
 
 Cada execução gera:
 
 1. `summary.json`;
 2. `source-inventory.csv`;
-3. `public-price-candidates.csv`;
-4. `public-price-conflicts.csv`;
-5. `policy-candidates.csv`;
-6. `accumulator-candidates.csv`;
-7. `needs-review.csv`;
+3. `commercial-offers.csv` e `offer-policy-summary.csv`;
+4. `product-public-prices.csv`, `public-price-candidates.csv` e `public-price-conflicts.csv`;
+5. `commercial-policies.csv` e `policy-candidates.csv`;
+6. `commercial-policy-accumulators.csv` e `accumulator-candidates.csv`;
+7. `needs-review.csv` e `informational-issues.csv`;
 8. `reconciliation.csv`;
-9. `view-coverage.csv`;
-10. `README.md`.
+9. `dealer-rebate-allocation-analysis.csv`, `rebate-reconciliation-analysis.csv` e o resumo JSON;
+10. `financing-analysis.csv`, `financing-benefit-comparison.csv` e o resumo de completude;
+11. `validation-samples.csv` e `validation-samples-summary.json`;
+12. `view-coverage.csv`;
+13. `README.md`.
 
 JSON usa chaves canônicas para hash. CSV possui colunas fixas, escaping RFC 4180 básico e ordem
 estável. Sobre a mesma fotografia e opções, o conteúdo de dados é repetível; apenas `executedAt` e o
@@ -325,10 +422,11 @@ Backfill persistente continua bloqueado enquanto houver:
 - mudança de fotografia sem aprovação;
 - preço zero, negativo, conflitante ou produto sem correspondência;
 - vigência ausente/inválida;
-- financiamento sem parameter set publicado;
-- percentual de seguro/IPVA não aprovado;
+- financiamento realmente incompleto ou sem parameter set publicado;
+- percentual de seguro não aprovado e IPVA com preço/mês inválido;
 - descrição obrigatória ausente;
-- rebates ou totais sem semântica confirmada;
-- relação AND/OR não decidida;
+- divergência entre rebates estruturados e `total_dealer_rebate`;
+- grupos OR permanecem em draft até validação administrativa, mas a ausência de relação no legado
+  não gera sozinha `AMBIGUOUS_AND_OR_RELATION`;
 - divergências de reconciliação sem explicação;
 - qualquer candidato `needs_review` sem decisão humana.

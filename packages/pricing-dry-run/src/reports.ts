@@ -54,12 +54,17 @@ repeatable-read, read-only transaction and the reports are local files only.
 - \`accumulator-candidates.csv\`: combination suggestions only; none is automatically publishable.
 - \`needs-review.csv\`: issue codes and evidence requiring human review.
 - \`reconciliation.csv\`: exact-decimal comparison with the legacy customer total.
+- \`dealer-rebate-reconciliation.csv\`: individual dealer rebates versus the legacy aggregate.
+- \`dealer-rebate-allocation-analysis.csv\`: explicit, proportional or unallocated legacy rebate
+  by policy, including base, percentage, rounding residue and reconciliation.
+- \`financing-analysis.csv\`: financing completeness, calculations and parameter-set traceability.
+- \`validation-samples.csv\`: deterministic review samples grouped in \`validation-samples-summary.json\`.
 - \`view-coverage.csv\`: expected compatibility coverage and absence reasons.
 
 ## Backfill blockers
 
 Backfill remains blocked while the source baseline changed without approval, conflicts or invalid
-values exist, financing lacks a published parameter set, AND/OR semantics are unresolved, or any
+values exist, financing lacks a published parameter set, provisional OR groups await UX review, or any
 candidate classified as \`needs_review\` has not been decided by a human.
 
 The optional insurance percentage is only a simulation premise and never authorizes publication.
@@ -80,6 +85,27 @@ export async function writeReports(
 
   const files = new Map<string, string>([
     ['summary.json', stablePrettyJson(result.summary)],
+    [
+      'commercial-offers.csv',
+      stableCsv(result.commercialOfferCandidates, [
+        { header: 'candidate_offer_id', value: (row) => row.candidateOfferId },
+        { header: 'legacy_source_id', value: (row) => row.legacySourceId },
+        { header: 'product_id', value: (row) => row.productId },
+        { header: 'product_public_price_candidate_id', value: (row) => row.publicPriceCandidateId },
+        { header: 'valid_from', value: (row) => row.validFrom },
+        { header: 'valid_to', value: (row) => row.validTo },
+        { header: 'status', value: (row) => row.status },
+        { header: 'policy_count', value: (row) => row.policyCount },
+        { header: 'accumulator_candidate_id', value: (row) => row.accumulatorCandidateId },
+        { header: 'source_system', value: (row) => row.sourceSystem },
+        { header: 'source_reference', value: (row) => row.sourceReference },
+        { header: 'blocking_issue_codes', value: (row) => row.blockingIssueCodes.join('|') },
+        {
+          header: 'informational_issue_codes',
+          value: (row) => row.informationalIssueCodes.join('|'),
+        },
+      ]),
+    ],
     [
       'source-inventory.csv',
       stableCsv(result.sourceInventory, [
@@ -106,6 +132,21 @@ export async function writeReports(
       ]),
     ],
     [
+      'product-public-prices.csv',
+      stableCsv(result.publicPriceCandidates, [
+        { header: 'candidate_price_id', value: (row) => row.candidatePriceId },
+        { header: 'product_id', value: (row) => row.productId },
+        { header: 'price_type', value: (row) => row.priceType },
+        { header: 'amount', value: (row) => row.proposedValue },
+        { header: 'valid_from', value: (row) => row.startsOn },
+        { header: 'valid_to', value: (row) => row.endsOn },
+        { header: 'source_system', value: (row) => row.sourceSystem },
+        { header: 'source_reference', value: (row) => row.sourceReference },
+        { header: 'status', value: (row) => row.status },
+        { header: 'issue_codes', value: (row) => row.issueCodes.join('|') },
+      ]),
+    ],
+    [
       'public-price-conflicts.csv',
       stableCsv(result.publicPriceConflicts, [
         { header: 'product_id', value: (row) => row.productId },
@@ -125,11 +166,62 @@ export async function writeReports(
         { header: 'calculation_method', value: (row) => row.calculationMethod },
         { header: 'input_monetary_value', value: (row) => row.inputMonetaryValue },
         { header: 'proposed_monetary_value', value: (row) => row.proposedMonetaryValue },
+        { header: 'dealer_rebate_amount', value: (row) => row.dealerRebateAmount },
+        {
+          header: 'dealer_rebate_allocation_method',
+          value: (row) => row.dealerRebateAllocationMethod,
+        },
+        { header: 'allocation_base', value: (row) => row.dealerRebateAllocationBase },
+        {
+          header: 'allocation_percentage',
+          value: (row) => row.dealerRebateAllocationPercentage,
+        },
+        { header: 'rounding_residual', value: (row) => row.dealerRebateRoundingResidual },
+        { header: 'legacy_policy_source', value: (row) => row.legacyPolicySource },
+        { header: 'fixed_amount', value: (row) => row.fixedAmount },
+        { header: 'percentage_rate', value: (row) => row.percentageRate },
+        { header: 'voucher_type', value: (row) => row.voucherType },
+        { header: 'policy_parameters', value: (row) => canonicalJson(row.policyParameters) },
+        { header: 'annual_rate', value: (row) => row.annualRate },
+        { header: 'remaining_months', value: (row) => row.remainingMonths },
+        { header: 'financed_principal', value: (row) => row.financedPrincipal },
+        { header: 'promotional_payment', value: (row) => row.promotionalPayment },
+        { header: 'promotional_total_paid', value: (row) => row.promotionalTotalPaid },
+        { header: 'reference_payment', value: (row) => row.referencePayment },
+        { header: 'reference_total_paid', value: (row) => row.referenceTotalPaid },
+        { header: 'total_paid_benefit', value: (row) => row.totalPaidBenefit },
+        { header: 'financial_parameter_set_id', value: (row) => row.financialParameterSetId },
+        {
+          header: 'financial_parameter_set_version',
+          value: (row) => row.financialParameterSetVersion,
+        },
+        { header: 'financial_calculation_method', value: (row) => row.financialCalculationMethod },
         { header: 'starts_on', value: (row) => row.startsOn },
         { header: 'classification', value: (row) => row.classification },
         { header: 'issue_codes', value: (row) => row.issueCodes.join('|') },
         { header: 'evidence_fields', value: (row) => row.evidence },
         { header: 'fingerprint', value: (row) => row.fingerprint },
+      ]),
+    ],
+    [
+      'commercial-policies.csv',
+      stableCsv(result.policyCandidates, [
+        { header: 'candidate_policy_id', value: (row) => row.candidatePolicyId },
+        { header: 'commercial_offer_id', value: (row) => row.commercialOfferId },
+        { header: 'calculation_base_price_id', value: (row) => row.calculationBasePriceId },
+        { header: 'policy_type', value: (row) => row.proposedPolicyType },
+        { header: 'customer_benefit_amount', value: (row) => row.proposedMonetaryValue },
+        { header: 'dealer_rebate_amount', value: (row) => row.dealerRebateAmount },
+        {
+          header: 'dealer_rebate_allocation_method',
+          value: (row) => row.dealerRebateAllocationMethod,
+        },
+        { header: 'fixed_amount', value: (row) => row.fixedAmount },
+        { header: 'percentage_rate', value: (row) => row.percentageRate },
+        { header: 'voucher_type', value: (row) => row.voucherType },
+        { header: 'calculation_method', value: (row) => row.calculationMethod },
+        { header: 'classification', value: (row) => row.classification },
+        { header: 'issue_codes', value: (row) => row.issueCodes.join('|') },
       ]),
     ],
     [
@@ -141,10 +233,23 @@ export async function writeReports(
           value: (row) => row.proposedPolicyFingerprints.join('|'),
         },
         { header: 'evidence_text', value: (row) => row.evidenceText },
-        { header: 'and_or_classification', value: (row) => row.andOrClassification },
+        { header: 'relation_type', value: (row) => row.relationType },
+        { header: 'relation_origin', value: (row) => row.relationOrigin },
+        { header: 'status', value: (row) => row.status },
         { header: 'issue_codes', value: (row) => row.issueCodes.join('|') },
         { header: 'automatically_publishable', value: (row) => row.automaticallyPublishable },
         { header: 'fingerprint', value: (row) => row.fingerprint },
+      ]),
+    ],
+    [
+      'commercial-policy-accumulators.csv',
+      stableCsv(result.accumulatorCandidates, [
+        { header: 'candidate_accumulator_id', value: (row) => row.candidateAccumulatorId },
+        { header: 'commercial_offer_id', value: (row) => row.commercialOfferId },
+        { header: 'relation_type', value: (row) => row.relationType },
+        { header: 'relation_origin', value: (row) => row.relationOrigin },
+        { header: 'policy_fingerprints', value: (row) => row.proposedPolicyFingerprints.join('|') },
+        { header: 'status', value: (row) => row.status },
       ]),
     ],
     [
@@ -157,6 +262,34 @@ export async function writeReports(
         { header: 'issue_codes', value: (row) => row.issue_codes },
         { header: 'evidence', value: (row) => row.evidence },
         { header: 'fingerprint', value: (row) => row.fingerprint },
+      ]),
+    ],
+    [
+      'informational-issues.csv',
+      stableCsv(result.informationalIssues, [
+        {
+          header: 'commercial_offer_candidate_id',
+          value: (row) => row.commercial_offer_candidate_id,
+        },
+        { header: 'legacy_source_id', value: (row) => row.legacy_source_id },
+        { header: 'issue_codes', value: (row) => row.issue_codes },
+        {
+          header: 'legacy_total_customer_benefit',
+          value: (row) => row.legacy_total_customer_benefit,
+        },
+        {
+          header: 'legacy_reference_rate_monthly',
+          value: (row) => row.legacy_reference_rate_monthly,
+        },
+        { header: 'new_annual_cdi_rate', value: (row) => row.new_annual_cdi_rate },
+        { header: 'new_monthly_cdi_rate', value: (row) => row.new_monthly_cdi_rate },
+        { header: 'new_monthly_spread_rate', value: (row) => row.new_monthly_spread_rate },
+        { header: 'new_monthly_reference_rate', value: (row) => row.new_monthly_reference_rate },
+        { header: 'new_calculation_method', value: (row) => row.new_calculation_method },
+        { header: 'new_best_policy_benefit', value: (row) => row.new_best_policy_benefit },
+        { header: 'absolute_difference', value: (row) => row.absolute_difference },
+        { header: 'relative_difference', value: (row) => row.relative_difference },
+        { header: 'reason', value: (row) => row.reason },
       ]),
     ],
     [
@@ -177,13 +310,169 @@ export async function writeReports(
           value: (row) => row.legacyTotalCustomerBenefit,
         },
         { header: 'calculated_known_total', value: (row) => row.calculatedKnownTotal },
+        { header: 'known_policy_values', value: (row) => row.knownPolicyValues },
+        {
+          header: 'maximum_alternative_policy_value',
+          value: (row) => row.maximumAlternativePolicyValue,
+        },
+        { header: 'sum_of_all_policy_values', value: (row) => row.sumOfAllPolicyValues },
+        { header: 'comparable_total', value: (row) => row.comparableTotal },
         { header: 'absolute_difference', value: (row) => row.absoluteDifference },
         { header: 'percentage_difference', value: (row) => row.percentageDifference },
         { header: 'explanation', value: (row) => row.explanation },
+        { header: 'components_included', value: (row) => row.componentsIncluded },
+        { header: 'components_excluded', value: (row) => row.componentsExcluded },
+        { header: 'reason_not_comparable', value: (row) => row.reasonNotComparable },
         { header: 'status', value: (row) => row.status },
         { header: 'issue_codes', value: (row) => row.issueCodes.join('|') },
       ]),
     ],
+    [
+      'dealer-rebate-reconciliation.csv',
+      stableCsv(result.dealerRebateReconciliation, [
+        { header: 'source_id', value: (row) => row.sourceId },
+        { header: 'retail_rebate', value: (row) => row.retailRebate },
+        { header: 'trade_in_rebate', value: (row) => row.tradeInRebate },
+        { header: 'rate_rebate', value: (row) => row.rateRebate },
+        { header: 'structured_total', value: (row) => row.structuredTotal },
+        { header: 'allocated_total', value: (row) => row.allocatedTotal },
+        { header: 'legacy_total', value: (row) => row.legacyTotal },
+        { header: 'absolute_difference', value: (row) => row.absoluteDifference },
+        { header: 'explanation', value: (row) => row.explanation },
+        { header: 'issue_codes', value: (row) => row.issueCodes.join('|') },
+      ]),
+    ],
+    [
+      'dealer-rebate-allocation-analysis.csv',
+      stableCsv(result.dealerRebateAllocations, [
+        { header: 'legacy_offer_id', value: (row) => row.legacyOfferId },
+        { header: 'source_row_id', value: (row) => row.sourceRowId },
+        { header: 'product_id', value: (row) => row.productId },
+        { header: 'policy_candidate_id', value: (row) => row.policyCandidateId },
+        { header: 'policy_type', value: (row) => row.policyType },
+        { header: 'total_dealer_rebate', value: (row) => row.legacyTotalDealerRebate },
+        { header: 'retail_rebate', value: (row) => row.legacyRetailRebate },
+        { header: 'trade_in_rebate', value: (row) => row.legacyTradeInRebate },
+        { header: 'rate_rebate', value: (row) => row.legacyRateRebate },
+        { header: 'customer_benefit_amount', value: (row) => row.customerBenefitAmount },
+        { header: 'eligible_for_rebate', value: (row) => row.eligibleForRebate },
+        { header: 'allocation_base', value: (row) => row.allocationBase },
+        { header: 'allocation_percentage', value: (row) => row.allocationPercentage },
+        { header: 'dealer_rebate_amount', value: (row) => row.dealerRebateAmount },
+        { header: 'dealer_rebate_allocation_method', value: (row) => row.allocationMethod },
+        { header: 'rounding_residual', value: (row) => row.roundingResidual },
+        { header: 'issue_code', value: (row) => row.issueCodes.join('|') },
+        { header: 'classification', value: (row) => row.classification },
+        { header: 'reconciliation_difference', value: (row) => row.reconciliationDifference },
+      ]),
+    ],
+    [
+      'financing-analysis.csv',
+      stableCsv(result.financingAnalysis, [
+        { header: 'source_id', value: (row) => row.sourceId },
+        { header: 'product_id', value: (row) => row.productId },
+        { header: 'offer_month', value: (row) => row.offerMonth },
+        { header: 'promotional_monthly_rate', value: (row) => row.promotionalMonthlyRate },
+        { header: 'down_payment_percent', value: (row) => row.downPaymentPercent },
+        { header: 'installments', value: (row) => row.installments },
+        { header: 'financed_principal', value: (row) => row.financedPrincipal },
+        { header: 'dealer_rebate', value: (row) => row.dealerRebate },
+        { header: 'missing_rate', value: (row) => row.missingRate },
+        { header: 'missing_down_payment', value: (row) => row.missingDownPayment },
+        { header: 'missing_installments', value: (row) => row.missingInstallments },
+        { header: 'missing_public_price', value: (row) => row.missingPublicPrice },
+        { header: 'missing_parameter_set', value: (row) => row.missingParameterSet },
+        { header: 'classification', value: (row) => row.classification },
+        { header: 'issue_codes', value: (row) => row.issueCodes.join('|') },
+      ]),
+    ],
+    ['financing-missing-summary.json', stablePrettyJson(result.financingMissingSummary)],
+    [
+      'financing-benefit-comparison.csv',
+      stableCsv(
+        result.policyCandidates.filter((row) => row.proposedPolicyType === 'subsidized_financing'),
+        [
+          { header: 'commercial_offer_id', value: (row) => row.commercialOfferId },
+          { header: 'financed_principal', value: (row) => row.financedPrincipal },
+          { header: 'promotional_payment', value: (row) => row.promotionalPayment },
+          { header: 'reference_payment', value: (row) => row.referencePayment },
+          { header: 'promotional_present_value', value: (row) => row.promotionalPresentValue },
+          { header: 'reference_present_value', value: (row) => row.referencePresentValue },
+          { header: 'official_customer_benefit', value: (row) => row.proposedMonetaryValue },
+          { header: 'diagnostic_nominal_difference', value: (row) => row.totalPaidBenefit },
+        ],
+      ),
+    ],
+    [
+      'rebate-reconciliation-analysis.csv',
+      stableCsv(result.dealerRebateReconciliation, [
+        { header: 'commercial_offer_id', value: (row) => row.commercialOfferCandidateId },
+        { header: 'legacy_source_id', value: (row) => row.sourceId },
+        { header: 'retail_rebate', value: (row) => row.retailRebate },
+        { header: 'trade_in_rebate', value: (row) => row.tradeInRebate },
+        { header: 'rate_rebate', value: (row) => row.rateRebate },
+        { header: 'individual_sum', value: (row) => row.structuredTotal },
+        { header: 'allocated_total', value: (row) => row.allocatedTotal },
+        { header: 'legacy_total', value: (row) => row.legacyTotal },
+        { header: 'difference', value: (row) => row.absoluteDifference },
+        { header: 'components_present', value: (row) => row.componentsPresent },
+        { header: 'components_missing', value: (row) => row.componentsMissing },
+      ]),
+    ],
+    [
+      'rebate-reconciliation-summary.json',
+      stablePrettyJson({
+        total: result.dealerRebateReconciliation.length,
+        mismatches: result.dealerRebateReconciliation.filter((row) =>
+          row.issueCodes.includes('DEALER_REBATE_TOTAL_MISMATCH'),
+        ).length,
+        deterministicSamples: result.dealerRebateReconciliation
+          .filter((row) => row.issueCodes.length > 0)
+          .slice(0, 20),
+      }),
+    ],
+    [
+      'offer-policy-summary.csv',
+      stableCsv(result.offerPolicySummary, [
+        { header: 'offer_candidate_id', value: (row) => row.offerCandidateId },
+        { header: 'legacy_source_id', value: (row) => row.legacySourceId },
+        { header: 'price', value: (row) => row.price },
+        { header: 'retail_bonus', value: (row) => row.retailBonus },
+        { header: 'trade_in_bonus', value: (row) => row.tradeInBonus },
+        { header: 'subsidized_financing', value: (row) => row.subsidizedFinancing },
+        { header: 'free_ipva', value: (row) => row.freeIpva },
+        { header: 'free_insurance', value: (row) => row.freeInsurance },
+        { header: 'other', value: (row) => row.other },
+        { header: 'policy_count', value: (row) => row.policyCount },
+        { header: 'relation_type', value: (row) => row.relationType },
+        { header: 'best_customer_benefit', value: (row) => row.bestCustomerBenefit },
+        { header: 'legacy_total_customer_benefit', value: (row) => row.legacyTotalCustomerBenefit },
+        { header: 'difference', value: (row) => row.difference },
+        { header: 'review_status', value: (row) => row.reviewStatus },
+      ]),
+    ],
+    [
+      'validation-samples.csv',
+      stableCsv(result.validationSamples, [
+        { header: 'category', value: (row) => row.category },
+        { header: 'source_table', value: (row) => row.source_table },
+        { header: 'source_id', value: (row) => row.source_id },
+        { header: 'product_id', value: (row) => row.product_id },
+        { header: 'offer_month', value: (row) => row.offer_month },
+        { header: 'legacy_data', value: (row) => row.legacy_data },
+        { header: 'policy_type', value: (row) => row.policy_type },
+        { header: 'calculated_value', value: (row) => row.calculated_value },
+        { header: 'dealer_rebate_amount', value: (row) => row.dealer_rebate_amount },
+        { header: 'relation_type', value: (row) => row.relation_type },
+        { header: 'relation_origin', value: (row) => row.relation_origin },
+        { header: 'parameter_set_id', value: (row) => row.parameter_set_id },
+        { header: 'parameter_set_version', value: (row) => row.parameter_set_version },
+        { header: 'classification', value: (row) => row.classification },
+        { header: 'issue_codes', value: (row) => row.issue_codes },
+        { header: 'justification', value: (row) => row.justification },
+      ]),
+    ],
+    ['validation-samples-summary.json', stablePrettyJson(result.validationSampleSummary)],
     [
       'view-coverage.csv',
       stableCsv(result.viewCoverage, [
