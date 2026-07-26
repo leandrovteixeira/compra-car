@@ -4,12 +4,15 @@ param(
     [Parameter(Mandatory = $true)][string]$AllowedSnapshotDirectory,
     [Parameter(Mandatory = $true)][ValidatePattern('^[A-Fa-f0-9]{64}$')][string]$ExpectedSha256,
     [Parameter(Mandatory = $true)][string]$DatabaseUrl,
+    [Parameter(Mandatory = $true)][hashtable]$ExpectedRowCounts,
     [switch]$ConfirmLocalRestore,
     [int]$ExpectedLocalPort = 54322,
     [long]$MaximumBytes = 1073741824,
     [string]$PsqlPath = 'psql',
     [string]$PgRestorePath = 'pg_restore',
-    [string]$PostgresContainer = 'supabase_db_compra-car'
+    [string]$PostgresContainer = 'supabase_db_compra-car',
+    [string]$PostgresImage = 'postgres:17',
+    [string]$DockerPath = 'docker'
 )
 
 Set-StrictMode -Version Latest
@@ -36,8 +39,18 @@ $plan = New-LocalRestorePlan `
 
 $status = 'PLANNED_ONLY'
 if ($PSCmdlet.ShouldProcess($target.SanitizedIdentity, "Restore data-only snapshot $($snapshot.FileName)")) {
-    Invoke-LocalSnapshotRestore -Plan $plan -Target $target -PsqlPath $PsqlPath -PostgresContainer $PostgresContainer
-    $status = 'RESTORED_LOCALLY'
+    $restoreResult = Invoke-LocalSnapshotRestore `
+        -Plan $plan `
+        -Target $target `
+        -ExpectedRowCounts $ExpectedRowCounts `
+        -PsqlPath $PsqlPath `
+        -PostgresContainer $PostgresContainer `
+        -PostgresImage $PostgresImage `
+        -DockerPath $DockerPath
+    if (-not $restoreResult.RestoreExecuted -or -not $restoreResult.DatabaseMode) {
+        throw 'Restore execution did not complete in pg_restore database mode.'
+    }
+    $status = $restoreResult.Status
 }
 
 [ordered]@{
@@ -45,5 +58,6 @@ if ($PSCmdlet.ShouldProcess($target.SanitizedIdentity, "Restore data-only snapsh
     snapshotFormat = $snapshot.Format
     localDatabase = $target.SanitizedIdentity
     tables = $snapshot.Tables
+    counts = if ($status -eq 'RESTORED_LOCALLY') { $restoreResult.Counts } else { $null }
     status = $status
 } | ConvertTo-Json -Depth 5

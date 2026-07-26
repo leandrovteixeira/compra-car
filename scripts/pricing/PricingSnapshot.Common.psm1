@@ -279,6 +279,72 @@ function Test-PlainSqlSnapshot {
     return @($foundTables | Sort-Object | ForEach-Object { "public.$_" })
 }
 
+function Get-PostgreSqlContainerRuntimeMetadata {
+    param(
+        [string]$PostgresContainer = 'supabase_db_compra-car',
+        [string]$DockerPath = 'docker'
+    )
+
+    $dockerCommandSource = Resolve-DockerCommand -DockerPath $DockerPath
+    if ([string]::IsNullOrWhiteSpace($PostgresContainer)) {
+        throw 'PostgresContainer must identify a PostgreSQL container.'
+    }
+
+    $previousErrorActionPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        $inspection = & $dockerCommandSource 'inspect' '--format' '{{.State.Status}}|{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}|{{json .NetworkSettings.Ports}}|{{json .NetworkSettings.Networks}}' $PostgresContainer 2>&1
+        $inspectionExitCode = $LASTEXITCODE
+    }
+    finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+    if ($inspectionExitCode -ne 0) {
+        throw "PostgreSQL container does not exist or cannot be inspected: $PostgresContainer"
+    }
+    $containerState = ([string]($inspection | Select-Object -Last 1)).Trim()
+    $stateParts = $containerState.Split('|', 4)
+    if ($stateParts.Count -ne 4 -or $stateParts[0] -ne 'running') {
+        throw "PostgreSQL container is not running: $PostgresContainer"
+    }
+    if ($stateParts[1] -ne 'healthy') {
+        throw "PostgreSQL container is not healthy: $PostgresContainer (health: $($stateParts[1]))"
+    }
+
+    try {
+        $publishedPorts = $stateParts[2] | ConvertFrom-Json
+    }
+    catch {
+        throw "PostgreSQL container port mappings could not be inspected: $PostgresContainer"
+    }
+    $portMappings = @()
+    foreach ($portProperty in $publishedPorts.PSObject.Properties) {
+        if ($portProperty.Name -notmatch '^(\d+)/([^/]+)$') {
+            continue
+        }
+        $containerPort = [int]$Matches[1]
+        $protocol = $Matches[2].ToLowerInvariant()
+        foreach ($binding in @($portProperty.Value)) {
+            if ($null -ne $binding -and -not [string]::IsNullOrWhiteSpace([string]$binding.HostPort)) {
+                $portMappings += [pscustomobject]@{
+                    HostIp = [string]$binding.HostIp
+                    HostPort = [int]$binding.HostPort
+                    ContainerPort = $containerPort
+                    Protocol = $protocol
+                }
+            }
+        }
+    }
+    $containerIpAddresses = Get-PostgreSqlContainerIpAddresses -NetworkSettingsJson $stateParts[3] -PostgresContainer $PostgresContainer
+
+    return [pscustomobject]@{
+        CommandSource = $dockerCommandSource
+        Container = $PostgresContainer
+        PortMappings = @($portMappings)
+        ContainerIpAddresses = @($containerIpAddresses)
+    }
+}
+
 function Resolve-PostgreSqlClientExecutor {
     param(
         [Parameter(Mandatory = $true)][ValidateSet('psql', 'pg_restore')][string]$Client,
@@ -294,65 +360,19 @@ function Resolve-PostgreSqlClientExecutor {
             Mode = 'Local'
             Client = $Client
             CommandSource = Get-PostgreSqlCommandSource -Command $localCommand
-            Container = $null
+            Container = $PostgresContainer
         }
     }
 
-    $dockerCommandSource = Resolve-DockerCommand -DockerPath $DockerPath
-    if ([string]::IsNullOrWhiteSpace($PostgresContainer)) {
-        throw 'PostgresContainer must identify a PostgreSQL container.'
-    }
-
-    $previousErrorActionPreference = $ErrorActionPreference
-    try {
-        $ErrorActionPreference = 'Continue'
-        $inspection = & $dockerCommandSource 'inspect' '--format' '{{.State.Status}}|{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}|{{json .NetworkSettings.Ports}}' $PostgresContainer 2>&1
-        $inspectionExitCode = $LASTEXITCODE
-    }
-    finally {
-        $ErrorActionPreference = $previousErrorActionPreference
-    }
-    if ($inspectionExitCode -ne 0) {
-        throw "PostgreSQL container does not exist or cannot be inspected: $PostgresContainer"
-    }
-    $containerState = ([string]($inspection | Select-Object -Last 1)).Trim()
-    $stateParts = $containerState.Split('|', 3)
-    if ($stateParts.Count -ne 3 -or $stateParts[0] -ne 'running') {
-        throw "PostgreSQL container is not running: $PostgresContainer"
-    }
-    if ($stateParts[1] -ne 'healthy') {
-        throw "PostgreSQL container is not healthy: $PostgresContainer (health: $($stateParts[1]))"
-    }
-
-    try {
-        $publishedPorts = $stateParts[2] | ConvertFrom-Json
-    }
-    catch {
-        throw "PostgreSQL container port mappings could not be inspected: $PostgresContainer"
-    }
-    $portMappings = @()
-    foreach ($portProperty in $publishedPorts.PSObject.Properties) {
-        if ($portProperty.Name -notmatch '^(\d+)/tcp$') {
-            continue
-        }
-        $containerPort = [int]$Matches[1]
-        foreach ($binding in @($portProperty.Value)) {
-            if ($null -ne $binding -and -not [string]::IsNullOrWhiteSpace([string]$binding.HostPort)) {
-                $portMappings += [pscustomobject]@{
-                    HostPort = [int]$binding.HostPort
-                    ContainerPort = $containerPort
-                }
-            }
-        }
-    }
-
+    $containerMetadata = Get-PostgreSqlContainerRuntimeMetadata -PostgresContainer $PostgresContainer -DockerPath $DockerPath
     Write-Information 'Usando PostgreSQL Client via Docker.' -InformationAction Continue
     return [pscustomobject]@{
         Mode = 'Docker'
         Client = $Client
-        CommandSource = $dockerCommandSource
-        Container = $PostgresContainer
-        PortMappings = @($portMappings)
+        CommandSource = $containerMetadata.CommandSource
+        Container = $containerMetadata.Container
+        PortMappings = @($containerMetadata.PortMappings)
+        ContainerIpAddresses = @($containerMetadata.ContainerIpAddresses)
     }
 }
 
@@ -370,10 +390,146 @@ function Resolve-PgRestoreExecutor {
     param(
         [string]$PgRestorePath = 'pg_restore',
         [string]$PostgresContainer = 'supabase_db_compra-car',
+        [string]$PostgresImage = 'postgres:17',
         [string]$DockerPath = 'docker'
     )
 
-    return Resolve-PostgreSqlClientExecutor -Client 'pg_restore' -ClientPath $PgRestorePath -PostgresContainer $PostgresContainer -DockerPath $DockerPath
+    return Resolve-PostgreSqlExportExecutor -Client 'pg_restore' -ClientPath $PgRestorePath -PostgresImage $PostgresImage -DockerPath $DockerPath
+}
+
+function Resolve-PostgreSqlContainerPortMapping {
+    param(
+        [Parameter(Mandatory = $true)]$Executor,
+        [Parameter(Mandatory = $true)][ValidateRange(1, 65535)][int]$ExpectedHostPort
+    )
+
+    $mappings = @($Executor.PortMappings)
+    if ($mappings.Count -eq 0) {
+        throw "PostgreSQL container does not publish local port $ExpectedHostPort`: $($Executor.Container)"
+    }
+
+    $allowedHostAddresses = @('0.0.0.0', '127.0.0.1', '::')
+    foreach ($mapping in $mappings) {
+        $hostAddress = ([string]$mapping.HostIp).Trim()
+        if ($hostAddress.StartsWith('[') -and $hostAddress.EndsWith(']')) {
+            $hostAddress = $hostAddress.Substring(1, $hostAddress.Length - 2)
+        }
+        if ([int]$mapping.ContainerPort -ne 5432 -or [string]$mapping.Protocol -ne 'tcp') {
+            throw "PostgreSQL container must publish only container port 5432/tcp: $($Executor.Container)"
+        }
+        if ($hostAddress -notin $allowedHostAddresses) {
+            throw "PostgreSQL container has an invalid non-local published address '$($mapping.HostIp)': $($Executor.Container)"
+        }
+        if ([int]$mapping.HostPort -ne $ExpectedHostPort) {
+            throw "PostgreSQL container has conflicting host port mappings; expected $ExpectedHostPort`: $($Executor.Container)"
+        }
+    }
+
+    return 5432
+}
+
+function ConvertTo-NormalizedIpAddress {
+    param(
+        [Parameter(Mandatory = $true)][string]$Address,
+        [string]$Description = 'IP address'
+    )
+
+    $addressText = $Address.Trim()
+    if ([string]::IsNullOrWhiteSpace($addressText)) {
+        throw "$Description is empty."
+    }
+    $addressParts = $addressText.Split('/', 2)
+    $ipText = $addressParts[0].Trim()
+    if ($ipText.StartsWith('[') -and $ipText.EndsWith(']')) {
+        $ipText = $ipText.Substring(1, $ipText.Length - 2)
+    }
+    try {
+        $ipAddress = [System.Net.IPAddress]::Parse($ipText)
+    }
+    catch {
+        throw "$Description is not a valid IP address."
+    }
+    if ($addressParts.Count -eq 2) {
+        $prefixLength = 0
+        if (-not [int]::TryParse($addressParts[1].Trim(), [ref]$prefixLength)) {
+            throw "$Description has an invalid network prefix."
+        }
+        $maximumPrefix = if ($ipAddress.AddressFamily -eq [System.Net.Sockets.AddressFamily]::InterNetwork) { 32 } else { 128 }
+        if ($prefixLength -lt 0 -or $prefixLength -gt $maximumPrefix) {
+            throw "$Description has an invalid network prefix."
+        }
+    }
+    return $ipAddress
+}
+
+function Test-IsPrivateContainerIpAddress {
+    param([Parameter(Mandatory = $true)][System.Net.IPAddress]$Address)
+
+    if ([System.Net.IPAddress]::IsLoopback($Address)) {
+        return $true
+    }
+    $bytes = $Address.GetAddressBytes()
+    if ($Address.AddressFamily -eq [System.Net.Sockets.AddressFamily]::InterNetwork) {
+        return ($bytes[0] -eq 10 -or
+            ($bytes[0] -eq 172 -and $bytes[1] -ge 16 -and $bytes[1] -le 31) -or
+            ($bytes[0] -eq 192 -and $bytes[1] -eq 168) -or
+            ($bytes[0] -eq 169 -and $bytes[1] -eq 254))
+    }
+    return (($bytes[0] -band 0xfe) -eq 0xfc -or ($bytes[0] -eq 0xfe -and ($bytes[1] -band 0xc0) -eq 0x80))
+}
+
+function Get-PostgreSqlContainerIpAddresses {
+    param(
+        [Parameter(Mandatory = $true)][string]$NetworkSettingsJson,
+        [string]$PostgresContainer = 'supabase_db_compra-car'
+    )
+
+    try {
+        $networks = $NetworkSettingsJson.Trim() | ConvertFrom-Json
+    }
+    catch {
+        throw "PostgreSQL container network addresses could not be inspected: $PostgresContainer"
+    }
+    $addresses = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::OrdinalIgnoreCase)
+    foreach ($network in $networks.PSObject.Properties) {
+        foreach ($propertyName in @('IPAddress', 'GlobalIPv6Address')) {
+            $rawAddress = [string]$network.Value.$propertyName
+            if ([string]::IsNullOrWhiteSpace($rawAddress)) {
+                continue
+            }
+            $ipAddress = ConvertTo-NormalizedIpAddress -Address $rawAddress -Description 'PostgreSQL container IP address'
+            if (-not (Test-IsPrivateContainerIpAddress -Address $ipAddress)) {
+                throw "PostgreSQL container reported a non-local IP address: $PostgresContainer"
+            }
+            [void]$addresses.Add($ipAddress.ToString())
+        }
+    }
+    if ($addresses.Count -eq 0) {
+        throw "PostgreSQL container did not report a valid IP address: $PostgresContainer"
+    }
+    return @($addresses | Sort-Object)
+}
+
+function Test-PostgreSqlServerAddress {
+    param(
+        [Parameter(Mandatory = $true)][string]$Address,
+        [string[]]$ContainerIpAddresses = @()
+    )
+
+    $serverAddress = ConvertTo-NormalizedIpAddress -Address $Address -Description 'Connected database server address'
+    if ([System.Net.IPAddress]::IsLoopback($serverAddress)) {
+        return $true
+    }
+    if (-not (Test-IsPrivateContainerIpAddress -Address $serverAddress)) {
+        throw 'Connected database server address is public or remote; restore is blocked.'
+    }
+    foreach ($containerAddressText in @($ContainerIpAddresses)) {
+        $containerAddress = ConvertTo-NormalizedIpAddress -Address $containerAddressText -Description 'PostgreSQL container IP address'
+        if ($serverAddress.Equals($containerAddress)) {
+            return $true
+        }
+    }
+    throw 'Connected database server address does not exactly match the expected PostgreSQL container; restore is blocked.'
 }
 
 function Get-PostgreSqlCommandSource {
@@ -397,15 +553,16 @@ function Resolve-DockerCommand {
 
 function Resolve-PostgreSqlExportExecutor {
     param(
-        [Parameter(Mandatory = $true)][ValidateSet('psql', 'pg_dump')][string]$Client,
+        [Parameter(Mandatory = $true)][ValidateSet('psql', 'pg_dump', 'pg_restore')][string]$Client,
         [Parameter(Mandatory = $true)][string]$ClientPath,
         [string]$PostgresImage = 'postgres:17',
         [string]$DockerPath = 'docker'
     )
 
+    $operation = if ($Client -eq 'pg_restore') { 'restauração/inspeção' } else { 'exportação' }
     $localCommand = Get-Command $ClientPath -ErrorAction SilentlyContinue
     if ($null -ne $localCommand) {
-        Write-Information 'Usando PostgreSQL Client local para exportação.' -InformationAction Continue
+        Write-Information "Usando PostgreSQL Client local para $operation." -InformationAction Continue
         return [pscustomobject]@{
             Mode = 'Local'
             Client = $Client
@@ -428,10 +585,10 @@ function Resolve-PostgreSqlExportExecutor {
         $ErrorActionPreference = $previousErrorActionPreference
     }
     if ($dockerExitCode -ne 0) {
-        throw 'Docker is installed but its engine is not available for pricing snapshot export.'
+        throw 'Docker is installed but its engine is not available for the pricing snapshot operation.'
     }
 
-    Write-Information 'Usando PostgreSQL Client via Docker para exportação.' -InformationAction Continue
+    Write-Information "Usando PostgreSQL Client via Docker para $operation." -InformationAction Continue
     return [pscustomobject]@{
         Mode = 'DockerRun'
         Client = $Client
@@ -471,6 +628,28 @@ function ConvertTo-WindowsProcessArgument {
     return '"' + $escaped + '"'
 }
 
+function Assert-PgRestoreDatabaseArguments {
+    param(
+        [Parameter(Mandatory = $true)][string[]]$Arguments,
+        [Parameter(Mandatory = $true)][string]$ArchivePath
+    )
+
+    $databaseArguments = @($Arguments | Where-Object { $_ -eq '--dbname' -or $_ -like '--dbname=*' })
+    if ($databaseArguments.Count -ne 1) {
+        throw 'pg_restore database mode requires exactly one --dbname argument.'
+    }
+    $databaseIndex = [Array]::IndexOf($Arguments, '--dbname')
+    if ($databaseIndex -ge 0 -and ($databaseIndex + 1 -ge $Arguments.Count -or [string]::IsNullOrWhiteSpace([string]$Arguments[$databaseIndex + 1]))) {
+        throw 'pg_restore --dbname must identify the validated local database.'
+    }
+    if (@($Arguments | Where-Object { $_ -eq '--file' -or $_ -like '--file=*' }).Count -gt 0) {
+        throw 'pg_restore database mode must not use --file.'
+    }
+    if (@($Arguments | Where-Object { [string]$_ -eq $ArchivePath }).Count -ne 1) {
+        throw 'pg_restore must receive the validated snapshot archive path exactly once.'
+    }
+}
+
 function Invoke-PostgreSqlClient {
     param(
         [Parameter(Mandatory = $true)]$Executor,
@@ -483,6 +662,8 @@ function Invoke-PostgreSqlClient {
     try {
         $env:PGPASSWORD = $Password
         if ($Executor.Mode -eq 'Local') {
+            Write-Verbose "PostgreSQL executable: $($Executor.CommandSource)"
+            Write-Verbose "PostgreSQL arguments: $(($Arguments | ForEach-Object { ConvertTo-WindowsProcessArgument -Value ([string]$_) }) -join ' ')"
             $previousErrorActionPreference = $ErrorActionPreference
             try {
                 $ErrorActionPreference = 'Continue'
@@ -492,6 +673,7 @@ function Invoke-PostgreSqlClient {
             finally {
                 $ErrorActionPreference = $previousErrorActionPreference
             }
+            Write-Verbose "PostgreSQL client exit code: $clientExitCode"
             if ($clientExitCode -ne 0) {
                 $safeOutput = $output -join ' '
                 if (-not [string]::IsNullOrEmpty($Password)) {
@@ -503,7 +685,26 @@ function Invoke-PostgreSqlClient {
         }
 
         if ($Executor.Mode -eq 'DockerRun') {
-            $dockerRunArguments = @('run', '--rm', '--env', 'PGPASSWORD', $Executor.Image, $Executor.Client) + $Arguments
+            $effectiveArguments = @($Arguments)
+            $dockerRunArguments = @('run', '--rm', '--env', 'PGPASSWORD')
+            if (-not [string]::IsNullOrWhiteSpace($InputFilePath)) {
+                $snapshotDirectory = [System.IO.Path]::GetDirectoryName([System.IO.Path]::GetFullPath($InputFilePath))
+                $containerInputPath = "/snapshots/$([System.IO.Path]::GetFileName($InputFilePath))"
+                $dockerRunArguments += @('--volume', "${snapshotDirectory}:/snapshots:ro")
+                for ($argumentIndex = 0; $argumentIndex -lt $effectiveArguments.Count; $argumentIndex += 1) {
+                    if ([string]$effectiveArguments[$argumentIndex] -eq $InputFilePath) {
+                        $effectiveArguments[$argumentIndex] = $containerInputPath
+                    }
+                    if ($Executor.Client -eq 'pg_restore' -and [string]$effectiveArguments[$argumentIndex] -eq '--host' -and $argumentIndex + 1 -lt $effectiveArguments.Count) {
+                        $effectiveArguments[$argumentIndex + 1] = 'host.docker.internal'
+                        $argumentIndex += 1
+                    }
+                }
+            }
+            $dockerRunArguments += @($Executor.Image, $Executor.Client) + $effectiveArguments
+            Write-Verbose "PostgreSQL Docker image: $($Executor.Image)"
+            Write-Verbose "PostgreSQL executable: $($Executor.CommandSource)"
+            Write-Verbose "PostgreSQL arguments: $(($dockerRunArguments | ForEach-Object { ConvertTo-WindowsProcessArgument -Value ([string]$_) }) -join ' ')"
             $previousErrorActionPreference = $ErrorActionPreference
             try {
                 $ErrorActionPreference = 'Continue'
@@ -513,6 +714,7 @@ function Invoke-PostgreSqlClient {
             finally {
                 $ErrorActionPreference = $previousErrorActionPreference
             }
+            Write-Verbose "PostgreSQL client exit code: $clientExitCode"
             if ($clientExitCode -ne 0) {
                 $safeOutput = $output -join ' '
                 if (-not [string]::IsNullOrEmpty($Password)) {
@@ -536,11 +738,8 @@ function Invoke-PostgreSqlClient {
             }
             if ([string]$clientArguments[$argumentIndex] -eq '--port' -and $argumentIndex + 1 -lt $clientArguments.Count) {
                 $hostPort = [int]$clientArguments[$argumentIndex + 1]
-                $portMapping = @($Executor.PortMappings | Where-Object { [int]$_.HostPort -eq $hostPort })
-                if ($portMapping.Count -ne 1) {
-                    throw "PostgreSQL container must publish local port $hostPort exactly once: $($Executor.Container)"
-                }
-                $clientArguments[$argumentIndex + 1] = [string]$portMapping[0].ContainerPort
+                $containerPort = Resolve-PostgreSqlContainerPortMapping -Executor $Executor -ExpectedHostPort $hostPort
+                $clientArguments[$argumentIndex + 1] = [string]$containerPort
                 $argumentIndex += 1
             }
         }
@@ -562,6 +761,8 @@ function Invoke-PostgreSqlClient {
         $startInfo = New-Object System.Diagnostics.ProcessStartInfo
         $startInfo.FileName = $Executor.CommandSource
         $startInfo.Arguments = (($dockerArguments | ForEach-Object { ConvertTo-WindowsProcessArgument -Value ([string]$_) }) -join ' ')
+        Write-Verbose "PostgreSQL executable: $($startInfo.FileName)"
+        Write-Verbose "PostgreSQL arguments: $($startInfo.Arguments)"
         $startInfo.UseShellExecute = $false
         $startInfo.CreateNoWindow = $true
         $startInfo.RedirectStandardOutput = $true
@@ -588,6 +789,7 @@ function Invoke-PostgreSqlClient {
         $process.WaitForExit()
         $outputText = $standardOutput.Result
         $errorText = $standardError.Result
+        Write-Verbose "PostgreSQL client exit code: $($process.ExitCode)"
         if ($process.ExitCode -ne 0) {
             throw "PostgreSQL client command failed: $errorText"
         }
@@ -624,6 +826,8 @@ function Invoke-PgRestore {
         $Executor
     )
 
+    Assert-PgRestoreDatabaseArguments -Arguments $Arguments -ArchivePath $InputFilePath
+    Write-Verbose 'pg_restore restore mode: database (--dbname); archive output mode (--file) is disabled.'
     if ($null -eq $Executor) {
         $Executor = Resolve-PgRestoreExecutor -PgRestorePath $PgRestorePath -PostgresContainer $PostgresContainer
     }
@@ -805,7 +1009,8 @@ function Invoke-PgRestoreList {
     )
 
     try {
-        $output = Invoke-PgRestore -Arguments @('--list', $Path) -InputFilePath $Path -PgRestorePath $PgRestorePath -PostgresContainer $PostgresContainer
+        $executor = Resolve-PgRestoreExecutor -PgRestorePath $PgRestorePath -PostgresContainer $PostgresContainer
+        $output = Invoke-PostgreSqlClient -Executor $executor -Arguments @('--list', $Path) -InputFilePath $Path
     }
     catch {
         throw "pg_restore could not inspect the custom-format snapshot: $($_.Exception.Message)"
@@ -939,10 +1144,9 @@ function New-LocalRestorePlan {
         }
     }
 
-    $tableArguments = @($script:AllowedPricingTables | ForEach-Object { "--table=public.$_" })
     return [pscustomobject]@{
         Executable = $PgRestorePath
-        Arguments = @('--data-only', '--exit-on-error', '--single-transaction', '--no-owner', '--no-privileges') + $connectionArguments + $tableArguments + @($Snapshot.Path)
+        Arguments = @('--verbose', '--data-only', '--exit-on-error', '--single-transaction', '--no-owner', '--no-privileges') + $connectionArguments + @($Snapshot.Path)
         Password = $Target.Password
         SanitizedTarget = $Target.SanitizedIdentity
         Format = $Snapshot.Format
@@ -951,16 +1155,96 @@ function New-LocalRestorePlan {
     }
 }
 
-function Test-LocalRestoreDestination {
+function ConvertTo-ValidatedPricingRowCounts {
+    param(
+        [Parameter(Mandatory = $true)]$Counts,
+        [switch]$RequirePositive,
+        [string]$Description = 'Pricing row counts'
+    )
+
+    $providedCounts = @{}
+    if ($Counts -is [System.Collections.IDictionary]) {
+        foreach ($key in $Counts.Keys) {
+            $providedCounts[[string]$key] = $Counts[$key]
+        }
+    }
+    else {
+        foreach ($property in $Counts.PSObject.Properties) {
+            $providedCounts[[string]$property.Name] = $property.Value
+        }
+    }
+    $unexpected = @($providedCounts.Keys | Where-Object { $_ -notin $script:AllowedPricingTables })
+    $missing = @($script:AllowedPricingTables | Where-Object { -not $providedCounts.ContainsKey($_) })
+    if ($unexpected.Count -gt 0 -or $missing.Count -gt 0) {
+        throw "$Description must contain exactly the seven allowed pricing tables."
+    }
+
+    $validated = [ordered]@{}
+    foreach ($table in $script:AllowedPricingTables) {
+        try {
+            $count = [long]$providedCounts[$table]
+        }
+        catch {
+            throw "$Description contains an invalid count for public.$table."
+        }
+        if ($count -lt 0 -or ($RequirePositive.IsPresent -and $count -eq 0)) {
+            throw "$Description contains an invalid or empty count for public.$table."
+        }
+        $validated[$table] = $count
+    }
+    return $validated
+}
+
+function Assert-PricingRestoreRowCounts {
+    param(
+        [Parameter(Mandatory = $true)]$ActualCounts,
+        [Parameter(Mandatory = $true)]$ExpectedCounts
+    )
+
+    $actual = ConvertTo-ValidatedPricingRowCounts -Counts $ActualCounts -RequirePositive -Description 'Post-restore row counts'
+    $expected = ConvertTo-ValidatedPricingRowCounts -Counts $ExpectedCounts -RequirePositive -Description 'Expected row counts'
+    foreach ($table in $script:AllowedPricingTables) {
+        if ([long]$actual[$table] -ne [long]$expected[$table]) {
+            throw "Post-restore count mismatch for public.$table`: expected $($expected[$table]), received $($actual[$table])."
+        }
+    }
+    return $actual
+}
+
+function Complete-LocalPricingRestore {
+    param(
+        [Parameter(Mandatory = $true)][bool]$RestoreExecuted,
+        [Parameter(Mandatory = $true)][bool]$DatabaseMode,
+        [Parameter(Mandatory = $true)]$ActualCounts,
+        [Parameter(Mandatory = $true)]$ExpectedCounts
+    )
+
+    if (-not $RestoreExecuted) {
+        throw 'pg_restore was not executed; local restore cannot be reported as successful.'
+    }
+    if (-not $DatabaseMode) {
+        throw 'pg_restore did not execute in database mode; --dbname is required.'
+    }
+    $validatedCounts = Assert-PricingRestoreRowCounts -ActualCounts $ActualCounts -ExpectedCounts $ExpectedCounts
+    return [pscustomobject]@{
+        Counts = $validatedCounts
+        RestoreExecuted = $true
+        DatabaseMode = $true
+        Status = 'RESTORED_LOCALLY'
+    }
+}
+
+function Get-LocalRestoreDatabaseState {
     param(
         [Parameter(Mandatory = $true)]$Target,
         [string]$PsqlPath = 'psql',
         [string]$PostgresContainer = 'supabase_db_compra-car',
+        [string]$DockerPath = 'docker',
         $PsqlExecutor
     )
 
     $countExpressions = @($script:AllowedPricingTables | ForEach-Object { "'$_', (SELECT count(*) FROM public.$_)" })
-    $query = "SELECT json_build_object('database', current_database(), 'address', inet_server_addr()::text, 'port', inet_server_port(), 'counts', json_build_object($($countExpressions -join ', ')))::text;"
+    $query = "SELECT json_build_object('user', current_user, 'database', current_database(), 'address', inet_server_addr()::text, 'port', inet_server_port(), 'counts', json_build_object($($countExpressions -join ', ')))::text;"
     $arguments = @(
         '--no-psqlrc', '--tuples-only', '--no-align', '--set=ON_ERROR_STOP=1',
         '--host', $Target.Host, '--port', [string]$Target.Port,
@@ -970,29 +1254,36 @@ function Test-LocalRestoreDestination {
     $output = Invoke-Psql -Arguments $arguments -Password $Target.Password -PsqlPath $PsqlPath -PostgresContainer $PostgresContainer -Executor $PsqlExecutor
     $jsonLine = @($output | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })[-1]
     $result = $jsonLine | ConvertFrom-Json
-    $expectedServerPort = [int]$Target.Port
     if ($null -ne $PsqlExecutor -and $PsqlExecutor.Mode -eq 'Docker') {
-        $portMapping = @($PsqlExecutor.PortMappings | Where-Object { [int]$_.HostPort -eq [int]$Target.Port })
-        if ($portMapping.Count -ne 1) {
-            throw "PostgreSQL container must publish local port $($Target.Port) exactly once: $($PsqlExecutor.Container)"
-        }
-        $expectedServerPort = [int]$portMapping[0].ContainerPort
+        $containerMetadata = $PsqlExecutor
     }
-    if ([int]$result.port -ne $expectedServerPort -or [string]$result.database -ne [string]$Target.Database) {
+    else {
+        $containerMetadata = Get-PostgreSqlContainerRuntimeMetadata -PostgresContainer $PostgresContainer -DockerPath $DockerPath
+    }
+    $expectedServerPort = Resolve-PostgreSqlContainerPortMapping -Executor $containerMetadata -ExpectedHostPort ([int]$Target.Port)
+    if ([int]$result.port -ne $expectedServerPort -or
+        [string]$result.database -ne [string]$Target.Database -or
+        [string]$result.user -ne [string]$Target.UserName) {
         throw 'Connected database identity does not match the validated local target.'
     }
-    try {
-        $serverAddress = [System.Net.IPAddress]::Parse([string]$result.address)
-    }
-    catch {
-        throw 'Connected database did not report a valid server IP address.'
-    }
-    if (-not [System.Net.IPAddress]::IsLoopback($serverAddress)) {
-        throw 'Connected database server address is not loopback; restore is blocked.'
-    }
-    foreach ($property in $result.counts.PSObject.Properties) {
-        if ([long]$property.Value -ne 0) {
-            throw "Local restore destination is not empty: public.$($property.Name) has $($property.Value) rows."
+    [void](Test-PostgreSqlServerAddress -Address ([string]$result.address) -ContainerIpAddresses @($containerMetadata.ContainerIpAddresses))
+    $result.counts = ConvertTo-ValidatedPricingRowCounts -Counts $result.counts -Description 'Connected database row counts'
+    return $result
+}
+
+function Test-LocalRestoreDestination {
+    param(
+        [Parameter(Mandatory = $true)]$Target,
+        [string]$PsqlPath = 'psql',
+        [string]$PostgresContainer = 'supabase_db_compra-car',
+        [string]$DockerPath = 'docker',
+        $PsqlExecutor
+    )
+
+    $result = Get-LocalRestoreDatabaseState -Target $Target -PsqlPath $PsqlPath -PostgresContainer $PostgresContainer -DockerPath $DockerPath -PsqlExecutor $PsqlExecutor
+    foreach ($table in $script:AllowedPricingTables) {
+        if ([long]$result.counts[$table] -ne 0) {
+            throw "Local restore destination is not empty: public.$table has $($result.counts[$table]) rows."
         }
     }
     return $result
@@ -1002,18 +1293,32 @@ function Invoke-LocalSnapshotRestore {
     param(
         [Parameter(Mandatory = $true)]$Plan,
         [Parameter(Mandatory = $true)]$Target,
+        [Parameter(Mandatory = $true)]$ExpectedRowCounts,
         [string]$PsqlPath = 'psql',
-        [string]$PostgresContainer = 'supabase_db_compra-car'
+        [string]$PostgresContainer = 'supabase_db_compra-car',
+        [string]$PostgresImage = 'postgres:17',
+        [string]$DockerPath = 'docker',
+        $PsqlExecutor,
+        $PgRestoreExecutor
     )
 
-    $psqlExecutor = Resolve-PsqlExecutor -PsqlPath $PsqlPath -PostgresContainer $PostgresContainer
-    [void](Test-LocalRestoreDestination -Target $Target -PsqlPath $PsqlPath -PostgresContainer $PostgresContainer -PsqlExecutor $psqlExecutor)
-    if ($Plan.Client -eq 'psql') {
-        [void](Invoke-Psql -Arguments $Plan.Arguments -Password $Plan.Password -InputFilePath $Plan.InputFilePath -Executor $psqlExecutor)
+    [void](ConvertTo-ValidatedPricingRowCounts -Counts $ExpectedRowCounts -RequirePositive -Description 'Expected row counts')
+    if ($Plan.Client -ne 'pg_restore') {
+        throw 'Local pricing restore requires pg_restore with a validated custom-format archive.'
     }
-    else {
-        [void](Invoke-PgRestore -Arguments $Plan.Arguments -Password $Plan.Password -InputFilePath $Plan.InputFilePath -PgRestorePath $Plan.Executable -PostgresContainer $PostgresContainer)
+    Assert-PgRestoreDatabaseArguments -Arguments $Plan.Arguments -ArchivePath $Plan.InputFilePath
+    if ($null -eq $PsqlExecutor) {
+        $PsqlExecutor = Resolve-PsqlExecutor -PsqlPath $PsqlPath -PostgresContainer $PostgresContainer -DockerPath $DockerPath
     }
+    [void](Test-LocalRestoreDestination -Target $Target -PsqlPath $PsqlPath -PostgresContainer $PostgresContainer -DockerPath $DockerPath -PsqlExecutor $PsqlExecutor)
+    if ($null -eq $PgRestoreExecutor) {
+        $PgRestoreExecutor = Resolve-PgRestoreExecutor -PgRestorePath $Plan.Executable -PostgresContainer $PostgresContainer -PostgresImage $PostgresImage -DockerPath $DockerPath
+    }
+    [void](Invoke-PgRestore -Arguments $Plan.Arguments -Password $Plan.Password -InputFilePath $Plan.InputFilePath -PgRestorePath $Plan.Executable -PostgresContainer $PostgresContainer -Executor $PgRestoreExecutor)
+    $postRestoreState = Get-LocalRestoreDatabaseState -Target $Target -PsqlPath $PsqlPath -PostgresContainer $PostgresContainer -DockerPath $DockerPath -PsqlExecutor $PsqlExecutor
+    $completion = Complete-LocalPricingRestore -RestoreExecuted $true -DatabaseMode $true -ActualCounts $postRestoreState.counts -ExpectedCounts $ExpectedRowCounts
+    Write-Verbose "Post-restore counts: $($completion.Counts | ConvertTo-Json -Compress)"
+    return $completion
 }
 
 function Invoke-PricingSnapshotDryRun {
@@ -1108,6 +1413,13 @@ Export-ModuleMember -Function @(
     'Test-CustomSnapshotToc',
     'Resolve-PsqlExecutor',
     'Resolve-PgRestoreExecutor',
+    'Resolve-PostgreSqlContainerPortMapping',
+    'Get-PostgreSqlContainerIpAddresses',
+    'Test-PostgreSqlServerAddress',
+    'Assert-PgRestoreDatabaseArguments',
+    'ConvertTo-ValidatedPricingRowCounts',
+    'Assert-PricingRestoreRowCounts',
+    'Complete-LocalPricingRestore',
     'Resolve-RemotePsqlExecutor',
     'Resolve-PgDumpExecutor',
     'Invoke-Psql',

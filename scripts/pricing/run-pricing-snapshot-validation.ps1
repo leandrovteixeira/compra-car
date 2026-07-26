@@ -5,8 +5,9 @@ param(
     [Parameter(Mandatory = $true)][ValidatePattern('^[A-Fa-f0-9]{64}$')][string]$ExpectedSha256,
     [Parameter(Mandatory = $true)][string]$DatabaseUrl,
     [Parameter(Mandatory = $true)][ValidatePattern('^\d{4}-\d{2}-\d{2}$')][string]$CutoffDate,
+    [Parameter(Mandatory = $true)][hashtable]$ExpectedRowCounts,
     [switch]$ConfirmLocalRestore,
-    [string]$AlgorithmVersion = '1.0.0',
+    [string]$AlgorithmVersion = '3.0.0',
     [string]$OutputDirectory = '.local-reports/pricing-snapshots',
     [int]$ExpectedLocalPort = 54322,
     [long]$MaximumBytes = 1073741824,
@@ -53,7 +54,10 @@ if (-not $PSCmdlet.ShouldProcess($target.SanitizedIdentity, "Restore authorized 
     return
 }
 
-Invoke-LocalSnapshotRestore -Plan $plan -Target $target -PsqlPath $PsqlPath -PostgresContainer $PostgresContainer
+$restoreResult = Invoke-LocalSnapshotRestore -Plan $plan -Target $target -ExpectedRowCounts $ExpectedRowCounts -PsqlPath $PsqlPath -PostgresContainer $PostgresContainer
+if (-not $restoreResult.RestoreExecuted -or -not $restoreResult.DatabaseMode) {
+    throw 'Restore execution did not complete in database mode.'
+}
 $dryRun = Invoke-PricingSnapshotDryRun `
     -Target $target `
     -OutputDirectory (Join-Path $resolvedOutput 'dry-run') `

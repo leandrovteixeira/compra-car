@@ -51,28 +51,59 @@ function New-ValidSqlSnapshotText {
     return "-- PostgreSQL data-only snapshot`nSET client_encoding = 'UTF8';`n$($blocks -join '')"
 }
 
+function New-DockerMappingExecutor {
+    param([object[]]$Mappings)
+
+    return [pscustomobject]@{
+        Mode = 'Docker'
+        Container = 'supabase_db_compra-car'
+        PortMappings = @($Mappings)
+    }
+}
+
 $temporaryDirectory = Join-Path ([System.IO.Path]::GetTempPath()) ("compra-car-pricing-snapshot-tests-" + [guid]::NewGuid().ToString('N'))
 [void](New-Item -ItemType Directory -Path $temporaryDirectory)
 try {
+    $expectedRowCounts = @{
+        products = 292
+        product_price_offers = 746
+        price_offer_imports = 10
+        price_offer_import_rows = 173
+        price_offers_staging = 746
+        product_specs = 37540
+        specs = 320
+    }
     $validSnapshotPath = Join-Path $temporaryDirectory 'authorized.sql'
     [System.IO.File]::WriteAllText($validSnapshotPath, (New-ValidSqlSnapshotText), [System.Text.UTF8Encoding]::new($false))
     $validSha = (Get-FileHash -LiteralPath $validSnapshotPath -Algorithm SHA256).Hash
     $fakeDockerPath = Join-Path $temporaryDirectory 'docker-mock.cmd'
     [System.IO.File]::WriteAllText($fakeDockerPath, @'
 @echo off
+if /i "%~1"=="version" (
+  echo 27.0.0
+  exit /b 0
+)
+if /i "%~1"=="run" (
+  if defined MOCK_PGRESTORE_LOG echo %* > "%MOCK_PGRESTORE_LOG%"
+  if "%MOCK_PGRESTORE_FAIL%"=="1" (
+    echo simulated pg_restore failure 1>&2
+    exit /b 9
+  )
+  exit /b 0
+)
 if "%MOCK_DOCKER_STATE%"=="missing" (
   echo Error: No such container 1>&2
   exit /b 1
 )
 if "%MOCK_DOCKER_STATE%"=="stopped" (
-  echo exited^|healthy^|{}
+  echo exited^|healthy^|{}^|{}
   exit /b 0
 )
 if "%MOCK_DOCKER_STATE%"=="unhealthy" (
-  echo running^|unhealthy^|{}
+  echo running^|unhealthy^|{}^|{}
   exit /b 0
 )
-echo running^|healthy^|{"5432/tcp":[{"HostPort":"54322"}]}
+echo running^|healthy^|{"5432/tcp":[{"HostIp":"0.0.0.0","HostPort":"54322"},{"HostIp":"::","HostPort":"54322"}]}^|{"supabase_network_compra-car":{"IPAddress":"172.18.0.12","GlobalIPv6Address":""}}
 '@)
     $fakePsqlPath = Join-Path $temporaryDirectory 'psql-mock.cmd'
     [System.IO.File]::WriteAllText($fakePsqlPath, @'
@@ -118,6 +149,11 @@ exit /b 0
     $fakePgRestorePath = Join-Path $temporaryDirectory 'pg-restore-mock.cmd'
     [System.IO.File]::WriteAllText($fakePgRestorePath, @'
 @echo off
+if defined MOCK_PGRESTORE_LOG echo %* > "%MOCK_PGRESTORE_LOG%"
+if "%MOCK_PGRESTORE_FAIL%"=="1" (
+  echo simulated pg_restore failure 1>&2
+  exit /b 9
+)
 if "%MOCK_TOC_SEQUENCE%"=="1" echo 99; 0 0 SEQUENCE SET public products_id_seq postgres
 echo 1; 0 0 TABLE DATA public products postgres
 echo 2; 0 0 TABLE DATA public product_price_offers postgres
@@ -157,7 +193,7 @@ exit /b 0
     Invoke-Test 'pg_restore falls back to healthy Docker container' {
         $env:MOCK_DOCKER_STATE = 'healthy'
         $executor = Resolve-PgRestoreExecutor -PgRestorePath (Join-Path $temporaryDirectory 'missing-pg-restore.exe') -PostgresContainer 'custom-postgres' -DockerPath $fakeDockerPath
-        Assert-True -Condition ($executor.Mode -eq 'Docker' -and $executor.Client -eq 'pg_restore') -Message 'pg_restore did not select Docker fallback.'
+        Assert-True -Condition ($executor.Mode -eq 'DockerRun' -and $executor.Client -eq 'pg_restore' -and $executor.Image -eq 'postgres:17') -Message 'pg_restore did not select the isolated Docker image fallback.'
     }
 
     Invoke-Test 'missing Docker is reported after local client lookup fails' {
@@ -176,7 +212,7 @@ exit /b 0
     Invoke-Test 'unhealthy PostgreSQL container is rejected' {
         $env:MOCK_DOCKER_STATE = 'unhealthy'
         Assert-ThrowsLike -Pattern '*container is not healthy*' -Action {
-            Resolve-PgRestoreExecutor -PgRestorePath (Join-Path $temporaryDirectory 'missing-pg-restore.exe') -DockerPath $fakeDockerPath
+            Resolve-PsqlExecutor -PsqlPath (Join-Path $temporaryDirectory 'missing-psql.exe') -DockerPath $fakeDockerPath
         }
     }
 
@@ -184,6 +220,115 @@ exit /b 0
         $env:MOCK_DOCKER_STATE = 'stopped'
         Assert-ThrowsLike -Pattern '*container is not running*' -Action {
             Resolve-PsqlExecutor -PsqlPath (Join-Path $temporaryDirectory 'missing-psql.exe') -DockerPath $fakeDockerPath
+        }
+    }
+
+    Invoke-Test 'Docker PostgreSQL mapping accepts IPv4 only' {
+        $executor = New-DockerMappingExecutor -Mappings @(
+            [pscustomobject]@{ HostIp = '0.0.0.0'; HostPort = 54322; ContainerPort = 5432; Protocol = 'tcp' }
+        )
+        $containerPort = Resolve-PostgreSqlContainerPortMapping -Executor $executor -ExpectedHostPort 54322
+        Assert-True -Condition ($containerPort -eq 5432) -Message 'IPv4 PostgreSQL mapping was not normalized.'
+    }
+
+    Invoke-Test 'Docker PostgreSQL mapping accepts IPv6 only' {
+        $executor = New-DockerMappingExecutor -Mappings @(
+            [pscustomobject]@{ HostIp = '[::]'; HostPort = 54322; ContainerPort = 5432; Protocol = 'tcp' }
+        )
+        $containerPort = Resolve-PostgreSqlContainerPortMapping -Executor $executor -ExpectedHostPort 54322
+        Assert-True -Condition ($containerPort -eq 5432) -Message 'IPv6 PostgreSQL mapping was not normalized.'
+    }
+
+    Invoke-Test 'Docker PostgreSQL mapping accepts equivalent IPv4 and IPv6 bindings' {
+        $executor = New-DockerMappingExecutor -Mappings @(
+            [pscustomobject]@{ HostIp = '0.0.0.0'; HostPort = 54322; ContainerPort = 5432; Protocol = 'tcp' },
+            [pscustomobject]@{ HostIp = '::'; HostPort = 54322; ContainerPort = 5432; Protocol = 'tcp' }
+        )
+        $containerPort = Resolve-PostgreSqlContainerPortMapping -Executor $executor -ExpectedHostPort 54322
+        Assert-True -Condition ($containerPort -eq 5432) -Message 'Equivalent IPv4 and IPv6 bindings were treated as conflicting mappings.'
+    }
+
+    Invoke-Test 'Docker PostgreSQL mapping rejects different IPv4 and IPv6 host ports' {
+        $executor = New-DockerMappingExecutor -Mappings @(
+            [pscustomobject]@{ HostIp = '0.0.0.0'; HostPort = 54322; ContainerPort = 5432; Protocol = 'tcp' },
+            [pscustomobject]@{ HostIp = '::'; HostPort = 54323; ContainerPort = 5432; Protocol = 'tcp' }
+        )
+        Assert-ThrowsLike -Pattern '*conflicting host port mappings*' -Action {
+            Resolve-PostgreSqlContainerPortMapping -Executor $executor -ExpectedHostPort 54322
+        }
+    }
+
+    Invoke-Test 'Docker PostgreSQL mapping rejects a host port different from expected' {
+        $executor = New-DockerMappingExecutor -Mappings @(
+            [pscustomobject]@{ HostIp = '127.0.0.1'; HostPort = 54323; ContainerPort = 5432; Protocol = 'tcp' }
+        )
+        Assert-ThrowsLike -Pattern '*conflicting host port mappings*' -Action {
+            Resolve-PostgreSqlContainerPortMapping -Executor $executor -ExpectedHostPort 54322
+        }
+    }
+
+    Invoke-Test 'Docker PostgreSQL mapping rejects missing publication' {
+        $executor = New-DockerMappingExecutor -Mappings @()
+        Assert-ThrowsLike -Pattern '*does not publish local port 54322*' -Action {
+            Resolve-PostgreSqlContainerPortMapping -Executor $executor -ExpectedHostPort 54322
+        }
+    }
+
+    Invoke-Test 'Docker PostgreSQL mapping rejects a different container port' {
+        $executor = New-DockerMappingExecutor -Mappings @(
+            [pscustomobject]@{ HostIp = '0.0.0.0'; HostPort = 54322; ContainerPort = 5433; Protocol = 'tcp' }
+        )
+        Assert-ThrowsLike -Pattern '*container port 5432/tcp*' -Action {
+            Resolve-PostgreSqlContainerPortMapping -Executor $executor -ExpectedHostPort 54322
+        }
+    }
+
+    Invoke-Test 'local restore preflight accepts IPv4 loopback' {
+        Assert-True -Condition (Test-PostgreSqlServerAddress -Address " 127.0.0.1/32`r`n") -Message 'IPv4 loopback address was rejected.'
+    }
+
+    Invoke-Test 'local restore preflight accepts exact Docker container IP' {
+        Assert-True -Condition (Test-PostgreSqlServerAddress -Address '172.18.0.12' -ContainerIpAddresses @('172.18.0.12')) -Message 'Exact Docker container IP was rejected.'
+    }
+
+    Invoke-Test 'local restore preflight normalizes IPv4 CIDR' {
+        Assert-True -Condition (Test-PostgreSqlServerAddress -Address '172.18.0.12/32' -ContainerIpAddresses @('172.18.0.12')) -Message 'IPv4 /32 address was not normalized.'
+    }
+
+    Invoke-Test 'Docker container IP discovery supports multiple networks' {
+        $networkJson = '{"first":{"IPAddress":"172.19.0.8","GlobalIPv6Address":""},"expected":{"IPAddress":"172.18.0.12","GlobalIPv6Address":"fd00::12/128"}}'
+        $containerAddresses = @(Get-PostgreSqlContainerIpAddresses -NetworkSettingsJson $networkJson)
+        Assert-True -Condition ($containerAddresses.Count -eq 3) -Message 'Container IP discovery did not retain all valid network addresses.'
+        Assert-True -Condition (Test-PostgreSqlServerAddress -Address '172.18.0.12/32' -ContainerIpAddresses $containerAddresses) -Message 'No exact match was found among multiple Docker networks.'
+    }
+
+    Invoke-Test 'local restore preflight rejects a different private container IP' {
+        Assert-ThrowsLike -Pattern '*does not exactly match*' -Action {
+            Test-PostgreSqlServerAddress -Address '172.18.0.13/32' -ContainerIpAddresses @('172.18.0.12')
+        }
+    }
+
+    Invoke-Test 'local restore preflight rejects subnet-only match' {
+        Assert-ThrowsLike -Pattern '*does not exactly match*' -Action {
+            Test-PostgreSqlServerAddress -Address '172.18.0.13/32' -ContainerIpAddresses @('172.18.0.12/16')
+        }
+    }
+
+    Invoke-Test 'local restore preflight rejects public server IP' {
+        Assert-ThrowsLike -Pattern '*public or remote*' -Action {
+            Test-PostgreSqlServerAddress -Address '8.8.8.8/32' -ContainerIpAddresses @('172.18.0.12')
+        }
+    }
+
+    Invoke-Test 'Docker container IP discovery rejects missing addresses' {
+        Assert-ThrowsLike -Pattern '*did not report a valid IP address*' -Action {
+            Get-PostgreSqlContainerIpAddresses -NetworkSettingsJson '{"bridge":{"IPAddress":"","GlobalIPv6Address":""}}'
+        }
+    }
+
+    Invoke-Test 'local restore preflight rejects invalid server address' {
+        Assert-ThrowsLike -Pattern '*not a valid IP address*' -Action {
+            Test-PostgreSqlServerAddress -Address 'not-an-ip' -ContainerIpAddresses @('172.18.0.12')
         }
     }
 
@@ -354,13 +499,13 @@ exit /b 0
     Invoke-Test 'restore without explicit confirmation is blocked' {
         $restoreScript = Join-Path $scriptDirectory 'restore-pricing-legacy-snapshot-local.ps1'
         Assert-ThrowsLike -Pattern '*ConfirmLocalRestore*' -Action {
-            & $restoreScript -SnapshotPath $validSnapshotPath -AllowedSnapshotDirectory $temporaryDirectory -ExpectedSha256 $validSha -DatabaseUrl 'postgresql://postgres:secret@127.0.0.1:54322/postgres'
+            & $restoreScript -SnapshotPath $validSnapshotPath -AllowedSnapshotDirectory $temporaryDirectory -ExpectedSha256 $validSha -DatabaseUrl 'postgresql://postgres:secret@127.0.0.1:54322/postgres' -ExpectedRowCounts $expectedRowCounts
         }
     }
 
     Invoke-Test 'confirmed restore produces safe plan under WhatIf' {
         $restoreScript = Join-Path $scriptDirectory 'restore-pricing-legacy-snapshot-local.ps1'
-        $output = & $restoreScript -SnapshotPath $validSnapshotPath -AllowedSnapshotDirectory $temporaryDirectory -ExpectedSha256 $validSha -DatabaseUrl 'postgresql://postgres:secret@127.0.0.1:54322/postgres' -ConfirmLocalRestore -WhatIf 3>&1
+        $output = & $restoreScript -SnapshotPath $validSnapshotPath -AllowedSnapshotDirectory $temporaryDirectory -ExpectedSha256 $validSha -DatabaseUrl 'postgresql://postgres:secret@127.0.0.1:54322/postgres' -ExpectedRowCounts $expectedRowCounts -ConfirmLocalRestore -WhatIf 3>&1
         Assert-True -Condition (($output -join "`n") -match 'PLANNED_ONLY') -Message 'Restore did not return PLANNED_ONLY under WhatIf.'
         Assert-True -Condition (($output -join "`n") -notmatch 'secret') -Message 'Restore plan leaked the password.'
     }
@@ -372,6 +517,102 @@ exit /b 0
         $arguments = $plan.Arguments -join ' '
         Assert-True -Condition ($arguments -match '--single-transaction') -Message 'Single transaction is required.'
         Assert-True -Condition ($arguments -notmatch '--clean|--create|--if-exists|postgresql://') -Message 'Restore plan contains a dangerous option or URL.'
+    }
+
+    Invoke-Test 'custom restore command uses database mode and an explicit archive' {
+        $snapshot = [pscustomobject]@{ Format = 'postgres-custom'; Path = (Join-Path $temporaryDirectory 'legacy-pricing.dump') }
+        $target = Get-LocalDatabaseTarget -DatabaseUrl 'postgresql://postgres:secret@localhost:54322/postgres'
+        $plan = New-LocalRestorePlan -Snapshot $snapshot -Target $target
+        Assert-PgRestoreDatabaseArguments -Arguments $plan.Arguments -ArchivePath $snapshot.Path
+        $arguments = $plan.Arguments -join ' '
+        Assert-True -Condition ($arguments -match '--dbname postgres' -and $arguments -match '--verbose' -and $arguments -notmatch '--file(?:=|\s)') -Message 'pg_restore plan is not a direct database restore.'
+    }
+
+    Invoke-Test 'pg_restore command without dbname is rejected' {
+        $archivePath = Join-Path $temporaryDirectory 'legacy-pricing.dump'
+        Assert-ThrowsLike -Pattern '*requires exactly one --dbname*' -Action {
+            Assert-PgRestoreDatabaseArguments -Arguments @('--data-only', $archivePath) -ArchivePath $archivePath
+        }
+    }
+
+    Invoke-Test 'pg_restore command using file output is rejected' {
+        $archivePath = Join-Path $temporaryDirectory 'legacy-pricing.dump'
+        Assert-ThrowsLike -Pattern '*must not use --file*' -Action {
+            Assert-PgRestoreDatabaseArguments -Arguments @('--dbname', 'postgres', '--file', 'output.sql', $archivePath) -ArchivePath $archivePath
+        }
+    }
+
+    Invoke-Test 'Docker pg_restore mounts and passes the archive path' {
+        $archivePath = Join-Path $temporaryDirectory 'legacy-pricing.dump'
+        [System.IO.File]::WriteAllText($archivePath, 'PGDMP')
+        $env:MOCK_PGRESTORE_LOG = Join-Path $temporaryDirectory 'pg-restore-docker-arguments.log'
+        try {
+            $executor = [pscustomobject]@{ Mode = 'DockerRun'; Client = 'pg_restore'; CommandSource = $fakeDockerPath; Image = 'postgres:17' }
+            Invoke-PgRestore -Arguments @('--verbose', '--data-only', '--host', 'localhost', '--port', '54322', '--username', 'postgres', '--dbname', 'postgres', $archivePath) -Password 'secret' -InputFilePath $archivePath -Executor $executor
+            $effectiveCommand = Get-Content -LiteralPath $env:MOCK_PGRESTORE_LOG -Raw
+            Assert-True -Condition ($effectiveCommand -match 'run --rm --env PGPASSWORD' -and $effectiveCommand -match '--volume' -and $effectiveCommand -match 'postgres:17 pg_restore') -Message 'Docker pg_restore was not invoked with the expected image and read-only mount.'
+            Assert-True -Condition ($effectiveCommand -match '--host host.docker.internal' -and $effectiveCommand -match '--port 54322' -and $effectiveCommand -match '--dbname postgres') -Message 'Docker pg_restore lost a database connection argument.'
+            Assert-True -Condition ($effectiveCommand -match '/snapshots/legacy-pricing.dump' -and $effectiveCommand -notmatch '--file(?:=|\s)' -and $effectiveCommand -notmatch 'secret') -Message 'Docker pg_restore did not receive the safe archive path or leaked a password.'
+        }
+        finally {
+            $env:MOCK_PGRESTORE_LOG = $null
+        }
+    }
+
+    Invoke-Test 'pg_restore non-zero exit code is rejected' {
+        $archivePath = Join-Path $temporaryDirectory 'legacy-pricing.dump'
+        $executor = [pscustomobject]@{ Mode = 'Local'; Client = 'pg_restore'; CommandSource = $fakePgRestorePath }
+        $env:MOCK_PGRESTORE_FAIL = '1'
+        try {
+            Assert-ThrowsLike -Pattern '*PostgreSQL client command failed*' -Action {
+                Invoke-PgRestore -Arguments @('--data-only', '--dbname', 'postgres', $archivePath) -InputFilePath $archivePath -Executor $executor
+            }
+        }
+        finally {
+            $env:MOCK_PGRESTORE_FAIL = $null
+        }
+    }
+
+    Invoke-Test 'restore cannot succeed when pg_restore was not called' {
+        Assert-ThrowsLike -Pattern '*pg_restore was not executed*' -Action {
+            Complete-LocalPricingRestore -RestoreExecuted $false -DatabaseMode $true -ActualCounts $expectedRowCounts -ExpectedCounts $expectedRowCounts
+        }
+    }
+
+    Invoke-Test 'local restore rejects a plan that does not call pg_restore before preflight' {
+        $invalidPlan = [pscustomobject]@{ Client = 'psql'; Arguments = @('--file', 'snapshot.sql'); InputFilePath = 'snapshot.sql' }
+        Assert-ThrowsLike -Pattern '*requires pg_restore*' -Action {
+            Invoke-LocalSnapshotRestore -Plan $invalidPlan -Target ([pscustomobject]@{}) -ExpectedRowCounts $expectedRowCounts
+        }
+    }
+
+    Invoke-Test 'correct post-restore counts produce success' {
+        $completion = Complete-LocalPricingRestore -RestoreExecuted $true -DatabaseMode $true -ActualCounts $expectedRowCounts -ExpectedCounts $expectedRowCounts
+        Assert-True -Condition ($completion.Status -eq 'RESTORED_LOCALLY' -and $completion.Counts.product_price_offers -eq 746) -Message 'Validated counts did not produce the final restore status.'
+    }
+
+    Invoke-Test 'divergent post-restore count is rejected' {
+        $actualCounts = @{} + $expectedRowCounts
+        $actualCounts.product_price_offers = 745
+        Assert-ThrowsLike -Pattern '*count mismatch*product_price_offers*' -Action {
+            Complete-LocalPricingRestore -RestoreExecuted $true -DatabaseMode $true -ActualCounts $actualCounts -ExpectedCounts $expectedRowCounts
+        }
+    }
+
+    Invoke-Test 'empty post-restore table is rejected' {
+        $actualCounts = @{} + $expectedRowCounts
+        $actualCounts.specs = 0
+        Assert-ThrowsLike -Pattern '*empty count*public.specs*' -Action {
+            Complete-LocalPricingRestore -RestoreExecuted $true -DatabaseMode $true -ActualCounts $actualCounts -ExpectedCounts $expectedRowCounts
+        }
+    }
+
+    Invoke-Test 'success is emitted only after post-validation' {
+        Assert-ThrowsLike -Pattern '*count mismatch*' -Action {
+            $partialCounts = @{} + $expectedRowCounts
+            $partialCounts.product_specs = 1
+            Complete-LocalPricingRestore -RestoreExecuted $true -DatabaseMode $true -ActualCounts $partialCounts -ExpectedCounts $expectedRowCounts
+        }
     }
 
     Invoke-Test 'pricing dry-run executes against a fixture' {
