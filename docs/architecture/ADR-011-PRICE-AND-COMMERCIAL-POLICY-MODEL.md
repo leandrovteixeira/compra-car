@@ -6,6 +6,13 @@
 - **Implementação:** primeira migration estrutural criada e validada localmente; etapas operacionais
   permanecem pendentes
 
+> **Adendo de 2026-07-26:** o agregado atual é `commercial_offer` com policies ligadas diretamente.
+> `free_registration` substitui `registration` e
+> `discounted_promotional_cash_flow_difference` substitui `present_value_subsidy` para novos
+> registros. Os nomes antigos permanecem deprecated apenas para compatibilidade do modelo histórico
+> de `commercial_policy_applications`. O contrato vigente está em
+> `docs/data/PRICING_POLICY_MODEL.md`.
+
 ## Contexto
 
 O ADR-009 separou conceitualmente MSRP e políticas comerciais, mas adiou o desenho físico. A

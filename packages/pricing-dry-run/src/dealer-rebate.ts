@@ -1,6 +1,6 @@
 import Decimal from 'decimal.js';
 
-import { decimal, money, percentage } from './money.js';
+import { decimal, money, percentage, roundingResidual } from './money.js';
 import { isRebateEligiblePolicy, REBATE_ELIGIBLE_POLICY_TYPES } from './policy-rules.js';
 import type {
   DealerRebateAllocationRow,
@@ -113,25 +113,46 @@ export function allocateDealerRebates(
       continue;
     }
 
-    let allocated = new Decimal(0);
-    eligible.forEach((policy, index) => {
+    const totalCents = legacyTotal.mul(100).toDecimalPlaces(0, Decimal.ROUND_HALF_UP);
+    const shares = eligible.map((policy) => {
       const benefit = new Decimal(policy.proposedMonetaryValue ?? 0);
-      const raw = legacyTotal.mul(benefit).div(base);
-      const finalAmount =
-        index === eligible.length - 1
-          ? legacyTotal.minus(allocated)
-          : raw.toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
-      allocated = allocated.plus(finalAmount);
-      policy.dealerRebateAmount = money(finalAmount);
-      policy.dealerRebateAllocationMethod = 'proportional_legacy_total';
+      const exactCents = totalCents.mul(benefit).div(base);
+      const floorCents = exactCents.floor();
+      return { policy, benefit, exactCents, finalCents: floorCents };
+    });
+    const initiallyAllocated = shares.reduce(
+      (sum, share) => sum.plus(share.finalCents),
+      new Decimal(0),
+    );
+    const remainingCents = totalCents.minus(initiallyAllocated).toNumber();
+    const remainderOrder = [...shares].sort((left, right) => {
+      const fractionDifference = right.exactCents
+        .minus(right.exactCents.floor())
+        .comparedTo(left.exactCents.minus(left.exactCents.floor()));
+      return fractionDifference !== 0
+        ? fractionDifference
+        : comparePolicies(left.policy, right.policy);
+    });
+    for (let index = 0; index < remainingCents; index += 1) {
+      const share = remainderOrder[index];
+      if (!share) throw new Error('Dealer rebate cent allocation exceeded eligible policies');
+      share.finalCents = share.finalCents.plus(1);
+    }
+
+    for (const { policy, benefit, exactCents, finalCents } of shares) {
+      const finalAmount = finalCents.div(100);
+      const rawAmount = exactCents.div(100);
+      const receivedRebate = finalCents.greaterThan(0);
+      policy.dealerRebateAmount = receivedRebate ? money(finalAmount) : null;
+      policy.dealerRebateAllocationMethod = receivedRebate ? 'proportional_legacy_total' : null;
       policy.dealerRebateAllocationBase = money(base);
       policy.dealerRebateAllocationPercentage = percentage(benefit.div(base).mul(100));
-      policy.dealerRebateRoundingResidual = money(finalAmount.minus(raw));
+      policy.dealerRebateRoundingResidual = roundingResidual(finalAmount.minus(rawAmount));
       policy.legacyDealerRebateValue = money(legacyTotal);
       policy.legacyPolicySource = 'total_dealer_rebate';
       policy.legacySourceColumn = 'total_dealer_rebate';
       rows.push(allocationRow(offer, policy, 'proportional_legacy_total'));
-    });
+    }
   }
 
   return { policies, rows };

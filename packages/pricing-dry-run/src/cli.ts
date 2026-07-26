@@ -176,7 +176,10 @@ async function main(): Promise<void> {
   if (args.verbose) {
     process.stdout.write(`Source: ${snapshot.databaseIdentity}\n`);
     process.stdout.write(`Status: ${String(result.summary.overallStatus)}\n`);
-    process.stdout.write(`Needs review: ${result.needsReview.length}\n`);
+    const reviewMetrics = result.summary.needsReviewMetrics as Record<string, number> | undefined;
+    process.stdout.write(
+      `Needs review: ${String(reviewMetrics?.needs_review_issue_occurrences ?? result.needsReview.length)} issue occurrences; ${String(reviewMetrics?.needs_review_unique_entities ?? result.needsReview.length)} entities; ${String(reviewMetrics?.needs_review_unique_offers ?? 'unknown')} offers\n`,
+    );
   }
   if (args.failOnSourceChange && result.baselineDifferences.length > 0) process.exitCode = 2;
 }

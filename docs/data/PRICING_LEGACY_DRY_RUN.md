@@ -48,6 +48,8 @@ participam.
 O relatório `dealer-rebate-allocation-analysis.csv` registra base, percentual, valor final, método,
 resíduo, classificação e reconciliação por policy. Sem base elegível, a offer recebe
 `UNALLOCATED_LEGACY_DEALER_REBATE`; o total permanece auditável, sem policy genérica.
+O rateio final usa centavos inteiros e maiores restos, com desempate estável. Rebate ausente gera
+`dealer_rebate_amount=NULL` e `dealer_rebate_allocation_method=NULL`; zero não representa ausência.
 
 Os tipos `free_wallbox`, `free_registration`, `free_maintenance` e
 `fuel_or_recharge_voucher` são reconhecidos para futuros cadastros, mas jamais inferidos do legado.
@@ -393,7 +395,8 @@ Cada execução gera:
 4. `product-public-prices.csv`, `public-price-candidates.csv` e `public-price-conflicts.csv`;
 5. `commercial-policies.csv` e `policy-candidates.csv`;
 6. `commercial-policy-accumulators.csv` e `accumulator-candidates.csv`;
-7. `needs-review.csv` e `informational-issues.csv`;
+7. `needs-review.csv`, `informational-issues.csv`, `issue-impact.csv` e
+   `source-issue-groups.csv`;
 8. `reconciliation.csv`;
 9. `dealer-rebate-allocation-analysis.csv`, `rebate-reconciliation-analysis.csv` e o resumo JSON;
 10. `financing-analysis.csv`, `financing-benefit-comparison.csv` e o resumo de completude;
@@ -404,6 +407,12 @@ Cada execução gera:
 JSON usa chaves canônicas para hash. CSV possui colunas fixas, escaping RFC 4180 básico e ordem
 estável. Sobre a mesma fotografia e opções, o conteúdo de dados é repetível; apenas `executedAt` e o
 nome do diretório variam. O hash pode ignorar `executedAt`.
+
+`summary.json` preserva as contagens anteriores e acrescenta nomes sem ambiguidade:
+`needs_review_issue_occurrences`, `needs_review_unique_entities` e
+`needs_review_unique_offers`. `issue-impact.csv` separa, por issue code, ocorrências, offers,
+policies, prices, sources e entidades bloqueadas. `source-issue-groups.csv` evidencia coocorrências
+na mesma origem sem fundir causas como preço zero e IPVA não calculável.
 
 ## Baseline e limitações
 

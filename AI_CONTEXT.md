@@ -1,5 +1,17 @@
 # Contexto para agentes de IA
 
+## Marco 2026-07-26 — revisão final da migration de pricing
+
+- O fluxo futuro oficial é `publish_commercial_offer`: valida offer, product, MSRP published e todas
+  as policies, publica o agregado atomicamente e audita. UPDATE direto e DELETE de offer terminal
+  são bloqueados. `commercial_policy_applications` permanece somente para compatibilidade anterior.
+- Rebate ausente é `NULL/NULL`. O rateio proporcional usa centavos inteiros e maiores restos;
+  `free_maintenance`, voucher obrigatório e `other` legado possuem regras iguais no SQL e TypeScript.
+- Os tipos compartilhados ficam em `@compra-car/contracts`; `registration` e
+  `present_value_subsidy` são compatibilidade deprecated e não podem ser publicados no fluxo novo.
+- As métricas distinguem ocorrências de issues, offers, policies, prices, sources e entidades. A
+  migration e os testes pgTAP continuam apenas preparados, sem aplicação ou escrita no Supabase.
+
 ## Marco 2026-07-26 — dealer rebate e policy types finais
 
 - `total_dealer_rebate` agregado é válido no legado. A migração aloca proporcionalmente somente para

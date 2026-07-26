@@ -53,6 +53,8 @@ repeatable-read, read-only transaction and the reports are local files only.
 - \`policy-candidates.csv\`: independent policy suggestions; null monetary results require review.
 - \`accumulator-candidates.csv\`: combination suggestions only; none is automatically publishable.
 - \`needs-review.csv\`: issue codes and evidence requiring human review.
+- \`issue-impact.csv\`: occurrences and distinct affected offers, policies, prices and entities.
+- \`source-issue-groups.csv\`: co-occurring issue codes by legacy source without merging them.
 - \`reconciliation.csv\`: exact-decimal comparison with the legacy customer total.
 - \`dealer-rebate-reconciliation.csv\`: individual dealer rebates versus the legacy aggregate.
 - \`dealer-rebate-allocation-analysis.csv\`: explicit, proportional or unallocated legacy rebate
@@ -262,6 +264,29 @@ export async function writeReports(
         { header: 'issue_codes', value: (row) => row.issue_codes },
         { header: 'evidence', value: (row) => row.evidence },
         { header: 'fingerprint', value: (row) => row.fingerprint },
+      ]),
+    ],
+    [
+      'issue-impact.csv',
+      stableCsv(result.issueImpact, [
+        { header: 'issue_code', value: (row) => row.issue_code },
+        { header: 'issue_occurrence_count', value: (row) => row.issue_occurrence_count },
+        { header: 'affected_offer_count', value: (row) => row.affected_offer_count },
+        { header: 'affected_policy_count', value: (row) => row.affected_policy_count },
+        { header: 'affected_price_count', value: (row) => row.affected_price_count },
+        { header: 'unique_source_count', value: (row) => row.unique_source_count },
+        { header: 'blocking_entity_count', value: (row) => row.blocking_entity_count },
+      ]),
+    ],
+    [
+      'source-issue-groups.csv',
+      stableCsv(result.sourceIssueGroups, [
+        { header: 'source_id', value: (row) => row.source_id },
+        { header: 'issue_codes', value: (row) => row.issue_codes },
+        { header: 'issue_code_count', value: (row) => row.issue_code_count },
+        { header: 'issue_occurrence_count', value: (row) => row.issue_occurrence_count },
+        { header: 'affected_entity_count', value: (row) => row.affected_entity_count },
+        { header: 'has_multiple_issue_codes', value: (row) => row.has_multiple_issue_codes },
       ]),
     ],
     [

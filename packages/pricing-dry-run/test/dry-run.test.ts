@@ -18,13 +18,15 @@ import { equivalentMonthlyRate, LEGACY_CDI_PARAMETER_SET } from '../src/financia
 import { decimal, money } from '../src/money.js';
 import {
   evaluateNewPolicy,
+  evaluateOtherPolicy,
+  isOfferPublicationPriceCompatible,
   isRebateEligiblePolicy,
   monetaryPolicyTotal,
   REBATE_ELIGIBLE_POLICY_TYPES,
 } from '../src/policy-rules.js';
 import { reconcileOffers } from '../src/reconciliation.js';
 import { stableCsv } from '../src/reports.js';
-import { runDryRun } from '../src/runner.js';
+import { runDryRun, summarizeIssueEvents } from '../src/runner.js';
 import { buildValidationSamples } from '../src/samples.js';
 import type { LegacyOffer, PolicyCandidate, SourceSnapshot } from '../src/types.js';
 
@@ -191,7 +193,7 @@ describe('pricing legacy dry-run', () => {
     expect(isRebateEligiblePolicy(excludedType)).toBe(false);
   });
 
-  it('applies rounding residue to the last deterministic policy and preserves the exact total', () => {
+  it('uses largest remainders with a deterministic tie-break and preserves the exact total', () => {
     const offer = { ...emptyOffer, retailBonus: '1', totalDealerRebate: '100' };
     const base = classifyPolicies([offer], null)[0]!;
     const policies = REBATE_ELIGIBLE_POLICY_TYPES.map((type, index) => ({
@@ -206,11 +208,68 @@ describe('pricing legacy dry-run', () => {
       REBATE_ELIGIBLE_POLICY_TYPES,
     );
     expect(allocated.map((policy) => policy.dealerRebateAmount)).toEqual([
-      '33.33',
-      '33.33',
       '33.34',
+      '33.33',
+      '33.33',
     ]);
-    expect(allocated.at(-1)?.dealerRebateRoundingResidual).toBe('0.01');
+    expect(allocated[0]?.dealerRebateRoundingResidual).toBe('0.00666667');
+    expect(
+      allocated
+        .reduce((total, policy) => total.plus(policy.dealerRebateAmount ?? 0), new Decimal(0))
+        .toFixed(2),
+    ).toBe('100.00');
+  });
+
+  it.each([
+    ['one cent', '0.01', ['0.01', null, null]],
+    ['two cents', '0.02', ['0.01', '0.01', null]],
+  ])('allocates %s without negative amounts', (_name, total, expected) => {
+    const offer = { ...emptyOffer, retailBonus: '1', totalDealerRebate: total };
+    const base = classifyPolicies([offer], null)[0]!;
+    const policies = REBATE_ELIGIBLE_POLICY_TYPES.map((type, index) => ({
+      ...base,
+      candidatePolicyId: `tiny-${index}`,
+      proposedPolicyType: type,
+      proposedMonetaryValue: '1.00',
+    }));
+    const allocated = allocateDealerRebates([offer], policies).policies;
+    expect(allocated.map((policy) => policy.dealerRebateAmount)).toEqual(expected);
+    expect(
+      allocated.every(
+        (policy) => policy.dealerRebateAmount === null || Number(policy.dealerRebateAmount) >= 0,
+      ),
+    ).toBe(true);
+  });
+
+  it('allocates multiple policies of the same type deterministically', () => {
+    const offer = { ...emptyOffer, retailBonus: '1', totalDealerRebate: '0.02' };
+    const base = classifyPolicies([offer], null)[0]!;
+    const policies = ['policy-3', 'policy-1', 'policy-2'].map((candidatePolicyId) => ({
+      ...base,
+      candidatePolicyId,
+      proposedMonetaryValue: '1.00',
+    }));
+    const first = allocateDealerRebates([offer], policies).policies;
+    const second = allocateDealerRebates([offer], [...policies].reverse()).policies;
+    const allocation = (rows: PolicyCandidate[]) =>
+      Object.fromEntries(rows.map((row) => [row.candidatePolicyId, row.dealerRebateAmount]));
+    expect(allocation(first)).toEqual(allocation(second));
+    expect(allocation(first)).toEqual({
+      'policy-3': null,
+      'policy-1': '0.01',
+      'policy-2': '0.01',
+    });
+  });
+
+  it('allocates one cent across two asymmetric policies without a negative residue', () => {
+    const offer = { ...emptyOffer, retailBonus: '1', totalDealerRebate: '0.01' };
+    const base = classifyPolicies([offer], null)[0]!;
+    const policies = [
+      { ...base, candidatePolicyId: 'large', proposedMonetaryValue: '999999.00' },
+      { ...base, candidatePolicyId: 'small', proposedMonetaryValue: '1.00' },
+    ];
+    const allocated = allocateDealerRebates([offer], policies).policies;
+    expect(allocated.map((policy) => policy.dealerRebateAmount)).toEqual(['0.01', null]);
   });
 
   it('keeps explicit legacy components authoritative and never redistributes them', () => {
@@ -232,7 +291,7 @@ describe('pricing legacy dry-run', () => {
     expect(
       result.policies.find((policy) => policy.proposedPolicyType === 'trade_in_bonus')
         ?.dealerRebateAmount,
-    ).toBe('0.00');
+    ).toBeNull();
   });
 
   it.each([
@@ -343,7 +402,7 @@ describe('pricing legacy dry-run', () => {
     ).toMatchObject({
       customerBenefitAmount: null,
       publishable: false,
-      issueCodes: ['MISSING_POLICY_DESCRIPTION'],
+      issueCodes: ['INVALID_MAINTENANCE_COVERAGE'],
     });
     expect(
       evaluateNewPolicy({
@@ -354,7 +413,11 @@ describe('pricing legacy dry-run', () => {
     ).toMatchObject({ customerBenefitAmount: '500.00', publishable: true });
     expect(
       evaluateNewPolicy({ policyType: 'fuel_or_recharge_voucher', fixedAmount: '500' }),
-    ).toMatchObject({ voucherType: 'unspecified', publishable: true });
+    ).toMatchObject({
+      voucherType: null,
+      publishable: false,
+      issueCodes: ['INVALID_VOUCHER_TYPE'],
+    });
     expect(
       evaluateNewPolicy({
         policyType: 'fuel_or_recharge_voucher',
@@ -365,9 +428,44 @@ describe('pricing legacy dry-run', () => {
     expect(
       evaluateNewPolicy({ policyType: 'fuel_or_recharge_voucher', fixedAmount: null }),
     ).toMatchObject({ customerBenefitAmount: null, publishable: false });
+    expect(
+      evaluateNewPolicy({
+        policyType: 'fuel_or_recharge_voucher',
+        fixedAmount: '500',
+        voucherType: 'invalid' as never,
+      }),
+    ).toMatchObject({ publishable: false, issueCodes: ['INVALID_VOUCHER_TYPE'] });
+    expect(
+      evaluateNewPolicy({
+        policyType: 'fuel_or_recharge_voucher',
+        fixedAmount: '500',
+        voucherType: 'unspecified',
+      }),
+    ).toMatchObject({ voucherType: 'unspecified', publishable: true });
     const legacy = classifyPolicies([{ ...emptyOffer, othersBonus: '4000', notes: null }], null);
     expect(legacy).toHaveLength(1);
     expect(legacy[0]?.proposedPolicyType).toBe('other');
+    expect(
+      evaluateOtherPolicy({ fixedAmount: '4000', legacyPolicySource: 'others_bonus' }).publishable,
+    ).toBe(true);
+    expect(evaluateOtherPolicy({ fixedAmount: '4000' }).publishable).toBe(false);
+  });
+
+  it.each([
+    ['top-level description', 'maintenance included', {}, true],
+    ['parameter description', null, { description: 'three services' }, true],
+    ['maintenance count', null, { maintenance_count: 3 }, true],
+    ['coverage months', null, { coverage_months: 24 }, true],
+    ['coverage km', null, { coverage_km: 30000 }, true],
+    ['zero count', null, { maintenance_count: 0 }, false],
+    ['negative months', null, { coverage_months: -1 }, false],
+    ['fractional count', null, { maintenance_count: 1.5 }, false],
+    ['string number', null, { coverage_km: '30000' }, false],
+    ['unrelated data', null, { unrelated: true }, false],
+  ])('validates free maintenance coverage: %s', (_name, description, parameters, publishable) => {
+    expect(
+      evaluateNewPolicy({ policyType: 'free_maintenance', description, parameters }).publishable,
+    ).toBe(publishable);
   });
 
   it('keeps non-monetized benefits qualitative and out of monetary totals', () => {
@@ -387,6 +485,26 @@ describe('pricing legacy dry-run', () => {
     };
     expect(monetaryPolicyTotal([base, maintenance, wallbox])).toBe('4100.00');
     expect(maintenance.proposedMonetaryValue).toBeNull();
+  });
+
+  it('requires a compatible published MSRP for offer publication', () => {
+    const price = {
+      offerProductId: '101',
+      validFrom: '2026-01-01',
+      validTo: '2026-01-31',
+      priceProductId: '101',
+      priceStatus: 'published' as const,
+      priceAmount: '100000.00',
+      currencyCode: 'BRL',
+      priceType: 'msrp',
+      startsOn: '2026-01-01',
+      endsOn: null,
+    };
+    expect(isOfferPublicationPriceCompatible(price)).toBe(true);
+    expect(isOfferPublicationPriceCompatible({ ...price, priceStatus: 'draft' })).toBe(false);
+    expect(isOfferPublicationPriceCompatible({ ...price, priceStatus: 'archived' })).toBe(false);
+    expect(isOfferPublicationPriceCompatible({ ...price, priceProductId: '102' })).toBe(false);
+    expect(isOfferPublicationPriceCompatible({ ...price, priceAmount: '0' })).toBe(false);
   });
   it('classifies positive, zero and negative public prices without binary money', () => {
     const offers = [
@@ -499,7 +617,7 @@ describe('pricing legacy dry-run', () => {
     );
   });
 
-  it('maps supported rebates and flags incomplete financing and missing descriptions', () => {
+  it('maps supported rebates, flags incomplete financing and preserves legacy other', () => {
     const policies = classifyPolicies(
       [
         {
@@ -524,8 +642,8 @@ describe('pricing legacy dry-run', () => {
       policies.some((policy) => policy.issueCodes.includes('INCOMPLETE_FINANCING_TERMS')),
     ).toBe(true);
     expect(
-      policies.some((policy) => policy.issueCodes.includes('MISSING_POLICY_DESCRIPTION')),
-    ).toBe(true);
+      policies.find((policy) => policy.legacyPolicySource === 'others_bonus')?.issueCodes,
+    ).not.toContain('MISSING_POLICY_DESCRIPTION');
   });
 
   it('supports all monetary consistency issue codes', () => {
@@ -632,7 +750,7 @@ describe('pricing legacy dry-run', () => {
     expect(retail?.proposedMonetaryValue).not.toBe('20000.00');
   });
 
-  it('preserves dealer rebate zero and null distinctly', () => {
+  it('normalizes explicit dealer rebate zero and null to no allocation', () => {
     const policies = classifyPolicies(
       [
         { ...emptyOffer, id: '1', retailBonus: '100', retailRebate: '0' },
@@ -640,7 +758,7 @@ describe('pricing legacy dry-run', () => {
       ],
       null,
     );
-    expect(policies.find((policy) => policy.sourceId === '1')?.dealerRebateAmount).toBe('0.00');
+    expect(policies.find((policy) => policy.sourceId === '1')?.dealerRebateAmount).toBeNull();
     expect(policies.find((policy) => policy.sourceId === '2')?.dealerRebateAmount).toBeNull();
   });
 
@@ -743,7 +861,7 @@ describe('pricing legacy dry-run', () => {
     ).find((candidate) => candidate.proposedPolicyType === 'subsidized_financing');
     expect(policy).toMatchObject({
       financedPrincipal: '100000.00',
-      dealerRebateAmount: '0.00',
+      dealerRebateAmount: null,
       financialParameterSetId: LEGACY_CDI_PARAMETER_SET.id,
       classification: 'classifiable_with_reconciliation',
       issueCodes: [],
@@ -1042,7 +1160,41 @@ describe('pricing legacy dry-run', () => {
       ),
     ).toBe(true);
     expect(first.needsReview.length).toBeGreaterThan(0);
+    expect(
+      first.policyCandidates.every(
+        (policy) =>
+          (policy.dealerRebateAmount === null) === (policy.dealerRebateAllocationMethod === null),
+      ),
+    ).toBe(true);
+    expect(
+      first.policyCandidates.some(
+        (policy) =>
+          policy.dealerRebateAmount === '0.00' && policy.dealerRebateAllocationMethod === null,
+      ),
+    ).toBe(false);
+    expect(first.issueImpact.length).toBeGreaterThan(0);
+    expect(first.sourceIssueGroups.length).toBeGreaterThan(0);
+    expect(
+      (first.summary.dealerRebateAllocation as { unallocatedTotal: string }).unallocatedTotal,
+    ).toBe('0.00');
     expect(first.summary.comparisonHash).toBe(second.summary.comparisonHash);
     expect(first.viewCoverage.find((row) => row.productId === '102')?.eligibleForV2).toBe(false);
+  });
+
+  it('distinguishes three affected policies from four issue occurrences', () => {
+    const issueCode = 'NEGATIVE_ECONOMIC_VALUE' as const;
+    const result = summarizeIssueEvents([
+      { issueCode, sourceId: '1', entityType: 'commercial_policy', entityId: 'policy-1' },
+      { issueCode, sourceId: '2', entityType: 'commercial_policy', entityId: 'policy-2' },
+      { issueCode, sourceId: '3', entityType: 'commercial_policy', entityId: 'policy-3' },
+      { issueCode, sourceId: '2', entityType: 'reconciliation', entityId: 'benefit-2' },
+    ]);
+    expect(result.impact[0]).toMatchObject({
+      issue_occurrence_count: 4,
+      affected_offer_count: 3,
+      affected_policy_count: 3,
+      unique_source_count: 3,
+      blocking_entity_count: 4,
+    });
   });
 });

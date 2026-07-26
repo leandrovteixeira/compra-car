@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@compra-car/contracts": "workspace:*",
     "decimal.js": "10.6.0",
     "pg": "8.16.3"
   },

@@ -1,3 +1,9 @@
+import type {
+  CommercialPolicyType as PolicyType,
+  PolicyCalculationMethod as CalculationMethod,
+  PricingVoucherType as VoucherType,
+} from '@compra-car/contracts';
+
 export const issueCodes = [
   'ZERO_PUBLIC_PRICE',
   'CONFLICTING_PUBLIC_PRICE',
@@ -25,6 +31,8 @@ export const issueCodes = [
   'LEGACY_CALCULATION_METHOD_DIFFERENCE',
   'UNALLOCATED_LEGACY_DEALER_REBATE',
   'REGISTRATION_NON_POSITIVE_PUBLIC_PRICE',
+  'INVALID_MAINTENANCE_COVERAGE',
+  'INVALID_VOUCHER_TYPE',
 ] as const;
 
 export type IssueCode = (typeof issueCodes)[number];
@@ -134,30 +142,14 @@ export interface PublicPriceConflict {
   automaticWinner: null;
 }
 
-export type PolicyType =
-  | 'retail_bonus'
-  | 'trade_in_bonus'
-  | 'subsidized_financing'
-  | 'free_ipva'
-  | 'free_insurance'
-  | 'free_wallbox'
-  | 'free_registration'
-  | 'free_maintenance'
-  | 'fuel_or_recharge_voucher'
-  | 'other';
-
-export type CalculationMethod =
-  | 'fixed_amount'
-  | 'percentage_of_msrp'
-  | 'proportional_ipva'
-  | 'discounted_promotional_cash_flow_difference'
-  | 'non_monetized'
-  | 'manual_amount';
+export type {
+  CommercialPolicyType as PolicyType,
+  PolicyCalculationMethod as CalculationMethod,
+  PricingVoucherType as VoucherType,
+} from '@compra-car/contracts';
 
 export type DealerRebateAllocationMethod =
   'explicit_legacy_component' | 'proportional_legacy_total' | 'unallocated_legacy_total';
-
-export type VoucherType = 'fuel' | 'electric_recharge' | 'unspecified';
 
 export interface FinancialParameterSet {
   id: string;
@@ -404,6 +396,8 @@ export interface DryRunResult {
   financingMissingSummary: CanonicalRow[];
   offerPolicySummary: OfferPolicySummaryRow[];
   informationalIssues: CanonicalRow[];
+  issueImpact: CanonicalRow[];
+  sourceIssueGroups: CanonicalRow[];
   validationSamples: ValidationSampleRow[];
   validationSampleSummary: Record<string, number>;
   viewCoverage: ViewCoverageRow[];

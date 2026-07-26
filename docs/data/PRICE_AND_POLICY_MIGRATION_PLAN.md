@@ -1,5 +1,10 @@
 # Plano de migração de preços e políticas comerciais
 
+> **Atualização de 2026-07-26:** a etapa corrente introduz `commercial_offer` como agregado pai e
+> mantém `commercial_policy_applications` somente para compatibilidade histórica. Novos registros
+> usam os tipos e métodos de `PRICING_POLICY_MODEL.md`; `registration` e `present_value_subsidy` são
+> deprecated. Backfill continua uma etapa separada e não foi executado.
+
 ## 1. Objetivo e princípios
 
 Migrar do modelo misto legado para o schema do ADR-011 sem apagar origem, sem reclassificação

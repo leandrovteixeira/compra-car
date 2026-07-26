@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-07-26 — Fechamento da revisão técnica de pricing
+
+- Adicionado o fluxo transacional `publish_commercial_offer`, independente do modelo legado de
+  applications, com MSRP publicado obrigatório, validação completa das policies, auditoria,
+  bloqueio de UPDATE direto e proteção de DELETE para offers terminais.
+- Ausência de rebate passou a ser `NULL/NULL`; o rateio agregado usa maiores restos em centavos sem
+  valores negativos. Voucher, maintenance e `other` legado receberam validações consistentes entre
+  SQL e TypeScript.
+- Tipos de pricing foram centralizados em contracts, valores deprecated documentados e relatórios
+  passaram a separar ocorrências, offers, policies, prices, sources e entidades bloqueadas.
+- Migration e pgTAP foram preparados, sem aplicação, backfill, escrita ou publicação.
+
 ## 2026-07-26 — Finalização da migration de pricing legado
 
 - Oficializada a alocação auditável de `total_dealer_rebate`: componentes explícitos prevalecem e o

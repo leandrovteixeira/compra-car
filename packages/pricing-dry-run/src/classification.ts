@@ -297,7 +297,7 @@ function explicitMoneyCandidate(
     calculationMethod: 'fixed_amount',
     inputMonetaryValue: parsed === null ? null : money(parsed),
     proposedMonetaryValue: nonPositive ? null : money(parsed),
-    dealerRebateAmount: parsedRebate === null ? null : money(parsedRebate),
+    dealerRebateAmount: parsedRebate?.greaterThan(0) === true ? money(parsedRebate) : null,
     dealerRebateAllocationMethod:
       parsedRebate?.greaterThan(0) === true ? 'explicit_legacy_component' : null,
     legacyPolicySource: field,
@@ -422,7 +422,7 @@ export function classifyPolicies(
           calculationMethod: 'discounted_promotional_cash_flow_difference',
           inputMonetaryValue: null,
           proposedMonetaryValue,
-          dealerRebateAmount: rateRebate === null ? null : money(rateRebate),
+          dealerRebateAmount: rateRebate?.greaterThan(0) === true ? money(rateRebate) : null,
           dealerRebateAllocationMethod:
             rateRebate?.greaterThan(0) === true ? 'explicit_legacy_component' : null,
           legacyPolicySource: 'subsidized_rate_monthly',
@@ -506,7 +506,6 @@ export function classifyPolicies(
     if (others !== null && !others.isZero()) {
       const issues: IssueCode[] = [];
       if (others.isNegative()) issues.push('NEGATIVE_ECONOMIC_VALUE');
-      if ((offer.notes ?? '').trim() === '') issues.push('MISSING_POLICY_DESCRIPTION');
       candidates.push(
         policyCandidate({
           offer,

@@ -294,6 +294,129 @@ function needsReviewRows(
   ].sort((left, right) => canonicalJson(left).localeCompare(canonicalJson(right)));
 }
 
+export interface IssueEvent {
+  issueCode: IssueCode;
+  sourceId: string;
+  entityType: 'commercial_offer' | 'commercial_policy' | 'public_price' | 'reconciliation';
+  entityId: string;
+}
+
+export function summarizeIssueEvents(events: IssueEvent[]): {
+  impact: CanonicalRow[];
+  sourceGroups: CanonicalRow[];
+  totals: { issueOccurrences: number; uniqueEntities: number; uniqueOffers: number };
+} {
+  const impact = [...new Set(events.map((event) => event.issueCode))].sort().map((issueCode) => {
+    const matches = events.filter((event) => event.issueCode === issueCode);
+    return {
+      issue_code: issueCode,
+      issue_occurrence_count: matches.length,
+      affected_offer_count: new Set(matches.map((event) => event.sourceId)).size,
+      affected_policy_count: new Set(
+        matches
+          .filter((event) => event.entityType === 'commercial_policy')
+          .map((event) => event.entityId),
+      ).size,
+      affected_price_count: new Set(
+        matches
+          .filter((event) => event.entityType === 'public_price')
+          .map((event) => event.entityId),
+      ).size,
+      unique_source_count: new Set(matches.map((event) => event.sourceId)).size,
+      blocking_entity_count: new Set(
+        matches.map((event) => `${event.entityType}:${event.entityId}`),
+      ).size,
+    };
+  });
+  const sourceGroups = [...new Set(events.map((event) => event.sourceId))]
+    .sort((left, right) => left.localeCompare(right, 'en', { numeric: true }))
+    .map((sourceId) => {
+      const matches = events.filter((event) => event.sourceId === sourceId);
+      const codes = [...new Set(matches.map((event) => event.issueCode))].sort();
+      return {
+        source_id: sourceId,
+        issue_codes: codes.join('|'),
+        issue_code_count: codes.length,
+        issue_occurrence_count: matches.length,
+        affected_entity_count: new Set(
+          matches.map((event) => `${event.entityType}:${event.entityId}`),
+        ).size,
+        has_multiple_issue_codes: codes.length > 1,
+      };
+    });
+  return {
+    impact,
+    sourceGroups,
+    totals: {
+      issueOccurrences: events.length,
+      uniqueEntities: new Set(events.map((event) => `${event.entityType}:${event.entityId}`)).size,
+      uniqueOffers: new Set(events.map((event) => event.sourceId)).size,
+    },
+  };
+}
+
+function issueImpactRows(
+  offers: DryRunResult['commercialOfferCandidates'],
+  prices: DryRunResult['publicPriceCandidates'],
+  policies: DryRunResult['policyCandidates'],
+  reconciliation: DryRunResult['reconciliation'],
+  rebates: DryRunResult['dealerRebateReconciliation'],
+): {
+  impact: CanonicalRow[];
+  sourceGroups: CanonicalRow[];
+  totals: { issueOccurrences: number; uniqueEntities: number; uniqueOffers: number };
+} {
+  const events: IssueEvent[] = [];
+  for (const price of prices)
+    for (const sourceId of price.sourceIds)
+      for (const issueCode of price.issueCodes)
+        events.push({
+          issueCode,
+          sourceId,
+          entityType: 'public_price',
+          entityId: price.logicalFingerprint,
+        });
+  for (const policy of policies)
+    for (const issueCode of policy.issueCodes)
+      events.push({
+        issueCode,
+        sourceId: policy.sourceId,
+        entityType: 'commercial_policy',
+        entityId: policy.candidatePolicyId,
+      });
+  for (const row of reconciliation)
+    for (const issueCode of row.issueCodes)
+      events.push({
+        issueCode,
+        sourceId: row.sourceId,
+        entityType: 'reconciliation',
+        entityId: `customer-benefit:${row.sourceId}`,
+      });
+  for (const row of rebates)
+    for (const issueCode of row.issueCodes)
+      events.push({
+        issueCode,
+        sourceId: row.sourceId,
+        entityType: 'reconciliation',
+        entityId: `dealer-rebate:${row.sourceId}`,
+      });
+  for (const offer of offers)
+    for (const issueCode of offer.blockingIssueCodes)
+      if (
+        !events.some(
+          (event) => event.sourceId === offer.legacySourceId && event.issueCode === issueCode,
+        )
+      )
+        events.push({
+          issueCode,
+          sourceId: offer.legacySourceId,
+          entityType: 'commercial_offer',
+          entityId: offer.candidateOfferId,
+        });
+
+  return summarizeIssueEvents(events);
+}
+
 export function runDryRun(snapshot: SourceSnapshot, options: DryRunOptions): DryRunResult {
   const financialParameterSets = options.financialParameterSets ?? [LEGACY_CDI_PARAMETER_SET];
   const knownProducts = new Set(snapshot.products.map((product) => product.id));
@@ -354,6 +477,13 @@ export function runDryRun(snapshot: SourceSnapshot, options: DryRunOptions): Dry
     publicPriceCandidates,
     policyCandidates,
     accumulatorCandidates,
+    reconciliation,
+    dealerRebateReconciliation,
+  );
+  const issueMetrics = issueImpactRows(
+    commercialOfferCandidates,
+    publicPriceCandidates,
+    policyCandidates,
     reconciliation,
     dealerRebateReconciliation,
   );
@@ -492,6 +622,11 @@ export function runDryRun(snapshot: SourceSnapshot, options: DryRunOptions): Dry
           .filter((row) => row.allocationMethod === 'unallocated_legacy_total')
           .map((row) => row.legacyOfferId),
       ).size,
+      unallocatedTotal: money(
+        dealerRebateAllocations
+          .filter((row) => row.allocationMethod === 'unallocated_legacy_total')
+          .reduce((sum, row) => sum.plus(decimal(row.legacyTotalDealerRebate) ?? 0), decimal('0')!),
+      ),
       legacyTotal: money(
         snapshot.offers.reduce(
           (sum, offer) => sum.plus(decimal(offer.totalDealerRebate) ?? 0),
@@ -547,6 +682,15 @@ export function runDryRun(snapshot: SourceSnapshot, options: DryRunOptions): Dry
       blockingIssues: needsReview.length,
       validationSamples: samples.rows.length,
     },
+    needsReviewMetrics: {
+      needs_review_issue_occurrences: issueMetrics.totals.issueOccurrences,
+      needs_review_unique_entities: issueMetrics.totals.uniqueEntities,
+      needs_review_unique_offers: issueMetrics.totals.uniqueOffers,
+      blocking_entity_count: issueMetrics.totals.uniqueEntities,
+    },
+    issueImpact: Object.fromEntries(
+      issueMetrics.impact.map((row) => [String(row.issue_code), row]),
+    ),
     viewCoverage: {
       activeProducts: snapshot.products.filter((product) => product.isActive).length,
       productsWithActiveSpecs: viewCoverage.filter((row) => row.hasActiveSpecs).length,
@@ -584,6 +728,8 @@ export function runDryRun(snapshot: SourceSnapshot, options: DryRunOptions): Dry
     financingMissingSummary,
     offerPolicySummary,
     informationalIssues,
+    issueImpact: issueMetrics.impact,
+    sourceIssueGroups: issueMetrics.sourceGroups,
     validationSamples: samples.rows,
     validationSampleSummary: samples.summary,
     viewCoverage,

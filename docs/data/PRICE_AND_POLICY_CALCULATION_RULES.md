@@ -1,5 +1,11 @@
 # Regras de cálculo de preços e políticas comerciais
 
+> **Nota de compatibilidade:** este documento descreve o primeiro modelo baseado em
+> `commercial_policy_applications`. Para o fluxo atual de `commercial_offer`, inclusive policies
+> não monetizadas, tipos atuais/deprecated e publicação, prevalece
+> `docs/data/PRICING_POLICY_MODEL.md`. `present_value_subsidy` permanece somente como método legado;
+> novos financiamentos usam `discounted_promotional_cash_flow_difference`.
+
 ## 1. Objetivo
 
 Definir fórmulas, unidades, arredondamento, validação e snapshots do valor econômico congelado das

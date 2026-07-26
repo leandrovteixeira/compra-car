@@ -15,6 +15,10 @@ export function percentage(value: Decimal): string {
   return value.toDecimalPlaces(6, Decimal.ROUND_HALF_UP).toFixed(6);
 }
 
+export function roundingResidual(value: Decimal): string {
+  return value.toDecimalPlaces(8, Decimal.ROUND_HALF_UP).toFixed(8);
+}
+
 export function positive(value: string | null): boolean {
   const parsed = decimal(value);
   return parsed !== null && parsed.greaterThan(0);

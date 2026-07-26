@@ -1,5 +1,10 @@
 # Schema alvo de preços e políticas comerciais
 
+> **Adendo de 2026-07-26:** as seções sobre `commercial_policy_applications`, `registration` e
+> `present_value_subsidy` registram o modelo anterior. O agregado vigente usa `commercial_offer`,
+> `free_registration` e `discounted_promotional_cash_flow_difference`; os valores antigos são
+> deprecated e não podem ser usados em novas offers. Consulte `PRICING_POLICY_MODEL.md`.
+
 ## 1. Escopo
 
 Este documento especifica o modelo físico proposto pelo ADR-011; ele não é SQL executável. A

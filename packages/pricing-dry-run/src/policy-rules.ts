@@ -1,5 +1,7 @@
 import Decimal from 'decimal.js';
 
+import { DEALER_REBATE_ELIGIBLE_POLICY_TYPES, PRICING_VOUCHER_TYPES } from '@compra-car/contracts';
+
 import { decimal, money } from './money.js';
 import type {
   CalculationMethod,
@@ -11,9 +13,7 @@ import type {
 } from './types.js';
 
 export const REBATE_ELIGIBLE_POLICY_TYPES = Object.freeze([
-  'retail_bonus',
-  'trade_in_bonus',
-  'subsidized_financing',
+  ...DEALER_REBATE_ELIGIBLE_POLICY_TYPES,
 ] as const satisfies readonly PolicyType[]);
 
 const rebateEligibleSet = new Set<PolicyType>(REBATE_ELIGIBLE_POLICY_TYPES);
@@ -51,7 +51,7 @@ export interface NewPolicyInput {
 }
 
 export interface NewPolicyEvaluation {
-  policyType: NewPolicyInput['policyType'];
+  policyType: PolicyType;
   calculationMethod: CalculationMethod;
   customerBenefitAmount: string | null;
   fixedAmount: string | null;
@@ -63,7 +63,84 @@ export interface NewPolicyEvaluation {
   qualitativeBenefit: boolean;
 }
 
-const validVoucherTypes = new Set<VoucherType>(['fuel', 'electric_recharge', 'unspecified']);
+export interface OtherPolicyInput {
+  fixedAmount: string | null;
+  description?: string | null;
+  legacyPolicySource?: string | null;
+}
+
+export interface OfferPublicationPriceInput {
+  offerProductId: string;
+  validFrom: string;
+  validTo: string;
+  priceProductId: string;
+  priceStatus: 'draft' | 'needs_review' | 'published' | 'archived';
+  priceAmount: string | null;
+  currencyCode: string;
+  priceType: string | null;
+  startsOn: string;
+  endsOn: string | null;
+}
+
+export function isOfferPublicationPriceCompatible(input: OfferPublicationPriceInput): boolean {
+  return (
+    input.priceStatus === 'published' &&
+    input.offerProductId === input.priceProductId &&
+    decimal(input.priceAmount)?.greaterThan(0) === true &&
+    input.currencyCode === 'BRL' &&
+    input.priceType === 'msrp' &&
+    input.startsOn <= input.validFrom &&
+    (input.endsOn === null || input.endsOn >= input.validTo)
+  );
+}
+
+const validVoucherTypes = new Set<VoucherType>(PRICING_VOUCHER_TYPES);
+
+function positiveInteger(value: unknown): boolean {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value > 0;
+}
+
+function positiveNumber(value: unknown): boolean {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0;
+}
+
+function validMaintenanceIdentification(
+  description: string | null | undefined,
+  parameters: CanonicalRow,
+): boolean {
+  if ((description ?? '').trim() !== '') return true;
+  if (typeof parameters.description === 'string' && parameters.description.trim() !== '')
+    return true;
+  return (
+    positiveInteger(parameters.maintenance_count) ||
+    positiveInteger(parameters.coverage_months) ||
+    positiveNumber(parameters.coverage_km)
+  );
+}
+
+export function evaluateOtherPolicy(input: OtherPolicyInput): NewPolicyEvaluation {
+  const amount = decimal(input.fixedAmount);
+  const validAmount = amount?.greaterThan(0) === true;
+  const legacy = input.legacyPolicySource === 'others_bonus';
+  const described = (input.description ?? '').trim() !== '';
+  const publishable = validAmount && (legacy || described);
+  return {
+    policyType: 'other',
+    calculationMethod: 'fixed_amount',
+    customerBenefitAmount: validAmount && amount ? money(amount) : null,
+    fixedAmount: validAmount && amount ? money(amount) : null,
+    percentageRate: null,
+    voucherType: null,
+    parameters: {},
+    issueCodes: publishable
+      ? []
+      : validAmount
+        ? ['MISSING_POLICY_DESCRIPTION']
+        : ['MISSING_INPUT_MONETARY_VALUE'],
+    publishable,
+    qualitativeBenefit: true,
+  };
+}
 
 export function evaluateNewPolicy(input: NewPolicyInput): NewPolicyEvaluation {
   const parameters = input.parameters ?? {};
@@ -100,11 +177,7 @@ export function evaluateNewPolicy(input: NewPolicyInput): NewPolicyEvaluation {
     };
   }
   if (input.policyType === 'free_maintenance') {
-    const identifiable =
-      (input.description ?? '').trim() !== '' ||
-      ['maintenance_count', 'coverage_months', 'coverage_km'].some(
-        (key) => parameters[key] !== null && parameters[key] !== undefined,
-      );
+    const identifiable = validMaintenanceIdentification(input.description, parameters);
     return {
       policyType: input.policyType,
       calculationMethod: 'non_monetized',
@@ -113,16 +186,16 @@ export function evaluateNewPolicy(input: NewPolicyInput): NewPolicyEvaluation {
       percentageRate: null,
       voucherType: null,
       parameters,
-      issueCodes: identifiable ? [] : ['MISSING_POLICY_DESCRIPTION'],
+      issueCodes: identifiable ? [] : ['INVALID_MAINTENANCE_COVERAGE'],
       publishable: identifiable,
       qualitativeBenefit: true,
     };
   }
 
   const amount = decimal(input.fixedAmount ?? null);
-  const voucherType = input.voucherType ?? 'unspecified';
+  const voucherType = input.voucherType ?? null;
   const validAmount = amount?.greaterThan(0) === true;
-  const validType = validVoucherTypes.has(voucherType);
+  const validType = voucherType !== null && validVoucherTypes.has(voucherType);
   return {
     policyType: input.policyType,
     calculationMethod: 'fixed_amount',
@@ -131,7 +204,10 @@ export function evaluateNewPolicy(input: NewPolicyInput): NewPolicyEvaluation {
     percentageRate: null,
     voucherType,
     parameters,
-    issueCodes: validAmount && validType ? [] : ['MISSING_INPUT_MONETARY_VALUE'],
+    issueCodes: [
+      ...(validAmount ? [] : (['MISSING_INPUT_MONETARY_VALUE'] as const)),
+      ...(validType ? [] : (['INVALID_VOUCHER_TYPE'] as const)),
+    ],
     publishable: validAmount && validType,
     qualitativeBenefit: true,
   };
