@@ -8,7 +8,8 @@ param(
     [int]$ExpectedLocalPort = 54322,
     [long]$MaximumBytes = 1073741824,
     [string]$PsqlPath = 'psql',
-    [string]$PgRestorePath = 'pg_restore'
+    [string]$PgRestorePath = 'pg_restore',
+    [string]$PostgresContainer = 'supabase_db_compra-car'
 )
 
 Set-StrictMode -Version Latest
@@ -25,7 +26,8 @@ $snapshot = Get-ValidatedPricingSnapshot `
     -AllowedSnapshotDirectory $AllowedSnapshotDirectory `
     -ExpectedSha256 $ExpectedSha256 `
     -MaximumBytes $MaximumBytes `
-    -PgRestorePath $PgRestorePath
+    -PgRestorePath $PgRestorePath `
+    -PostgresContainer $PostgresContainer
 $plan = New-LocalRestorePlan `
     -Snapshot $snapshot `
     -Target $target `
@@ -34,7 +36,7 @@ $plan = New-LocalRestorePlan `
 
 $status = 'PLANNED_ONLY'
 if ($PSCmdlet.ShouldProcess($target.SanitizedIdentity, "Restore data-only snapshot $($snapshot.FileName)")) {
-    Invoke-LocalSnapshotRestore -Plan $plan -Target $target -PsqlPath $PsqlPath
+    Invoke-LocalSnapshotRestore -Plan $plan -Target $target -PsqlPath $PsqlPath -PostgresContainer $PostgresContainer
     $status = 'RESTORED_LOCALLY'
 }
 

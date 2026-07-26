@@ -12,6 +12,7 @@ param(
     [long]$MaximumBytes = 1073741824,
     [string]$PsqlPath = 'psql',
     [string]$PgRestorePath = 'pg_restore',
+    [string]$PostgresContainer = 'supabase_db_compra-car',
     [string]$PnpmPath = 'pnpm'
 )
 
@@ -29,7 +30,8 @@ $snapshot = Get-ValidatedPricingSnapshot `
     -AllowedSnapshotDirectory $AllowedSnapshotDirectory `
     -ExpectedSha256 $ExpectedSha256 `
     -MaximumBytes $MaximumBytes `
-    -PgRestorePath $PgRestorePath
+    -PgRestorePath $PgRestorePath `
+    -PostgresContainer $PostgresContainer
 $plan = New-LocalRestorePlan `
     -Snapshot $snapshot `
     -Target $target `
@@ -51,7 +53,7 @@ if (-not $PSCmdlet.ShouldProcess($target.SanitizedIdentity, "Restore authorized 
     return
 }
 
-Invoke-LocalSnapshotRestore -Plan $plan -Target $target -PsqlPath $PsqlPath
+Invoke-LocalSnapshotRestore -Plan $plan -Target $target -PsqlPath $PsqlPath -PostgresContainer $PostgresContainer
 $dryRun = Invoke-PricingSnapshotDryRun `
     -Target $target `
     -OutputDirectory (Join-Path $resolvedOutput 'dry-run') `

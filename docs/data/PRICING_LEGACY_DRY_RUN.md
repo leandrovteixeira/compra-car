@@ -47,10 +47,20 @@ com as sete tabelas legadas abaixo vazias.
 Pré-requisitos:
 
 - PowerShell 5.1 ou posterior;
-- clientes PostgreSQL `psql` e `pg_restore` compatíveis com o dump;
+- clientes PostgreSQL `psql` e `pg_restore` compatíveis com o dump **ou** Docker com o container
+  PostgreSQL local em execução e `healthy`;
 - `pnpm` e dependências do monorepo instaladas;
 - Supabase local na porta explícita esperada, por padrão `54322`;
 - dump data-only autorizado e seu SHA-256 recebido por canal separado.
+
+Não é mais obrigatório instalar PostgreSQL Client Tools no Windows. Os scripts priorizam
+automaticamente `psql` e `pg_restore` encontrados localmente; quando um executável não existe,
+usam `docker exec` no container PostgreSQL local. O nome default é `supabase_db_compra-car` e pode
+ser substituído com `-PostgresContainer '<nome>'`. O fallback exige Docker disponível e recusa
+container inexistente, parado ou com health diferente de `healthy`. Dumps são enviados ao processo
+pelo `stdin`: nenhum arquivo é copiado para o container, nenhuma imagem é alterada e nenhum pacote
+é instalado. No modo Docker, o executor também confirma o mapeamento da porta local autorizada para
+a porta interna do container antes de traduzir o endpoint para o namespace do próprio container.
 
 São aceitos `*.sql` no formato data-only padrão do `pg_dump`, exclusivamente com blocos `COPY`, ou
 arquivos custom PostgreSQL `*.dump`/`*.backup` com assinatura `PGDMP`. SQL com `INSERT`, DDL ou
@@ -94,6 +104,7 @@ $localDatabaseUrl = '<URL PostgreSQL explícita para 127.0.0.1:54322>'
   -CutoffDate '2026-07-25' `
   -AlgorithmVersion '1.0.0' `
   -OutputDirectory '.local-reports/pricing-snapshots/authorized-run' `
+  -PostgresContainer 'supabase_db_compra-car' `
   -ConfirmLocalRestore
 ```
 
@@ -132,7 +143,9 @@ Git.
 
 A suíte `pnpm pricing:snapshot:test` cobre arquivo ausente, SHA, allowlist, `DROP`, host remoto, porta
 incorreta, confirmação obrigatória, plano permitido em `-WhatIf`, argumentos seguros de restore,
-execução real do algoritmo sobre fixture e manifesto sanitizado. Ela não conecta a banco.
+prioridade dos clientes locais, fallback Docker, container ausente/unhealthy, Docker ausente,
+execução real do algoritmo sobre fixture e contrato do manifesto sanitizado. Ela não conecta a
+banco.
 
 ## Proteção contra ambiente remoto
 

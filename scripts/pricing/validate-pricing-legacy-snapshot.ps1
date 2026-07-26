@@ -4,7 +4,8 @@ param(
     [Parameter(Mandatory = $true)][string]$AllowedSnapshotDirectory,
     [Parameter(Mandatory = $true)][ValidatePattern('^[A-Fa-f0-9]{64}$')][string]$ExpectedSha256,
     [long]$MaximumBytes = 1073741824,
-    [string]$PgRestorePath = 'pg_restore'
+    [string]$PgRestorePath = 'pg_restore',
+    [string]$PostgresContainer = 'supabase_db_compra-car'
 )
 
 Set-StrictMode -Version Latest
@@ -16,7 +17,8 @@ $result = Get-ValidatedPricingSnapshot `
     -AllowedSnapshotDirectory $AllowedSnapshotDirectory `
     -ExpectedSha256 $ExpectedSha256 `
     -MaximumBytes $MaximumBytes `
-    -PgRestorePath $PgRestorePath
+    -PgRestorePath $PgRestorePath `
+    -PostgresContainer $PostgresContainer
 
 [ordered]@{
     fileName = $result.FileName

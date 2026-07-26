@@ -57,6 +57,79 @@ try {
     $validSnapshotPath = Join-Path $temporaryDirectory 'authorized.sql'
     [System.IO.File]::WriteAllText($validSnapshotPath, (New-ValidSqlSnapshotText), [System.Text.UTF8Encoding]::new($false))
     $validSha = (Get-FileHash -LiteralPath $validSnapshotPath -Algorithm SHA256).Hash
+    $fakeDockerPath = Join-Path $temporaryDirectory 'docker-mock.cmd'
+    [System.IO.File]::WriteAllText($fakeDockerPath, @'
+@echo off
+if "%MOCK_DOCKER_STATE%"=="missing" (
+  echo Error: No such container 1>&2
+  exit /b 1
+)
+if "%MOCK_DOCKER_STATE%"=="stopped" (
+  echo exited^|healthy^|{}
+  exit /b 0
+)
+if "%MOCK_DOCKER_STATE%"=="unhealthy" (
+  echo running^|unhealthy^|{}
+  exit /b 0
+)
+echo running^|healthy^|{"5432/tcp":[{"HostPort":"54322"}]}
+'@)
+
+    Invoke-Test 'local psql is found' {
+        $executor = Resolve-PsqlExecutor -PsqlPath 'powershell' -DockerPath (Join-Path $temporaryDirectory 'missing-docker.exe')
+        Assert-True -Condition ($executor.Mode -eq 'Local' -and $executor.Client -eq 'psql') -Message 'Local psql executor was not selected.'
+    }
+
+    Invoke-Test 'local pg_restore is found' {
+        $executor = Resolve-PgRestoreExecutor -PgRestorePath 'powershell' -DockerPath (Join-Path $temporaryDirectory 'missing-docker.exe')
+        Assert-True -Condition ($executor.Mode -eq 'Local' -and $executor.Client -eq 'pg_restore') -Message 'Local pg_restore executor was not selected.'
+    }
+
+    Invoke-Test 'local client has priority over Docker' {
+        $env:MOCK_DOCKER_STATE = 'missing'
+        $executor = Resolve-PsqlExecutor -PsqlPath 'powershell' -DockerPath $fakeDockerPath
+        Assert-True -Condition ($executor.Mode -eq 'Local') -Message 'Docker was selected even though the local client exists.'
+    }
+
+    Invoke-Test 'psql falls back to healthy Docker container' {
+        $env:MOCK_DOCKER_STATE = 'healthy'
+        $executor = Resolve-PsqlExecutor -PsqlPath (Join-Path $temporaryDirectory 'missing-psql.exe') -PostgresContainer 'custom-postgres' -DockerPath $fakeDockerPath
+        Assert-True -Condition ($executor.Mode -eq 'Docker' -and $executor.Container -eq 'custom-postgres') -Message 'Docker fallback did not preserve the configured container.'
+        Assert-True -Condition ($executor.PortMappings[0].HostPort -eq 54322 -and $executor.PortMappings[0].ContainerPort -eq 5432) -Message 'Docker fallback did not resolve the published PostgreSQL port.'
+    }
+
+    Invoke-Test 'pg_restore falls back to healthy Docker container' {
+        $env:MOCK_DOCKER_STATE = 'healthy'
+        $executor = Resolve-PgRestoreExecutor -PgRestorePath (Join-Path $temporaryDirectory 'missing-pg-restore.exe') -PostgresContainer 'custom-postgres' -DockerPath $fakeDockerPath
+        Assert-True -Condition ($executor.Mode -eq 'Docker' -and $executor.Client -eq 'pg_restore') -Message 'pg_restore did not select Docker fallback.'
+    }
+
+    Invoke-Test 'missing Docker is reported after local client lookup fails' {
+        Assert-ThrowsLike -Pattern '*Docker is not available*' -Action {
+            Resolve-PsqlExecutor -PsqlPath (Join-Path $temporaryDirectory 'missing-psql.exe') -DockerPath (Join-Path $temporaryDirectory 'missing-docker.exe')
+        }
+    }
+
+    Invoke-Test 'missing PostgreSQL container is rejected' {
+        $env:MOCK_DOCKER_STATE = 'missing'
+        Assert-ThrowsLike -Pattern '*container does not exist*' -Action {
+            Resolve-PsqlExecutor -PsqlPath (Join-Path $temporaryDirectory 'missing-psql.exe') -DockerPath $fakeDockerPath
+        }
+    }
+
+    Invoke-Test 'unhealthy PostgreSQL container is rejected' {
+        $env:MOCK_DOCKER_STATE = 'unhealthy'
+        Assert-ThrowsLike -Pattern '*container is not healthy*' -Action {
+            Resolve-PgRestoreExecutor -PgRestorePath (Join-Path $temporaryDirectory 'missing-pg-restore.exe') -DockerPath $fakeDockerPath
+        }
+    }
+
+    Invoke-Test 'stopped PostgreSQL container is rejected' {
+        $env:MOCK_DOCKER_STATE = 'stopped'
+        Assert-ThrowsLike -Pattern '*container is not running*' -Action {
+            Resolve-PsqlExecutor -PsqlPath (Join-Path $temporaryDirectory 'missing-psql.exe') -DockerPath $fakeDockerPath
+        }
+    }
 
     Invoke-Test 'missing file is rejected' {
         Assert-ThrowsLike -Pattern '*does not exist*' -Action {
@@ -150,13 +223,18 @@ try {
         $target = Get-LocalDatabaseTarget -DatabaseUrl 'postgresql://postgres:secret@127.0.0.1:54322/postgres'
         $manifest = New-PricingSnapshotManifest -Snapshot $snapshot -Target $target -DryRun $dryRun -AlgorithmVersion 'snapshot-test' -CutoffDate '2026-07-25' -Timestamp '2026-07-25T23:00:00Z'
         $json = $manifest | ConvertTo-Json -Depth 12
+        $expectedManifestKeys = 'timestamp,snapshotSha256,snapshotSizeBytes,snapshotFormat,algorithmVersion,cutoffDate,localDatabase,counts,dryRunResult,comparisonHash,finalStatus'
+        Assert-True -Condition (($manifest.Keys -join ',') -eq $expectedManifestKeys) -Message 'Manifest contract changed.'
         Assert-True -Condition ($json -match 'comparisonHash') -Message 'Manifest has no comparison hash.'
         Assert-True -Condition ($json -match '127.0.0.1:54322/postgres') -Message 'Manifest has no sanitized local identity.'
         Assert-True -Condition ($json -notmatch 'secret|postgresql://') -Message 'Manifest leaked credentials or a connection string.'
     }
 }
 finally {
+    $env:MOCK_DOCKER_STATE = $null
     if (Test-Path -LiteralPath $temporaryDirectory) {
+        [System.GC]::Collect()
+        [System.GC]::WaitForPendingFinalizers()
         Remove-Item -LiteralPath $temporaryDirectory -Recurse -Force
     }
 }

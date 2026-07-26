@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-07-26 — Fallback Docker para snapshots de pricing
+
+- Centralizada em `PricingSnapshot.Common.psm1` a resolução e execução de `psql` e `pg_restore`,
+  preservando prioridade para executáveis locais e adicionando fallback automático via `docker exec`.
+- O container PostgreSQL possui default configurável, é inspecionado quanto a existência, estado
+  `running`, health `healthy` e mapeamento da porta local para a porta interna; dumps seguem por
+  `stdin`, sem cópia, instalação ou mudança de imagem.
+- Mantidos argumentos seguros, validações, allowlist, fluxo, relatórios e contrato do manifesto; a
+  senha continua somente em `PGPASSWORD` temporário e não aparece em argumentos ou mensagens.
+- Ampliada a suíte PowerShell com cenários de prioridade local, fallback, Docker ausente, container
+  inexistente/unhealthy e estabilidade do manifesto, sem conexão ou alteração de banco.
+
 ## 2026-07-25 — Preparação de fotografia local do legado de pricing
 
 - Criados três scripts PowerShell e um módulo comum para validar dump autorizado, restringir o alvo

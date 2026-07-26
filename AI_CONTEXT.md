@@ -279,6 +279,15 @@ confirmação, tabelas locais vazias, transação única e clientes PostgreSQL; 
 obrigatoriamente o pricing dry-run e gera `snapshot-manifest.json` sanitizado. Não existe bypass
 remoto, limpeza automática, backfill, migration, publicação ou escrita em tabelas da Sprint 9.
 
+Desde 2026-07-26, `PricingSnapshot.Common.psm1` centraliza a execução dos clientes PostgreSQL. Cada
+cliente encontrado localmente permanece prioritário; na ausência, o fluxo usa `docker exec` no
+container configurado por `-PostgresContainer` (default `supabase_db_compra-car`) somente depois de
+confirmar existência, estado `running` e health `healthy`. O dump é transmitido por `stdin`, sem
+cópia para o container, e `PGPASSWORD` é propagado pelo ambiente sem expor seu valor. A porta local
+autorizada é confirmada no mapeamento publicado e traduzida para a porta interna somente no
+namespace do container. Validações, allowlist, fluxo operacional, relatórios, hashes e manifesto
+permanecem inalterados.
+
 A URL de comparação é `/comparar?vehicles=id1,id2[,id3,...]`. A página valida IDs, preserva sua ordem, executa `CompareVehicles`, apresenta categorias e usa `hasReferenceAdvantage` no filtro “Ver destaques”. A UI usa uma única superfície tabular com cabeçalho e primeira coluna fixos, rolagem bidirecional, células com slot estável para checks e estados dedicados de loading, vazio e erro. O domínio e o adapter não conhecem componentes ou parâmetros de URL.
 
 Os testes do core usam repositórios in-memory. Os mappers do adaptador são testados sem rede e a integração real é opt-in por variáveis exclusivas. A UI de negócio e `Legacy` permanecem sem alteração nesta fase.
