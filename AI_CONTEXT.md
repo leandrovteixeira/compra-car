@@ -271,13 +271,19 @@ conflito, 9 candidatos de política, 1 sugestão de acumulador e 11 itens de rev
 recriado sem seed permaneceu com todas as fontes em zero e status `SOURCE_CHANGED`; isso valida a
 ferramenta, não substitui o dry-run futuro sobre uma fotografia local autorizada do legado real.
 
-`scripts/pricing` prepara essa futura fotografia sem buscar ou acessar a origem remota. O pipeline
-valida dump data-only autorizado por diretório, extensão, tamanho, SHA-256, conteúdo e allowlist das
-sete tabelas legadas necessárias; rejeita DDL, comandos destrutivos, owners/objetos inesperados e
-qualquer alvo fora de `localhost`/`127.0.0.1`/`::1` na porta local explícita. A restauração exige
-confirmação, tabelas locais vazias, transação única e clientes PostgreSQL; depois executa
-obrigatoriamente o pricing dry-run e gera `snapshot-manifest.json` sanitizado. Não existe bypass
-remoto, limpeza automática, backfill, migration, publicação ou escrita em tabelas da Sprint 9.
+`scripts/pricing/export-pricing-legacy-snapshot.ps1` é a única automação autorizada a receber origem
+remota. Ela valida URL/allowlist, exige `-ConfirmRemoteExport`, confirma uma transação remota
+read-only, gera dump custom data-only temporário das sete tabelas permitidas, exclui e recusa
+`SEQUENCE SET`, calcula SHA-256, chama o validador existente e só então publica snapshot e manifesto
+sanitizado. Prefere `psql`/`pg_dump` locais e usa `docker run postgres:17` como fallback. O Session
+Pooler na porta 5432 é o caminho documentado quando a conexão direta IPv6 falha.
+
+O snapshot real `legacy-pricing.dump` foi validado manualmente em 2026-07-26: formato
+`postgres-custom`, 262858 bytes, sete tabelas, SHA-256
+`ad982044e1c93dc98e47f180a128d6d7d088fa4ecb0a8c05d88ddd6c6cc0648c`, status `VALIDATED`. Ainda
+não houve restore, pricing dry-run real nem alteração do banco local. Os demais scripts mantêm o
+alvo exclusivamente local, validam allowlist/hash/conteúdo e encadeiam restore confirmado com o
+dry-run, sem bypass remoto, backfill, migration ou publicação no domínio da Sprint 9.
 
 Desde 2026-07-26, `PricingSnapshot.Common.psm1` centraliza a execução dos clientes PostgreSQL. Cada
 cliente encontrado localmente permanece prioritário; na ausência, o fluxo usa `docker exec` no

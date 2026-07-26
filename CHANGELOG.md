@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-07-26 — Exportação oficial do snapshot legado de pricing
+
+- Criado `export-pricing-legacy-snapshot.ps1` para validar origem remota autorizada e somente leitura,
+  gerar dump custom data-only das sete tabelas permitidas e publicar somente após TOC, SHA-256 e
+  validação pelo script existente.
+- Adicionados `psql`/`pg_dump` locais com fallback `docker run postgres:17`, credenciais via ambiente
+  temporário, exclusão e rejeição de `SEQUENCE SET`, arquivos temporários e manifesto sanitizado.
+- Registrado o snapshot manual validado em 2026-07-26 (262858 bytes, SHA-256
+  `ad982044e1c93dc98e47f180a128d6d7d088fa4ecb0a8c05d88ddd6c6cc0648c`), sem afirmar restore ou
+  dry-run real.
+- Ampliada a suíte PowerShell com exportação integral simulada, allowlist remota, confirmação,
+  prioridade local/Docker, segurança de argumentos, hash/manifesto e preservação em falha, sem rede.
+
 ## 2026-07-26 — Fallback Docker para snapshots de pricing
 
 - Centralizada em `PricingSnapshot.Common.psm1` a resolução e execução de `psql` e `pg_restore`,

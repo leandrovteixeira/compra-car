@@ -86,6 +86,103 @@ function Get-LocalDatabaseTarget {
     }
 }
 
+function Get-RemotePricingSnapshotSource {
+    param(
+        [Parameter(Mandatory = $true)][string]$DatabaseUrl,
+        [string[]]$AllowRemoteHost = @()
+    )
+
+    try {
+        $uri = [System.Uri]$DatabaseUrl
+    }
+    catch {
+        throw 'DatabaseUrl is not a valid PostgreSQL URL.'
+    }
+    if ($uri.Scheme -notin @('postgres', 'postgresql')) {
+        throw 'DatabaseUrl must use postgres:// or postgresql://.'
+    }
+    if ([string]::IsNullOrWhiteSpace($uri.Host)) {
+        throw 'DatabaseUrl must include a remote host.'
+    }
+    $hostName = $uri.Host.ToLowerInvariant()
+    if ($hostName -in @('localhost', '127.0.0.1', '::1')) {
+        throw 'Pricing snapshot export requires a remote database host; localhost is not allowed.'
+    }
+    if (-not [string]::IsNullOrEmpty($uri.Query) -or -not [string]::IsNullOrEmpty($uri.Fragment)) {
+        throw 'DatabaseUrl query parameters and fragments are not accepted.'
+    }
+
+    $database = [System.Uri]::UnescapeDataString($uri.AbsolutePath.TrimStart('/'))
+    if ([string]::IsNullOrWhiteSpace($database) -or $database.Contains('/')) {
+        throw 'DatabaseUrl must identify exactly one remote database.'
+    }
+    $userName = ''
+    $password = ''
+    if (-not [string]::IsNullOrWhiteSpace($uri.UserInfo)) {
+        $userParts = $uri.UserInfo.Split(':', 2)
+        $userName = [System.Uri]::UnescapeDataString($userParts[0])
+        if ($userParts.Count -eq 2) {
+            $password = [System.Uri]::UnescapeDataString($userParts[1])
+        }
+    }
+    if ([string]::IsNullOrWhiteSpace($userName)) {
+        throw 'DatabaseUrl must include an explicit remote database user.'
+    }
+
+    $normalizedAllowlist = @($AllowRemoteHost | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | ForEach-Object { $_.Trim().ToLowerInvariant() })
+    if ($normalizedAllowlist.Count -gt 0 -and $hostName -notin $normalizedAllowlist) {
+        throw "Remote database host is not in AllowRemoteHost: $hostName"
+    }
+
+    $remotePort = if ($uri.Port -eq -1) { 5432 } else { $uri.Port }
+    if ($remotePort -lt 1 -or $remotePort -gt 65535) {
+        throw 'DatabaseUrl must include a valid PostgreSQL port.'
+    }
+    return [pscustomobject]@{
+        Host = $hostName
+        Port = $remotePort
+        Database = $database
+        UserName = $userName
+        Password = $password
+        SanitizedIdentity = ('{0}:{1}/{2}' -f $hostName, $remotePort, $database)
+    }
+}
+
+function Resolve-PricingSnapshotOutputDirectory {
+    param([Parameter(Mandatory = $true)][string]$OutputDirectory)
+
+    if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {
+        throw 'OutputDirectory must not be empty.'
+    }
+    $pathSegments = $OutputDirectory -split '[\\/]'
+    if ($pathSegments -contains '..') {
+        throw 'OutputDirectory must not contain path traversal segments.'
+    }
+    $fullPath = [System.IO.Path]::GetFullPath($OutputDirectory)
+    $existingAncestor = $fullPath
+    while (-not (Test-Path -LiteralPath $existingAncestor)) {
+        $parent = Split-Path -Parent $existingAncestor
+        if ([string]::IsNullOrWhiteSpace($parent) -or $parent -eq $existingAncestor) {
+            throw 'OutputDirectory has no accessible parent directory.'
+        }
+        $existingAncestor = $parent
+    }
+    if ((Get-Item -LiteralPath $existingAncestor -Force).Attributes -band [System.IO.FileAttributes]::ReparsePoint) {
+        throw 'OutputDirectory must not be inside a symbolic link or reparse point.'
+    }
+    if (-not (Test-Path -LiteralPath $fullPath)) {
+        [void](New-Item -ItemType Directory -Path $fullPath -Force)
+    }
+    $directory = Get-Item -LiteralPath $fullPath -Force
+    if (-not $directory.PSIsContainer) {
+        throw 'OutputDirectory must identify a directory.'
+    }
+    if ($directory.Attributes -band [System.IO.FileAttributes]::ReparsePoint) {
+        throw 'OutputDirectory must not be a symbolic link or reparse point.'
+    }
+    return $directory.FullName
+}
+
 function Assert-NoForbiddenSnapshotText {
     param([Parameter(Mandatory = $true)][string]$Text)
 
@@ -196,15 +293,12 @@ function Resolve-PostgreSqlClientExecutor {
         return [pscustomobject]@{
             Mode = 'Local'
             Client = $Client
-            CommandSource = $localCommand.Source
+            CommandSource = Get-PostgreSqlCommandSource -Command $localCommand
             Container = $null
         }
     }
 
-    $dockerCommand = Get-Command $DockerPath -ErrorAction SilentlyContinue
-    if ($null -eq $dockerCommand) {
-        throw "PostgreSQL client '$Client' was not found locally and Docker is not available."
-    }
+    $dockerCommandSource = Resolve-DockerCommand -DockerPath $DockerPath
     if ([string]::IsNullOrWhiteSpace($PostgresContainer)) {
         throw 'PostgresContainer must identify a PostgreSQL container.'
     }
@@ -212,7 +306,7 @@ function Resolve-PostgreSqlClientExecutor {
     $previousErrorActionPreference = $ErrorActionPreference
     try {
         $ErrorActionPreference = 'Continue'
-        $inspection = & $dockerCommand.Source 'inspect' '--format' '{{.State.Status}}|{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}|{{json .NetworkSettings.Ports}}' $PostgresContainer 2>&1
+        $inspection = & $dockerCommandSource 'inspect' '--format' '{{.State.Status}}|{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}|{{json .NetworkSettings.Ports}}' $PostgresContainer 2>&1
         $inspectionExitCode = $LASTEXITCODE
     }
     finally {
@@ -256,7 +350,7 @@ function Resolve-PostgreSqlClientExecutor {
     return [pscustomobject]@{
         Mode = 'Docker'
         Client = $Client
-        CommandSource = $dockerCommand.Source
+        CommandSource = $dockerCommandSource
         Container = $PostgresContainer
         PortMappings = @($portMappings)
     }
@@ -280,6 +374,90 @@ function Resolve-PgRestoreExecutor {
     )
 
     return Resolve-PostgreSqlClientExecutor -Client 'pg_restore' -ClientPath $PgRestorePath -PostgresContainer $PostgresContainer -DockerPath $DockerPath
+}
+
+function Get-PostgreSqlCommandSource {
+    param([Parameter(Mandatory = $true)]$Command)
+
+    if (-not [string]::IsNullOrWhiteSpace([string]$Command.Path)) {
+        return [string]$Command.Path
+    }
+    return [string]$Command.Source
+}
+
+function Resolve-DockerCommand {
+    param([string]$DockerPath = 'docker')
+
+    $dockerCommand = Get-Command $DockerPath -ErrorAction SilentlyContinue
+    if ($null -eq $dockerCommand) {
+        throw 'Docker is not available.'
+    }
+    return Get-PostgreSqlCommandSource -Command $dockerCommand
+}
+
+function Resolve-PostgreSqlExportExecutor {
+    param(
+        [Parameter(Mandatory = $true)][ValidateSet('psql', 'pg_dump')][string]$Client,
+        [Parameter(Mandatory = $true)][string]$ClientPath,
+        [string]$PostgresImage = 'postgres:17',
+        [string]$DockerPath = 'docker'
+    )
+
+    $localCommand = Get-Command $ClientPath -ErrorAction SilentlyContinue
+    if ($null -ne $localCommand) {
+        Write-Information 'Usando PostgreSQL Client local para exportação.' -InformationAction Continue
+        return [pscustomobject]@{
+            Mode = 'Local'
+            Client = $Client
+            CommandSource = Get-PostgreSqlCommandSource -Command $localCommand
+            Image = $null
+        }
+    }
+    $dockerCommandSource = Resolve-DockerCommand -DockerPath $DockerPath
+    if ([string]::IsNullOrWhiteSpace($PostgresImage)) {
+        throw 'PostgresImage must identify a PostgreSQL image.'
+    }
+
+    $previousErrorActionPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        $dockerOutput = & $dockerCommandSource 'version' '--format' '{{.Client.Version}}' 2>&1
+        $dockerExitCode = $LASTEXITCODE
+    }
+    finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+    if ($dockerExitCode -ne 0) {
+        throw 'Docker is installed but its engine is not available for pricing snapshot export.'
+    }
+
+    Write-Information 'Usando PostgreSQL Client via Docker para exportação.' -InformationAction Continue
+    return [pscustomobject]@{
+        Mode = 'DockerRun'
+        Client = $Client
+        CommandSource = $dockerCommandSource
+        Image = $PostgresImage
+    }
+}
+
+function Resolve-RemotePsqlExecutor {
+    param(
+        [string]$PsqlPath = 'psql',
+        [string]$PostgresImage = 'postgres:17',
+        [string]$DockerPath = 'docker'
+    )
+
+    return Resolve-PostgreSqlExportExecutor -Client 'psql' -ClientPath $PsqlPath -PostgresImage $PostgresImage -DockerPath $DockerPath
+}
+
+function Resolve-PgDumpExecutor {
+    param(
+        [string]$PgDumpPath = 'pg_dump',
+        [string]$PostgresImage = 'postgres:17',
+        [string]$DockerPath = 'docker'
+    )
+
+    return Resolve-PostgreSqlExportExecutor -Client 'pg_dump' -ClientPath $PgDumpPath -PostgresImage $PostgresImage -DockerPath $DockerPath
 }
 
 function ConvertTo-WindowsProcessArgument {
@@ -315,7 +493,32 @@ function Invoke-PostgreSqlClient {
                 $ErrorActionPreference = $previousErrorActionPreference
             }
             if ($clientExitCode -ne 0) {
-                throw "PostgreSQL client command failed: $($output -join ' ')"
+                $safeOutput = $output -join ' '
+                if (-not [string]::IsNullOrEmpty($Password)) {
+                    $safeOutput = $safeOutput.Replace($Password, '[REDACTED]')
+                }
+                throw "PostgreSQL client command failed: $safeOutput"
+            }
+            return @($output)
+        }
+
+        if ($Executor.Mode -eq 'DockerRun') {
+            $dockerRunArguments = @('run', '--rm', '--env', 'PGPASSWORD', $Executor.Image, $Executor.Client) + $Arguments
+            $previousErrorActionPreference = $ErrorActionPreference
+            try {
+                $ErrorActionPreference = 'Continue'
+                $output = & $Executor.CommandSource @dockerRunArguments 2>&1
+                $clientExitCode = $LASTEXITCODE
+            }
+            finally {
+                $ErrorActionPreference = $previousErrorActionPreference
+            }
+            if ($clientExitCode -ne 0) {
+                $safeOutput = $output -join ' '
+                if (-not [string]::IsNullOrEmpty($Password)) {
+                    $safeOutput = $safeOutput.Replace($Password, '[REDACTED]')
+                }
+                throw "PostgreSQL client command failed: $safeOutput"
             }
             return @($output)
         }
@@ -425,6 +628,173 @@ function Invoke-PgRestore {
         $Executor = Resolve-PgRestoreExecutor -PgRestorePath $PgRestorePath -PostgresContainer $PostgresContainer
     }
     return Invoke-PostgreSqlClient -Executor $Executor -Arguments $Arguments -Password $Password -InputFilePath $InputFilePath
+}
+
+function Test-RemotePricingSnapshotConnection {
+    param(
+        [Parameter(Mandatory = $true)]$Source,
+        [Parameter(Mandatory = $true)]$Executor
+    )
+
+    $query = "BEGIN TRANSACTION READ ONLY; SELECT current_user || '|' || current_database() || '|' || current_setting('transaction_read_only'); COMMIT;"
+    $arguments = @(
+        '--no-psqlrc', '--tuples-only', '--no-align', '--set=ON_ERROR_STOP=1',
+        '--host', $Source.Host, '--port', [string]$Source.Port,
+        '--username', $Source.UserName, '--dbname', $Source.Database,
+        '--command', $query
+    )
+    $output = Invoke-PostgreSqlClient -Executor $Executor -Arguments $arguments -Password $Source.Password
+    $identityLine = @($output | ForEach-Object { ([string]$_).Trim() } | Where-Object { $_ -match '^[^|]+\|[^|]+\|(on|true)$' }) | Select-Object -Last 1
+    if ($null -eq $identityLine) {
+        throw 'Remote read-only preflight did not return the expected sanitized identity.'
+    }
+    $identity = $identityLine.Split('|', 3)
+    if ($identity[1] -ne $Source.Database -or $identity[2] -notin @('on', 'true')) {
+        throw 'Remote export session did not confirm the expected database and read-only transaction.'
+    }
+    return [pscustomobject]@{
+        UserName = $identity[0]
+        Database = $identity[1]
+        TransactionReadOnly = $true
+    }
+}
+
+function New-PricingSnapshotExportPlan {
+    param(
+        [Parameter(Mandatory = $true)]$Source,
+        [Parameter(Mandatory = $true)][string]$OutputPath
+    )
+
+    $tables = @(Get-PricingSnapshotAllowedTables | ForEach-Object { "public.$_" })
+    $arguments = @(
+        '--format=custom',
+        '--data-only',
+        '--no-owner',
+        '--no-privileges',
+        '--no-blobs',
+        '--exclude-table-data=public.*_seq',
+        '--host', $Source.Host,
+        '--port', [string]$Source.Port,
+        '--username', $Source.UserName,
+        '--dbname', $Source.Database
+    )
+    $arguments += @($tables | ForEach-Object { "--table=$_" })
+    $arguments += "--file=$OutputPath"
+    return [pscustomobject]@{
+        Arguments = @($arguments)
+        OutputPath = $OutputPath
+        Tables = @($tables)
+    }
+}
+
+function Invoke-PgDump {
+    param(
+        [Parameter(Mandatory = $true)]$Executor,
+        [Parameter(Mandatory = $true)]$Plan,
+        [AllowEmptyString()][string]$Password = ''
+    )
+
+    $previousPassword = $env:PGPASSWORD
+    $previousOptions = $env:PGOPTIONS
+    try {
+        $env:PGPASSWORD = $Password
+        $env:PGOPTIONS = '-c default_transaction_read_only=on'
+        if ($Executor.Mode -eq 'Local') {
+            $dumpArguments = @($Plan.Arguments)
+            $previousErrorActionPreference = $ErrorActionPreference
+            try {
+                $ErrorActionPreference = 'Continue'
+                $output = & $Executor.CommandSource @dumpArguments 2>&1
+                $dumpExitCode = $LASTEXITCODE
+            }
+            finally {
+                $ErrorActionPreference = $previousErrorActionPreference
+            }
+            if ($dumpExitCode -ne 0) {
+                $safeOutput = $output -join ' '
+                if (-not [string]::IsNullOrEmpty($Password)) {
+                    $safeOutput = $safeOutput.Replace($Password, '[REDACTED]')
+                }
+                throw "pg_dump failed with exit code ${dumpExitCode}: $safeOutput"
+            }
+            return
+        }
+
+        $clientArguments = @($Plan.Arguments | Where-Object { [string]$_ -notlike '--file=*' })
+        $dockerArguments = @('run', '--rm', '--env', 'PGPASSWORD', '--env', 'PGOPTIONS', $Executor.Image, 'pg_dump') + $clientArguments
+        $startInfo = New-Object System.Diagnostics.ProcessStartInfo
+        $startInfo.FileName = $Executor.CommandSource
+        $startInfo.Arguments = (($dockerArguments | ForEach-Object { ConvertTo-WindowsProcessArgument -Value ([string]$_) }) -join ' ')
+        $startInfo.UseShellExecute = $false
+        $startInfo.CreateNoWindow = $true
+        $startInfo.RedirectStandardOutput = $true
+        $startInfo.RedirectStandardError = $true
+
+        $process = New-Object System.Diagnostics.Process
+        $process.StartInfo = $startInfo
+        if (-not $process.Start()) {
+            throw 'Docker could not start pg_dump.'
+        }
+        $standardError = $process.StandardError.ReadToEndAsync()
+        $snapshotStream = [System.IO.File]::Create($Plan.OutputPath)
+        try {
+            $process.StandardOutput.BaseStream.CopyTo($snapshotStream)
+        }
+        finally {
+            $snapshotStream.Dispose()
+        }
+        $process.WaitForExit()
+        $errorText = $standardError.Result
+        if ($process.ExitCode -ne 0) {
+            if (-not [string]::IsNullOrEmpty($Password)) {
+                $errorText = $errorText.Replace($Password, '[REDACTED]')
+            }
+            throw "pg_dump failed: $errorText"
+        }
+    }
+    finally {
+        $env:PGPASSWORD = $previousPassword
+        $env:PGOPTIONS = $previousOptions
+    }
+}
+
+function Assert-NoPricingSnapshotSequenceSet {
+    param([Parameter(Mandatory = $true)][string]$TocText)
+
+    if ($TocText -match '(?im)\bSEQUENCE SET\b') {
+        throw 'Exported pricing snapshot contains SEQUENCE SET; regenerate it without sequence data.'
+    }
+}
+
+function New-PricingSnapshotExportManifest {
+    param(
+        [Parameter(Mandatory = $true)]$Snapshot,
+        [Parameter(Mandatory = $true)]$Source,
+        [Parameter(Mandatory = $true)]$PgDumpExecutor,
+        [Parameter(Mandatory = $true)][string]$FileName,
+        [string]$PostgresImage = 'postgres:17',
+        [string]$ExportedAtUtc = ([DateTimeOffset]::UtcNow.ToString('o'))
+    )
+
+    return [ordered]@{
+        fileName = $FileName
+        sizeBytes = [long]$Snapshot.SizeBytes
+        sha256 = [string]$Snapshot.Sha256
+        format = [string]$Snapshot.Format
+        tables = @($Snapshot.Tables)
+        status = [string]$Snapshot.ValidationStatus
+        exportedAtUtc = $ExportedAtUtc
+        source = [ordered]@{
+            host = [string]$Source.Host
+            port = [int]$Source.Port
+            database = [string]$Source.Database
+            user = [string]$Source.UserName
+        }
+        tooling = [ordered]@{
+            pgDumpMode = if ($PgDumpExecutor.Mode -eq 'Local') { 'local' } else { 'docker' }
+            postgresImage = if ($PgDumpExecutor.Mode -eq 'Local') { $null } else { $PostgresImage }
+        }
+    }
 }
 
 function Invoke-PgRestoreList {
@@ -731,13 +1101,23 @@ function New-PricingSnapshotManifest {
 Export-ModuleMember -Function @(
     'Get-PricingSnapshotAllowedTables',
     'Get-LocalDatabaseTarget',
+    'Get-RemotePricingSnapshotSource',
+    'Resolve-PricingSnapshotOutputDirectory',
     'Get-ValidatedPricingSnapshot',
     'Test-PlainSqlSnapshot',
     'Test-CustomSnapshotToc',
     'Resolve-PsqlExecutor',
     'Resolve-PgRestoreExecutor',
+    'Resolve-RemotePsqlExecutor',
+    'Resolve-PgDumpExecutor',
     'Invoke-Psql',
     'Invoke-PgRestore',
+    'Invoke-PgRestoreList',
+    'Test-RemotePricingSnapshotConnection',
+    'New-PricingSnapshotExportPlan',
+    'Invoke-PgDump',
+    'Assert-NoPricingSnapshotSequenceSet',
+    'New-PricingSnapshotExportManifest',
     'New-LocalRestorePlan',
     'Invoke-LocalSnapshotRestore',
     'Invoke-PricingSnapshotDryRun',

@@ -35,6 +35,18 @@ Base da investigação de 2026-07-25:
 As contagens devem ser coletadas novamente imediatamente antes do backfill. Mudança entre a data
 de corte e a execução exige nova reconciliação e aprovação.
 
+### 2.1 Snapshot real autorizado
+
+Em 2026-07-26, o snapshot real `legacy-pricing.dump` foi exportado manualmente e validado como
+`postgres-custom`, data-only, com 262858 bytes, sete tabelas autorizadas e SHA-256
+`ad982044e1c93dc98e47f180a128d6d7d088fa4ecb0a8c05d88ddd6c6cc0648c`. O hash foi confirmado e o
+status é `VALIDATED`. Nenhum restore, pricing dry-run real ou alteração do banco local ocorreu.
+
+A reprodução oficial passa a ser feita por
+`scripts/pricing/export-pricing-legacy-snapshot.ps1`, com origem remota somente leitura, allowlist
+opcional de host, dump temporário sem `SEQUENCE SET`, validação pelo script existente e manifesto
+sanitizado antes da publicação final.
+
 ## 3. Mapa origem -> destino
 
 | Origem atual | Destino alvo | Estratégia |

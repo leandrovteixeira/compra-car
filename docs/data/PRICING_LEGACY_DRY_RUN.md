@@ -37,6 +37,121 @@ Opções:
 - `--expected-local-port`: porta esperada da stack, com default 54322;
 - `--fixture`: executa o mesmo algoritmo sobre uma fotografia JSON local, sem conexão de banco.
 
+## Exportação do snapshot legado
+
+`scripts/pricing/export-pricing-legacy-snapshot.ps1` é o procedimento oficial e reproduzível para
+exportar somente as sete tabelas legadas autorizadas. Esta é a única automação de snapshot que pode
+receber uma origem remota. Ela não restaura dados, não executa o pricing dry-run e não altera schema
+ou conteúdo do banco.
+
+Pré-requisitos:
+
+- PowerShell 5.1 ou posterior;
+- `psql`, `pg_dump` e `pg_restore` locais, ou Docker disponível; o fallback de exportação executa
+  `psql`/`pg_dump` com a imagem configurável `postgres:17`;
+- usuário PostgreSQL remoto temporário e somente leitura;
+- host remoto conhecido, preferencialmente restringido com `-AllowRemoteHost`;
+- diretório de saída local não simbólico. O default `.local-snapshots/pricing` é ignorado pelo Git.
+
+Exemplo oficial, sem connection string real:
+
+```powershell
+$env:LEGACY_DATABASE_URL = "<connection-string>"
+
+.\scripts\pricing\export-pricing-legacy-snapshot.ps1 `
+  -DatabaseUrl $env:LEGACY_DATABASE_URL `
+  -OutputDirectory ".local-snapshots\pricing" `
+  -AllowRemoteHost "aws-1-us-west-2.pooler.supabase.com" `
+  -ConfirmRemoteExport
+
+Remove-Item Env:LEGACY_DATABASE_URL
+```
+
+O script mostra somente host, porta, database, user, destino e as tabelas previstas. A URL nunca é
+repassada aos processos filhos: host, porta, database e user seguem como argumentos separados; a
+senha permanece temporariamente em `PGPASSWORD`. O preflight abre uma transação `READ ONLY` e exige
+`transaction_read_only = on`. O `pg_dump` também recebe
+`PGOPTIONS=-c default_transaction_read_only=on`; ainda assim, a garantia administrativa principal
+continua sendo usar uma role remota sem privilégios de escrita.
+
+O dump usa formato custom, `data-only`, sem owner, ACL ou blobs, uma opção `--table` para cada item
+da allowlist e `--exclude-table-data=public.*_seq`. Ele é criado com nome temporário, inspecionado
+por `pg_restore --list`, recusado se houver `SEQUENCE SET`, hasheado em SHA-256 e submetido ao
+`validate-pricing-legacy-snapshot.ps1`. Somente depois dessas etapas o snapshot e seu manifesto são
+publicados. Um arquivo existente bloqueia a operação; `-Force` autoriza substituição apenas após a
+nova versão ser validada.
+
+O manifesto derivado, por exemplo `legacy-pricing.manifest.json`, preserva o contrato de validação
+(`fileName`, `sizeBytes`, `sha256`, `format`, `tables` e `status`) e acrescenta `exportedAtUtc`, origem
+sanitizada e modo de `pg_dump`. Senha, connection string, `PGPASSWORD`, tokens e query parameters
+nunca são incluídos.
+
+### Usuário remoto somente leitura
+
+Criação genérica, a ser executada explicitamente por um administrador autorizado:
+
+```sql
+CREATE ROLE pricing_snapshot_reader
+WITH
+  LOGIN
+  PASSWORD '<TEMPORARY_STRONG_PASSWORD>'
+  NOSUPERUSER
+  NOCREATEDB
+  NOCREATEROLE
+  NOINHERIT
+  NOREPLICATION;
+
+GRANT CONNECT ON DATABASE postgres TO pricing_snapshot_reader;
+GRANT USAGE ON SCHEMA public TO pricing_snapshot_reader;
+GRANT SELECT ON TABLE
+  public.products,
+  public.product_price_offers,
+  public.price_offer_imports,
+  public.price_offer_import_rows,
+  public.price_offers_staging,
+  public.product_specs,
+  public.specs
+TO pricing_snapshot_reader;
+```
+
+Se uma ferramenta externa ainda exigir leitura de sequences, o administrador pode conceder
+temporariamente `GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO pricing_snapshot_reader;`. O
+fluxo oficial não depende de `SEQUENCE SET` e o recusa no artefato final.
+
+Após confirmar exportação e validação, a remoção da role permanece deliberadamente manual:
+
+```sql
+REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM pricing_snapshot_reader;
+REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public FROM pricing_snapshot_reader;
+REVOKE USAGE ON SCHEMA public FROM pricing_snapshot_reader;
+REVOKE CONNECT ON DATABASE postgres FROM pricing_snapshot_reader;
+DROP ROLE pricing_snapshot_reader;
+```
+
+O exportador não cria, concede privilégios, revoga nem remove essa role.
+
+### Troubleshooting da exportação
+
+- `Network is unreachable` na conexão direta: usar o Session Pooler, normalmente na porta 5432. O
+  usuário do Pooler pode diferir de `current_user`; o preflight confirma database e modo read-only.
+- `permission denied for sequence equipments_id_seq`: conceder SELECT temporário nas sequences
+  somente se necessário ou regenerar sem sequence data. O fluxo oficial exclui e recusa
+  `SEQUENCE SET`.
+- validador rejeita sequence inesperada: não ampliar automaticamente a allowlist; corrigir a origem
+  e regenerar o snapshot.
+- arquivo já existe: revisar o anterior e usar `-Force` conscientemente.
+- hash divergente: não restaurar; regenerar ou investigar qualquer alteração do arquivo.
+
+### Snapshot real validado em 2026-07-26
+
+O procedimento manual que originou esta automação produziu `legacy-pricing.dump`, custom data-only,
+com 262858 bytes e SHA-256
+`ad982044e1c93dc98e47f180a128d6d7d088fa4ecb0a8c05d88ddd6c6cc0648c`. O TOC validado contém
+`public.price_offer_import_rows`, `public.price_offer_imports`, `public.price_offers_staging`,
+`public.product_price_offers`, `public.product_specs`, `public.products` e `public.specs`, com status
+`VALIDATED`. Essa evidência não significa que houve restore, dry-run real ou alteração do banco
+local.
+
 ## Fotografia autorizada na stack local
 
 Os scripts em `scripts/pricing` preparam o caminho operacional entre um dump previamente autorizado

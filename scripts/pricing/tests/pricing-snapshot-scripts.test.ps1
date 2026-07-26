@@ -74,6 +74,62 @@ if "%MOCK_DOCKER_STATE%"=="unhealthy" (
 )
 echo running^|healthy^|{"5432/tcp":[{"HostPort":"54322"}]}
 '@)
+    $fakePsqlPath = Join-Path $temporaryDirectory 'psql-mock.cmd'
+    [System.IO.File]::WriteAllText($fakePsqlPath, @'
+@echo off
+if defined MOCK_PSQL_LOG echo %* > "%MOCK_PSQL_LOG%"
+echo pricing_snapshot_reader^|postgres^|on
+exit /b 0
+'@)
+    $fakePgDumpPath = Join-Path $temporaryDirectory 'pg-dump-mock.cmd'
+    [System.IO.File]::WriteAllText($fakePgDumpPath, @'
+@echo off
+setlocal EnableDelayedExpansion
+set "outfile="
+set "allargs="
+set "expectfile="
+:loop
+if "%~1"=="" goto done
+set "arg=%~1"
+set "allargs=!allargs! [!arg!]"
+if defined expectfile (
+  set "outfile=!arg!"
+  set "expectfile="
+) else if /i "!arg!"=="--file" (
+  set "expectfile=1"
+) else if /i "!arg:~0,7!"=="--file=" (
+  set "outfile=!arg:~7!"
+)
+shift
+goto loop
+:done
+if defined MOCK_PGDUMP_LOG echo !allargs! > "%MOCK_PGDUMP_LOG%"
+if "%MOCK_PGDUMP_FAIL%"=="1" (
+  echo simulated pg_dump failure 1>&2
+  exit /b 9
+)
+if not defined outfile (
+  echo missing output argument: !allargs! 1>&2
+  exit /b 8
+)
+<nul set /p "=PGDMP" > "!outfile!"
+exit /b 0
+'@)
+    $fakePgRestorePath = Join-Path $temporaryDirectory 'pg-restore-mock.cmd'
+    [System.IO.File]::WriteAllText($fakePgRestorePath, @'
+@echo off
+if "%MOCK_TOC_SEQUENCE%"=="1" echo 99; 0 0 SEQUENCE SET public products_id_seq postgres
+echo 1; 0 0 TABLE DATA public products postgres
+echo 2; 0 0 TABLE DATA public product_price_offers postgres
+echo 3; 0 0 TABLE DATA public price_offer_imports postgres
+echo 4; 0 0 TABLE DATA public price_offer_import_rows postgres
+echo 5; 0 0 TABLE DATA public price_offers_staging postgres
+echo 6; 0 0 TABLE DATA public product_specs postgres
+echo 7; 0 0 TABLE DATA public specs postgres
+exit /b 0
+'@)
+    $exportScript = Join-Path $scriptDirectory 'export-pricing-legacy-snapshot.ps1'
+    $remoteUrl = 'postgresql://pricing_snapshot_reader:TOP_SECRET_123@allowed.example.com:5432/postgres'
 
     Invoke-Test 'local psql is found' {
         $executor = Resolve-PsqlExecutor -PsqlPath 'powershell' -DockerPath (Join-Path $temporaryDirectory 'missing-docker.exe')
@@ -129,6 +185,128 @@ echo running^|healthy^|{"5432/tcp":[{"HostPort":"54322"}]}
         Assert-ThrowsLike -Pattern '*container is not running*' -Action {
             Resolve-PsqlExecutor -PsqlPath (Join-Path $temporaryDirectory 'missing-psql.exe') -DockerPath $fakeDockerPath
         }
+    }
+
+    Invoke-Test 'export requires DatabaseUrl' {
+        Assert-ThrowsLike -Pattern '*DatabaseUrl*' -Action {
+            & $exportScript
+        }
+    }
+
+    Invoke-Test 'remote export rejects localhost' {
+        Assert-ThrowsLike -Pattern '*localhost is not allowed*' -Action {
+            Get-RemotePricingSnapshotSource -DatabaseUrl 'postgresql://reader:secret@localhost:5432/postgres'
+        }
+    }
+
+    Invoke-Test 'remote export rejects host outside allowlist' {
+        Assert-ThrowsLike -Pattern '*not in AllowRemoteHost*' -Action {
+            Get-RemotePricingSnapshotSource -DatabaseUrl $remoteUrl -AllowRemoteHost @('different.example.com')
+        }
+    }
+
+    Invoke-Test 'remote export accepts authorized host without retaining URL' {
+        $source = Get-RemotePricingSnapshotSource -DatabaseUrl $remoteUrl -AllowRemoteHost @('allowed.example.com')
+        Assert-True -Condition ($source.Host -eq 'allowed.example.com' -and $source.UserName -eq 'pricing_snapshot_reader') -Message 'Authorized remote source was not parsed.'
+        Assert-True -Condition ($source.PSObject.Properties.Name -notcontains 'ConnectionString') -Message 'Remote source retained the connection string.'
+    }
+
+    Invoke-Test 'remote export requires explicit confirmation and creates output directory' {
+        $outputDirectory = Join-Path $temporaryDirectory 'confirmation-required'
+        Assert-ThrowsLike -Pattern '*ConfirmRemoteExport*' -Action {
+            & $exportScript -DatabaseUrl $remoteUrl -OutputDirectory $outputDirectory -AllowRemoteHost @('allowed.example.com')
+        }
+        Assert-True -Condition (Test-Path -LiteralPath $outputDirectory -PathType Container) -Message 'Validated output directory was not created.'
+    }
+
+    Invoke-Test 'pg_dump plan contains only allowlisted tables and excludes sequences' {
+        $source = Get-RemotePricingSnapshotSource -DatabaseUrl $remoteUrl
+        $plan = New-PricingSnapshotExportPlan -Source $source -OutputPath (Join-Path $temporaryDirectory 'plan.dump')
+        $arguments = $plan.Arguments -join ' '
+        Assert-True -Condition (($plan.Tables.Count -eq 7) -and (($plan.Arguments | Where-Object { $_ -like '--table=*' }).Count -eq 7)) -Message 'Export plan does not contain exactly seven allowlisted tables.'
+        Assert-True -Condition ($arguments -match '--format=custom' -and $arguments -match '--data-only' -and $arguments -match '--exclude-table-data=public\.\*_seq') -Message 'Export plan lacks custom/data-only/sequence exclusion flags.'
+        Assert-True -Condition ($arguments -notmatch 'profiles|auth\.|storage\.|--schema-only|--create|--clean') -Message 'Export plan contains an unauthorized object or option.'
+    }
+
+    Invoke-Test 'SEQUENCE SET is rejected explicitly' {
+        Assert-ThrowsLike -Pattern '*contains SEQUENCE SET*' -Action {
+            Assert-NoPricingSnapshotSequenceSet -TocText '99; 0 0 SEQUENCE SET public products_id_seq postgres'
+        }
+    }
+
+    Invoke-Test 'pg_dump uses local client before Docker' {
+        $executor = Resolve-PgDumpExecutor -PgDumpPath $fakePgDumpPath -DockerPath (Join-Path $temporaryDirectory 'missing-docker.exe')
+        Assert-True -Condition ($executor.Mode -eq 'Local' -and $executor.Client -eq 'pg_dump') -Message 'Local pg_dump executor was not selected.'
+    }
+
+    Invoke-Test 'pg_dump falls back to configured Docker image' {
+        $executor = Resolve-PgDumpExecutor -PgDumpPath (Join-Path $temporaryDirectory 'missing-pg-dump.exe') -PostgresImage 'postgres:17' -DockerPath $fakeDockerPath
+        Assert-True -Condition ($executor.Mode -eq 'DockerRun' -and $executor.Image -eq 'postgres:17') -Message 'pg_dump Docker fallback was not selected.'
+    }
+
+    Invoke-Test 'official export publishes validated snapshot and sanitized manifest' {
+        $exportDirectory = Join-Path $temporaryDirectory 'official-export'
+        $env:MOCK_PGDUMP_LOG = Join-Path $temporaryDirectory 'pg-dump-arguments.log'
+        $env:MOCK_PSQL_LOG = Join-Path $temporaryDirectory 'psql-arguments.log'
+        $output = & $exportScript `
+            -DatabaseUrl $remoteUrl `
+            -OutputDirectory $exportDirectory `
+            -AllowRemoteHost @('allowed.example.com') `
+            -ConfirmRemoteExport `
+            -PsqlPath $fakePsqlPath `
+            -PgDumpPath $fakePgDumpPath `
+            -PgRestorePath $fakePgRestorePath 6>&1 3>&1
+        $snapshotPath = Join-Path $exportDirectory 'legacy-pricing.dump'
+        $manifestPath = Join-Path $exportDirectory 'legacy-pricing.manifest.json'
+        $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+        $actualSha = (Get-FileHash -LiteralPath $snapshotPath -Algorithm SHA256).Hash.ToLowerInvariant()
+        $allOutput = $output -join [Environment]::NewLine
+        $dumpArguments = Get-Content -LiteralPath $env:MOCK_PGDUMP_LOG -Raw
+        $psqlArguments = Get-Content -LiteralPath $env:MOCK_PSQL_LOG -Raw
+
+        Assert-True -Condition (Test-Path -LiteralPath $snapshotPath -PathType Leaf) -Message 'Validated snapshot was not published.'
+        Assert-True -Condition ($manifest.sha256 -eq $actualSha -and $manifest.status -eq 'VALIDATED' -and $manifest.format -eq 'postgres-custom') -Message 'Manifest hash or validation contract is incorrect.'
+        Assert-True -Condition ($manifest.tables.Count -eq 7 -and $manifest.source.host -eq 'allowed.example.com' -and $manifest.tooling.pgDumpMode -eq 'local') -Message 'Manifest does not contain the expected sanitized export metadata.'
+        Assert-True -Condition (($manifest | ConvertTo-Json -Depth 8) -notmatch 'TOP_SECRET_123|postgresql://|PGPASSWORD') -Message 'Manifest leaked a credential or connection string.'
+        Assert-True -Condition ($allOutput -notmatch 'TOP_SECRET_123|postgresql://') -Message 'Export output leaked a credential or connection string.'
+        Assert-True -Condition ($dumpArguments -match '\.tmp\.dump' -and $dumpArguments -match '--exclude-table-data.*public\.\*_seq') -Message 'Export did not use a temporary dump with sequence exclusion.'
+        Assert-True -Condition ($dumpArguments -notmatch 'TOP_SECRET_123|postgresql://' -and $psqlArguments -notmatch 'TOP_SECRET_123|postgresql://') -Message 'A child process received the connection string or password as an argument.'
+        Assert-True -Condition ($psqlArguments -match 'BEGIN TRANSACTION READ ONLY' -and $psqlArguments -notmatch '\b(INSERT|UPDATE|DELETE|DROP|ALTER|CREATE)\b') -Message 'Remote preflight was not strictly read-only.'
+        Assert-True -Condition ($dumpArguments -notmatch 'restore|pricing:dry-run') -Message 'Export invoked a restore or pricing dry-run command.'
+    }
+
+    Invoke-Test 'existing snapshot aborts without Force' {
+        $exportDirectory = Join-Path $temporaryDirectory 'official-export'
+        Assert-ThrowsLike -Pattern '*already exists*' -Action {
+            & $exportScript -DatabaseUrl $remoteUrl -OutputDirectory $exportDirectory -AllowRemoteHost @('allowed.example.com') -ConfirmRemoteExport -PsqlPath $fakePsqlPath -PgDumpPath $fakePgDumpPath -PgRestorePath $fakePgRestorePath
+        }
+    }
+
+    Invoke-Test 'Force replaces snapshot only after another successful validation' {
+        $exportDirectory = Join-Path $temporaryDirectory 'official-export'
+        $output = & $exportScript -DatabaseUrl $remoteUrl -OutputDirectory $exportDirectory -AllowRemoteHost @('allowed.example.com') -ConfirmRemoteExport -Force -PsqlPath $fakePsqlPath -PgDumpPath $fakePgDumpPath -PgRestorePath $fakePgRestorePath 6>&1
+        $manifest = Get-Content -LiteralPath (Join-Path $exportDirectory 'legacy-pricing.manifest.json') -Raw | ConvertFrom-Json
+        Assert-True -Condition (($output -join [Environment]::NewLine) -match 'Snapshot exportado e validado') -Message 'Forced export did not complete validation and publication.'
+        Assert-True -Condition ($manifest.status -eq 'VALIDATED') -Message 'Forced export did not publish a validated manifest.'
+    }
+
+    Invoke-Test 'failed forced export preserves previous snapshot and removes temporary file' {
+        $exportDirectory = Join-Path $temporaryDirectory 'official-export'
+        $snapshotPath = Join-Path $exportDirectory 'legacy-pricing.dump'
+        $previousSha = (Get-FileHash -LiteralPath $snapshotPath -Algorithm SHA256).Hash
+        $env:MOCK_PGDUMP_FAIL = '1'
+        try {
+            Assert-ThrowsLike -Pattern '*pg_dump failed*' -Action {
+                & $exportScript -DatabaseUrl $remoteUrl -OutputDirectory $exportDirectory -AllowRemoteHost @('allowed.example.com') -ConfirmRemoteExport -Force -PsqlPath $fakePsqlPath -PgDumpPath $fakePgDumpPath -PgRestorePath $fakePgRestorePath
+            }
+        }
+        finally {
+            $env:MOCK_PGDUMP_FAIL = $null
+        }
+        $currentSha = (Get-FileHash -LiteralPath $snapshotPath -Algorithm SHA256).Hash
+        $temporaryFiles = @(Get-ChildItem -LiteralPath $exportDirectory -Filter '*.tmp.*' -File -Force)
+        Assert-True -Condition ($currentSha -eq $previousSha) -Message 'Failed export replaced the previous validated snapshot.'
+        Assert-True -Condition ($temporaryFiles.Count -eq 0) -Message 'Failed export left temporary files behind.'
     }
 
     Invoke-Test 'missing file is rejected' {
@@ -232,6 +410,10 @@ echo running^|healthy^|{"5432/tcp":[{"HostPort":"54322"}]}
 }
 finally {
     $env:MOCK_DOCKER_STATE = $null
+    $env:MOCK_PGDUMP_FAIL = $null
+    $env:MOCK_PGDUMP_LOG = $null
+    $env:MOCK_PSQL_LOG = $null
+    $env:MOCK_TOC_SEQUENCE = $null
     if (Test-Path -LiteralPath $temporaryDirectory) {
         [System.GC]::Collect()
         [System.GC]::WaitForPendingFinalizers()
