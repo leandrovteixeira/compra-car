@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-07-27 — Auditoria do Admin para evolução de Pricing
+
+- documentado o inventário completo das rotas, camadas, componentes, autenticação, autorização,
+  contratos, acessos a dados e testes da área administrativa Next.js existente;
+- registrado o mapa de dependências por tela e a aderência ao domínio vigente em que
+  `CommercialPolicy` pertence diretamente a `CommercialOffer`;
+- classificados gaps, dependências legadas, riscos e componentes reutilizáveis, sem alteração de
+  código funcional ou banco;
+- definido roadmap incremental do MVP-A preservando o Admin atual e tratando
+  `commercial_policy_applications` somente como compatibilidade histórica.
+
 ## 2026-07-26 — Fechamento da revisão técnica de pricing
 
 - Adicionado o fluxo transacional `publish_commercial_offer`, independente do modelo legado de

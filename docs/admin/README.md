@@ -2,6 +2,10 @@
 
 Este diretório documenta o domínio da área `admin` do Compra Car. A arquitetura-alvo usa a mesma aplicação Next.js do MVP-u para as áreas `seller` e `admin`; `admin` também acessa a área `seller`. As regras permanecem independentes da ferramenta de interface.
 
+- [`ADMIN_PRICING_AUDIT.md`](ADMIN_PRICING_AUDIT.md): inventário da implementação Next.js atual,
+  aderência ao domínio `ProductPublicPrice -> CommercialOffer -> CommercialPolicy`, gaps, riscos e
+  roadmap incremental do MVP-A;
+
 Os documentos e exports do Appsmith registram uma direção anterior e permanecem preservados apenas como referência histórica. Eles não são planos vigentes e não receberão novas implementações.
 
 ## Documentos
