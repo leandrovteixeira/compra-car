@@ -1,5 +1,15 @@
 # Contexto para agentes de IA
 
+## Marco atual — ProductPublicPrice administrativo em leitura (2026-07-27)
+
+- `/admin/prices` é a primeira fatia vertical de Pricing no Admin Next.js existente;
+- `ProductPublicPriceRepository` e `ProductPublicPriceSupabaseAdapter` são dedicados e somente leitura;
+- a lista é paginada no servidor, associa Product e não usa `LegacySupabaseAdapter`;
+- `ends_on` é consumido como coluna opcional porque foi adicionado pela migration
+  `20260726150000_add_pricing_legacy_migration_rules.sql`, apesar da formulação anterior do ADR-011;
+- escrita, publicação, CommercialOffer, CommercialPolicy e `commercial_policy_applications`
+  permanecem fora desta implementação.
+
 ## Marco 2026-07-26 — revisão final da migration de pricing
 
 - O fluxo futuro oficial é `publish_commercial_offer`: valida offer, product, MSRP published e todas

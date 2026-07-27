@@ -5,6 +5,8 @@ Este diretório documenta o domínio da área `admin` do Compra Car. A arquitetu
 - [`ADMIN_PRICING_AUDIT.md`](ADMIN_PRICING_AUDIT.md): inventário da implementação Next.js atual,
   aderência ao domínio `ProductPublicPrice -> CommercialOffer -> CommercialPolicy`, gaps, riscos e
   roadmap incremental do MVP-A;
+- [`PRODUCT_PUBLIC_PRICE_READ_SLICE.md`](PRODUCT_PUBLIC_PRICE_READ_SLICE.md): arquitetura e limites
+  da primeira listagem administrativa somente leitura de preços públicos;
 
 Os documentos e exports do Appsmith registram uma direção anterior e permanecem preservados apenas como referência histórica. Eles não são planos vigentes e não receberão novas implementações.
 

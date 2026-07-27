@@ -23,3 +23,13 @@ export class InvalidLegacyNumericValueError extends LegacyAdapterMappingError {
     );
   }
 }
+
+export class PricingAdapterError extends Error {
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options);
+    this.name = new.target.name;
+  }
+}
+
+export class PricingAdapterQueryError extends PricingAdapterError {}
+export class PricingAdapterMappingError extends PricingAdapterError {}

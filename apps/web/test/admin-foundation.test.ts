@@ -21,6 +21,7 @@ describe('admin foundation', () => {
     expect(adminNavigationItems.filter((item) => item.status === 'active')).toEqual([
       { href: '/admin', label: 'Visão geral', status: 'active' },
       { href: '/admin/products', label: 'Veículos', status: 'active' },
+      { href: '/admin/prices', label: 'Preços públicos', status: 'active' },
     ]);
   });
 

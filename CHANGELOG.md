@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-07-27 — ProductPublicPrice administrativo em leitura
+
+- criada a rota `/admin/prices` dentro do Admin existente, com loading, sucesso, vazio, erro e
+  paginação server-side;
+- adicionados entidade, tipos monetários/status, DTOs, repository e caso de uso mínimos de leitura;
+- adicionado `ProductPublicPriceSupabaseAdapter`, dedicado a Pricing e sem alteração do adapter
+  legado;
+- adicionados mapeamento defensivo, formatação pt-BR e testes de core, adapter, service e UI;
+- documentada a divergência de `ends_on` resolvida pela migration versionada mais recente;
+- mantidos fora do escopo escrita, publicação, CommercialOffer, CommercialPolicy e
+  `commercial_policy_applications`.
+
 ## 2026-07-27 — Auditoria do Admin para evolução de Pricing
 
 - documentado o inventário completo das rotas, camadas, componentes, autenticação, autorização,

@@ -6,6 +6,9 @@ import type {
   ComparisonResult,
   Vehicle,
   VehicleComparisonValue,
+  ProductPublicPriceMoney,
+  ProductPublicPriceProduct,
+  PricingWorkflowStatus,
 } from '@compra-car/core';
 
 export {
@@ -44,7 +47,35 @@ export type {
   VehicleDisplayName,
   VehicleId,
   VehicleRepository,
+  ProductPublicPrice,
+  ProductPublicPriceMoney,
+  ProductPublicPricePage,
+  ProductPublicPriceProduct,
+  ProductPublicPriceRepository,
+  PricingWorkflowStatus,
+  ListProductPublicPricesInput,
+  ListProductPublicPricesResult,
 } from '@compra-car/core';
+
+export interface ProductPublicPriceListItemDto {
+  readonly id: string;
+  readonly product: ProductPublicPriceProduct;
+  readonly money: ProductPublicPriceMoney;
+  readonly startsOn: string;
+  readonly endsOn: string | null;
+  readonly status: PricingWorkflowStatus;
+  readonly publishedAt: string | null;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export interface ProductPublicPriceListPageDto {
+  readonly items: readonly ProductPublicPriceListItemDto[];
+  readonly page: number;
+  readonly pageSize: number;
+  readonly pageCount: number;
+  readonly total: number;
+}
 
 export interface AdministrativeVehicleFormValuesDto {
   readonly brand: string;

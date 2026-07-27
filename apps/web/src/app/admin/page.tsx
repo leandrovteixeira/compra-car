@@ -37,6 +37,12 @@ export default function AdminPage() {
             title="Cadastro de veículos"
           />
           <ModuleCard
+            description="Consulta somente leitura do histórico versionado de preços públicos por veículo."
+            href="/admin/prices"
+            status="Leitura disponível"
+            title="Preços públicos"
+          />
+          <ModuleCard
             description="Organização de equipamentos e categorias será definida em etapa posterior."
             status="Em breve"
             title="Catálogo auxiliar"
