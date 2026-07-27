@@ -55,6 +55,9 @@ export type {
   PricingWorkflowStatus,
   ListProductPublicPricesInput,
   ListProductPublicPricesResult,
+  ProductPublicPriceWriteFieldErrors,
+  ProductPublicPriceWriteInput,
+  UpdateProductPublicPriceInput,
 } from '@compra-car/core';
 
 export interface ProductPublicPriceListItemDto {
@@ -67,6 +70,7 @@ export interface ProductPublicPriceListItemDto {
   readonly publishedAt: string | null;
   readonly createdAt: string;
   readonly updatedAt: string;
+  readonly lockVersion: number;
 }
 
 export interface ProductPublicPriceListPageDto {
@@ -75,6 +79,45 @@ export interface ProductPublicPriceListPageDto {
   readonly pageSize: number;
   readonly pageCount: number;
   readonly total: number;
+}
+
+export interface ProductPublicPriceFormValuesDto {
+  readonly id: string;
+  readonly productId: string;
+  readonly amount: string;
+  readonly startsOn: string;
+  readonly endsOn: string;
+  readonly lockVersion: string;
+}
+
+export type ProductPublicPriceFieldErrorsDto = Partial<
+  Readonly<
+    Record<'productId' | 'amount' | 'startsOn' | 'endsOn' | 'lockVersion', readonly string[]>
+  >
+>;
+
+export type ProductPublicPriceActionStateDto =
+  | {
+      readonly status: 'idle';
+      readonly values: ProductPublicPriceFormValuesDto;
+      readonly fieldErrors: ProductPublicPriceFieldErrorsDto;
+    }
+  | {
+      readonly status: 'error' | 'conflict';
+      readonly values: ProductPublicPriceFormValuesDto;
+      readonly fieldErrors: ProductPublicPriceFieldErrorsDto;
+      readonly message: string;
+    }
+  | {
+      readonly status: 'success';
+      readonly values: ProductPublicPriceFormValuesDto;
+      readonly fieldErrors: ProductPublicPriceFieldErrorsDto;
+      readonly message: string;
+    };
+
+export interface ProductPublicPriceProductOptionDto {
+  readonly id: string;
+  readonly label: string;
 }
 
 export interface AdministrativeVehicleFormValuesDto {

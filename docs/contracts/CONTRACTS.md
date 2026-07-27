@@ -1,5 +1,16 @@
 # Contratos Normalizados
 
+## Escrita de ProductPublicPrice
+
+`ProductPublicPriceWriteInput` transporta `productId`, `amount` decimal canônico em string,
+`startsOn` e `endsOn`. `UpdateProductPublicPriceInput` acrescenta `id` e `lockVersion`; nenhum input
+de UI aceita ator, status ou timestamps. O repository recebe o ator validado separadamente no
+servidor e retorna resultado discriminado para update concluído, inexistente, não editável ou
+conflito concorrente.
+
+Create sempre produz `draft`. Update preserva produto e status e só alcança `draft`,
+`needs_review` ou `rejected`. `published` e `archived` permanecem fora do contrato de edição.
+
 Estes contratos definem a fronteira entre aplicação, domínio e infraestrutura. A implementação autoritativa está em `packages/core` e `packages/contracts`; nenhum contrato representa tabelas, colunas ou respostas cruas do Supabase.
 
 ## Direção das dependências

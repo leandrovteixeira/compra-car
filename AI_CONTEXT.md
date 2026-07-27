@@ -1,5 +1,18 @@
 # Contexto para agentes de IA
 
+## Marco atual — ProductPublicPrice administrativo com draft/edit (2026-07-27)
+
+- `/admin/prices` cria preços manuais em `draft` e edita somente `draft`, `needs_review` e
+  `rejected`; `published` e `archived` permanecem somente leitura;
+- o fluxo segue Server Action, serviço server-only, casos de uso do core, repository e adapter
+  dedicado; ator vem do profile administrativo autenticado, nunca do cliente;
+- updates filtram atomicamente ID, `lock_version` e status editável; o trigger existente incrementa
+  a versão e divergências são reportadas como conflito sem overwrite;
+- amount continua string decimal em reais/BRL; entrada pt-BR é normalizada sem `parseFloat`, e a
+  listagem apenas oculta centavos na apresentação;
+- publicação e demais transições, Offers, Policies, filtros e indicador de ambiente continuam fora
+  do escopo.
+
 ## Marco atual — ProductPublicPrice administrativo em leitura (2026-07-27)
 
 - `/admin/prices` é a primeira fatia vertical de Pricing no Admin Next.js existente;

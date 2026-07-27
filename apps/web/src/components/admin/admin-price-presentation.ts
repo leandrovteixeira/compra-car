@@ -12,6 +12,8 @@ export function formatAdminPrice(amount: string, currencyCode: 'BRL'): string {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: currencyCode,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(Number(amount));
 }
 

@@ -26,6 +26,16 @@ function identifier(value: unknown, field: string): string {
   return String(value);
 }
 
+function positiveInteger(value: unknown, field: string): number {
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < 1) {
+    throw new PricingAdapterMappingError(
+      `Inteiro positivo inválido em ProductPublicPrice: ${field}.`,
+    );
+  }
+  return parsed;
+}
+
 function date(value: unknown, field: string): string {
   const parsed = requiredString(value, field);
   if (!DATE_PATTERN.test(parsed)) {
@@ -100,5 +110,6 @@ export function mapProductPublicPriceRow(row: ProductPublicPriceRow): ProductPub
     publishedAt: nullableTimestamp(row.published_at, 'published_at'),
     createdAt: timestamp(row.created_at, 'created_at'),
     updatedAt: timestamp(row.updated_at, 'updated_at'),
+    lockVersion: positiveInteger(row.lock_version, 'lock_version'),
   });
 }

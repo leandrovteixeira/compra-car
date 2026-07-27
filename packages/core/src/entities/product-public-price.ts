@@ -31,4 +31,17 @@ export interface ProductPublicPrice {
   readonly publishedAt: string | null;
   readonly createdAt: string;
   readonly updatedAt: string;
+  readonly lockVersion: number;
+}
+
+export const EDITABLE_PRODUCT_PUBLIC_PRICE_STATUSES = [
+  'draft',
+  'needs_review',
+  'rejected',
+] as const satisfies readonly PricingWorkflowStatus[];
+
+export function isProductPublicPriceEditable(status: PricingWorkflowStatus): boolean {
+  return EDITABLE_PRODUCT_PUBLIC_PRICE_STATUSES.includes(
+    status as (typeof EDITABLE_PRODUCT_PUBLIC_PRICE_STATUSES)[number],
+  );
 }

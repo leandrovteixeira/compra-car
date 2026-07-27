@@ -1,5 +1,14 @@
 # Modelo de Domínio
 
+## ProductPublicPrice administrativo
+
+O valor monetário é uma string decimal BRL, nunca `number` na fronteira de persistência. Criação
+manual entra em `draft` com `created_by` e `updated_by` derivados do profile autenticado. Edição
+permite somente amount e vigência para estados não terminais, preserva Product e lifecycle e exige
+a versão corrente do registro. O adapter aplica compare-and-swap por `id`, `lock_version` e status;
+o trigger existente incrementa a versão. `published` e `archived` não têm identidade econômica
+editável por este fluxo.
+
 Este documento descreve o domínio normalizado do Compra Car sem reproduzir o schema do Supabase atual. O código autoritativo desta fase está em `packages/core`.
 
 ## Vehicle

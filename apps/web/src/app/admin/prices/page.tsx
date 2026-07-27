@@ -1,10 +1,11 @@
 import { parseAdminPricePage, type AdminPriceQuery } from '@/application/admin/admin-price-query';
 import { requireRole } from '@/auth/authorization';
 import { AdminPriceError } from '@/components/admin/admin-price-error';
-import { AdminPriceList } from '@/components/admin/admin-price-list';
-import { EmptyState } from '@/components/admin/empty-state';
+import { AdminPriceManager } from '@/components/admin/admin-price-manager';
 import { PageHeader } from '@/components/admin/page-header';
 import { loadAdminProductPublicPrices } from '@/server/admin-product-public-price-service';
+import { loadAdminProducts } from '@/server/admin-product-service';
+import { createProductPublicPriceAction, updateProductPublicPriceAction } from './actions';
 
 interface AdminPricesPageProps {
   readonly searchParams: Promise<AdminPriceQuery>;
@@ -13,25 +14,31 @@ interface AdminPricesPageProps {
 export default async function AdminPricesPage({ searchParams }: AdminPricesPageProps) {
   await requireRole('admin');
   const page = parseAdminPricePage(await searchParams);
-  const result = await loadAdminProductPublicPrices({ page });
+  const [result, productsResult] = await Promise.all([
+    loadAdminProductPublicPrices({ page }),
+    loadAdminProducts(),
+  ]);
 
   return (
     <>
       <PageHeader
-        description="Consulte o histórico versionado de preços públicos dos veículos. Esta etapa é somente leitura."
+        description="Cadastre e edite rascunhos de preços públicos dos veículos."
         eyebrow="Pricing"
         title="Preços públicos"
       />
       <div className="mt-8">
-        {!result.ok ? (
+        {!result.ok || !productsResult.ok ? (
           <AdminPriceError />
-        ) : result.data.items.length === 0 ? (
-          <EmptyState
-            description="Ainda não há preços públicos disponíveis para consulta nesta página."
-            title="Nenhum preço público encontrado"
-          />
         ) : (
-          <AdminPriceList page={result.data} />
+          <AdminPriceManager
+            createAction={createProductPublicPriceAction}
+            page={result.data}
+            products={productsResult.data.map((product) => ({
+              id: product.id,
+              label: `${product.brand} ${product.model} ${product.version} — ${product.modelYear}`,
+            }))}
+            updateAction={updateProductPublicPriceAction}
+          />
         )}
       </div>
     </>

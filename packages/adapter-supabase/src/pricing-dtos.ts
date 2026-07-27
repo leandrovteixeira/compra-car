@@ -17,5 +17,11 @@ export interface ProductPublicPriceRow {
   readonly published_at: unknown;
   readonly created_at: unknown;
   readonly updated_at: unknown;
+  readonly lock_version: unknown;
   readonly product: ProductPublicPriceProductRow | readonly ProductPublicPriceProductRow[] | null;
+}
+
+export interface ProductPublicPriceStateRow {
+  readonly status: unknown;
+  readonly lock_version: unknown;
 }

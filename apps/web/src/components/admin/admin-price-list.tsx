@@ -1,4 +1,7 @@
+'use client';
+
 import type { ProductPublicPriceListPageDto, PricingWorkflowStatus } from '@compra-car/contracts';
+import { isProductPublicPriceEditable } from '@compra-car/core';
 import Link from 'next/link';
 
 import {
@@ -9,6 +12,7 @@ import {
 
 interface AdminPriceListProps {
   readonly page: ProductPublicPriceListPageDto;
+  readonly onEdit: (id: string, opener: HTMLButtonElement) => void;
 }
 
 function statusClass(status: PricingWorkflowStatus): string {
@@ -19,7 +23,7 @@ function statusClass(status: PricingWorkflowStatus): string {
       : 'border-slate-700 bg-slate-900 text-slate-300';
 }
 
-export function AdminPriceList({ page }: AdminPriceListProps) {
+export function AdminPriceList({ page, onEdit }: AdminPriceListProps) {
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/50">
       <div className="overflow-x-auto">
@@ -44,6 +48,9 @@ export function AdminPriceList({ page }: AdminPriceListProps) {
               </th>
               <th className="px-4 py-3 font-semibold" scope="col">
                 Atualização
+              </th>
+              <th className="px-4 py-3 font-semibold" scope="col">
+                Ações
               </th>
             </tr>
           </thead>
@@ -83,6 +90,19 @@ export function AdminPriceList({ page }: AdminPriceListProps) {
                   <p className="mt-1 text-xs text-slate-500">
                     Criado em {formatAdminDate(price.createdAt)}
                   </p>
+                </td>
+                <td className="px-4 py-4">
+                  {isProductPublicPriceEditable(price.status) ? (
+                    <button
+                      className="min-h-10 rounded-lg border border-slate-700 px-3 font-semibold text-slate-200 transition hover:bg-slate-800"
+                      onClick={(event) => onEdit(price.id, event.currentTarget)}
+                      type="button"
+                    >
+                      Editar
+                    </button>
+                  ) : (
+                    <span className="text-xs text-slate-500">Somente leitura</span>
+                  )}
                 </td>
               </tr>
             ))}

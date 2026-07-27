@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-07-27 — Criação e edição administrativa de ProductPublicPrice
+
+- adicionados contratos e casos de uso de criação em `draft` e edição de status não terminais;
+- implementada escrita server-side no adapter dedicado, com ator autenticado e concorrência
+  otimista por `lock_version`, sem migration ou RPC nova;
+- `/admin/prices` recebeu formulário acessível, feedback, refresh da lista e BRL sem centavos;
+- publicação, revisão, rejeição, arquivamento, Offers, Policies e filtros permanecem pendentes.
+
 ## 2026-07-27 — ProductPublicPrice administrativo em leitura
 
 - criada a rota `/admin/prices` dentro do Admin existente, com loading, sucesso, vazio, erro e

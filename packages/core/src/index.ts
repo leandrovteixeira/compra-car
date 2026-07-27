@@ -24,5 +24,8 @@ export * from './value-objects/vehicle-id';
 export * from './admin/administrative-vehicle';
 export * from './admin/administrative-product-specs';
 export * from './admin/vehicle-text-normalization';
+export * from './admin/product-public-price';
+export * from './use-cases/create-product-public-price';
+export * from './use-cases/update-product-public-price';
 export * from './use-cases/load-administrative-product-specs';
 export * from './use-cases/save-administrative-product-specs';
