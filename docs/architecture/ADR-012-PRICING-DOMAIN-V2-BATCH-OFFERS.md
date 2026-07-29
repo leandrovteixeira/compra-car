@@ -1,6 +1,6 @@
 # ADR-012 — Pricing Domain V2 para Policies reutilizáveis e Offers em lote
 
-- **Status:** aceito e implementado na Sprint 9A
+- **Status:** aceito; modelo implementado na Sprint 9A e Batch Prices implementado na Sprint 9B
 - **Data:** 2026-07-28
 - **Substitui parcialmente:** ADR-011 nas relações entre Product, CommercialPolicy e CommercialOffer
 
@@ -67,9 +67,21 @@ A migration `20260728120000_evolve_pricing_domain_v2.sql`:
 
 ## Consequências
 
-O futuro Batch Policies pode persistir Policies antes das Offers; o Offer Builder pode reutilizá-las
-em combinações explícitas; e o Batch Prices permanece independente. A interface dessas três etapas
-não faz parte da Sprint 9A.
+O futuro Batch Policies pode persistir Policies antes das Offers e o Offer Builder pode reutilizá-las
+em combinações explícitas. Batch Prices foi entregue independentemente na Sprint 9B, pela mesma
+infraestrutura persistente de imports, sem criar Policies ou Offers.
+
+## Incremento da Sprint 9B — Batch Prices
+
+A rota `/admin/prices/input` usa a RPC transacional `create_manual_price_batch`. O payload completo é
+validado antes da primeira escrita; sucesso cria batch `manual`, uma import row e output por linha,
+um `ProductPublicPrice draft` por output e eventos correlacionados. Qualquer erro ou conflito em
+`(product_id, starts_on)` reverte tudo.
+
+A RPC é `SECURITY DEFINER`, `search_path = ''`, exige admin ativo e correlation ID e só pode ser
+executada por `service_role`. As tabelas mantêm RLS e browser roles não recebem escrita. O tipo físico
+de `pricing_import_batches.source_type` é o enum `pricing_source_type`, que continua sendo a allowlist
+do banco após a remoção da antiga check constraint na Sprint 9A.
 
 Documentos anteriores que descrevem Policy como filha exclusiva da Offer são históricos e devem ser
 lidos sob esta decisão.

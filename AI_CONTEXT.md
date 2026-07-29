@@ -1,5 +1,28 @@
 # Contexto para agentes de IA
 
+## Marco atual — Batch Prices (Sprint 9B, 2026-07-28)
+
+- `/admin/prices/input` recebe até 100 preços públicos manuais em grade; uma linha totalmente vazia
+  é ignorada e uma linha parcial bloqueia o lote inteiro;
+- cada linha válida cria `ProductPublicPrice` em `draft`; não publica, não edita preço existente e
+  não cria Policy ou Offer;
+- o fluxo é UI → Server Action → serviço server-only → core → repository → adapter dedicado → RPC
+  `create_manual_price_batch`; UI e browser não conhecem tabelas nem recebem `actorId` como input;
+- a RPC valida o payload completo antes de escrever e persiste atomicamente
+  `pricing_import_batches`, `pricing_import_rows`, `pricing_import_row_outputs`, preços e auditoria;
+- valores monetários atravessam as fronteiras como string decimal canônica; entradas `200000`,
+  `200000,00`, `200.000` e `200.000,00` são aceitas sem `parseFloat`;
+- o seletor lista todos os Products administrativos, inclusive inativos/privados, porque preço pode
+  anteceder a publicação do veículo; o adapter consulta apenas os oito campos necessários;
+- conflito vigente segue a unique key física `(product_id, starts_on)` e rejeita o lote inteiro;
+- `source_type` continua protegido pelo enum PostgreSQL `pricing_source_type`, cuja allowlist inclui
+  `manual`; a constraint removida na 9A era redundante e não foi recriada;
+- Batch Policies, Offer Builder, revisão, lifecycle terminal, publicação e uploads permanecem fora
+  da Sprint 9B.
+- a migration `20260728220000_create_manual_price_batch.sql` foi aplicada somente ao Staging
+  `shfsjyjxmgwnlexmdkcs`; validação reversível confirmou o fluxo completo e rollback sem alterar as
+  contagens preexistentes.
+
 ## Marco histórico — ProductPublicPrice administrativo com draft/edit (2026-07-27)
 
 - `/admin/prices` cria preços manuais em `draft` e edita somente `draft`, `needs_review` e

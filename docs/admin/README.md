@@ -7,6 +7,8 @@ Este diretório documenta o domínio da área `admin` do Compra Car. A arquitetu
   roadmap incremental do MVP-A;
 - [`PRODUCT_PUBLIC_PRICE_READ_SLICE.md`](PRODUCT_PUBLIC_PRICE_READ_SLICE.md): arquitetura e limites
   da primeira listagem administrativa somente leitura de preços públicos;
+- [`SPRINT_9B_BATCH_PRICES.md`](SPRINT_9B_BATCH_PRICES.md): grade manual, validações, atomicidade,
+  segurança e limites do batch de preços;
 
 Os documentos e exports do Appsmith registram uma direção anterior e permanecem preservados apenas como referência histórica. Eles não são planos vigentes e não receberão novas implementações.
 
@@ -32,8 +34,8 @@ Os documentos e exports do Appsmith registram uma direção anterior e permanece
 
 A documentação registra o domínio aprovado e o inventário histórico do export Appsmith.
 Autenticação, autorização, shell, listagem, criação, edição, duplicação e ficha de specs dos
-veículos estão implementados no Next.js. Permanecem pendentes preços, a auditoria de grants/RLS e
-a monetização de specs.
+veículos estão implementados no Next.js. A listagem, draft/edit individual e Batch Prices também
+estão implementados. Permanecem pendentes Batch Policies, Offer Builder e publicação administrativa.
 
 ## Princípios
 

@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-07-28 — Sprint 9B: Batch Prices
+
+- Criada a rota administrativa `/admin/prices/input`, com grade responsiva e pesquisável, linha
+  vazia operacional, limite de 100 preços e seleção de todos os Products administrativos, inclusive
+  inativos e não públicos.
+- Adicionados contratos, validação pt-BR sem floating point, caso de uso, repository e adapter
+  dedicado; erros preservam a linha por `clientRowId` e conflitos não sobrescrevem preços existentes.
+- A RPC transacional `create_manual_price_batch` persiste batch, rows, outputs, auditoria e preços
+  `draft` de forma atômica, com ator/correlation server-side, admin ativo e execução exclusiva por
+  `service_role`.
+- A proteção de `pricing_import_batches.source_type` permanece no enum físico
+  `pricing_source_type`; não foi criada constraint redundante. Batch Policies, Offer Builder,
+  publicação e importação por arquivo continuam fora do escopo.
+- Adicionados testes de core, adapter, serviço/UI e pgTAP; a suíte SQL local completa passou com 428
+  testes após reset integral do Supabase.
+- A migration foi aplicada exclusivamente ao Staging `shfsjyjxmgwnlexmdkcs`. O teste funcional
+  transacional foi revertido deliberadamente e as contagens antes/depois permaneceram idênticas,
+  sem fixture artificial e sem migration pendente.
+
 ## 2026-07-28 — Sprint 9A: Pricing Domain V2
 
 - Evoluído o modelo de `CommercialOffer 1:N CommercialPolicy` para Product 1:N Policy e

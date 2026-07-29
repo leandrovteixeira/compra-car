@@ -67,6 +67,12 @@ export type {
   ProductPublicPriceWriteFieldErrors,
   ProductPublicPriceWriteInput,
   UpdateProductPublicPriceInput,
+  CreateManualPriceBatchInput,
+  ManualPriceBatchRepository,
+  ManualPriceBatchResult,
+  ManualPriceBatchRowInput,
+  ManualPriceBatchValidationIssue,
+  ManualPriceBatchProductOption,
 } from '@compra-car/core';
 
 export interface ProductPublicPriceListItemDto {
@@ -127,6 +133,46 @@ export type ProductPublicPriceActionStateDto =
 export interface ProductPublicPriceProductOptionDto {
   readonly id: string;
   readonly label: string;
+}
+
+export interface ManualPriceBatchGridRowDto {
+  readonly clientRowId: string;
+  readonly productId: string;
+  readonly amount: string;
+  readonly startsOn: string;
+  readonly endsOn: string;
+}
+
+export type ManualPriceBatchRowFieldErrorsDto = Partial<
+  Readonly<Record<'productId' | 'amount' | 'startsOn' | 'endsOn' | 'row', readonly string[]>>
+>;
+
+export type ManualPriceBatchActionStateDto =
+  | {
+      readonly status: 'idle';
+      readonly rows: readonly ManualPriceBatchGridRowDto[];
+      readonly rowErrors: Readonly<Record<string, ManualPriceBatchRowFieldErrorsDto>>;
+    }
+  | {
+      readonly status: 'error' | 'conflict';
+      readonly rows: readonly ManualPriceBatchGridRowDto[];
+      readonly rowErrors: Readonly<Record<string, ManualPriceBatchRowFieldErrorsDto>>;
+      readonly message: string;
+    }
+  | {
+      readonly status: 'success';
+      readonly rows: readonly ManualPriceBatchGridRowDto[];
+      readonly rowErrors: Readonly<Record<string, ManualPriceBatchRowFieldErrorsDto>>;
+      readonly message: string;
+      readonly batchId: string;
+      readonly createdCount: number;
+    };
+
+export interface ManualPriceBatchProductOptionDto {
+  readonly id: string;
+  readonly displayName: string;
+  readonly isActive: boolean;
+  readonly isPublic: boolean;
 }
 
 export interface AdministrativeVehicleFormValuesDto {

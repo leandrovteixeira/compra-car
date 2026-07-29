@@ -2,6 +2,21 @@
 
 ## ProductPublicPrice administrativo
 
+### Batch manual
+
+`CreateManualPriceBatch` recebe até 100 linhas, ignora somente linhas completamente vazias e rejeita
+linhas parciais. Cada linha exige Product, valor BRL positivo e `startsOn`; `endsOn` é opcional e não
+pode anteceder o início. Dinheiro é normalizado de pt-BR para string decimal canônica com duas casas,
+sem uso de floating point.
+
+O batch não é um segundo agregado paralelo: ele materializa proveniência em `pricing_import_batches`,
+`pricing_import_rows` e `pricing_import_row_outputs`. Os preços nascem em `draft`. Duplicidade dentro
+do payload ou conflito com a chave física `(product_id, starts_on)` rejeita o lote inteiro; não há
+upsert, encerramento implícito, publicação, Policy ou Offer.
+
+O catálogo administrativo do batch inclui Products ativos/inativos e públicos/privados. Essa é uma
+decisão deliberada: o cadastro de preço pode preceder a publicação editorial do veículo.
+
 O valor monetário é uma string decimal BRL, nunca `number` na fronteira de persistência. Criação
 manual entra em `draft` com `created_by` e `updated_by` derivados do profile autenticado. Edição
 permite somente amount e vigência para estados não terminais, preserva Product e lifecycle e exige

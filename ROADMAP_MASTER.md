@@ -57,7 +57,7 @@ Criar rapidamente um MVP mobile-first para vendedores de concessionárias, permi
 - [x] Sprint 7 — Duplicação de veículos.
 - [x] Sprint 8 — Cadastro de equipamentos (`product_specs`).
 - [x] Sprint 9A — Pricing Domain V2: Product→Policy, Offer↔Policy N:N, lifecycle e batch persistente.
-- [ ] Sprint 9B — Batch Prices.
+- [x] Sprint 9B — Batch Prices: grade `/admin/prices/input`, batch manual atômico e drafts auditáveis.
 - [ ] Sprint 9C — Batch Policies.
 - [ ] Sprint 9D — Offer Builder.
 - [ ] Implementar gestão de preços e políticas exclusivamente em grade.

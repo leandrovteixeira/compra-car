@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/admin/page-header';
 import { loadAdminProductPublicPrices } from '@/server/admin-product-public-price-service';
 import { loadAdminProducts } from '@/server/admin-product-service';
 import { createProductPublicPriceAction, updateProductPublicPriceAction } from './actions';
+import Link from 'next/link';
 
 interface AdminPricesPageProps {
   readonly searchParams: Promise<AdminPriceQuery>;
@@ -22,6 +23,14 @@ export default async function AdminPricesPage({ searchParams }: AdminPricesPageP
   return (
     <>
       <PageHeader
+        actions={
+          <Link
+            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-sky-500 px-4 text-sm font-bold text-slate-950 transition hover:bg-sky-400"
+            href="/admin/prices/input"
+          >
+            Entrada em lote
+          </Link>
+        }
         description="Cadastre e edite rascunhos de preços públicos dos veículos."
         eyebrow="Pricing"
         title="Preços públicos"

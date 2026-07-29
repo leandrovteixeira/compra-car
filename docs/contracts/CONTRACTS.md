@@ -1,5 +1,20 @@
 # Contratos Normalizados
 
+## Batch manual de ProductPublicPrice
+
+`CreateManualPriceBatchInput` contém `rows` com `clientRowId`, `productId`, `amount`, `startsOn` e
+`endsOn`. `amount` é sempre string; `clientRowId` é identidade local da grade e correlaciona erros e
+resultados, sem participar da identidade persistente do preço.
+
+`ManualPriceBatchResult` retorna `batchId`, `createdCount`, `priceIds` e o mapeamento de cada
+`clientRowId` para `importRowId`/`priceId`. IDs atravessam contratos como strings. O repository expõe
+somente `listProductOptions` e `createManualPriceBatch`; o primeiro retorna um recorte de Product sem
+objeto bruto do banco e o segundo recebe ator e correlation ID gerados no servidor.
+
+`ManualPriceBatchActionStateDto` preserva rows e erros por campo/linha em falha e, em sucesso, informa
+quantidade e batch. O cliente não envia ator, status ou currency; o servidor fixa BRL e a RPC fixa
+`draft`.
+
 ## Escrita de ProductPublicPrice
 
 `ProductPublicPriceWriteInput` transporta `productId`, `amount` decimal canônico em string,
@@ -156,7 +171,7 @@ Continuam planejados, mas não fazem parte desta entrega:
 
 - estados detalhados de qualidade e disponibilidade de equipamentos;
 - ranking de itens `scale`;
-- telas em lote de preços, Policies e montagem de Offers;
+- telas em lote de Policies e montagem de Offers;
 - tema de marca;
 - entrada autocontida para PDF;
 - operações de criação, edição e duplicação de veículos;

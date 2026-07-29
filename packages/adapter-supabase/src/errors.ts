@@ -33,3 +33,13 @@ export class PricingAdapterError extends Error {
 
 export class PricingAdapterQueryError extends PricingAdapterError {}
 export class PricingAdapterMappingError extends PricingAdapterError {}
+export class ManualPriceBatchConflictError extends PricingAdapterError {
+  constructor(
+    message: string,
+    readonly clientRowIds: readonly string[] = [],
+    options?: ErrorOptions,
+  ) {
+    super(message, options);
+  }
+}
+export class ManualPriceBatchAuthorizationError extends PricingAdapterError {}
