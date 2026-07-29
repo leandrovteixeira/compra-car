@@ -7,3 +7,4 @@ export * from './product-public-price-supabase-adapter';
 export * from './commercial-pricing-supabase-adapter';
 export * from './manual-price-batch-supabase-adapter';
 export * from './manual-policy-batch-supabase-adapter';
+export * from './commercial-offer-builder-supabase-adapter';

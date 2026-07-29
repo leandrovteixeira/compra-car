@@ -231,6 +231,62 @@ export type ManualPolicyBatchActionStateDto =
       readonly createdCount: number;
     };
 
+export interface OfferBuilderFormDto {
+  readonly productId: string;
+  readonly publicPriceId: string;
+  readonly validFrom: string;
+  readonly validTo: string;
+  readonly policyIds: readonly string[];
+}
+export interface OfferBuilderPolicyDto {
+  readonly id: string;
+  readonly productId: string;
+  readonly policyType: string;
+  readonly title: string;
+  readonly description: string | null;
+  readonly startsOn: string;
+  readonly endsOn: string | null;
+  readonly customerBenefitAmount: string;
+  readonly status: string;
+}
+export interface OfferBuilderPriceDto {
+  readonly id: string;
+  readonly productId: string;
+  readonly amount: string;
+  readonly startsOn: string;
+  readonly endsOn: string | null;
+}
+export interface OfferBuilderDraftDto {
+  readonly id: string;
+  readonly productId: string;
+  readonly publicPriceAmount: string;
+  readonly validFrom: string;
+  readonly validTo: string;
+  readonly status: 'draft';
+  readonly policyCount: number;
+  readonly benefitAmount: string;
+  readonly transactionalPrice: string;
+}
+export type OfferBuilderActionStateDto =
+  | {
+      readonly status: 'idle';
+      readonly values: OfferBuilderFormDto;
+      readonly errors: readonly string[];
+    }
+  | {
+      readonly status: 'error';
+      readonly values: OfferBuilderFormDto;
+      readonly errors: readonly string[];
+      readonly message: string;
+    }
+  | {
+      readonly status: 'success';
+      readonly values: OfferBuilderFormDto;
+      readonly errors: readonly string[];
+      readonly message: string;
+      readonly offer: OfferBuilderDraftDto;
+    };
+
 export interface AdministrativeVehicleFormValuesDto {
   readonly brand: string;
   readonly model: string;

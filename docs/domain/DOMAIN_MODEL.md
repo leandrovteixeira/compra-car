@@ -223,3 +223,11 @@ Cada `CommercialPolicy` pertence a exatamente um `Product`, possui lifecycle ind
 em `draft`. Um lote manual não cria `CommercialOffer` nem `commercial_offer_policies`. Policies de
 valor fixo persistem o valor informado; registration, IPVA, seguro e financiamento são derivados de
 MSRP publicado compatível. Financiamento também exige um Financial Parameter Set publicado e vigente.
+
+# Offer Builder (Sprint 9D)
+
+Uma Offer draft pertence a um Product, referencia um MSRP publicado compatível e inclui uma ou mais
+Policies explicitamente escolhidas. Todas as Policies devem pertencer ao mesmo Product e cobrir a
+vigência completa. O benefício é a soma monetária exata dos memberships; o preço transacional é MSRP
+menos benefício. Uma Policy pode ser reutilizada em múltiplas Offers, sem duplicação ou mudança de
+lifecycle. A publicação continua uma operação posterior e independente.

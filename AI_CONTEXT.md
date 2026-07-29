@@ -1,5 +1,16 @@
 # Contexto para agentes de IA
 
+## Marco — Offer Builder (Sprint 9D, 2026-07-29)
+
+- `/admin/prices/offers` monta `CommercialOffer` em `draft` a partir de MSRP publicado e Policies
+  explicitamente selecionadas do mesmo Product; nenhuma Policy é inferida ou publicada.
+- O servidor recarrega preço e Policies, recalcula benefício/preço transacional sem floating point e
+  persiste Offer, memberships e auditoria em uma única RPC atômica exclusiva de `service_role`.
+- A migration `20260729202538_create_commercial_offer_builder.sql` foi aplicada somente no Staging
+  `shfsjyjxmgwnlexmdkcs`; o teste remoto reversível de composição, reuso e isolamento passou.
+- **PENDENTE:** reset local e pgTAP 011/012/013 não foram executados porque `supabase start` expirou
+  antes de criar a stack. A suíte não falhou.
+
 ## Marco — Batch Policies (Sprint 9C, 2026-07-29)
 
 - `/admin/prices/policies/input` cria lotes atômicos de até 100 `CommercialPolicy` em `draft`.

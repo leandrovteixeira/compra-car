@@ -37,6 +37,12 @@ export default async function AdminPricesPage({ searchParams }: AdminPricesPageP
             >
               Policies em lote
             </Link>
+            <Link
+              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-emerald-700 px-4 text-sm font-bold text-emerald-200 transition hover:bg-emerald-950"
+              href="/admin/prices/offers"
+            >
+              Montador de ofertas
+            </Link>
           </div>
         }
         description="Cadastre e edite rascunhos de preços públicos dos veículos."

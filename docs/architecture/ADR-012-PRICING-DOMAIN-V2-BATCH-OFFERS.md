@@ -104,3 +104,14 @@ A entrada em lote reutiliza a proveniência de pricing imports e mantém Policy 
 Product. A combinação de benefícios continua exclusiva de Offer e, portanto, esta operação não cria
 Offer nem membership. Cálculos dependentes de MSRP e referência financeira são autoritativos no
 servidor/RPC; previews de UI são apenas informativos.
+
+# Complemento Sprint 9D — Offer Builder
+
+O builder materializa exclusivamente a composição explícita escolhida pelo admin. A Server Action
+autorizada chama o caso de uso, que recarrega MSRP e Policies por repository e entrega a composição
+validada à RPC `create_commercial_offer_with_policies`. A RPC repete as invariantes sob locks e cria
+Offer draft, memberships e auditoria na mesma transação.
+
+Policies `draft`, `needs_review` e `published` podem compor uma Offer draft; Policies rejeitadas,
+arquivadas, históricas de registration, de outro Product ou sem cobertura integral são bloqueadas.
+Publicação permanece separada e continua exigindo Policies publicadas pelo lifecycle oficial.

@@ -6,6 +6,10 @@ Criar rapidamente um MVP mobile-first para vendedores de concessionárias, permi
 
 ## Estado atual da Fase 1
 
+- **CONCLUÍDO:** Sprint 9D — Offer Builder administrativo com composição explícita, cálculo exato,
+  persistência atômica de drafts e validação reversível em Staging. A Sprint 9 está funcionalmente
+  encerrada; revisão integrada/manual e pgTAP local permanecem pendentes.
+
 - **CONCLUÍDO:** Sprint 9C — entrada manual em lote de CommercialPolicies com cálculo autoritativo,
   provenance, auditoria e persistência exclusiva em draft. Offer Builder permanece na Sprint 9D.
 
@@ -61,10 +65,10 @@ Criar rapidamente um MVP mobile-first para vendedores de concessionárias, permi
 - [x] Sprint 8 — Cadastro de equipamentos (`product_specs`).
 - [x] Sprint 9A — Pricing Domain V2: Product→Policy, Offer↔Policy N:N, lifecycle e batch persistente.
 - [x] Sprint 9B — Batch Prices: grade `/admin/prices/input`, batch manual atômico e drafts auditáveis.
-- [ ] Sprint 9C-0 — Financial Reference Foundation: migration e V1 publicadas no Staging, CDI manual,
-  spread mensal de 0,30% e rollover auditável. Reset/pgTAP local e commit permanecem pendentes.
-- [ ] Sprint 9C — Batch Policies.
-- [ ] Sprint 9D — Offer Builder.
+- [x] Sprint 9C-0 — Financial Reference Foundation: migration e V1 publicadas no Staging, CDI manual,
+  spread mensal de 0,30% e rollover auditável. Reset/pgTAP local permanece pendente.
+- [x] Sprint 9C — Batch Policies.
+- [x] Sprint 9D — Offer Builder.
 - [ ] Implementar gestão de preços e políticas exclusivamente em grade.
 - [ ] Implementar comparador administrativo com indicadores financeiros e todos os specs.
 - [ ] Implementar exportação de uma comparação com bloco financeiro e specs.

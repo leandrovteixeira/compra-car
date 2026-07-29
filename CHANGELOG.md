@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-07-29 — Sprint 9D: Offer Builder
+
+- Criada `/admin/prices/offers` com seleção explícita de Product, MSRP, vigência e Policies
+  compatíveis, preview monetário exato e listagem de drafts recentes.
+- Adicionados validação e caso de uso no core, contratos, adapter server-only e RPC atômica para
+  Offer, memberships e auditoria; browser roles não recebem execução.
+- A migration `20260729202538` foi aplicada somente em Staging. O teste remoto reversível validou
+  duas Policies, reuso entre Offers e rejeição cross-product, preservando os counts após rollback.
+- pgTAP 011/012/013 permanece pendente por indisponibilidade da stack local, não por falha da suíte.
+
 ## 2026-07-29 — Sprint 9C: Batch Policies
 
 - Criada `/admin/prices/policies/input` para até 100 CommercialPolicies manuais em draft.

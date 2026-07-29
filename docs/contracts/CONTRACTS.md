@@ -201,3 +201,11 @@ correlation são definidos no servidor. A RPC é atômica, exclusiva de `service
 drafts e retorna `{ batchId, createdCount, policyIds }`. MSRP, Parameter Set, principal e benefício
 são validados/recalculados no servidor e no banco; valores derivados enviados pelo browser não são
 autoridade.
+
+# Contrato do Offer Builder
+
+`CommercialOfferBuilderRepository` lista Products, MSRPs publicados e Policies disponíveis, recarrega
+as entidades selecionadas e persiste somente uma composição já validada. IDs são strings nas
+fronteiras e dinheiro é decimal BRL canônico. `create_commercial_offer_with_policies` recebe Product,
+MSRP, vigência, IDs únicos de Policies, ator e correlation definidos no servidor; retorna o resumo do
+draft com benefício e preço transacional. A operação é atômica e não altera lifecycle de Policy.
