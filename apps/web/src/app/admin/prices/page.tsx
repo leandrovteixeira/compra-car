@@ -24,12 +24,20 @@ export default async function AdminPricesPage({ searchParams }: AdminPricesPageP
     <>
       <PageHeader
         actions={
-          <Link
-            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-sky-500 px-4 text-sm font-bold text-slate-950 transition hover:bg-sky-400"
-            href="/admin/prices/input"
-          >
-            Entrada em lote
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-sky-500 px-4 text-sm font-bold text-slate-950 transition hover:bg-sky-400"
+              href="/admin/prices/input"
+            >
+              Entrada em lote
+            </Link>
+            <Link
+              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-sky-700 px-4 text-sm font-bold text-sky-200 transition hover:bg-sky-950"
+              href="/admin/prices/policies/input"
+            >
+              Policies em lote
+            </Link>
+          </div>
         }
         description="Cadastre e edite rascunhos de preços públicos dos veículos."
         eyebrow="Pricing"

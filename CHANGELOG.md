@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-07-29 — Sprint 9C: Batch Policies
+
+- Criada `/admin/prices/policies/input` para até 100 CommercialPolicies manuais em draft.
+- O fluxo preserva as fronteiras UI → Server Action → core → repository → adapter → RPC e resolve
+  MSRP e Financial Parameter Set no servidor; cálculos monetários usam `decimal.js`.
+- As migrations `20260729190304` e `20260729192018` foram aplicadas somente no Staging. A segunda
+  corrige a resolução de variáveis PL/pgSQL identificada pelo primeiro teste transacional.
+- Teste remoto fixed/calculated/financing passou com rollback integral. Nenhuma Offer ou membership
+  foi criada. pgTAP 011/012 permanece pendente por indisponibilidade da stack local.
+
 ## 2026-07-29 — Sprint 9C-0: Financial Reference Foundation
 
 - Preparada migration forward-only para derivar taxas decimais de CDI/spread, impedir vigências

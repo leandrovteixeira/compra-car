@@ -1,5 +1,15 @@
 # Contexto para agentes de IA
 
+## Marco — Batch Policies (Sprint 9C, 2026-07-29)
+
+- `/admin/prices/policies/input` cria lotes atômicos de até 100 `CommercialPolicy` em `draft`.
+- Tipos calculados recarregam MSRP publicado e Parameter Set vigente no servidor; a RPC recalcula e
+  rejeita divergência. O browser não é autoridade de valor, ator, correlation ou lifecycle.
+- O lote persiste provenance em batches/rows/outputs e auditoria, sem criar Offer ou membership.
+- Migrations `20260729190304` e `20260729192018` aplicadas apenas em Staging.
+- **PENDENTE:** `supabase start` expirou antes de criar a stack; reset local e pgTAP 011/012 não
+  foram executados. A suíte não falhou; o teste remoto reversível passou.
+
 ## Marco — Financial Reference Foundation (Sprint 9C-0, 2026-07-29)
 
 - o MVP define spread mensal de `0,30%` e CDI mensal informado manualmente em um

@@ -175,6 +175,62 @@ export interface ManualPriceBatchProductOptionDto {
   readonly isPublic: boolean;
 }
 
+export interface ManualPolicyBatchGridRowDto {
+  readonly clientRowId: string;
+  readonly productId: string;
+  readonly policyType: string;
+  readonly title: string;
+  readonly description: string;
+  readonly startsOn: string;
+  readonly endsOn: string;
+  readonly amount: string;
+  readonly maintenanceCount: string;
+  readonly coverageMonths: string;
+  readonly coverageKm: string;
+  readonly voucherType: string;
+  readonly calculationBasePriceId: string;
+  readonly annualRate: string;
+  readonly offerMonth: string;
+  readonly coverageYears: string;
+  readonly termMonths: string;
+  readonly customerInterestRateMonthly: string;
+  readonly downPaymentPercentage: string;
+}
+export interface ManualPolicyBasePriceDto {
+  readonly id: string;
+  readonly productId: string;
+  readonly amount: string;
+  readonly startsOn: string;
+  readonly endsOn: string | null;
+}
+export interface ManualPolicyFinancialReferenceDto {
+  readonly id: string;
+  readonly label: string;
+  readonly effectiveFrom: string;
+  readonly validTo: string | null;
+  readonly monthlyReferenceRate: string;
+}
+export type ManualPolicyBatchActionStateDto =
+  | {
+      readonly status: 'idle';
+      readonly rows: readonly ManualPolicyBatchGridRowDto[];
+      readonly rowErrors: Readonly<Record<string, Readonly<Record<string, readonly string[]>>>>;
+    }
+  | {
+      readonly status: 'error';
+      readonly rows: readonly ManualPolicyBatchGridRowDto[];
+      readonly rowErrors: Readonly<Record<string, Readonly<Record<string, readonly string[]>>>>;
+      readonly message: string;
+    }
+  | {
+      readonly status: 'success';
+      readonly rows: readonly ManualPolicyBatchGridRowDto[];
+      readonly rowErrors: Readonly<Record<string, Readonly<Record<string, readonly string[]>>>>;
+      readonly message: string;
+      readonly batchId: string;
+      readonly createdCount: number;
+    };
+
 export interface AdministrativeVehicleFormValuesDto {
   readonly brand: string;
   readonly model: string;

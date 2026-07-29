@@ -6,6 +6,9 @@ Criar rapidamente um MVP mobile-first para vendedores de concessionárias, permi
 
 ## Estado atual da Fase 1
 
+- **CONCLUÍDO:** Sprint 9C — entrada manual em lote de CommercialPolicies com cálculo autoritativo,
+  provenance, auditoria e persistência exclusiva em draft. Offer Builder permanece na Sprint 9D.
+
 - **CONCLUÍDO:** fundação arquitetural e documentação-base do produto.
 - **CONCLUÍDO:** infraestrutura do monorepo com pnpm, Turborepo e aplicação Next.js 15 compilável.
 - **CONCLUÍDO:** preparação técnica para Railway e PWA instalável, sem suporte offline.

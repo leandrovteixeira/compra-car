@@ -194,3 +194,10 @@ Convite, aceite, desativação administrativa e promoção de role continuam for
 Os contratos futuros atenderão às áreas `seller` e `admin` da mesma aplicação Next.js. `admin` inclui acesso aos casos de uso permitidos a `seller`, mas cada operação administrativa continuará exigindo autorização explícita. Appsmith, seus widgets e suas queries não constituem contratos e permanecem somente como referência histórica.
 
 Nenhum schema de validação externo foi adicionado. As validações atuais são funções e factories TypeScript do próprio core.
+# Contrato de batch manual de policies
+
+`create_manual_policy_batch(jsonb, uuid, uuid)` aceita de 1 a 100 linhas normalizadas. Ator e
+correlation são definidos no servidor. A RPC é atômica, exclusiva de `service_role`, cria somente
+drafts e retorna `{ batchId, createdCount, policyIds }`. MSRP, Parameter Set, principal e benefício
+são validados/recalculados no servidor e no banco; valores derivados enviados pelo browser não são
+autoridade.

@@ -217,3 +217,9 @@ As regras explícitas deste MVP são presença em `binary` e direção em `numer
 - **PENDENTE:** definir regras de vantagem.
 - **PENDENTE:** confirmar estados detalhados de equipamentos necessários após o MVP.
 - **PENDENTE:** definir preço, moeda, referência temporal e políticas comerciais.
+# Batch manual de CommercialPolicy (Sprint 9C)
+
+Cada `CommercialPolicy` pertence a exatamente um `Product`, possui lifecycle independente e nasce
+em `draft`. Um lote manual não cria `CommercialOffer` nem `commercial_offer_policies`. Policies de
+valor fixo persistem o valor informado; registration, IPVA, seguro e financiamento são derivados de
+MSRP publicado compatível. Financiamento também exige um Financial Parameter Set publicado e vigente.

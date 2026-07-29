@@ -98,3 +98,9 @@ do banco após a remoção da antiga check constraint na Sprint 9A.
 
 Documentos anteriores que descrevem Policy como filha exclusiva da Offer são históricos e devem ser
 lidos sob esta decisão.
+# Complemento Sprint 9C — entrada manual de policies
+
+A entrada em lote reutiliza a proveniência de pricing imports e mantém Policy diretamente sob
+Product. A combinação de benefícios continua exclusiva de Offer e, portanto, esta operação não cria
+Offer nem membership. Cálculos dependentes de MSRP e referência financeira são autoritativos no
+servidor/RPC; previews de UI são apenas informativos.
