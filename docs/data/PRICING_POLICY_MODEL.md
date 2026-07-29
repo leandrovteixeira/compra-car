@@ -1,75 +1,72 @@
-# Modelo de offers e policies comerciais
+# Modelo de Offers e Policies comerciais — V2
 
-## Agregado
+## Relações e composição
 
-`commercial_offer` é o agregado pai de uma condição comercial. Ela referencia produto, MSRP
-versionado, vigência, origem e suas policies. Identificadores legados são somente auditoria.
+`commercial_policy` pertence diretamente a um Product e tem lifecycle próprio. Uma
+`commercial_offer` também pertence a um Product e referencia o MSRP versionado, a vigência e a
+origem. A relação N:N é persistida em `commercial_offer_policies`.
 
-Policies monetizadas: `retail_bonus`, `trade_in_bonus`, `subsidized_financing`, `free_ipva`,
-`free_insurance`, `free_wallbox`, `free_registration`, `fuel_or_recharge_voucher` e `other` com
-`fixed_amount`. `free_maintenance` é qualitativa e não monetizada: seu valor permanece `NULL`, nunca
-zero, e não participa de totais financeiros.
+A mesma Policy pode participar de várias Offers do mesmo Product. A Offer é a única autorização de
+acúmulo: nunca se somam todas as Policies de um Product. Memberships de Offer published ou archived
+são históricas e imutáveis.
+
+## Monetização
+
+Toda Policy publicável exige `customer_benefit_amount > 0` em BRL:
+
+- `retail_bonus`, `trade_in_bonus`, `free_wallbox`, `free_maintenance`,
+  `fuel_or_recharge_voucher` e `other`: valor fixo positivo;
+- `free_registration`: 1% do ProductPublicPrice-base, sem valor manual como fonte de verdade;
+- `free_ipva` e `free_insurance`: valor calculado a partir do preço-base e parâmetros;
+- `subsidized_financing`: diferença de fluxo de caixa conforme parâmetros financeiros publicados.
+
+`registration` e `present_value_subsidy` permanecem apenas por compatibilidade histórica e não são
+aceitos para nova publicação. `other` exige descrição. A cobertura de manutenção pode continuar em
+`policy_parameters`, mas não substitui seu valor econômico obrigatório.
+
+Valores derivados usam decimal exato e arredondamento HALF_UP. O benefício da Offer e seu preço
+transacional não são materializados:
+
+```text
+OfferBenefitAmount = sum(member_policy.customer_benefit_amount)
+TransactionalPrice = ProductPublicPrice.amount - OfferBenefitAmount
+```
+
+Benefício superior ao MSRP invalida a Offer.
+
+## Lifecycle e vigência
+
+Policy percorre `draft → needs_review → published → archived` independentemente da Offer. Publicar
+uma Offer exige suas Policies previamente published e não altera as Policies.
+
+Uma membership válida exige o mesmo Product e cobertura integral do período:
+
+```text
+policy.starts_on <= offer.valid_from
+policy.ends_on IS NULL OR policy.ends_on >= offer.valid_to
+```
+
+Draft Offer pode receber Policy draft ou needs_review para composição antecipada. Policy rejected ou
+archived não pode receber nova associação. Arquivamento posterior não invalida a história de uma
+Offer já publicada.
 
 ## Dealer rebate legado
 
-O Excel pode informar somente `total_dealer_rebate`. A alocação proporcional é regra exclusiva de
-migração. Apenas retail, trade-in e financiamento são elegíveis. Componentes individuais positivos
-são autoritativos (`explicit_legacy_component`) e nunca redistribuídos.
+O Excel pode informar somente `total_dealer_rebate`. Sua alocação proporcional continua sendo regra
+exclusiva de migração. Apenas retail, trade-in e financiamento são elegíveis; componentes explícitos
+positivos são autoritativos e nunca redistribuídos. `dealer_rebate_amount` não compõe o benefício do
+cliente.
 
-Quando só existe o total agregado, policies elegíveis, calculáveis e com benefício positivo recebem:
+`commercial_policy_applications` e acumuladores permanecem no schema apenas para compatibilidade e
+reconciliação histórica. Eles não implementam Offer↔Policy e não são fonte da composição V2.
 
-```text
-total_dealer_rebate × customer_benefit_amount / soma_dos_benefícios_elegíveis
-```
+## Batch persistente
 
-O cálculo usa precisão decimal e HALF_UP. O total é convertido em centavos inteiros: cada policy
-recebe primeiro o piso de sua quota e os centavos restantes seguem as maiores frações, com desempate
-por retail, trade-in, financiamento, source id e candidate id. Nenhum valor pode ser negativo e a
-soma final é exatamente o total legado. Ausência de rebate é sempre representada por amount e método
-`NULL`, nunca por zero sem método. Sem base elegível, o total fica `unallocated_legacy_total`, recebe
-`UNALLOCATED_LEGACY_DEALER_REBATE` e bloqueia publicação; nenhuma policy genérica é criada.
+Origem `manual` usa `pricing_import_batches`, assim como Excel, PDF e IA. Não existe infraestrutura
+paralela para os futuros Batch Prices, Batch Policies e Offer Builder.
 
-IPVA, seguro, wallbox, emplacamento, manutenção, voucher, `other` e futuros tipos não declarados não
-recebem rebate. `dealer_rebate_amount` nunca compõe o benefício do cliente.
+## Segurança e auditoria
 
-## Tipos para novos cadastros
-
-- `free_wallbox`: `fixed_amount`, default atual BRL 4.000,00, alterável por policy.
-- `free_registration`: `percentage_of_msrp`, taxa auditável de 1% do MSRP versionado.
-- `free_maintenance`: `non_monetized`, com descrição ou cobertura em `policy_parameters`.
-- `fuel_or_recharge_voucher`: `fixed_amount` nominal e modalidade `fuel`,
-  `electric_recharge` ou `unspecified`; a modalidade é obrigatória na publicação.
-
-Nenhum desses tipos é inferido de `others_bonus`. O legado continua gerando `other`, pois não há
-evidência confiável para reclassificação histórica.
-
-## Tipos compartilhados e compatibilidade
-
-`@compra-car/contracts` é a fonte TypeScript dos tipos. Os tipos atuais são os dez listados acima.
-`registration` permanece somente no enum SQL como compatibilidade histórica e é deprecated para
-novos registros; seu equivalente atual é `free_registration`. `present_value_subsidy` é um método
-de cálculo legado, não um policy type, e foi substituído no fluxo atual por
-`discounted_promotional_cash_flow_difference`. Ambos são recusados pela publicação de offers novas.
-Os demais métodos reconhecidos são `fixed_amount`, `percentage_of_msrp`, `manual_amount`,
-`proportional_ipva` e `non_monetized`.
-
-## Publicação
-
-Uma offer publicável exige produto e MSRP `published`, positivo, BRL, do mesmo produto e com vigência
-compatível, além de referências íntegras, policies válidas e ausência de issues bloqueadores. Rebate não alocado e benefício
-financeiro negativo bloqueiam publicação. `free_maintenance` válida não bloqueia apenas por ter valor
-`NULL`; policies monetizadas exigem benefício positivo.
-
-`publish_commercial_offer` é o único fluxo de transição de draft para published. A função valida e
-bloqueia o agregado, publica suas policies na mesma transação e grava os campos de ciclo de vida e o
-evento de auditoria. UPDATE direto é recusado; published e archived não voltam a draft nem podem ser
-apagadas. `commercial_policy_applications` continua no schema apenas para compatibilidade do modelo
-anterior e não é lida nem reconstruída por esse fluxo.
-
-As colunas `price_type` e `policy_parameters` foram adicionadas como nullable. Seus defaults valem
-somente para registros novos; valores históricos exigem validação e backfill separado antes de um
-futuro `NOT NULL`. A migration permanece transacional e substitui apenas triggers nomeados,
-recriando seu comportamento no mesmo arquivo.
-
-As alterações de schema permanecem somente na migration não aplicada
-`20260726150000_add_pricing_legacy_migration_rules.sql`.
+A junction possui RLS, leitura restrita e nenhuma escrita privilegiada pelo browser. Link/unlink
+ocorrem por RPC server-only, validam optimistic locking da Offer e registram ator e correlation ID em
+`pricing_audit_events`. Publicações de Policy e Offer também usam funções auditadas independentes.

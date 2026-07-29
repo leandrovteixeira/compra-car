@@ -141,6 +141,25 @@ Os dados atuais podem conter `Powertrain`, `Exterior`, `Interior`, `Convenience`
 
 `VehicleRepository` e `ComparisonRepository` são portas assíncronas do domínio. Elas retornam entidades e valores normalizados e não mencionam Supabase, tabelas, colunas, `products`, `specs` ou `product_specs`.
 
+`CommercialPricingRepository` implementa o Pricing Domain V2 sem expor nomes legados: lista
+Policies por Product, lê Offer com memberships N:N, associa/desassocia Policy em Offer draft e
+publica Policy e Offer separadamente.
+
+## Pricing Domain V2
+
+`CommercialPolicy` pertence diretamente a um único Product. `CommercialOffer` também pertence a um
+Product e seleciona suas Policies por `CommercialOfferPolicyMembership`. Uma Policy pode ser
+reutilizada por várias Offers do mesmo Product; nunca por Products diferentes.
+
+A Offer é a fronteira de composição: benefício total é a soma exata das Policies associadas àquela
+Offer, e preço transacional é MSRP menos esse benefício. O domínio não infere a soma de todas as
+Policies existentes para um Product e rejeita duplicidades, produtos divergentes, períodos sem
+cobertura e resultado transacional negativo.
+
+Toda Policy publicável possui benefício BRL positivo. Os inputs TypeScript são uma união
+discriminada por `policyType`; campos não aplicáveis são rejeitados. Policy e Offer são publicadas
+independentemente, e publicar Offer não altera o lifecycle das Policies.
+
 ## Conceitos preservados para evolução
 
 Os conceitos abaixo continuam válidos no modelo conceitual mais amplo, mas não foram implementados nesta fase:
@@ -148,7 +167,7 @@ Os conceitos abaixo continuam válidos no modelo conceitual mais amplo, mas não
 - `Brand`, `Model`, `Generation`, `Facelift` e ofertas por mercado ou período;
 - `Powertrain`, `Engine`, `ElectricMotor`, `Transmission` e `Drivetrain`;
 - estados comerciais detalhados de equipamentos: série, opcional e pacote;
-- `Price`, `CommercialPolicy`, `DataSource`, `DataFreshness` e snapshots;
+- `DataSource`, `DataFreshness` e snapshots adicionais de Pricing;
 - `Translation`, `BrandTheme` e geração de PDF;
 - pesos, score geral e comparação editorial.
 

@@ -1,8 +1,9 @@
 # ADR-011 — Modelo de preços públicos, políticas comerciais, acumuladores e importações
 
-- **Status:** aceito; implementação incremental iniciada
+- **Status:** aceito historicamente; relações Offer/Policy substituídas pelo ADR-012
 - **Data:** 2026-07-25
 - **Substitui parcialmente:** ADR-009, detalhando seu modelo alvo
+- **Substituído parcialmente por:** ADR-012, que torna Policy filha de Product e Offer↔Policy N:N
 - **Implementação:** primeira migration estrutural criada e validada localmente; etapas operacionais
   permanecem pendentes
 

@@ -1,6 +1,6 @@
 # Contexto para agentes de IA
 
-## Marco atual — ProductPublicPrice administrativo com draft/edit (2026-07-27)
+## Marco histórico — ProductPublicPrice administrativo com draft/edit (2026-07-27)
 
 - `/admin/prices` cria preços manuais em `draft` e edita somente `draft`, `needs_review` e
   `rejected`; `published` e `archived` permanecem somente leitura;
@@ -13,7 +13,25 @@
 - publicação e demais transições, Offers, Policies, filtros e indicador de ambiente continuam fora
   do escopo.
 
-## Marco atual — ProductPublicPrice administrativo em leitura (2026-07-27)
+## Marco atual — Pricing Domain V2 (Sprint 9A, 2026-07-28)
+
+- `CommercialPolicy` pertence a exatamente um Product por `product_id NOT NULL`;
+- Offer↔Policy é N:N por `commercial_offer_policies`, e a mesma Policy pode ser reutilizada em Offers
+  do mesmo Product;
+- a Offer é a fronteira exclusiva de composição de benefícios;
+- toda Policy publicável é monetizada, incluindo manutenção; registro gratuito vale 1% do MSRP-base;
+- Policy e Offer possuem publicação independente; publicar Offer não modifica Policy;
+- batch persistente aceita origem manual, Offer possui optimistic locking e preços terminais têm
+  todos os campos históricos protegidos;
+- o core calcula benefício e preço transacional com centavos inteiros, sem floating point;
+- a migration forward-only é `20260728120000_evolve_pricing_domain_v2.sql` e a decisão está no
+  ADR-012.
+- em 2026-07-28, a migration foi aplicada somente ao Staging `shfsjyjxmgwnlexmdkcs`; o backfill
+  preservou 1 Offer, 1 Policy e 3 preços, criou 1 membership e deixou zero Policy sem Product.
+
+As telas Batch Prices (9B), Batch Policies (9C) e Offer Builder (9D) permanecem fora da Sprint 9A.
+
+## Marco histórico — ProductPublicPrice administrativo em leitura (2026-07-27)
 
 - `/admin/prices` é a primeira fatia vertical de Pricing no Admin Next.js existente;
 - `ProductPublicPriceRepository` e `ProductPublicPriceSupabaseAdapter` são dedicados e somente leitura;
@@ -23,7 +41,7 @@
 - escrita, publicação, CommercialOffer, CommercialPolicy e `commercial_policy_applications`
   permanecem fora desta implementação.
 
-## Marco 2026-07-26 — revisão final da migration de pricing
+## Marco histórico 2026-07-26 — revisão final da migration de pricing
 
 - O fluxo futuro oficial é `publish_commercial_offer`: valida offer, product, MSRP published e todas
   as policies, publica o agregado atomicamente e audita. UPDATE direto e DELETE de offer terminal
@@ -35,17 +53,17 @@
 - As métricas distinguem ocorrências de issues, offers, policies, prices, sources e entidades. A
   migration e os testes pgTAP continuam apenas preparados, sem aplicação ou escrita no Supabase.
 
-## Marco 2026-07-26 — dealer rebate e policy types finais
+## Marco histórico 2026-07-26 — dealer rebate e policy types anteriores ao V2
 
 - `total_dealer_rebate` agregado é válido no legado. A migração aloca proporcionalmente somente para
   retail, trade-in e financiamento calculáveis; componentes positivos explícitos são autoritativos.
 - Ausência de base gera `UNALLOCATED_LEGACY_DEALER_REBATE`, nunca policy genérica. Resíduo monetário
   vai para a última policy na ordem determinística aprovada.
-- Novos cadastros podem usar wallbox BRL 4.000, emplacamento 1% do MSRP, manutenção não monetizada e
-  voucher nominal. Nenhum tipo novo é inferido de `others_bonus`.
+- Naquele desenho, manutenção ainda era não monetizada. O ADR-012 substituiu essa regra por valor
+  fixo positivo obrigatório. Nenhum tipo novo é inferido de `others_bonus`.
 - Schema permanece apenas na migration não aplicada; dry-run continua read-only e sem persistência.
 
-## Marco 2026-07-26 — pricing legacy dry-run 3.0.0
+## Marco histórico 2026-07-26 — pricing legacy dry-run 3.0.0
 
 - `commercial_offer` é o agregado pai: uma por linha legacy, em draft, ligada ao MSRP versionado;
   policies e accumulators referenciam a offer, enquanto `legacy_source_id` é somente auditoria.
@@ -387,8 +405,7 @@ O export histórico do Appsmith permanece versionado em `appsmith/exports/Compra
 2. Validar cobertura e desempenho com 2 ou 3 veículos reais.
 3. Comparar este clone com o `C:\Dev\compra-car` do outro notebook.
 4. Avaliar com o negócio as três divergências estruturais de specs encontradas na Sprint 5.
-5. Continuar a Sprint 9 pelas migrations/subtarefas restantes do ADR-011, preservando as decisões
-   financeiras pendentes como bloqueio de publicação, não da estrutura.
+5. Implementar Sprint 9B Batch Prices, 9C Batch Policies e 9D Offer Builder sobre o ADR-012.
 6. Concluir MVP e piloto; depois evoluir dados, importador e arquitetura gradualmente.
 
 ## Registro histórico — Sprint 1 de Gestão de Produtos no Appsmith (planejamento em 2026-07-22)

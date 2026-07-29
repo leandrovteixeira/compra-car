@@ -307,19 +307,19 @@ select throws_ok(
 );
 
 insert into public.commercial_policies (
-  id, policy_type, scope_type, model_brand, model_name, scope_snapshot,
+  id, product_id, policy_type, scope_type, model_brand, model_name, scope_snapshot,
   title, description, starts_on, ends_on, benefit_percentage,
   down_payment_percentage, term_months, customer_interest_rate_monthly,
   calculation_method, financial_parameter_set_id, source_type
 ) values
-  (97201, 'retail_bonus', 'model', 'Scope Brand', 'Scope Model', '{"schemaVersion":"1","productIds":[2100000101,2100000102]}', 'Retail bonus', null, date '2026-07-01', null, null, null, null, null, 'fixed_amount', null, 'manual'),
-  (97202, 'trade_in_bonus', 'product_set', null, null, '{"schemaVersion":"1","productIds":[2100000101]}', 'Trade-in bonus', 'Eligible used vehicle', date '2026-07-01', date '2026-12-31', null, null, null, null, 'fixed_amount', null, 'manual'),
-  (97203, 'subsidized_financing', 'product_set', null, null, '{"schemaVersion":"1","productIds":[2100000101]}', 'Synthetic financing', 'Synthetic test only', date '2026-07-01', null, null, 50, 24, 0, 'present_value_subsidy', 97101, 'manual'),
-  (97204, 'free_ipva', 'product_set', null, null, '{"schemaVersion":"1","productIds":[2100000101]}', 'Free IPVA', 'Explicit synthetic percentage', date '2026-07-01', null, 4, null, null, null, 'percentage_of_msrp', null, 'manual'),
-  (97205, 'free_insurance', 'product_set', null, null, '{"schemaVersion":"1","productIds":[2100000101]}', 'Free insurance', 'Eighteen months', date '2026-07-01', null, 3, null, 18, null, 'percentage_of_msrp', null, 'manual'),
-  (97206, 'free_wallbox', 'product_set', null, null, '{"schemaVersion":"1","productIds":[2100000101]}', 'Free wallbox', 'Editable approved premise', date '2026-07-01', null, null, null, null, null, 'fixed_amount', null, 'manual'),
-  (97207, 'registration', 'product_set', null, null, '{"schemaVersion":"1","productIds":[2100000101]}', 'Registration', 'Explicit synthetic percentage', date '2026-07-01', null, 1, null, null, null, 'percentage_of_msrp', null, 'manual'),
-  (97208, 'other', 'product_set', null, null, '{"schemaVersion":"1","productIds":[2100000101]}', 'Other benefit', 'Manual economic estimate', date '2026-07-01', null, null, null, null, null, 'manual_amount', null, 'manual');
+  (97201, 2100000101, 'retail_bonus', 'model', 'Scope Brand', 'Scope Model', '{"schemaVersion":"1","productIds":[2100000101,2100000102]}', 'Retail bonus', null, date '2026-07-01', null, null, null, null, null, 'fixed_amount', null, 'manual'),
+  (97202, 2100000101, 'trade_in_bonus', 'product_set', null, null, '{"schemaVersion":"1","productIds":[2100000101]}', 'Trade-in bonus', 'Eligible used vehicle', date '2026-07-01', date '2026-12-31', null, null, null, null, 'fixed_amount', null, 'manual'),
+  (97203, 2100000101, 'subsidized_financing', 'product_set', null, null, '{"schemaVersion":"1","productIds":[2100000101]}', 'Synthetic financing', 'Synthetic test only', date '2026-07-01', null, null, 50, 24, 0, 'present_value_subsidy', 97101, 'manual'),
+  (97204, 2100000101, 'free_ipva', 'product_set', null, null, '{"schemaVersion":"1","productIds":[2100000101]}', 'Free IPVA', 'Explicit synthetic percentage', date '2026-07-01', null, 4, null, null, null, 'percentage_of_msrp', null, 'manual'),
+  (97205, 2100000101, 'free_insurance', 'product_set', null, null, '{"schemaVersion":"1","productIds":[2100000101]}', 'Free insurance', 'Eighteen months', date '2026-07-01', null, 3, null, 18, null, 'percentage_of_msrp', null, 'manual'),
+  (97206, 2100000101, 'free_wallbox', 'product_set', null, null, '{"schemaVersion":"1","productIds":[2100000101]}', 'Free wallbox', 'Editable approved premise', date '2026-07-01', null, null, null, null, null, 'fixed_amount', null, 'manual'),
+  (97207, 2100000101, 'free_registration', 'product_set', null, null, '{"schemaVersion":"1","productIds":[2100000101]}', 'Registration', 'Explicit synthetic percentage', date '2026-07-01', null, 1, null, null, null, 'percentage_of_msrp', null, 'manual'),
+  (97208, 2100000101, 'other', 'product_set', null, null, '{"schemaVersion":"1","productIds":[2100000101]}', 'Other benefit', 'Manual economic estimate', date '2026-07-01', null, null, null, null, null, 'manual_amount', null, 'manual');
 
 insert into public.commercial_policy_applications (
   id, policy_id, product_id, basis_public_price_id, input_monetary_value,
@@ -376,36 +376,60 @@ select
   )
 from result;
 
+update public.commercial_policies set fixed_amount = 1000, customer_benefit_amount = 1000 where id = 97201;
+update public.commercial_policies set fixed_amount = 1500, customer_benefit_amount = 1500 where id = 97202;
+update public.commercial_policies
+   set calculation_method = 'discounted_promotional_cash_flow_difference',
+       calculation_base_price_id = 97001,
+       financed_principal = 50000,
+       customer_benefit_amount = (select monetary_value from public.commercial_policy_applications where id = 97309)
+ where id = 97203;
+update public.commercial_policies
+   set calculation_method = 'proportional_ipva', calculation_base_price_id = 97001,
+       annual_rate = 0.04, offer_month = 1, remaining_months = 12, customer_benefit_amount = 4000
+ where id = 97204;
+update public.commercial_policies
+   set calculation_base_price_id = 97001, annual_rate = 0.03,
+       coverage_years = 1.5, customer_benefit_amount = 4500
+ where id = 97205;
+update public.commercial_policies set fixed_amount = 3750, customer_benefit_amount = 3750 where id = 97206;
+update public.commercial_policies
+   set calculation_base_price_id = 97001, percentage_rate = 0.01, customer_benefit_amount = 1000
+ where id = 97207;
+update public.commercial_policies
+   set calculation_method = 'fixed_amount', fixed_amount = 2500, customer_benefit_amount = 2500
+ where id = 97208;
+
 select lives_ok(
-  $$select public.publish_commercial_policy(97201, 'a1000000-0000-4000-8000-000000000001', 1, 'c1000000-0000-4000-8000-000000000031')$$,
+  $$select public.publish_commercial_policy(97201, 'a1000000-0000-4000-8000-000000000001', 2, 'c1000000-0000-4000-8000-000000000031')$$,
   'retail_bonus publishes with an exact model scope snapshot'
 );
 select lives_ok(
-  $$select public.publish_commercial_policy(97202, 'a1000000-0000-4000-8000-000000000001', 1, 'c1000000-0000-4000-8000-000000000032')$$,
+  $$select public.publish_commercial_policy(97202, 'a1000000-0000-4000-8000-000000000001', 2, 'c1000000-0000-4000-8000-000000000032')$$,
   'trade_in_bonus publishes'
 );
 select lives_ok(
-  $$select public.publish_commercial_policy(97203, 'a1000000-0000-4000-8000-000000000001', 1, 'c1000000-0000-4000-8000-000000000033')$$,
+  $$select public.publish_commercial_policy(97203, 'a1000000-0000-4000-8000-000000000001', 2, 'c1000000-0000-4000-8000-000000000033')$$,
   'subsidized_financing publishes with synthetic decimal present value inputs'
 );
 select lives_ok(
-  $$select public.publish_commercial_policy(97204, 'a1000000-0000-4000-8000-000000000001', 1, 'c1000000-0000-4000-8000-000000000034')$$,
+  $$select public.publish_commercial_policy(97204, 'a1000000-0000-4000-8000-000000000001', 2, 'c1000000-0000-4000-8000-000000000034')$$,
   'free_ipva publishes'
 );
 select lives_ok(
-  $$select public.publish_commercial_policy(97205, 'a1000000-0000-4000-8000-000000000001', 1, 'c1000000-0000-4000-8000-000000000035')$$,
+  $$select public.publish_commercial_policy(97205, 'a1000000-0000-4000-8000-000000000001', 2, 'c1000000-0000-4000-8000-000000000035')$$,
   'free_insurance publishes proportionally for eighteen months'
 );
 select lives_ok(
-  $$select public.publish_commercial_policy(97206, 'a1000000-0000-4000-8000-000000000001', 1, 'c1000000-0000-4000-8000-000000000036')$$,
+  $$select public.publish_commercial_policy(97206, 'a1000000-0000-4000-8000-000000000001', 2, 'c1000000-0000-4000-8000-000000000036')$$,
   'free_wallbox publishes without a hardcoded premise'
 );
 select lives_ok(
-  $$select public.publish_commercial_policy(97207, 'a1000000-0000-4000-8000-000000000001', 1, 'c1000000-0000-4000-8000-000000000037')$$,
+  $$select public.publish_commercial_policy(97207, 'a1000000-0000-4000-8000-000000000001', 2, 'c1000000-0000-4000-8000-000000000037')$$,
   'registration publishes'
 );
 select lives_ok(
-  $$select public.publish_commercial_policy(97208, 'a1000000-0000-4000-8000-000000000001', 1, 'c1000000-0000-4000-8000-000000000038')$$,
+  $$select public.publish_commercial_policy(97208, 'a1000000-0000-4000-8000-000000000001', 2, 'c1000000-0000-4000-8000-000000000038')$$,
   'other publishes with manual_amount and non-empty description'
 );
 select is(
@@ -425,10 +449,10 @@ select is(
 );
 
 insert into public.commercial_policies (
-  id, policy_type, scope_type, scope_snapshot, title, description,
+  id, product_id, policy_type, scope_type, scope_snapshot, title, description,
   starts_on, benefit_percentage, calculation_method, source_type
 ) values (
-  97209, 'registration', 'product_set',
+  97209, 2100000101, 'registration', 'product_set',
   '{"schemaVersion":"1","productIds":[2100000101]}',
   'Half-up boundary', 'Synthetic half-cent boundary', date '2026-07-01',
   0.000005, 'percentage_of_msrp', 'manual'
@@ -446,9 +470,10 @@ insert into public.commercial_policy_applications (
     null, 'MSRP * percentage / 100', 0.005, 0.01
   )
 );
-select lives_ok(
+select throws_ok(
   $$select public.publish_commercial_policy(97209, 'a1000000-0000-4000-8000-000000000001', 1, 'c1000000-0000-4000-8000-000000000039')$$,
-  'a positive half-cent boundary policy publishes'
+  '23514', null,
+  'deprecated registration cannot publish'
 );
 select is(
   (select monetary_value from public.commercial_policy_applications where id = 97310),
@@ -457,18 +482,18 @@ select is(
 );
 
 insert into public.commercial_policies (
-  id, policy_type, scope_type, scope_snapshot, title, description, starts_on,
+  id, product_id, policy_type, scope_type, scope_snapshot, title, description, starts_on,
   benefit_percentage, down_payment_percentage, term_months,
   customer_interest_rate_monthly, calculation_method,
   financial_parameter_set_id, source_type
 ) values
-  (97801, 'retail_bonus', 'product_set', '{"schemaVersion":"1","productIds":[2100000101]}', 'Wrong method', null, date '2026-07-01', null, null, null, null, 'manual_amount', null, 'manual'),
-  (97802, 'retail_bonus', 'product_set', '{"schemaVersion":"1","productIds":[2100000101]}', 'Empty snapshot', null, date '2026-07-01', null, null, null, null, 'fixed_amount', null, 'manual'),
-  (97803, 'retail_bonus', 'product_set', '{"schemaVersion":"1","productIds":[2100000101]}', 'Zero value', null, date '2026-07-01', null, null, null, null, 'fixed_amount', null, 'manual'),
-  (97804, 'free_ipva', 'product_set', '{"schemaVersion":"1","productIds":[2100000101]}', 'Wrong product price', 'Invalid basis', date '2026-07-01', 4, null, null, null, 'percentage_of_msrp', null, 'manual'),
-  (97805, 'free_ipva', 'product_set', '{"schemaVersion":"1","productIds":[2100000101]}', 'Draft basis', 'Invalid basis', date '2026-07-01', 4, null, null, null, 'percentage_of_msrp', null, 'manual'),
-  (97806, 'subsidized_financing', 'product_set', '{"schemaVersion":"1","productIds":[2100000101]}', 'Draft parameter', 'Invalid parameter', date '2026-07-01', null, 50, 24, 0, 'present_value_subsidy', 97104, 'manual'),
-  (97807, 'free_ipva', 'product_set', '{"schemaVersion":"1","productIds":[2100000101]}', 'Wrong formula', 'Invalid formula', date '2026-07-01', 4, null, null, null, 'percentage_of_msrp', null, 'manual');
+  (97801, 2100000101, 'retail_bonus', 'product_set', '{"schemaVersion":"1","productIds":[2100000101]}', 'Wrong method', null, date '2026-07-01', null, null, null, null, 'manual_amount', null, 'manual'),
+  (97802, 2100000101, 'retail_bonus', 'product_set', '{"schemaVersion":"1","productIds":[2100000101]}', 'Empty snapshot', null, date '2026-07-01', null, null, null, null, 'fixed_amount', null, 'manual'),
+  (97803, 2100000101, 'retail_bonus', 'product_set', '{"schemaVersion":"1","productIds":[2100000101]}', 'Zero value', null, date '2026-07-01', null, null, null, null, 'fixed_amount', null, 'manual'),
+  (97804, 2100000101, 'free_ipva', 'product_set', '{"schemaVersion":"1","productIds":[2100000101]}', 'Wrong product price', 'Invalid basis', date '2026-07-01', 4, null, null, null, 'percentage_of_msrp', null, 'manual'),
+  (97805, 2100000101, 'free_ipva', 'product_set', '{"schemaVersion":"1","productIds":[2100000101]}', 'Draft basis', 'Invalid basis', date '2026-07-01', 4, null, null, null, 'percentage_of_msrp', null, 'manual'),
+  (97806, 2100000101, 'subsidized_financing', 'product_set', '{"schemaVersion":"1","productIds":[2100000101]}', 'Draft parameter', 'Invalid parameter', date '2026-07-01', null, 50, 24, 0, 'present_value_subsidy', 97104, 'manual'),
+  (97807, 2100000101, 'free_ipva', 'product_set', '{"schemaVersion":"1","productIds":[2100000101]}', 'Wrong formula', 'Invalid formula', date '2026-07-01', 4, null, null, null, 'percentage_of_msrp', null, 'manual');
 
 insert into public.commercial_policy_applications (
   id, policy_id, product_id, basis_public_price_id, input_monetary_value,

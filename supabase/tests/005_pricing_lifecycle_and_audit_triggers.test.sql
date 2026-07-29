@@ -72,8 +72,8 @@ select is(
          'set_pricing_updated_at'
        )
   ),
-  23::bigint,
-  'the four functions are attached through exactly 23 row triggers'
+  24::bigint,
+  'the four functions are attached through exactly 24 row triggers including offers'
 );
 
 select is(
@@ -84,8 +84,8 @@ select is(
      where not trigger_record.tgisinternal
        and procedure.proname = 'set_pricing_updated_at'
   ),
-  7::bigint,
-  'updated_at and lock_version automation is limited to the seven approved tables'
+  8::bigint,
+  'updated_at and lock_version automation includes the eight approved tables'
 );
 
 insert into auth.users (id, email, raw_user_meta_data)
@@ -193,10 +193,10 @@ select throws_ok(
 );
 
 insert into public.commercial_policies (
-  id, policy_type, scope_type, scope_snapshot, title, starts_on,
+  id, product_id, policy_type, scope_type, scope_snapshot, title, starts_on,
   calculation_method, status, source_type
 ) values (
-  95401, 'other', 'product_set', '{}', 'Draft policy', date '2026-07-01',
+  95401, 2100000003, 'other', 'product_set', '{}', 'Draft policy', date '2026-07-01',
   'manual_amount', 'draft', 'manual'
 );
 select lives_ok(
@@ -205,10 +205,10 @@ select lives_ok(
 );
 
 insert into public.commercial_policies (
-  id, policy_type, scope_type, scope_snapshot, title, starts_on,
+  id, product_id, policy_type, scope_type, scope_snapshot, title, starts_on,
   calculation_method, status, source_type, published_at, published_by
 ) values (
-  95402, 'retail_bonus', 'product_set', '{}', 'Published policy', date '2026-07-01',
+  95402, 2100000003, 'retail_bonus', 'product_set', '{}', 'Published policy', date '2026-07-01',
   'fixed_amount', 'published', 'manual', now(),
   '99999999-9999-4999-8999-999999999999'
 );

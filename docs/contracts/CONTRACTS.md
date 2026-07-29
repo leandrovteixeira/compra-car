@@ -144,13 +144,19 @@ O adaptador legado traduz falhas técnicas em erros próprios sem expor credenci
 
 Auth está implementado em `packages/contracts`: `AppRole` aceita `admin`/`seller`, `UserStatus` aceita `pending`/`active`/`disabled` e `AuthProfile` expõe `id`, `fullName`, `role` e `status`. As factories e consultas Auth ficam em `packages/adapter-supabase`; cookies, redirects e proteção de routes ficam em `apps/web`. A autorização não usa `user_metadata`.
 
+Pricing Domain V2 expõe `CommercialPolicy`, `CommercialOffer`,
+`CommercialOfferPolicyMembership`, `CommercialPricingRepository` e `CommercialPolicyInput`. O
+último é uma união discriminada pelos tipos atuais de Policy, com campos obrigatórios e proibidos
+validados no core. IDs são strings nas fronteiras; valores monetários são strings decimais BRL e
+nunca `number` em cálculos. `CommercialOffer.policyIds` representa somente memberships explícitas.
+
 A listagem administrativa usa um DTO local e estreito, `AdminProductListItem`, em `apps/web/src/server/admin-product-service.ts`. Ele transporta somente os campos renderizados: `id`, `brand`, `model`, `version`, `modelYear`, `productionYear`, `isActive` e `isPublic`. Esse DTO não é um contrato público do domínio e não expõe a resposta bruta do Supabase.
 
 Continuam planejados, mas não fazem parte desta entrega:
 
 - estados detalhados de qualidade e disponibilidade de equipamentos;
 - ranking de itens `scale`;
-- preços, políticas comerciais e snapshots;
+- telas em lote de preços, Policies e montagem de Offers;
 - tema de marca;
 - entrada autocontida para PDF;
 - operações de criação, edição e duplicação de veículos;

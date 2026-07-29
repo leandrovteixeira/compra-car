@@ -9,6 +9,7 @@ const expected = {
   product_public_prices: 2,
   commercial_offers: 1,
   commercial_policies: 1,
+  commercial_offer_policies: 1,
   profiles: 1,
 };
 for (const [table, count] of Object.entries(expected))
@@ -147,6 +148,13 @@ const policies = (
 assert(offers.length === 1 && policies.length === 1, 'Fixture Offer/Policy identity mismatch.');
 const [offer] = offers;
 const [policy] = policies;
+const memberships = (
+  await request(
+    url,
+    key,
+    `/rest/v1/commercial_offer_policies?select=commercial_offer_id,commercial_policy_id&commercial_offer_id=eq.${offer.id}&commercial_policy_id=eq.${policy.id}`,
+  )
+).data;
 const songPrice = prices.find((price) => price.product_id === 609);
 assert(
   offer.product_id === 609 &&
@@ -158,7 +166,8 @@ assert(
   'Offer validation failed.',
 );
 assert(
-  policy.commercial_offer_id === offer.id &&
+  memberships.length === 1 &&
+    policy.product_id === offer.product_id &&
     policy.calculation_base_price_id === songPrice.id &&
     policy.policy_type === 'retail_bonus' &&
     policy.calculation_method === 'fixed_amount' &&

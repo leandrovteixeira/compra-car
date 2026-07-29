@@ -62,7 +62,9 @@ select is(
        and table_name in (
          'product_public_prices',
          'financial_parameter_sets',
+         'commercial_offers',
          'commercial_policies',
+         'commercial_offer_policies',
          'commercial_policy_applications',
          'commercial_policy_accumulators',
          'commercial_policy_accumulator_items',
@@ -71,6 +73,7 @@ select is(
        and table_type = 'BASE TABLE'
   ),
   array[
+    'commercial_offer_policies',
     'commercial_offers',
     'commercial_policies',
     'commercial_policy_accumulator_items',
@@ -80,7 +83,7 @@ select is(
     'financial_parameter_sets',
     'product_public_prices'
   ],
-  'all eight pricing core tables exist in public'
+  'all nine Pricing V2 core tables exist in public'
 );
 
 select is(
@@ -104,7 +107,7 @@ select is(
     'published_at:timestamp with time zone:false:', 'published_by:uuid:false:',
     'created_at:timestamp with time zone:true:', 'created_by:uuid:false:',
     'updated_at:timestamp with time zone:true:', 'updated_by:uuid:false:',
-    'lock_version:integer:true:', 'price_type:text:true:', 'ends_on:date:false:',
+    'lock_version:integer:true:', 'price_type:text:false:', 'ends_on:date:false:',
     'source_reference:text:false:', 'legacy_source_id:bigint:false:'
   ],
   'product_public_prices columns match the target schema exactly'
@@ -165,7 +168,7 @@ select is(
     'published_at:timestamp with time zone:false:', 'published_by:uuid:false:',
     'created_at:timestamp with time zone:true:', 'created_by:uuid:false:',
     'updated_at:timestamp with time zone:true:', 'updated_by:uuid:false:',
-    'lock_version:integer:true:', 'commercial_offer_id:bigint:false:',
+    'lock_version:integer:true:',
     'calculation_base_price_id:bigint:false:', 'customer_benefit_amount:numeric(14,2):false:',
     'dealer_rebate_amount:numeric(14,2):false:',
     'dealer_rebate_allocation_method:dealer_rebate_allocation_method:false:',
@@ -175,10 +178,11 @@ select is(
     'legacy_policy_source:text:false:', 'legacy_offer_id:bigint:false:',
     'legacy_source_column:text:false:', 'legacy_dealer_rebate_value:numeric(14,2):false:',
     'fixed_amount:numeric(14,2):false:', 'percentage_rate:numeric(14,12):false:',
-    'voucher_type:text:false:', 'policy_parameters:jsonb:true:',
+    'voucher_type:text:false:', 'policy_parameters:jsonb:false:',
     'annual_rate:numeric(14,12):false:',
     'coverage_years:numeric(6,2):false:', 'remaining_months:smallint:false:',
-    'offer_month:smallint:false:', 'financed_principal:numeric(14,2):false:'
+    'offer_month:smallint:false:', 'financed_principal:numeric(14,2):false:',
+    'product_id:integer:true:'
   ],
   'commercial_policies columns match the target schema exactly'
 );
@@ -277,7 +281,9 @@ select is(
        and constraint_record.conrelid in (
          'public.product_public_prices'::regclass,
          'public.financial_parameter_sets'::regclass,
+         'public.commercial_offers'::regclass,
          'public.commercial_policies'::regclass,
+         'public.commercial_offer_policies'::regclass,
          'public.commercial_policy_applications'::regclass,
          'public.commercial_policy_accumulators'::regclass,
          'public.commercial_policy_accumulator_items'::regclass,
@@ -285,6 +291,8 @@ select is(
        )
   ),
   array[
+    'commercial_offer_policies_pkey',
+    'commercial_offers_pkey',
     'commercial_policies_pkey',
     'commercial_policy_accumulator_items_pkey',
     'commercial_policy_accumulator_values_pkey',
@@ -308,6 +316,9 @@ select is(
         ('financial_parameter_sets_published_by_fkey', 'financial_parameter_sets', 'profiles', 'n'),
         ('financial_parameter_sets_created_by_fkey', 'financial_parameter_sets', 'profiles', 'n'),
         ('financial_parameter_sets_updated_by_fkey', 'financial_parameter_sets', 'profiles', 'n'),
+        ('commercial_offers_product_id_fkey', 'commercial_offers', 'products', 'r'),
+        ('commercial_offers_public_price_id_fkey', 'commercial_offers', 'product_public_prices', 'r'),
+        ('commercial_policies_product_id_fkey', 'commercial_policies', 'products', 'r'),
         ('commercial_policies_financial_parameter_set_id_fkey', 'commercial_policies', 'financial_parameter_sets', 'r'),
         ('commercial_policies_supersedes_policy_id_fkey', 'commercial_policies', 'commercial_policies', 'r'),
         ('commercial_policies_reviewed_by_fkey', 'commercial_policies', 'profiles', 'n'),
@@ -315,6 +326,9 @@ select is(
         ('commercial_policies_created_by_fkey', 'commercial_policies', 'profiles', 'n'),
         ('commercial_policies_updated_by_fkey', 'commercial_policies', 'profiles', 'n'),
         ('commercial_policies_source_import_row_id_fkey', 'commercial_policies', 'pricing_import_rows', 'r'),
+        ('commercial_offer_policies_offer_id_fkey', 'commercial_offer_policies', 'commercial_offers', 'c'),
+        ('commercial_offer_policies_policy_id_fkey', 'commercial_offer_policies', 'commercial_policies', 'r'),
+        ('commercial_offer_policies_created_by_fkey', 'commercial_offer_policies', 'profiles', 'n'),
         ('commercial_policy_applications_policy_id_fkey', 'commercial_policy_applications', 'commercial_policies', 'c'),
         ('commercial_policy_applications_product_id_fkey', 'commercial_policy_applications', 'products', 'r'),
         ('commercial_policy_applications_basis_public_price_id_fkey', 'commercial_policy_applications', 'product_public_prices', 'r'),
@@ -342,8 +356,8 @@ select is(
        and constraint_record.confrelid = ('public.' || expected.target_table)::regclass
        and constraint_record.confdeltype::text = expected.delete_action
   ),
-  33::bigint,
-  'all 33 approved foreign keys have the expected target and delete action'
+  39::bigint,
+  'all 39 approved foreign keys have the expected target and delete action'
 );
 select is(
   (
@@ -406,8 +420,8 @@ select is(
        and not index_record.indisprimary
        and not index_record.indisunique
   ),
-  18::bigint,
-  'all 18 documented non-unique indexes exist'
+  21::bigint,
+  'all 21 documented non-unique indexes exist'
 );
 
 insert into public.products (
@@ -462,10 +476,10 @@ select throws_ok(
 select lives_ok(
   $$
     insert into public.commercial_policies (
-      id, policy_type, scope_type, model_brand, model_name, scope_snapshot,
+      id, product_id, policy_type, scope_type, model_brand, model_name, scope_snapshot,
       title, starts_on, calculation_method, source_type
     ) values (
-      92001, 'retail_bonus', 'model', 'Marca', 'Modelo', '{}',
+      92001, 2100000001, 'retail_bonus', 'model', 'Marca', 'Modelo', '{}',
       'Política de modelo', date '2026-07-01', 'fixed_amount', 'manual'
     )
   $$,
@@ -474,10 +488,10 @@ select lives_ok(
 select lives_ok(
   $$
     insert into public.commercial_policies (
-      id, policy_type, scope_type, scope_snapshot, title, starts_on,
+      id, product_id, policy_type, scope_type, scope_snapshot, title, starts_on,
       calculation_method, source_type
     ) values (
-      92002, 'other', 'product_set', '{}', 'Política por produtos',
+      92002, 2100000001, 'other', 'product_set', '{}', 'Política por produtos',
       date '2026-07-01', 'manual_amount', 'manual'
     )
   $$,
@@ -486,10 +500,10 @@ select lives_ok(
 select throws_ok(
   $$
     insert into public.commercial_policies (
-      policy_type, scope_type, model_brand, model_name, scope_snapshot,
+      product_id, policy_type, scope_type, model_brand, model_name, scope_snapshot,
       title, starts_on, calculation_method, source_type
     ) values (
-      'retail_bonus', 'model', ' ', 'Modelo', '{}', 'Escopo inválido',
+      2100000001, 'retail_bonus', 'model', ' ', 'Modelo', '{}', 'Escopo inválido',
       date '2026-07-01', 'fixed_amount', 'manual'
     )
   $$,
@@ -500,10 +514,10 @@ select throws_ok(
 select throws_ok(
   $$
     insert into public.commercial_policies (
-      policy_type, scope_type, model_brand, model_name, scope_snapshot,
+      product_id, policy_type, scope_type, model_brand, model_name, scope_snapshot,
       title, starts_on, calculation_method, source_type
     ) values (
-      'retail_bonus', 'product_set', 'Marca', null, '{}', 'Escopo inválido',
+      2100000001, 'retail_bonus', 'product_set', 'Marca', null, '{}', 'Escopo inválido',
       date '2026-07-01', 'fixed_amount', 'manual'
     )
   $$,
@@ -514,10 +528,10 @@ select throws_ok(
 select throws_ok(
   $$
     insert into public.commercial_policies (
-      policy_type, scope_type, scope_snapshot, title, starts_on, ends_on,
+      product_id, policy_type, scope_type, scope_snapshot, title, starts_on, ends_on,
       calculation_method, source_type
     ) values (
-      'retail_bonus', 'product_set', '{}', 'Datas inválidas',
+      2100000001, 'retail_bonus', 'product_set', '{}', 'Datas inválidas',
       date '2026-08-01', date '2026-07-31', 'fixed_amount', 'manual'
     )
   $$,
@@ -528,10 +542,10 @@ select throws_ok(
 select throws_ok(
   $$
     insert into public.commercial_policies (
-      policy_type, scope_type, scope_snapshot, title, starts_on,
+      product_id, policy_type, scope_type, scope_snapshot, title, starts_on,
       benefit_percentage, calculation_method, source_type
     ) values (
-      'free_ipva', 'product_set', '{}', 'Percentual inválido',
+      2100000001, 'free_ipva', 'product_set', '{}', 'Percentual inválido',
       date '2026-07-01', 100.000001, 'percentage_of_msrp', 'manual'
     )
   $$,
@@ -607,7 +621,9 @@ select ok(
      where relation.oid in (
        'public.product_public_prices'::regclass,
        'public.financial_parameter_sets'::regclass,
+       'public.commercial_offers'::regclass,
        'public.commercial_policies'::regclass,
+       'public.commercial_offer_policies'::regclass,
        'public.commercial_policy_applications'::regclass,
        'public.commercial_policy_accumulators'::regclass,
        'public.commercial_policy_accumulator_items'::regclass,
@@ -631,8 +647,8 @@ select is(
          'public.commercial_policy_accumulator_values'::regclass
        )
   ),
-  20::bigint,
-  'the lifecycle and publication migrations attach the expected 20 triggers to pricing core tables'
+  25::bigint,
+  'the lifecycle and publication migrations attach the expected 25 triggers to pricing core tables'
 );
 select is(
   (

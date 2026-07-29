@@ -309,7 +309,6 @@ select is(
     'pricing_import_batches_idempotency_key_check',
     'pricing_import_batches_lock_version_check',
     'pricing_import_batches_schema_version_check',
-    'pricing_import_batches_source_type_check',
     'pricing_import_row_outputs_exactly_one_check',
     'pricing_import_row_reviews_notes_check',
     'pricing_import_rows_confidence_score_check',
@@ -318,7 +317,7 @@ select is(
     'pricing_import_rows_source_page_check',
     'pricing_import_rows_source_row_number_check'
   ],
-  'all 16 documented local checks exist'
+  'all 15 documented local checks exist after manual batches are enabled'
 );
 
 select is(
@@ -384,11 +383,9 @@ insert into public.pricing_import_rows (
   94101, 94001, 1, 'product_price_offers', 1, 2100000002
 );
 
-select throws_ok(
+select lives_ok(
   $$insert into public.pricing_import_batches (source_type, idempotency_key, schema_version) values ('manual', 'test:manual', '1')$$,
-  '23514',
-  null,
-  'manual source type is rejected for import batches'
+  'manual source type is accepted for persistent batches'
 );
 select lives_ok(
   $$insert into public.pricing_import_batches (id, source_type, idempotency_key, content_sha256, schema_version) values (94002, 'api_import', 'test:hash:valid', '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef', '1')$$,

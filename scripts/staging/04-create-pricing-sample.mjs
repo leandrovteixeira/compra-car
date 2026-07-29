@@ -128,7 +128,7 @@ let policies = (
   await request(
     url,
     key,
-    '/rest/v1/commercial_policies?select=id,commercial_offer_id,calculation_base_price_id,title,policy_type,calculation_method,customer_benefit_amount,fixed_amount,starts_on,ends_on,status,created_by,updated_by,published_by&title=eq.B%C3%B4nus%20fict%C3%ADcio%20Staging%20Song%20Plus',
+    '/rest/v1/commercial_policies?select=id,product_id,calculation_base_price_id,title,policy_type,calculation_method,customer_benefit_amount,fixed_amount,starts_on,ends_on,status,created_by,updated_by,published_by,lock_version&title=eq.B%C3%B4nus%20fict%C3%ADcio%20Staging%20Song%20Plus',
   )
 ).data;
 assert(
@@ -139,6 +139,7 @@ let [policy] = policies;
 if (!policy)
   [policy] = await insert('commercial_policies', {
     policy_type: 'retail_bonus',
+    product_id: 609,
     scope_type: 'model',
     model_brand: 'BYD',
     model_name: 'Song Plus',
@@ -150,7 +151,6 @@ if (!policy)
     calculation_method: 'fixed_amount',
     status: 'draft',
     source_type: 'manual',
-    commercial_offer_id: offer.id,
     calculation_base_price_id: songPrice.id,
     customer_benefit_amount: 10000,
     fixed_amount: 10000,
@@ -169,7 +169,7 @@ assert(
     offer.valid_from === songPrice.starts_on &&
     offer.valid_to === songPrice.ends_on &&
     ['draft', 'published'].includes(offer.status) &&
-    policy.commercial_offer_id === offer.id &&
+    policy.product_id === offer.product_id &&
     policy.calculation_base_price_id === songPrice.id &&
     policy.title === 'Bônus fictício Staging Song Plus' &&
     policy.policy_type === 'retail_bonus' &&
@@ -184,7 +184,45 @@ assert(
     ['draft', 'published'].includes(policy.status),
   'Unexpected existing pricing fixture.',
 );
-if (offer.status === 'draft')
+const memberships = (
+  await request(
+    url,
+    key,
+    `/rest/v1/commercial_offer_policies?select=commercial_offer_id,commercial_policy_id&commercial_offer_id=eq.${offer.id}&commercial_policy_id=eq.${policy.id}`,
+  )
+).data;
+assert(memberships.length <= 1, 'Duplicate Offer/Policy membership.');
+if (memberships.length === 0) {
+  assert(offer.status === 'draft', 'Published fixture is missing its immutable membership.');
+  await request(url, key, '/rest/v1/rpc/link_commercial_offer_policy', {
+    method: 'POST',
+    body: JSON.stringify({
+      p_offer_id: offer.id,
+      p_policy_id: policy.id,
+      p_actor_id: actor.id,
+      p_expected_offer_lock_version: offer.lock_version,
+      p_correlation_id: randomUUID(),
+    }),
+  });
+}
+if (policy.status === 'draft')
+  await request(url, key, '/rest/v1/rpc/publish_commercial_policy', {
+    method: 'POST',
+    body: JSON.stringify({
+      p_policy_id: policy.id,
+      p_actor_id: actor.id,
+      p_expected_lock_version: policy.lock_version,
+      p_correlation_id: randomUUID(),
+    }),
+  });
+if (offer.status === 'draft') {
+  [offer] = (
+    await request(
+      url,
+      key,
+      '/rest/v1/commercial_offers?select=id,lock_version&source_system=eq.staging_fixture&source_reference=eq.offer-staging-song-plus',
+    )
+  ).data;
   await request(url, key, '/rest/v1/rpc/publish_commercial_offer', {
     method: 'POST',
     body: JSON.stringify({
@@ -194,6 +232,7 @@ if (offer.status === 'draft')
       p_correlation_id: randomUUID(),
     }),
   });
+}
 prices = (
   await request(
     url,
@@ -218,7 +257,7 @@ for (const fixture of priceFixtures) {
   await request(
     url,
     key,
-    '/rest/v1/commercial_policies?select=id,commercial_offer_id,calculation_base_price_id,title,policy_type,calculation_method,customer_benefit_amount,fixed_amount,starts_on,ends_on,status,created_by,updated_by,published_by&title=eq.B%C3%B4nus%20fict%C3%ADcio%20Staging%20Song%20Plus',
+    '/rest/v1/commercial_policies?select=id,product_id,calculation_base_price_id,title,policy_type,calculation_method,customer_benefit_amount,fixed_amount,starts_on,ends_on,status,created_by,updated_by,published_by&title=eq.B%C3%B4nus%20fict%C3%ADcio%20Staging%20Song%20Plus',
   )
 ).data;
 assert(
@@ -232,6 +271,10 @@ console.log(
     prices: prices.map((p) => ({ productId: p.product_id, amount: p.amount })),
     offerId: offer.id,
     policyId: policy.id,
-    publicationFunctions: ['publish_product_public_price', 'publish_commercial_offer'],
+    publicationFunctions: [
+      'publish_product_public_price',
+      'publish_commercial_policy',
+      'publish_commercial_offer',
+    ],
   }),
 );

@@ -341,24 +341,24 @@ select ok(
 );
 
 insert into public.commercial_policies (
-  id, policy_type, scope_type, scope_snapshot, title, description, starts_on, ends_on,
+  id, product_id, policy_type, scope_type, scope_snapshot, title, description, starts_on, ends_on,
   calculation_method, status, source_type, published_at, published_by
 ) values
-  (99101, 'retail_bonus', 'product_set', '{}', 'Current policy', 'Current description',
+  (99101, 2110000201, 'retail_bonus', 'product_set', '{}', 'Current policy', 'Current description',
     current_date - 5, current_date + 5, 'fixed_amount', 'published', 'manual', now(),
     'a2000000-0000-4000-8000-000000000001'),
-  (99102, 'retail_bonus', 'product_set', '{}', 'Future policy', 'Future description',
+  (99102, 2110000201, 'retail_bonus', 'product_set', '{}', 'Future policy', 'Future description',
     current_date + 1, null, 'fixed_amount', 'published', 'manual', now(),
     'a2000000-0000-4000-8000-000000000001'),
-  (99103, 'retail_bonus', 'product_set', '{}', 'Expired policy', 'Expired description',
+  (99103, 2110000201, 'retail_bonus', 'product_set', '{}', 'Expired policy', 'Expired description',
     current_date - 10, current_date - 1, 'fixed_amount', 'published', 'manual', now(),
     'a2000000-0000-4000-8000-000000000001'),
-  (99104, 'retail_bonus', 'product_set', '{}', 'Draft policy', 'Draft description',
+  (99104, 2110000201, 'retail_bonus', 'product_set', '{}', 'Draft policy', 'Draft description',
     current_date - 1, null, 'fixed_amount', 'draft', 'manual', null, null),
-  (99105, 'trade_in_bonus', 'product_set', '{}', 'Second current policy',
+  (99105, 2110000201, 'trade_in_bonus', 'product_set', '{}', 'Second current policy',
     'Second description', current_date - 5, current_date + 5, 'fixed_amount',
     'published', 'manual', now(), 'a2000000-0000-4000-8000-000000000001'),
-  (99106, 'other', 'product_set', '{}', 'Isolated policy', 'Isolated description',
+  (99106, 2110000201, 'other', 'product_set', '{}', 'Isolated policy', 'Isolated description',
     current_date - 5, current_date + 5, 'manual_amount', 'published', 'manual', now(),
     'a2000000-0000-4000-8000-000000000001');
 

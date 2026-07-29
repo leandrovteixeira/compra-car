@@ -51,10 +51,10 @@ resíduo, classificação e reconciliação por policy. Sem base elegível, a of
 O rateio final usa centavos inteiros e maiores restos, com desempate estável. Rebate ausente gera
 `dealer_rebate_amount=NULL` e `dealer_rebate_allocation_method=NULL`; zero não representa ausência.
 
-Os tipos `free_wallbox`, `free_registration`, `free_maintenance` e
-`fuel_or_recharge_voucher` são reconhecidos para futuros cadastros, mas jamais inferidos do legado.
-Wallbox usa BRL 4.000,00 por default, emplacamento usa 1% do MSRP, manutenção é `non_monetized` e
-voucher usa valor nominal. O contrato completo está em `PRICING_POLICY_MODEL.md`.
+Na versão histórica deste dry-run, `free_maintenance` ainda era `non_monetized`. Essa regra não deve
+ser usada para novos cadastros: o ADR-012 exige valor fixo positivo para manutenção. Wallbox,
+registro gratuito, manutenção e voucher jamais são inferidos do legado. O contrato vigente está em
+`PRICING_POLICY_MODEL.md`.
 
 ## Execução
 

@@ -12,7 +12,8 @@ Este procedimento carrega dois produtos reais por leitura controlada do operacio
 - Ator: único profile `admin/active` preexistente no Staging (UUID não documentado integralmente).
 - Preços fictícios: R$ 159.990,00 e R$ 249.990,00, BRL, vigência de 30 dias.
 - Offer: oferta fictícia do Product 609.
-- Policy: `retail_bonus`, `fixed_amount`, R$ 10.000,00, vinculada diretamente à Offer.
+- Policy: `retail_bonus`, `fixed_amount`, R$ 10.000,00, pertencente ao Product e associada à Offer
+  por `commercial_offer_policies`.
 
 ## Execução
 
@@ -28,7 +29,10 @@ A ordem completa é:
 
 Os scripts `01` a `05` em `scripts/staging` exigem refs, URLs e chaves por variáveis de ambiente. URLs são validadas estruturalmente: HTTPS, hostname exato, sem porta, caminho, query, fragmento ou credenciais embutidas. A extração usa um helper dedicado que aceita exclusivamente GET com `OPERATIONAL_PUBLISHABLE_KEY`; ele não recebe método nem body. A carga exige `STAGING_SERVICE_ROLE_KEY` e aborta se o ref/hostname não forem os do Staging ou se as tabelas não estiverem vazias.
 
-Lifecycle utilizado: inserção em `draft`, publicação de preços por `publish_product_public_price`, validação da policy por `validate_commercial_policy_for_offer` e publicação conjunta da Offer/Policy por `publish_commercial_offer`. Eventos de auditoria são gerados exclusivamente pelas funções oficiais.
+Lifecycle utilizado: inserção em `draft`, publicação de preços por `publish_product_public_price`,
+publicação independente da Policy por `publish_commercial_policy`, link auditado por
+`link_commercial_offer_policy` e publicação posterior somente da Offer por
+`publish_commercial_offer`. Eventos de auditoria são gerados exclusivamente pelas funções oficiais.
 
 PostgREST garante atomicidade por requisição em lote. Como o schema não oferece RPC transacional para a carga relacional multi-tabela, os lotes `specs`, `products` e `product_specs` são requisições separadas, sempre precedidas de validação e estado vazio. Nenhuma constraint, trigger ou RLS é desabilitada.
 
@@ -53,7 +57,7 @@ A carga foi executada exclusivamente em `shfsjyjxmgwnlexmdkcs`:
 - 2 Products, 190 Specs e 306 Product Specs carregados;
 - Product 608 com 124 associações e Product 609 com 182;
 - preços fictícios de R$ 159.990,00 e R$ 249.990,00 publicados por `publish_product_public_price`;
-- uma Offer e uma Policy vinculadas diretamente, publicadas por `publish_commercial_offer`;
+- uma Offer e uma Policy do mesmo Product, associadas pela junction e publicadas separadamente;
 - três eventos de auditoria gerados pelas funções oficiais;
 - as três views de leitura retornaram os dois produtos;
 - tabelas legadas, imports, reviews e `commercial_policy_applications` permaneceram vazias.

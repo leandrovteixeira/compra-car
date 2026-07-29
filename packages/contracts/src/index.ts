@@ -20,7 +20,12 @@ export {
   POLICY_CALCULATION_METHODS,
   PRICING_VOUCHER_TYPES,
 } from './pricing';
-export type { CommercialPolicyType, PolicyCalculationMethod, PricingVoucherType } from './pricing';
+export type {
+  CommercialPolicyInput,
+  CommercialPolicyType,
+  PolicyCalculationMethod,
+  PricingVoucherType,
+} from './pricing';
 
 export type {
   AdministrativeVehicle,
@@ -48,6 +53,10 @@ export type {
   VehicleId,
   VehicleRepository,
   ProductPublicPrice,
+  CommercialPolicy,
+  CommercialOffer,
+  CommercialOfferPolicyMembership,
+  CommercialPricingRepository,
   ProductPublicPriceMoney,
   ProductPublicPricePage,
   ProductPublicPriceProduct,

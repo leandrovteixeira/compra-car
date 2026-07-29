@@ -1,5 +1,8 @@
 # Auditoria do Admin e plano de evolução para Pricing
 
+> Documento histórico da inspeção anterior à Sprint 9A. As descrições de Policy como filha direta
+> da Offer e de publicação conjunta foram substituídas pelo ADR-012 e não representam o modelo atual.
+
 **Data da auditoria:** 2026-07-27  
 **Escopo:** leitura estática do monorepo; nenhuma migration, escrita no banco, publicação ou alteração
 funcional foi executada.

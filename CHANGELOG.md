@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-07-28 — Sprint 9A: Pricing Domain V2
+
+- Evoluído o modelo de `CommercialOffer 1:N CommercialPolicy` para Product 1:N Policy e
+  Offer↔Policy N:N, com backfill transacional e remoção da FK direta antiga.
+- Adicionados lifecycle independente, publicação e auditoria de Policy, composição imutável de Offer
+  publicada, validações de Product/vigência e RPCs auditadas de link/unlink com optimistic locking.
+- Todas as Policies publicáveis passaram a exigir benefício positivo; manutenção usa valor fixo,
+  wallbox/other permanecem monetizados e registro gratuito usa exatamente 1% do MSRP-base.
+- Adicionados contratos discriminados, cálculo monetário puro de benefício/preço transacional e
+  adaptador Supabase para Policies, Offers e memberships.
+- Batch persistente passou a aceitar origem manual e a imutabilidade terminal de
+  ProductPublicPrice passou a abranger `ends_on`, `price_type`, `source_reference` e
+  `legacy_source_id`.
+- Criado ADR-012 e sincronizados domínio, contratos, roadmap e documentação de Pricing. As próximas
+  etapas são 9B Batch Prices, 9C Batch Policies e 9D Offer Builder.
+- A migration foi aplicada exclusivamente ao Staging `shfsjyjxmgwnlexmdkcs`: 1 Offer e 1 Policy
+  legadas foram reconciliadas em 1 membership, sem alteração das contagens de Offers, Policies,
+  applications, batches ou preços e sem acesso à Produção.
+
 ## 2026-07-27 — Criação e edição administrativa de ProductPublicPrice
 
 - adicionados contratos e casos de uso de criação em `draft` e edição de status não terminais;
