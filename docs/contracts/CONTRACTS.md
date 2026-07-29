@@ -1,5 +1,16 @@
 # Contratos Normalizados
 
+## Financial Parameter Set
+
+O contrato persistente usa versões monotônicas, `effective_from`/`valid_to`, `source_type` e
+`source_snapshot`. Percentuais são convertidos pelo banco em taxas decimais; a taxa mensal de
+referência é CDI mensal mais spread mensal. Para o MVP, a origem é `manual` e o spread é `0,30%`.
+
+`rollover_financial_parameter_set` exige admin ativo, lock versions e correlation ID. Ela encerra a
+vigência corrente e chama `publish_financial_parameter_set` para a sucessora na mesma transação.
+Apenas `service_role` possui `EXECUTE`; browser roles não escrevem diretamente. `api_import` e
+metadados de provedor no snapshot são compatibilidade futura, não integração implementada.
+
 ## Batch manual de ProductPublicPrice
 
 `CreateManualPriceBatchInput` contém `rows` com `clientRowId`, `productId`, `amount`, `startsOn` e

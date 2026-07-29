@@ -58,6 +58,8 @@ Criar rapidamente um MVP mobile-first para vendedores de concessionárias, permi
 - [x] Sprint 8 — Cadastro de equipamentos (`product_specs`).
 - [x] Sprint 9A — Pricing Domain V2: Product→Policy, Offer↔Policy N:N, lifecycle e batch persistente.
 - [x] Sprint 9B — Batch Prices: grade `/admin/prices/input`, batch manual atômico e drafts auditáveis.
+- [ ] Sprint 9C-0 — Financial Reference Foundation: migration e V1 publicadas no Staging, CDI manual,
+  spread mensal de 0,30% e rollover auditável. Reset/pgTAP local e commit permanecem pendentes.
 - [ ] Sprint 9C — Batch Policies.
 - [ ] Sprint 9D — Offer Builder.
 - [ ] Implementar gestão de preços e políticas exclusivamente em grade.
@@ -75,6 +77,10 @@ Criar rapidamente um MVP mobile-first para vendedores de concessionárias, permi
 - [ ] Avaliar fine-tuning somente após medir a abordagem híbrida inicial.
 
 ## Backlog pós-MVP
+
+- Automated CDI Reference Ingestion: consultar fonte confiável, normalizar e validar o CDI,
+  comparar a referência vigente, evitar versões redundantes, executar rollover/publicação
+  idempotentes, preservar `source_snapshot`/auditoria e alertar indisponibilidade ou dado inválido.
 
 - Adicionar cardinalidade explícita `single`/`multiple` para conjuntos de opções.
 - Avaliar agrupamento visual de itens `scale`, preservando uma linha por `code` no domínio.

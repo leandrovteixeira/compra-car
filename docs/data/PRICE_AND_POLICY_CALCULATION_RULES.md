@@ -359,6 +359,10 @@ O resultado compara o benefício financeiro com bônus monetários, embora não 
 | `i_spread` | `spread_monthly_percentage / 100` | taxa mensal decimal |
 
 Parâmetros CDI/spread vêm de um `financial_parameter_set` publicado e são copiados para o snapshot.
+No MVP, o CDI mensal é informado manualmente e o spread mensal oficial é `0,30%` (`0.003` em taxa
+decimal). O banco deriva `monthly_reference_rate = monthly_cdi_rate + monthly_spread_rate`.
+O primeiro conjunto aprovado para o Staging usa CDI mensal `1,1458%`, produzindo referência mensal
+`1,4458%`.
 `input_monetary_value` é nulo e `basis_public_price_id` é persistido pelo serviço.
 
 Fonte, calendário e governança de CDI/spread não bloqueiam tabelas, drafts ou needs_review, mas
@@ -530,7 +534,7 @@ alternativas OU. `total_customer_benefit = -100` é needs_review obrigatório.
 
 - fonte e calendário oficial do CDI mensal equivalente;
 - CDI bruto/líquido, convenção de dias úteis e data de corte;
-- valor/governança do spread;
+- governança futura do spread após o valor inicial de `0,30%` ao mês;
 - taxa aditiva versus composta após a versão inicial;
 - financiamento com carência, parcela balão, residual, tarifas ou parcela anunciada;
 - cobertura fracionária e condições do seguro;

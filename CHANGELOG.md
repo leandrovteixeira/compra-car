@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-07-29 — Sprint 9C-0: Financial Reference Foundation
+
+- Preparada migration forward-only para derivar taxas decimais de CDI/spread, impedir vigências
+  publicadas sobrepostas e executar rollover transacional com optimistic locking e auditoria.
+- Definido spread mensal do MVP em `0,3000%` e aprovado CDI mensal inicial de `1,1458%`, resultando
+  em taxa mensal de referência de `1,4458%`; o dado não faz parte da migration.
+- Preservadas `manual` e `api_import`, preparando futura ingestão por `source_snapshot` sem crawler,
+  API ou fornecedor.
+- A migration foi aplicada somente ao Staging `shfsjyjxmgwnlexmdkcs`; V1 foi criada como draft e
+  publicada pela função oficial, e o teste de rollover foi revertido sem deixar fixture.
+- Adicionado pgTAP para lifecycle, segurança, derivação, imutabilidade, rollover e não regressão.
+  A execução local permanece pendente porque `supabase start` não criou a stack neste ambiente.
+
 ## 2026-07-28 — Sprint 9B: Batch Prices
 
 - Criada a rota administrativa `/admin/prices/input`, com grade responsiva e pesquisável, linha

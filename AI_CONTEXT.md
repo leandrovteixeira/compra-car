@@ -1,5 +1,22 @@
 # Contexto para agentes de IA
 
+## Marco — Financial Reference Foundation (Sprint 9C-0, 2026-07-29)
+
+- o MVP define spread mensal de `0,30%` e CDI mensal informado manualmente em um
+  `financial_parameter_set` versionado;
+- a taxa canônica é derivada no banco como CDI mensal decimal + `0.003`, sem floating point e sem
+  hardcode em Policies;
+- a migration forward-only adiciona proteção contra sobreposição e rollover transacional/auditado,
+  preservando histórico, optimistic locking, RLS e publicação oficial;
+- `manual` e `api_import` reutilizam `pricing_source_type`; integração externa continua backlog;
+- CDI mensal inicial aprovado: `1,1458%`; a referência mensal resultante é `1,4458%` após somar o
+  spread de `0,3000%`.
+- a migration `20260729174815_add_financial_reference_foundation.sql` foi aplicada somente ao
+  Staging `shfsjyjxmgwnlexmdkcs`; V1 foi publicada pelo lifecycle oficial e o rollover remoto
+  reversível passou sem deixar fixture;
+- **PENDENTE:** reset e pgTAP local não foram executados porque `supabase start` não criou a stack
+  após a nova tentativa controlada. Não considerar esse gate aprovado.
+
 ## Marco atual — Batch Prices (Sprint 9B, 2026-07-28)
 
 - `/admin/prices/input` recebe até 100 preços públicos manuais em grade; uma linha totalmente vazia

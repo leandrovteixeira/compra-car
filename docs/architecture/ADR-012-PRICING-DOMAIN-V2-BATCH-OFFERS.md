@@ -65,6 +65,19 @@ A migration `20260728120000_evolve_pricing_domain_v2.sql`:
 - habilita RLS na junction e mantém escrita apenas pelas funções privilegiadas auditadas;
 - completa optimistic locking de Offer e imutabilidade terminal de ProductPublicPrice.
 
+## Fundação da referência financeira (Sprint 9C-0)
+
+`financial_parameter_sets` é a fonte versionada do CDI e do spread usados em financiamento
+subsidiado. No MVP, o CDI mensal é entrada manual e o spread mensal oficial é `0,30%`
+(`0.003` decimal). A taxa mensal de referência é derivada como CDI mensal decimal mais spread
+mensal decimal; nenhum valor é hardcoded no cálculo de Policies.
+
+Registros publicados preservam sua identidade econômica. A troca de referência usa rollover
+transacional e auditado: encerra `valid_to` da versão corrente no dia anterior ao `effective_from`
+da sucessora e publica a sucessora pela função oficial. Sobreposição entre referências publicadas é
+rejeitada. `manual` atende o MVP e `api_import` já representa a futura ingestão automática sem nova
+enumeração.
+
 ## Consequências
 
 O futuro Batch Policies pode persistir Policies antes das Offers e o Offer Builder pode reutilizá-las

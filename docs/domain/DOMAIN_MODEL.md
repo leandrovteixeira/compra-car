@@ -1,5 +1,16 @@
 # Modelo de Domínio
 
+## Referência financeira versionada
+
+`FinancialParameterSet` representa uma referência temporal para financiamento subsidiado. Cada
+versão registra CDI mensal, spread, origem, snapshot e vigência. No MVP, CDI é informado
+manualmente e o spread mensal é `0,30%`; `monthly_reference_rate` é derivada em decimal pela soma de
+CDI e spread. Referências publicadas não são sobrescritas: o rollover encerra a vigência anterior e
+publica a sucessora atomicamente, com optimistic locking e auditoria.
+
+`source_type=api_import` e o JSON `source_snapshot` reservam a mesma abstração para uma futura
+ingestão automática, sem chamada externa nesta etapa.
+
 ## ProductPublicPrice administrativo
 
 ### Batch manual
