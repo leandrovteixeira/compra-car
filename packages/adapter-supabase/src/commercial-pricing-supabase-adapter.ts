@@ -12,6 +12,7 @@ import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js';
 
 import { assertLegacyServerRuntime, createLegacySupabaseClientFromEnv } from './client';
 import { PricingAdapterMappingError, PricingAdapterQueryError } from './errors';
+import { moneyDecimalString } from './pricing-decimal';
 
 interface CommercialPolicyRow {
   readonly id: unknown;
@@ -104,7 +105,7 @@ function workflowStatus(value: unknown): PricingWorkflowStatus {
 }
 
 function amount(value: unknown): string {
-  const parsed = typeof value === 'number' ? value.toFixed(2) : requiredString(value, 'amount');
+  const parsed = moneyDecimalString(value, 'CommercialPolicy.amount');
   if (!/^(?:0|[1-9]\d*)\.\d{2}$/u.test(parsed) || parsed === '0.00') {
     throw new PricingAdapterMappingError('Benefício monetário inválido em CommercialPolicy.');
   }

@@ -9,6 +9,7 @@ import type {
 import { useActionState, useEffect, useRef, useState } from 'react';
 
 import { EMPTY_MANUAL_PRICE_BATCH_ROW } from '@/application/admin/manual-price-batch';
+import { AdminProductCombobox } from '@/components/admin/admin-product-combobox';
 
 type BatchAction = (
   state: ManualPriceBatchActionStateDto,
@@ -42,13 +43,6 @@ function FieldError({
   ) : null;
 }
 
-function productStatus(product: ManualPriceBatchProductOptionDto): string {
-  const flags = [!product.isActive ? 'inativo' : '', !product.isPublic ? 'privado' : ''].filter(
-    Boolean,
-  );
-  return flags.length ? ` (${flags.join(', ')})` : '';
-}
-
 export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridProps) {
   const initialState: ManualPriceBatchActionStateDto = {
     status: 'idle',
@@ -57,14 +51,12 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
   };
   const [state, formAction, pending] = useActionState(action, initialState);
   const [rows, setRows] = useState<readonly ManualPriceBatchGridRowDto[]>(initialState.rows);
-  const [searches, setSearches] = useState<Readonly<Record<string, string>>>({});
   const nextRowId = useRef(2);
 
   useEffect(() => {
     if (state.status === 'idle') return;
     if (state.status === 'success') {
       setRows([newEmptyRow(`row-${nextRowId.current++}`)]);
-      setSearches({});
       return;
     }
     const submitted = [...state.rows];
@@ -99,11 +91,6 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
     setRows((current) => {
       const next = current.filter((row) => row.clientRowId !== clientRowId);
       return next.length ? next : [newEmptyRow(`row-${nextRowId.current++}`)];
-    });
-    setSearches((current) => {
-      const next = { ...current };
-      delete next[clientRowId];
-      return next;
     });
   }
 
@@ -141,15 +128,6 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
           {rows.map((row, index) => {
             const errors: ManualPriceBatchRowFieldErrorsDto =
               state.rowErrors[row.clientRowId] ?? {};
-            const query = searches[row.clientRowId]?.trim().toLocaleLowerCase('pt-BR') ?? '';
-            const options = products.filter(
-              (product) =>
-                product.id === row.productId ||
-                !query ||
-                `${product.displayName}${productStatus(product)}`
-                  .toLocaleLowerCase('pt-BR')
-                  .includes(query),
-            );
             const isLastEmpty = index === rows.length - 1 && isOperationallyEmpty(row);
             const maxReached = isLastEmpty && filledCount >= 100;
             const prefix = `batch-${row.clientRowId}`;
@@ -160,50 +138,18 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
                 key={row.clientRowId}
               >
                 <div>
-                  <label
-                    className="text-xs font-semibold text-slate-400 md:sr-only"
-                    htmlFor={`${prefix}-search`}
-                  >
-                    Buscar veículo — linha {index + 1}
-                  </label>
-                  <input
-                    className={inputClass}
+                  <AdminProductCombobox
                     disabled={maxReached}
-                    id={`${prefix}-search`}
-                    onChange={(event) =>
-                      setSearches((current) => ({
-                        ...current,
-                        [row.clientRowId]: event.target.value,
-                      }))
-                    }
-                    placeholder={
-                      maxReached
-                        ? 'Limite de 100 linhas atingido'
-                        : 'Buscar marca, modelo ou versão'
-                    }
-                    type="search"
-                    value={searches[row.clientRowId] ?? ''}
-                  />
-                  <select
-                    aria-describedby={
+                    error={Boolean(errors.productId || errors.row)}
+                    errorDescriptionId={
                       errors.productId || errors.row ? `${prefix}-product-error` : undefined
                     }
-                    aria-invalid={Boolean(errors.productId || errors.row)}
-                    className={`${inputClass} mt-2`}
-                    disabled={maxReached}
-                    onChange={(event) =>
-                      updateRow(row.clientRowId, { productId: event.target.value })
-                    }
+                    label={`Veículo — linha ${index + 1}`}
+                    hideLabel
+                    onChange={(productId) => updateRow(row.clientRowId, { productId })}
+                    options={products}
                     value={row.productId}
-                  >
-                    <option value="">Selecione um veículo</option>
-                    {options.map((product) => (
-                      <option key={product.id} value={product.id}>
-                        {product.displayName}
-                        {productStatus(product)}
-                      </option>
-                    ))}
-                  </select>
+                  />
                   <FieldError
                     id={`${prefix}-product-error`}
                     messages={errors.productId ?? errors.row}

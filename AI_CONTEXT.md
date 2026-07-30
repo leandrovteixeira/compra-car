@@ -1,5 +1,15 @@
 # Contexto para agentes de IA
 
+## Marco — estabilização de Pricing (Sprint 9E, 2026-07-30)
+
+- Batch Policies não recebe mais `title`, `endsOn` ou seleção de MSRP como autoridade do browser:
+  título, vigência aberta e defaults por tipo são normalizados no core antes da persistência.
+- MSRP publicado e referência financeira são resolvidos por `startsOn`, exigindo exatamente uma
+  correspondência; a mesma função pura alimenta prévia e submissão para evitar divergência temporal.
+- IPVA usa 4% e mês derivado do início; seguro usa 3% e prazo de 12/24/36 meses; emplacamento usa 1%.
+- O combobox administrativo pesquisa todos os tokens em qualquer ordem e renderiza o popup em portal.
+- Nenhuma migration foi criada; Produção e `Legacy` permanecem fora do escopo.
+
 ## Marco — Offer Builder (Sprint 9D, 2026-07-29)
 
 - `/admin/prices/offers` monta `CommercialOffer` em `draft` a partir de MSRP publicado e Policies
@@ -514,3 +524,11 @@ O escopo da Sprint 1 fica limitado a `products` e `product_specs`, usando `specs
 - **PENDENTE:** para `getVehiclesByIds`, a rodada Auth mantém elegibilidade restrita a `is_active = true` e `is_public = true`; decidir em `/admin/products` e no catálogo se a consulta por IDs também exigirá specs ativas.
 - **CONCLUÍDO:** migration de profiles aplicada e validada no projeto remoto auditado, incluindo pgTAP e rollback das fixtures de teste.
 - **PENDENTE:** auditar grants/RLS do catálogo legado e formalizar o runbook operacional de usuários administrativos.
+# Marco 2026-07-30 — Sprint 9E
+
+- Homologação de Pricing estabilizada no código: DTOs RSC são plain objects, numeric do PostgREST é
+  convertido na borda para decimal string e as três telas usam o mesmo combobox de Product.
+- Auth diferencia ausência real de sessão de indisponibilidade técnica e possui timings DEV-only;
+  autorização read-only é deduplicada por renderização, mantendo revalidação nas Server Actions.
+- Staging autorizado: `shfsjyjxmgwnlexmdkcs`. Não houve migration, acesso a Produção ou alteração em
+  `Legacy`. Smoke autenticado ainda depende de credencial/sessão administrativa fornecida externamente.

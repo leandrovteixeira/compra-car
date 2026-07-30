@@ -4,6 +4,7 @@ import {
   ManualPriceBatchConflictError,
   ManualPriceBatchSupabaseAdapter,
 } from '@compra-car/adapter-supabase';
+import { formatAdministrativeVehicleName } from '@compra-car/core';
 import type {
   ManualPriceBatchActionStateDto,
   ManualPriceBatchProductOptionDto,
@@ -16,6 +17,7 @@ import {
   type SaveManualPriceBatchDependencies,
 } from '@/application/admin/manual-price-batch';
 import { requireRole } from '@/auth/authorization';
+import { withDevTiming } from '@/server/dev-timing';
 
 export interface ManualPriceBatchServiceDependencies {
   readonly authorize: () => Promise<{ readonly actorId: string }>;
@@ -44,14 +46,15 @@ export async function loadManualPriceBatchProductOptions(
   | { readonly ok: true; readonly data: readonly ManualPriceBatchProductOptionDto[] }
   | { readonly ok: false }
 > {
-  await dependencies.authorize();
   try {
-    const products = await dependencies.createRepository().listProductOptions();
+    const products = await withDevTiming('pricing.listProductOptions', () =>
+      dependencies.createRepository().listProductOptions(),
+    );
     return {
       ok: true,
       data: products.map((product) => ({
         id: product.id,
-        displayName: `${product.brand} — ${product.model} — ${product.version} — ${product.modelYear}/${product.productionYear}`,
+        displayName: formatAdministrativeVehicleName(product),
         isActive: product.isActive,
         isPublic: product.isPublic,
       })),

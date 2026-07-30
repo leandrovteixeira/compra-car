@@ -9,6 +9,12 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthClientConfig } from './config';
 import { requiresAuthentication } from './route-policy';
 
+function devTiming(label: string, startedAt: number): void {
+  if (process.env.NODE_ENV === 'development') {
+    console.info(`[timing] ${label}: ${Math.round(performance.now() - startedAt)} ms`);
+  }
+}
+
 function destinationFor(request: NextRequest): string {
   return `${request.nextUrl.pathname}${request.nextUrl.search}`;
 }
@@ -40,7 +46,12 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   };
 
   const client = createServerAuthClient(getAuthClientConfig(), cookieStore);
+  const authStartedAt = performance.now();
   const user = await getVerifiedAuthUser(client);
+  devTiming('auth.middleware.getUser', authStartedAt);
+  if (process.env.NODE_ENV === 'development') {
+    console.info(`[auth] middleware user: ${user ? 'found' : 'not found'}`);
+  }
 
   if (!user && requiresAuthentication(request.nextUrl.pathname)) {
     const loginUrl = request.nextUrl.clone();

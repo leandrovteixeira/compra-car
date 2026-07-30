@@ -8,7 +8,7 @@ import {
 } from '@compra-car/contracts';
 import type { SupabaseClient, User } from '@supabase/supabase-js';
 
-import { LegacyAdapterConfigurationError } from './errors';
+import { AuthVerificationError, LegacyAdapterConfigurationError } from './errors';
 
 export { APP_ROLES, USER_STATUSES };
 export type { AppRole, AuthProfile, UserStatus };
@@ -68,7 +68,19 @@ export function createServerAuthClient(
 
 export async function getVerifiedAuthUser(client: SupabaseClient): Promise<User | null> {
   const { data, error } = await client.auth.getUser();
-  if (error) return null;
+  if (error) {
+    const code = (error as { code?: string }).code;
+    if (
+      error.name === 'AuthSessionMissingError' ||
+      code === 'session_not_found' ||
+      code === 'refresh_token_not_found' ||
+      code === 'refresh_token_already_used' ||
+      code === 'bad_jwt'
+    ) {
+      return null;
+    }
+    throw new AuthVerificationError('NÃ£o foi possÃ­vel verificar a sessÃ£o.', { cause: error });
+  }
   return data.user;
 }
 
@@ -82,7 +94,12 @@ export async function getAuthProfile(
     .eq('id', userId)
     .maybeSingle();
 
-  if (error || !data) return null;
+  if (error) {
+    throw new AuthVerificationError('NÃ£o foi possÃ­vel carregar o profile de autenticaÃ§Ã£o.', {
+      cause: error,
+    });
+  }
+  if (!data) return null;
   if (!APP_ROLES.includes(data.role as AppRole)) return null;
   if (!USER_STATUSES.includes(data.status as UserStatus)) return null;
 

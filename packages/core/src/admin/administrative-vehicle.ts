@@ -100,6 +100,11 @@ export function administrativeVehicleIdentity(input: AdministrativeVehicleInput)
   ].join('\u001f');
 }
 
-export function formatAdministrativeVehicleName(input: AdministrativeVehicleInput): string {
+export function formatAdministrativeVehicleName(
+  input: Pick<AdministrativeVehicleInput, 'brand' | 'model' | 'version'> & {
+    readonly modelYear: string | number;
+    readonly productionYear: string | number;
+  },
+): string {
   return `${input.brand} ${input.model} ${input.version} ${input.modelYear}/${input.productionYear}`;
 }

@@ -58,13 +58,9 @@ export function readManualPriceBatchRows(
 export function toManualPriceBatchRowErrors(
   issues: readonly ManualPriceBatchValidationIssue[],
 ): Readonly<Record<string, ManualPriceBatchRowFieldErrorsDto>> {
-  const errors: Record<string, Record<string, readonly string[]>> = Object.create(null) as Record<
-    string,
-    Record<string, readonly string[]>
-  >;
+  const errors: Record<string, Record<string, readonly string[]>> = {};
   for (const issue of issues) {
-    const row =
-      errors[issue.clientRowId] ?? (Object.create(null) as Record<string, readonly string[]>);
+    const row = errors[issue.clientRowId] ?? {};
     row[issue.field] = Object.freeze([...(row[issue.field] ?? []), issue.message]);
     errors[issue.clientRowId] = row;
   }

@@ -9,6 +9,7 @@ import type {
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { assertLegacyServerRuntime, createLegacySupabaseClientFromEnv } from './client';
 import { PricingAdapterMappingError, PricingAdapterQueryError } from './errors';
+import { moneyDecimalString } from './pricing-decimal';
 import { mapCommercialPolicyRow } from './commercial-pricing-supabase-adapter';
 const records = (value: unknown): readonly Record<string, unknown>[] =>
   Array.isArray(value)
@@ -20,12 +21,7 @@ const required = (value: unknown, field: string) => {
     throw new PricingAdapterMappingError(`Campo inválido no Offer Builder: ${field}.`);
   return value;
 };
-const money = (value: unknown, field: string) => {
-  const normalized = typeof value === 'number' ? value.toFixed(2) : required(value, field).trim();
-  if (!/^(?:0|[1-9]\d*)\.\d{2}$/u.test(normalized))
-    throw new PricingAdapterMappingError(`Valor monetÃ¡rio invÃ¡lido no Offer Builder: ${field}.`);
-  return normalized;
-};
+const money = moneyDecimalString;
 const policyColumns =
   'id,product_id,policy_type,title,description,starts_on,ends_on,customer_benefit_amount,status,lock_version';
 export class CommercialOfferBuilderSupabaseAdapter implements CommercialOfferBuilderRepository {

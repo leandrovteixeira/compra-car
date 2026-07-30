@@ -5,10 +5,10 @@ import {
 } from '@compra-car/core';
 
 import { PricingAdapterMappingError } from './errors';
+import { moneyDecimalString } from './pricing-decimal';
 import type { ProductPublicPriceProductRow, ProductPublicPriceRow } from './pricing-dtos';
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/u;
-const MONEY_PATTERN = /^\d+(?:\.\d{1,2})?$/u;
 
 function requiredString(value: unknown, field: string): string {
   if (typeof value !== 'string' || value.trim() === '') {
@@ -61,11 +61,7 @@ function nullableTimestamp(value: unknown, field: string): string | null {
 }
 
 function amount(value: unknown): string {
-  const parsed = typeof value === 'number' ? String(value) : requiredString(value, 'amount');
-  if (!MONEY_PATTERN.test(parsed) || Number(parsed) < 0) {
-    throw new PricingAdapterMappingError('Valor monetário inválido em ProductPublicPrice.');
-  }
-  return parsed;
+  return moneyDecimalString(value, 'ProductPublicPrice.amount');
 }
 
 function status(value: unknown): PricingWorkflowStatus {

@@ -22,5 +22,22 @@ describe('commercial offer builder UI', () => {
     expect(ui).toContain("pending ? 'Salvando…'");
     expect(ui).toContain('xl:grid-cols');
     expect(ui).toContain('Rascunhos recentes');
+    expect(ui).toContain('<AdminProductCombobox');
+    expect(ui).not.toContain('type="search"');
+  });
+
+  it('shares an accessible keyboard combobox across pricing workflows', () => {
+    const combobox = source('../src/components/admin/admin-product-combobox.tsx');
+    expect(combobox).toContain('role="combobox"');
+    expect(combobox).toContain("event.key === 'ArrowDown'");
+    expect(combobox).toContain("event.key === 'ArrowUp'");
+    expect(combobox).toContain("event.key === 'Enter'");
+    expect(combobox).toContain("event.key === 'Escape'");
+    expect(combobox).toContain('role="listbox"');
+    expect(combobox).toContain('Limpar veículo');
+    expect(combobox).toContain('createPortal');
+    expect(combobox).toContain('document.body');
+    expect(combobox).toContain('className="fixed z-[1000]');
+    expect(combobox).not.toMatch(/[ÃÂ�]/u);
   });
 });

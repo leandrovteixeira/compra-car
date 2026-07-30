@@ -31,9 +31,12 @@ export interface ManualPolicyBatchRowInput {
 }
 
 export interface ManualPolicyReferenceData {
+  readonly calculationBasePriceId?: string;
   readonly basePriceAmount?: string;
   readonly financialParameterSetId?: string;
   readonly monthlyReferenceRate?: string;
+  readonly basePriceResolution?: 'missing' | 'ambiguous';
+  readonly financialReferenceResolution?: 'missing' | 'ambiguous';
 }
 
 export interface NormalizedManualPolicyBatchRow extends ManualPolicyBatchRowInput {
@@ -57,11 +60,118 @@ const FIXED = new Set([
   'fuel_or_recharge_voucher',
   'other',
 ]);
+export const MANUAL_POLICY_TITLES: Readonly<Record<string, string>> = Object.freeze({
+  retail_bonus: 'Bônus varejo',
+  trade_in_bonus: 'Bônus trade-in',
+  subsidized_financing: 'Financiamento subsidiado',
+  free_ipva: 'IPVA grátis',
+  free_insurance: 'Seguro grátis',
+  free_wallbox: 'Wallbox grátis',
+  free_registration: 'Emplacamento grátis',
+  free_maintenance: 'Manutenção grátis',
+  fuel_or_recharge_voucher: 'Voucher combustível/recarga',
+  other: 'Outro benefício',
+});
 const DECIMAL = /^(?:0|[1-9]\d*)(?:\.\d+)?$/u;
 const integer = (value?: string) => Boolean(value && /^[1-9]\d*$/u.test(value));
 const positive = (value?: string) =>
   Boolean(value && DECIMAL.test(value) && new Decimal(value).gt(0));
 const money = (value: Decimal) => value.toDecimalPlaces(2, Decimal.ROUND_HALF_UP).toFixed(2);
+
+export function normalizeManualPolicyBatchRow(
+  row: ManualPolicyBatchRowInput,
+): ManualPolicyBatchRowInput {
+  const common = {
+    clientRowId: row.clientRowId,
+    productId: row.productId,
+    policyType: row.policyType,
+    title: MANUAL_POLICY_TITLES[row.policyType] ?? '',
+    description: row.description,
+    startsOn: row.startsOn,
+    endsOn: null,
+  };
+  if (FIXED.has(row.policyType)) {
+    return {
+      ...common,
+      amount: row.amount,
+      voucherType:
+        row.policyType === 'fuel_or_recharge_voucher'
+          ? row.voucherType || 'unspecified'
+          : undefined,
+    };
+  }
+  if (row.policyType === 'free_insurance') {
+    const months = row.termMonths || '12';
+    return {
+      ...common,
+      annualRate: '0.03',
+      termMonths: months,
+      coverageYears: /^(?:12|24|36)$/u.test(months) ? String(Number(months) / 12) : '',
+    };
+  }
+  if (row.policyType === 'free_ipva') {
+    const month = /^\d{4}-(\d{2})-\d{2}$/u.exec(row.startsOn)?.[1];
+    return {
+      ...common,
+      annualRate: '0.04',
+      offerMonth: month ? String(Number(month)) : '',
+    };
+  }
+  if (row.policyType === 'subsidized_financing') {
+    return {
+      ...common,
+      termMonths: row.termMonths,
+      customerInterestRateMonthly: row.customerInterestRateMonthly,
+      downPaymentPercentage: row.downPaymentPercentage,
+    };
+  }
+  return common;
+}
+
+export function resolveManualPolicyReferenceData(
+  row: Pick<ManualPolicyBatchRowInput, 'productId' | 'startsOn'>,
+  prices: readonly {
+    readonly id: string;
+    readonly productId: string;
+    readonly amount: string;
+    readonly startsOn: string;
+    readonly endsOn: string | null;
+  }[],
+  references: readonly {
+    readonly id: string;
+    readonly effectiveFrom: string;
+    readonly validTo: string | null;
+    readonly monthlyReferenceRate: string;
+  }[],
+): ManualPolicyReferenceData {
+  const matchingPrices = prices.filter(
+    (price) =>
+      price.productId === row.productId &&
+      price.startsOn <= row.startsOn &&
+      (price.endsOn === null || price.endsOn >= row.startsOn),
+  );
+  const matchingReferences = references.filter(
+    (reference) =>
+      reference.effectiveFrom <= row.startsOn &&
+      (reference.validTo === null || reference.validTo >= row.startsOn),
+  );
+  const price = matchingPrices.length === 1 ? matchingPrices[0] : undefined;
+  const reference = matchingReferences.length === 1 ? matchingReferences[0] : undefined;
+  return {
+    calculationBasePriceId: price?.id,
+    basePriceAmount: price?.amount,
+    financialParameterSetId: reference?.id,
+    monthlyReferenceRate: reference?.monthlyReferenceRate,
+    basePriceResolution:
+      matchingPrices.length === 0 ? 'missing' : matchingPrices.length > 1 ? 'ambiguous' : undefined,
+    financialReferenceResolution:
+      matchingReferences.length === 0
+        ? 'missing'
+        : matchingReferences.length > 1
+          ? 'ambiguous'
+          : undefined,
+  };
+}
 
 export function calculateManualPolicyBenefit(
   row: ManualPolicyBatchRowInput,
@@ -73,30 +183,26 @@ export function calculateManualPolicyBenefit(
   const base = new Decimal(reference.basePriceAmount);
   if (row.policyType === 'free_registration')
     return { customerBenefitAmount: money(base.mul('0.01')) };
-  if (row.policyType === 'free_ipva' && positive(row.annualRate) && integer(row.offerMonth)) {
+  if (row.policyType === 'free_ipva' && integer(row.offerMonth)) {
     const remainingMonths = 13 - Number(row.offerMonth);
     return {
-      customerBenefitAmount: money(base.mul(row.annualRate!).mul(remainingMonths).div(12)),
+      customerBenefitAmount: money(base.mul('0.04').mul(remainingMonths).div(12)),
       remainingMonths,
     };
   }
-  if (
-    row.policyType === 'free_insurance' &&
-    positive(row.annualRate) &&
-    positive(row.coverageYears)
-  ) {
-    return { customerBenefitAmount: money(base.mul(row.annualRate!).mul(row.coverageYears!)) };
+  if (row.policyType === 'free_insurance' && positive(row.coverageYears)) {
+    return { customerBenefitAmount: money(base.mul('0.03').mul(row.coverageYears!)) };
   }
   if (
     row.policyType === 'subsidized_financing' &&
     integer(row.termMonths) &&
-    row.customerInterestRateMonthly !== undefined &&
-    row.downPaymentPercentage !== undefined &&
+    Boolean(row.customerInterestRateMonthly?.match(DECIMAL)) &&
+    Boolean(row.downPaymentPercentage?.match(DECIMAL)) &&
     reference.monthlyReferenceRate &&
     reference.financialParameterSetId
   ) {
-    const down = new Decimal(row.downPaymentPercentage);
-    const customerRate = new Decimal(row.customerInterestRateMonthly).div(100);
+    const down = new Decimal(row.downPaymentPercentage!);
+    const customerRate = new Decimal(row.customerInterestRateMonthly!).div(100);
     const referenceRate = new Decimal(reference.monthlyReferenceRate);
     const term = Number(row.termMonths);
     const principal = base
@@ -214,13 +320,7 @@ export function validateManualPolicyBatch(
             field,
             message: 'Informe um inteiro positivo.',
           });
-    if (
-      row.policyType === 'free_ipva' &&
-      (!positive(row.annualRate) ||
-        new Decimal(row.annualRate || 0).gt(1) ||
-        !integer(row.offerMonth) ||
-        Number(row.offerMonth) > 12)
-    )
+    if (row.policyType === 'free_ipva' && (!integer(row.offerMonth) || Number(row.offerMonth) > 12))
       issues.push({
         clientRowId: row.clientRowId,
         field: 'annualRate',
@@ -228,9 +328,7 @@ export function validateManualPolicyBatch(
       });
     if (
       row.policyType === 'free_insurance' &&
-      (!positive(row.annualRate) ||
-        new Decimal(row.annualRate || 0).gt(1) ||
-        !positive(row.coverageYears))
+      (!/^(?:12|24|36)$/u.test(row.termMonths ?? '') || !positive(row.coverageYears))
     )
       issues.push({
         clientRowId: row.clientRowId,
@@ -249,15 +347,43 @@ export function validateManualPolicyBatch(
         field: 'termMonths',
         message: 'Parâmetros de financiamento inválidos.',
       });
-    const calculated = calculateManualPolicyBenefit(row, references[row.clientRowId] ?? {});
-    if (!calculated?.customerBenefitAmount)
+    const reference = references[row.clientRowId] ?? {};
+    const needsBasePrice = [
+      'free_registration',
+      'free_ipva',
+      'free_insurance',
+      'subsidized_financing',
+    ].includes(row.policyType);
+    if (needsBasePrice && reference.basePriceResolution) {
+      issues.push({
+        clientRowId: row.clientRowId,
+        field: 'amount',
+        message:
+          reference.basePriceResolution === 'missing'
+            ? 'Não há preço público válido para o veículo na data informada.'
+            : 'Há mais de um preço público válido para o veículo na data informada.',
+      });
+    }
+    if (row.policyType === 'subsidized_financing' && reference.financialReferenceResolution) {
+      issues.push({
+        clientRowId: row.clientRowId,
+        field: 'amount',
+        message:
+          reference.financialReferenceResolution === 'missing'
+            ? 'Referência financeira não disponível para a data informada.'
+            : 'Há mais de uma referência financeira válida para a data informada.',
+      });
+    }
+    const calculated = calculateManualPolicyBenefit(row, reference);
+    if (
+      !calculated?.customerBenefitAmount &&
+      !reference.basePriceResolution &&
+      !reference.financialReferenceResolution
+    )
       issues.push({
         clientRowId: row.clientRowId,
         field: 'row',
-        message:
-          row.policyType === 'subsidized_financing'
-            ? 'Referência financeira não disponível.'
-            : 'Não foi possível calcular o benefício.',
+        message: 'Não foi possível calcular o benefício.',
       });
     const fingerprint = JSON.stringify({ ...row, clientRowId: undefined });
     if (fingerprints.has(fingerprint))
@@ -270,6 +396,7 @@ export function validateManualPolicyBatch(
     if (calculated?.customerBenefitAmount) {
       normalized.push({
         ...row,
+        calculationBasePriceId: reference.calculationBasePriceId,
         ...calculated,
         customerBenefitAmount: calculated.customerBenefitAmount,
       });

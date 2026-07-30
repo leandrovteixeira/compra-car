@@ -10,6 +10,7 @@ import type {
 import { calculateCommercialOfferBenefit, calculateTransactionalPrice } from '@compra-car/core';
 import { useActionState, useEffect, useState } from 'react';
 import { EMPTY_OFFER_BUILDER_FORM } from '@/application/admin/commercial-offer-builder';
+import { AdminProductCombobox } from '@/components/admin/admin-product-combobox';
 type Action = (
   state: OfferBuilderActionStateDto,
   data: FormData,
@@ -50,7 +51,6 @@ export function CommercialOfferBuilder({
   };
   const [state, formAction, pending] = useActionState(action, initial);
   const [values, setValues] = useState<OfferBuilderFormDto>(initial.values);
-  const [search, setSearch] = useState('');
   useEffect(() => {
     if (state.status === 'success') setValues(EMPTY_OFFER_BUILDER_FORM);
     else if (state.status === 'error') setValues(state.values);
@@ -102,38 +102,12 @@ export function CommercialOfferBuilder({
         )}
         <fieldset disabled={pending} className="space-y-5">
           <div className="grid gap-4 rounded-2xl border border-slate-800 bg-slate-900/50 p-5 md:grid-cols-2">
-            <label className="text-sm text-slate-300">
-              Buscar veículo
-              <input
-                className="mt-2 min-h-11 w-full rounded-lg border border-slate-700 bg-slate-950 px-3"
-                type="search"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </label>
-            <label className="text-sm text-slate-300">
-              Veículo
-              <select
-                className="mt-2 min-h-11 w-full rounded-lg border border-slate-700 bg-slate-950 px-3"
-                value={values.productId}
-                onChange={(e) =>
-                  update({ productId: e.target.value, publicPriceId: '', policyIds: [] })
-                }
-              >
-                <option value="">Selecione</option>
-                {products
-                  .filter((p) =>
-                    p.displayName
-                      .toLocaleLowerCase('pt-BR')
-                      .includes(search.toLocaleLowerCase('pt-BR')),
-                  )
-                  .map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.displayName}
-                    </option>
-                  ))}
-              </select>
-            </label>
+            <AdminProductCombobox
+              label="Veículo"
+              onChange={(productId) => update({ productId, publicPriceId: '', policyIds: [] })}
+              options={products}
+              value={values.productId}
+            />
             <label className="text-sm text-slate-300">
               MSRP-base
               <select

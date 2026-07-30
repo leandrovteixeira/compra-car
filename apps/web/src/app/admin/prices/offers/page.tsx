@@ -3,10 +3,11 @@ import { requireRole } from '@/auth/authorization';
 import { CommercialOfferBuilder } from '@/components/admin/commercial-offer-builder';
 import { PageHeader } from '@/components/admin/page-header';
 import { loadCommercialOfferBuilder } from '@/server/commercial-offer-builder-service';
+import { withDevTiming } from '@/server/dev-timing';
 import { createCommercialOfferDraftAction } from './actions';
 export default async function CommercialOffersPage() {
   await requireRole('admin');
-  const data = await loadCommercialOfferBuilder();
+  const data = await withDevTiming('pricing.page.offers', loadCommercialOfferBuilder);
   return (
     <>
       <PageHeader

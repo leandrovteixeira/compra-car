@@ -43,3 +43,4 @@ export class ManualPriceBatchConflictError extends PricingAdapterError {
   }
 }
 export class ManualPriceBatchAuthorizationError extends PricingAdapterError {}
+export class AuthVerificationError extends LegacyAdapterError {}

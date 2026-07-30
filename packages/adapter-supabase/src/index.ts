@@ -3,6 +3,7 @@ export * from './client';
 export * from './errors';
 export * from './legacy-supabase-adapter';
 export * from './pricing-mappers';
+export * from './pricing-decimal';
 export * from './product-public-price-supabase-adapter';
 export * from './commercial-pricing-supabase-adapter';
 export * from './manual-price-batch-supabase-adapter';

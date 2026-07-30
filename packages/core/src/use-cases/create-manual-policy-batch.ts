@@ -1,5 +1,6 @@
 import {
   validateManualPolicyBatch,
+  normalizeManualPolicyBatchRow,
   type ManualPolicyBatchRowInput,
   type ManualPolicyBatchIssue,
 } from '../admin/manual-policy-batch';
@@ -17,8 +18,9 @@ export class CreateManualPolicyBatch {
     rows: readonly ManualPolicyBatchRowInput[],
     context: { readonly actorId: string; readonly correlationId: string },
   ): Promise<CreateManualPolicyBatchResult> {
-    const references = await this.repository.resolveReferences(rows);
-    const validation = validateManualPolicyBatch(rows, references);
+    const normalizedInput = rows.map(normalizeManualPolicyBatchRow);
+    const references = await this.repository.resolveReferences(normalizedInput);
+    const validation = validateManualPolicyBatch(normalizedInput, references);
     if (!validation.ok) return validation;
     return {
       ok: true,

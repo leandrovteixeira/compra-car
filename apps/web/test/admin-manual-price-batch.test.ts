@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   executeManualPriceBatchCreation,
   readManualPriceBatchRows,
+  toManualPriceBatchRowErrors,
 } from '../src/application/admin/manual-price-batch';
 
 function source(relativePath: string) {
@@ -46,6 +47,21 @@ const row = {
 };
 
 describe('admin manual price batch', () => {
+  it('produz DTO de erros com protÃ³tipos plain serializÃ¡veis pelo React', () => {
+    const errors = toManualPriceBatchRowErrors([
+      {
+        clientRowId: 'row-1',
+        rowNumber: 1,
+        field: 'amount',
+        code: 'INVALID_AMOUNT',
+        message: 'InvÃ¡lido',
+      },
+    ]);
+    expect(Object.getPrototypeOf(errors)).toBe(Object.prototype);
+    expect(Object.getPrototypeOf(errors['row-1'])).toBe(Object.prototype);
+    expect(errors).toEqual({ 'row-1': { amount: ['InvÃ¡lido'] } });
+  });
+
   it('rejects malformed browser payloads after authorization and preserves safe feedback', async () => {
     const authorize = vi.fn(async () => ({ actorId: 'server-actor' }));
     const invalid = new FormData();
@@ -145,6 +161,7 @@ describe('admin manual price batch', () => {
     expect(grid).toContain('aria-live="polite"');
     expect(grid).toContain('type="date"');
     expect(grid).toContain('inputMode="decimal"');
+    expect(grid).toContain('<AdminProductCombobox');
     expect(adapter).toContain(".from('products')");
     expect(adapter).not.toContain('LegacySupabaseAdapter');
   });

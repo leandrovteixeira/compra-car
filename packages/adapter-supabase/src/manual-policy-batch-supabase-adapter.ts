@@ -8,10 +8,12 @@ import type {
   NormalizedManualPolicyBatchRow,
   ManualPriceBatchProductOption,
 } from '@compra-car/core';
+import { resolveManualPolicyReferenceData } from '@compra-car/core';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { assertLegacyServerRuntime, createLegacySupabaseClientFromEnv } from './client';
 import { PricingAdapterMappingError, PricingAdapterQueryError } from './errors';
+import { decimalString, moneyDecimalString } from './pricing-decimal';
 
 const productColumns = 'id,brand,model,version,model_year,production_year,is_active,is_public';
 const id = (value: unknown) => String(value);
@@ -67,7 +69,7 @@ export class ManualPolicyBatchSupabaseAdapter implements ManualPolicyBatchReposi
     return records(data).map((r) => ({
       id: id(r.id),
       productId: id(r.product_id),
-      amount: string(r.amount, 'amount'),
+      amount: moneyDecimalString(r.amount, 'amount'),
       startsOn: string(r.starts_on, 'starts_on'),
       endsOn: r.ends_on == null ? null : string(r.ends_on, 'ends_on'),
     }));
@@ -89,9 +91,9 @@ export class ManualPolicyBatchSupabaseAdapter implements ManualPolicyBatchReposi
       version: Number(r.version),
       effectiveFrom: string(r.effective_from, 'effective_from'),
       validTo: r.valid_to == null ? null : string(r.valid_to, 'valid_to'),
-      cdiMonthlyPercentage: string(r.cdi_monthly_percentage, 'cdi'),
-      spreadMonthlyPercentage: string(r.spread_monthly_percentage, 'spread'),
-      monthlyReferenceRate: string(r.monthly_reference_rate, 'reference'),
+      cdiMonthlyPercentage: decimalString(r.cdi_monthly_percentage, 'cdi'),
+      spreadMonthlyPercentage: decimalString(r.spread_monthly_percentage, 'spread'),
+      monthlyReferenceRate: decimalString(r.monthly_reference_rate, 'reference'),
     }));
   }
   async resolveReferences(
@@ -102,29 +104,10 @@ export class ManualPolicyBatchSupabaseAdapter implements ManualPolicyBatchReposi
       this.listFinancialReferences(),
     ]);
     return Object.fromEntries(
-      rows.map((row) => {
-        const price = prices.find(
-          (p) =>
-            p.id === row.calculationBasePriceId &&
-            p.productId === row.productId &&
-            p.startsOn <= row.startsOn &&
-            (p.endsOn == null || (row.endsOn != null && p.endsOn >= row.endsOn)),
-        );
-        const matches = parameters.filter(
-          (p) =>
-            p.effectiveFrom <= row.startsOn &&
-            (p.validTo == null || (row.endsOn != null && p.validTo >= row.endsOn)),
-        );
-        const parameter = matches.length === 1 ? matches[0] : undefined;
-        return [
-          row.clientRowId,
-          {
-            basePriceAmount: price?.amount,
-            financialParameterSetId: parameter?.id,
-            monthlyReferenceRate: parameter?.monthlyReferenceRate,
-          },
-        ];
-      }),
+      rows.map((row) => [
+        row.clientRowId,
+        resolveManualPolicyReferenceData(row, prices, parameters),
+      ]),
     );
   }
   async createManualPolicyBatch(input: {

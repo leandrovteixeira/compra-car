@@ -4,12 +4,13 @@ import { requireRole } from '@/auth/authorization';
 import { AdminPriceBatchGrid } from '@/components/admin/admin-price-batch-grid';
 import { PageHeader } from '@/components/admin/page-header';
 import { loadManualPriceBatchProductOptions } from '@/server/manual-price-batch-service';
+import { withDevTiming } from '@/server/dev-timing';
 
 import { createManualPriceBatchAction } from './actions';
 
 export default async function AdminPriceInputPage() {
   await requireRole('admin');
-  const products = await loadManualPriceBatchProductOptions();
+  const products = await withDevTiming('pricing.page.input', loadManualPriceBatchProductOptions);
 
   return (
     <>

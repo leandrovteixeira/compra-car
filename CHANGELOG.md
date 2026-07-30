@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-07-30 — Sprint 9E: estabilização da homologação de Pricing
+
+- Corrigida a fronteira Server Action/Client Component do lote de preços, removendo objetos com
+  protótipo nulo e adicionando regressão explícita de serialização plain-object.
+- Numeric do PostgREST passou a ser canonicalizado imediatamente como decimal string nos adapters
+  de Pricing, inclusive referências financeiras e amounts, sem cálculo financeiro em floating point.
+- Auth agora distingue sessão ausente de erro técnico, registra timings sanitizados apenas em DEV e
+  evita consultas duplicadas na mesma renderização; loaders independentes permanecem paralelos.
+- Criado combobox acessível e reutilizável de Product nas telas de preços em lote, policies e offers;
+  o display segue `Marca Modelo Versão MY/PY`.
+- Batch Policies passou a resolver exatamente um MSRP publicado e uma referência financeira pela
+  data de início, sem depender de `endsOn`; prévia e envio agora compartilham a mesma regra temporal.
+- A grade de Policies foi condensada em oito colunas, com títulos, taxas fixas e vigências derivados
+  no servidor; a busca de Product usa tokens em AND e popup em portal para evitar clipping.
+- Nenhuma migration foi criada, Produção e `Legacy` não foram acessados ou alterados.
+
 ## 2026-07-29 — Sprint 9D: Offer Builder
 
 - Criada `/admin/prices/offers` com seleção explícita de Product, MSRP, vigência e Policies

@@ -5,6 +5,7 @@ import { AdminPriceManager } from '@/components/admin/admin-price-manager';
 import { PageHeader } from '@/components/admin/page-header';
 import { loadAdminProductPublicPrices } from '@/server/admin-product-public-price-service';
 import { loadAdminProducts } from '@/server/admin-product-service';
+import { withDevTiming } from '@/server/dev-timing';
 import { createProductPublicPriceAction, updateProductPublicPriceAction } from './actions';
 import Link from 'next/link';
 
@@ -15,10 +16,12 @@ interface AdminPricesPageProps {
 export default async function AdminPricesPage({ searchParams }: AdminPricesPageProps) {
   await requireRole('admin');
   const page = parseAdminPricePage(await searchParams);
-  const [result, productsResult] = await Promise.all([
-    loadAdminProductPublicPrices({ page }),
-    loadAdminProducts(),
-  ]);
+  const [result, productsResult] = await withDevTiming('pricing.page.list', () =>
+    Promise.all([
+      withDevTiming('pricing.listBasePrices', () => loadAdminProductPublicPrices({ page })),
+      withDevTiming('pricing.listProductOptions', () => loadAdminProducts()),
+    ]),
+  );
 
   return (
     <>

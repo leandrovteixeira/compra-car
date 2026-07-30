@@ -1,7 +1,11 @@
 import {
   calculateManualPolicyBenefit,
+  CreateManualPolicyBatch,
+  normalizeManualPolicyBatchRow,
+  resolveManualPolicyReferenceData,
   validateManualPolicyBatch,
   type ManualPolicyBatchRowInput,
+  type ManualPolicyBatchRepository,
 } from '../src';
 import { describe, expect, it } from 'vitest';
 const base: ManualPolicyBatchRowInput = {
@@ -37,24 +41,139 @@ describe('manual policy batch', () => {
           ...base,
           policyType: 'free_ipva',
           calculationBasePriceId: '1',
-          annualRate: '0.04',
-          offerMonth: '7',
+          offerMonth: '8',
         },
         ref,
       ),
-    ).toEqual({ customerBenefitAmount: '4000.00', remainingMonths: 6 });
+    ).toEqual({ customerBenefitAmount: '3333.33', remainingMonths: 5 });
     expect(
       calculateManualPolicyBenefit(
         {
           ...base,
           policyType: 'free_insurance',
           calculationBasePriceId: '1',
-          annualRate: '0.05',
           coverageYears: '2',
         },
         ref,
       ),
-    ).toMatchObject({ customerBenefitAmount: '20000.00' });
+    ).toMatchObject({ customerBenefitAmount: '12000.00' });
+  });
+
+  it('injects official defaults, title and clears residual fields by policy type', () => {
+    expect(
+      normalizeManualPolicyBatchRow({
+        ...base,
+        policyType: 'free_ipva',
+        startsOn: '2026-08-10',
+        title: 'forjado',
+        endsOn: '2027-01-01',
+        amount: '999',
+        annualRate: '0.99',
+        offerMonth: '1',
+      }),
+    ).toEqual({
+      clientRowId: 'row-1',
+      productId: '1',
+      policyType: 'free_ipva',
+      title: 'IPVA grátis',
+      description: '',
+      startsOn: '2026-08-10',
+      endsOn: null,
+      annualRate: '0.04',
+      offerMonth: '8',
+    });
+    for (const [months, years] of [
+      ['12', '1'],
+      ['24', '2'],
+      ['36', '3'],
+    ]) {
+      expect(
+        normalizeManualPolicyBatchRow({
+          ...base,
+          policyType: 'free_insurance',
+          termMonths: months,
+        }),
+      ).toMatchObject({
+        title: 'Seguro grátis',
+        endsOn: null,
+        annualRate: '0.03',
+        termMonths: months,
+        coverageYears: years,
+      });
+    }
+    expect(normalizeManualPolicyBatchRow({ ...base, policyType: 'free_insurance' })).toMatchObject({
+      termMonths: '12',
+      coverageYears: '1',
+    });
+    expect(
+      normalizeManualPolicyBatchRow({
+        ...base,
+        policyType: 'free_maintenance',
+        maintenanceCount: '3',
+        coverageMonths: '24',
+        coverageKm: '30000',
+      }),
+    ).toEqual({
+      clientRowId: 'row-1',
+      productId: '1',
+      policyType: 'free_maintenance',
+      title: 'Manutenção grátis',
+      description: '',
+      startsOn: '2026-07-29',
+      endsOn: null,
+      amount: '5.000,00',
+      voucherType: undefined,
+    });
+  });
+
+  it('resolves MSRP and financial reference only at startsOn even with endsOn null', () => {
+    const row = { productId: '1', startsOn: '2026-08-10' };
+    const prices = [
+      {
+        id: 'price-1',
+        productId: '1',
+        amount: '200000.00',
+        startsOn: '2026-07-01',
+        endsOn: '2026-08-31',
+      },
+    ];
+    const references = [
+      {
+        id: 'reference-1',
+        effectiveFrom: '2026-07-29',
+        validTo: '2026-12-31',
+        monthlyReferenceRate: '0.014458',
+      },
+    ];
+    expect(resolveManualPolicyReferenceData(row, prices, references)).toEqual({
+      calculationBasePriceId: 'price-1',
+      basePriceAmount: '200000.00',
+      financialParameterSetId: 'reference-1',
+      monthlyReferenceRate: '0.014458',
+      basePriceResolution: undefined,
+      financialReferenceResolution: undefined,
+    });
+    expect(resolveManualPolicyReferenceData(row, [], references)).toMatchObject({
+      basePriceResolution: 'missing',
+    });
+    expect(
+      resolveManualPolicyReferenceData(
+        row,
+        [...prices, { ...prices[0]!, id: 'price-2' }],
+        references,
+      ),
+    ).toMatchObject({
+      basePriceResolution: 'ambiguous',
+    });
+    expect(resolveManualPolicyReferenceData(row, prices, [])).toMatchObject({
+      financialReferenceResolution: 'missing',
+    });
+    expect(
+      resolveManualPolicyReferenceData(row, prices, [
+        ...references,
+        { ...references[0]!, id: 'reference-2' },
+      ]),
+    ).toMatchObject({ financialReferenceResolution: 'ambiguous' });
   });
   it('derives financing from the persisted reference rate', () => {
     expect(
@@ -77,6 +196,51 @@ describe('manual policy batch', () => {
       financialParameterSetId: '7',
       financedPrincipal: '160000.00',
       customerBenefitAmount: expect.stringMatching(/^\d+\.\d{2}$/u),
+    });
+  });
+  it('creates financing with open Policy and finite reference validity', async () => {
+    let persisted: unknown;
+    const repository: ManualPolicyBatchRepository = {
+      listProductOptions: async () => [],
+      listBasePrices: async () => [],
+      listFinancialReferences: async () => [],
+      resolveReferences: async (rows) => ({
+        [rows[0]!.clientRowId]: {
+          calculationBasePriceId: 'price-1',
+          basePriceAmount: '200000.00',
+          financialParameterSetId: 'reference-1',
+          monthlyReferenceRate: '0.014458',
+        },
+      }),
+      createManualPolicyBatch: async (input) => {
+        persisted = input;
+        return { batchId: 'batch-1', createdCount: 1, policyIds: ['policy-1'] };
+      },
+    };
+    const result = await new CreateManualPolicyBatch(repository).execute(
+      [
+        {
+          ...base,
+          policyType: 'subsidized_financing',
+          title: 'forjado',
+          endsOn: null,
+          termMonths: '24',
+          customerInterestRateMonthly: '0.5',
+          downPaymentPercentage: '20',
+        },
+      ],
+      { actorId: 'actor-1', correlationId: 'correlation-1' },
+    );
+    expect(result.ok).toBe(true);
+    expect(persisted).toMatchObject({
+      rows: [
+        {
+          title: 'Financiamento subsidiado',
+          endsOn: null,
+          calculationBasePriceId: 'price-1',
+          financialParameterSetId: 'reference-1',
+        },
+      ],
     });
   });
   it('supports all current fixed variants and validates specialized fields', () => {

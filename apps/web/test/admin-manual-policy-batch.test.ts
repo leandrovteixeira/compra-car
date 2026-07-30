@@ -18,23 +18,19 @@ describe('admin manual policy batch', () => {
 
   it('renders all current types, dynamic fields and batch safeguards', () => {
     const grid = source('../src/components/admin/admin-policy-batch-grid.tsx');
-    for (const type of [
-      'retail_bonus',
-      'trade_in_bonus',
-      'subsidized_financing',
-      'free_ipva',
-      'free_insurance',
-      'free_wallbox',
-      'free_registration',
-      'free_maintenance',
-      'fuel_or_recharge_voucher',
-      'other',
-    ])
-      expect(grid).toContain(type);
+    expect(grid).toContain('Object.entries(MANUAL_POLICY_TITLES)');
     expect(grid).not.toContain("['registration'");
     expect(grid).toContain('changeType');
     expect(grid).toContain('result.push(empty');
     expect(grid).toContain("pending ? 'Salvando lote…'");
-    expect(grid).toContain('md:grid-cols');
+    expect(grid).toContain('lg:grid-cols-');
+    expect(grid).toContain('<AdminProductCombobox');
+    expect(grid).toContain('<span>Veículo</span>');
+    expect(grid).toContain('<span>Descrição</span>');
+    expect(grid).not.toContain('MSRP publicado');
+    expect(grid).not.toContain('Alíquota anual');
+    expect(grid).not.toContain('Principal financiado');
+    expect(grid).not.toContain('Fim (opcional)');
+    expect(grid).not.toContain('>Título<');
   });
 });

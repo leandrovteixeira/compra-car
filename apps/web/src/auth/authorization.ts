@@ -8,9 +8,11 @@ import {
   type AuthUser,
 } from '@compra-car/adapter-supabase';
 import { redirect } from 'next/navigation';
+import { cache } from 'react';
 
 import { hasRole } from './access-control';
 import { createReadOnlyServerClient } from './server-client';
+import { withDevTiming } from '@/server/dev-timing';
 
 export interface ActiveIdentity {
   readonly user: AuthUser;
@@ -36,14 +38,33 @@ export async function requireAuthenticatedUser(): Promise<AuthUser> {
   return user;
 }
 
-export async function requireActiveProfile(): Promise<ActiveIdentity> {
-  const client = await createReadOnlyServerClient();
-  const user = await getVerifiedAuthUser(client);
-  if (!user) redirect('/login');
+type ActiveIdentityResult =
+  | { readonly status: 'active'; readonly identity: ActiveIdentity }
+  | { readonly status: 'unauthenticated' }
+  | { readonly status: 'profile-denied' };
 
-  const profile = await getAuthProfile(client, user.id);
-  if (!profile || profile.status !== 'active') redirect('/login?error=access');
-  return { user, profile };
+const loadActiveIdentity = cache(async (): Promise<ActiveIdentityResult> => {
+  const client = await createReadOnlyServerClient();
+  const user = await withDevTiming('auth.getUser', () => getVerifiedAuthUser(client));
+  if (!user) {
+    if (process.env.NODE_ENV === 'development') console.info('[auth] user: not found');
+    return { status: 'unauthenticated' };
+  }
+  if (process.env.NODE_ENV === 'development') console.info('[auth] user: found');
+
+  const profile = await withDevTiming('auth.profile', () => getAuthProfile(client, user.id));
+  if (process.env.NODE_ENV === 'development') {
+    console.info(`[auth] profile: ${profile?.status ?? 'missing'}`);
+  }
+  if (!profile || profile.status !== 'active') return { status: 'profile-denied' };
+  return { status: 'active', identity: { user, profile } };
+});
+
+export async function requireActiveProfile(): Promise<ActiveIdentity> {
+  const result = await withDevTiming('auth.requireActiveProfile', loadActiveIdentity);
+  if (result.status === 'unauthenticated') redirect('/login');
+  if (result.status === 'profile-denied') redirect('/login?error=access');
+  return result.identity;
 }
 
 export async function requireRole(requiredRole: AppRole): Promise<ActiveIdentity> {

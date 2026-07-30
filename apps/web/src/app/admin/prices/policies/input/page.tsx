@@ -3,10 +3,11 @@ import { requireRole } from '@/auth/authorization';
 import { AdminPolicyBatchGrid } from '@/components/admin/admin-policy-batch-grid';
 import { PageHeader } from '@/components/admin/page-header';
 import { loadManualPolicyBatchOptions } from '@/server/manual-policy-batch-service';
+import { withDevTiming } from '@/server/dev-timing';
 import { createManualPolicyBatchAction } from './actions';
 export default async function AdminPolicyInputPage() {
   await requireRole('admin');
-  const options = await loadManualPolicyBatchOptions();
+  const options = await withDevTiming('pricing.page.policies', loadManualPolicyBatchOptions);
   return (
     <>
       <PageHeader
