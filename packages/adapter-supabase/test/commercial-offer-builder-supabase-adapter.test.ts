@@ -4,6 +4,23 @@ import { describe, expect, it, vi } from 'vitest';
 import { CommercialOfferBuilderSupabaseAdapter } from '../src';
 
 describe('CommercialOfferBuilder Supabase adapter', () => {
+  it('persists all combinations with one atomic batch RPC call', async () => {
+    const client = {
+      rpc: vi.fn(async () => ({ data: { createdCount: 0, offers: [] }, error: null })),
+    } as unknown as SupabaseClient;
+    await expect(
+      new CommercialOfferBuilderSupabaseAdapter(client).createCombinationBatch({
+        rows: [{ clientRowId: 'row-1', productId: '42', policyIds: ['1', '2'] }],
+        actorId: 'actor',
+        correlationId: 'corr',
+      }),
+    ).resolves.toEqual({ createdCount: 0, offers: [] });
+    expect(client.rpc).toHaveBeenCalledWith('create_commercial_offer_batch', {
+      p_rows: [{ clientRowId: 'row-1', productId: 42, policyIds: [1, 2] }],
+      p_actor_id: 'actor',
+      p_correlation_id: 'corr',
+    });
+  });
   it('persists a validated draft only through the atomic domain RPC', async () => {
     const client = {
       rpc: vi.fn(async () => ({

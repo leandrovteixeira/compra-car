@@ -4,8 +4,12 @@ import type {
   NormalizedManualPriceBatchRow,
 } from '../src';
 import {
+  canonicalDecimalToPtBrMoney,
   canonicalManualPriceAmount,
   CreateManualPriceBatch,
+  formatPtBrMoneyInput,
+  ptBrMoneyToCanonicalDecimal,
+  ptBrMoneyCaretPosition,
   validateManualPriceBatch,
 } from '../src';
 import { describe, expect, it, vi } from 'vitest';
@@ -17,6 +21,28 @@ const validRow: ManualPriceBatchRowInput = {
   startsOn: '2026-08-01',
   endsOn: null,
 };
+
+interface MoneyEditState {
+  readonly value: string;
+  readonly caret: number;
+}
+
+function editMoney(
+  state: MoneyEditState,
+  inserted: string,
+  selectionStart = state.caret,
+  selectionEnd = selectionStart,
+): MoneyEditState {
+  const raw = `${state.value.slice(0, selectionStart)}${inserted}${state.value.slice(selectionEnd)}`;
+  const rawCaret = selectionStart + inserted.length;
+  const value = formatPtBrMoneyInput(raw);
+  return { value, caret: ptBrMoneyCaretPosition(raw, value, rawCaret) ?? rawCaret };
+}
+
+function backspaceMoney(state: MoneyEditState): MoneyEditState {
+  if (state.caret === 0) return state;
+  return editMoney(state, '', state.caret - 1, state.caret);
+}
 
 function repository(): ManualPriceBatchRepository {
   return {
@@ -45,6 +71,67 @@ describe('manual price batch', () => {
     ['R$ 1.234,56', '1234.56'],
   ])('normalizes pt-BR money without floating point: %s', (input, expected) => {
     expect(canonicalManualPriceAmount(input)).toBe(expected);
+  });
+
+  it.each([
+    ['162990', '162.990,00'],
+    ['15000', '15.000,00'],
+    ['1000000', '1.000.000,00'],
+    ['2666,5', '2.666,50'],
+    ['', ''],
+  ])('formats money for masked editing: %s', (input, expected) => {
+    expect(formatPtBrMoneyInput(input)).toBe(expected);
+  });
+
+  it('supports replacing a masked value without changing its persisted amount', () => {
+    const display = formatPtBrMoneyInput('162990');
+    expect(display).toBe('162.990,00');
+    expect(canonicalManualPriceAmount(display)).toBe('162990.00');
+    expect(formatPtBrMoneyInput('159990')).toBe('159.990,00');
+  });
+
+  it('separates strict canonical conversion from tolerant masked editing', () => {
+    expect(ptBrMoneyToCanonicalDecimal('15.000,00')).toBe('15000.00');
+    expect(canonicalDecimalToPtBrMoney('15000.00')).toBe('15.000,00');
+    expect(canonicalDecimalToPtBrMoney(ptBrMoneyToCanonicalDecimal('15.000,00')!)).toBe(
+      '15.000,00',
+    );
+    expect(ptBrMoneyToCanonicalDecimal('1.0000,00')).toBeNull();
+    expect(formatPtBrMoneyInput('1.0000,00')).toBe('10.000,00');
+  });
+
+  it('keeps progressive typing stable when thousands separators are regrouped', () => {
+    let state: MoneyEditState = { value: '', caret: 0 };
+    for (const digit of '10000') state = editMoney(state, digit);
+    expect(state).toEqual({ value: '10.000,00', caret: 6 });
+    expect(canonicalManualPriceAmount(state.value)).toBe('10000.00');
+  });
+
+  it('supports backspace, select-all replacement, middle edits, paste, clear and retype', () => {
+    let state: MoneyEditState = { value: '10.000,00', caret: 6 };
+    state = backspaceMoney(state);
+    expect(state).toEqual({ value: '1.000,00', caret: 5 });
+
+    state = editMoney(state, '2500', 0, state.value.length);
+    expect(state.value).toBe('2.500,00');
+
+    state = editMoney({ value: '1.000,00', caret: 1 }, '5');
+    expect(state.value).toBe('15.000,00');
+
+    expect(editMoney({ value: '', caret: 0 }, '15000.00').value).toBe('15.000,00');
+    expect(editMoney({ value: '', caret: 0 }, '15.000,00').value).toBe('15.000,00');
+
+    state = editMoney(state, '', 0, state.value.length);
+    expect(state).toEqual({ value: '', caret: 0 });
+    for (const digit of '10000') state = editMoney(state, digit);
+    expect(state.value).toBe('10.000,00');
+  });
+
+  it('keeps integer and decimal caret positions natural while masking', () => {
+    expect(ptBrMoneyCaretPosition('162990', '162.990,00', 6)).toBe(7);
+    expect(ptBrMoneyCaretPosition('16,00', '16,00', 2)).toBe(2);
+    expect(ptBrMoneyCaretPosition('1,50', '1,50', 3)).toBe(3);
+    expect(ptBrMoneyCaretPosition('19.234,00', '19.234,00', 2)).toBe(2);
   });
 
   it.each(['', '0', '0,00', '-1', '1,234', '1.2.3', 'R$ -10,00'])(

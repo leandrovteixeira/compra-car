@@ -1,39 +1,43 @@
-import type { OfferBuilderActionStateDto, OfferBuilderFormDto } from '@compra-car/contracts';
+import type {
+  OfferBuilderActionStateDto,
+  PolicyCombinationGridRowDto,
+} from '@compra-car/contracts';
 import {
-  CreateCommercialOfferDraft,
+  CreatePolicyCombinationBatch,
+  POLICY_COMBINATION_MAX_ROWS,
   type CommercialOfferBuilderRepository,
 } from '@compra-car/core';
-export const EMPTY_OFFER_BUILDER_FORM: OfferBuilderFormDto = Object.freeze({
+
+export const EMPTY_POLICY_COMBINATION_ROW: PolicyCombinationGridRowDto = Object.freeze({
+  clientRowId: 'row-1',
   productId: '',
-  publicPriceId: '',
-  validFrom: '',
-  validTo: '',
   policyIds: [],
 });
-function read(formData: FormData): OfferBuilderFormDto | null {
-  const productId = formData.get('productId'),
-    publicPriceId = formData.get('publicPriceId'),
-    validFrom = formData.get('validFrom'),
-    validTo = formData.get('validTo'),
-    raw = formData.get('policyIds');
-  if (![productId, publicPriceId, validFrom, validTo, raw].every((v) => typeof v === 'string'))
-    return null;
+
+function read(formData: FormData): readonly PolicyCombinationGridRowDto[] | null {
+  const raw = formData.get('rows');
+  if (typeof raw !== 'string') return null;
   try {
-    const policyIds: unknown = JSON.parse(raw as string);
-    return Array.isArray(policyIds) && policyIds.every((id) => typeof id === 'string')
-      ? {
-          productId: productId as string,
-          publicPriceId: publicPriceId as string,
-          validFrom: validFrom as string,
-          validTo: validTo as string,
-          policyIds,
-        }
+    const value: unknown = JSON.parse(raw);
+    if (!Array.isArray(value) || value.length > POLICY_COMBINATION_MAX_ROWS + 1) return null;
+    return value.every((row) => {
+      if (typeof row !== 'object' || row === null) return false;
+      const item = row as Record<string, unknown>;
+      return (
+        typeof item.clientRowId === 'string' &&
+        typeof item.productId === 'string' &&
+        Array.isArray(item.policyIds) &&
+        item.policyIds.every((id) => typeof id === 'string')
+      );
+    })
+      ? (value as PolicyCombinationGridRowDto[])
       : null;
   } catch {
     return null;
   }
 }
-export async function executeCommercialOfferDraftCreation(
+
+export async function executePolicyCombinationBatchCreation(
   formData: FormData,
   deps: {
     authorize: () => Promise<{ actorId: string }>;
@@ -43,51 +47,50 @@ export async function executeCommercialOfferDraftCreation(
   },
 ): Promise<OfferBuilderActionStateDto> {
   const { actorId } = await deps.authorize();
-  const values = read(formData);
-  if (!values)
+  const rows = read(formData);
+  if (!rows)
     return {
       status: 'error',
-      values: EMPTY_OFFER_BUILDER_FORM,
-      errors: [],
-      message: 'Os dados da oferta são inválidos.',
+      rows: [EMPTY_POLICY_COMBINATION_ROW],
+      rowErrors: {},
+      message: 'Os dados do lote de combinações são inválidos.',
     };
+  const correlationId = deps.correlationId();
   try {
-    const result = await new CreateCommercialOfferDraft(deps.repository()).execute(values, {
+    const result = await new CreatePolicyCombinationBatch(deps.repository()).execute(rows, {
       actorId,
-      correlationId: deps.correlationId(),
+      correlationId,
     });
-    if (!result.ok)
+    if (!result.ok) {
+      const rowErrors = result.issues.reduce<Record<string, string[]>>((all, issue) => {
+        (all[issue.clientRowId] ??= []).push(issue.message);
+        return all;
+      }, {});
       return {
         status: 'error',
-        values,
-        errors: result.errors,
-        message: 'Revise a composição. Nenhuma oferta foi criada.',
+        rows,
+        rowErrors,
+        message: 'Revise as combinações. Nenhuma oferta foi criada.',
       };
+    }
     deps.revalidate('/admin/prices/offers');
     return {
       status: 'success',
-      values: EMPTY_OFFER_BUILDER_FORM,
-      errors: [],
-      message: `Oferta criada como rascunho com ${result.offer.policyIds.length} política(s).`,
-      offer: {
-        id: result.offer.id,
-        productId: result.offer.productId,
-        publicPriceAmount: result.offer.publicPriceAmount!,
-        validFrom: result.offer.validFrom,
-        validTo: result.offer.validTo,
-        status: 'draft',
-        policyCount: result.offer.policyIds.length,
-        benefitAmount: result.offer.benefitAmount,
-        transactionalPrice: result.offer.transactionalPrice,
-      },
+      rows: [EMPTY_POLICY_COMBINATION_ROW],
+      rowErrors: {},
+      message: `${result.batch.createdCount} combinação(ões) salva(s) como rascunho.`,
+      createdCount: result.batch.createdCount,
     };
-  } catch {
-    console.error('Commercial offer builder failed.');
+  } catch (error) {
+    console.error('Policy combination batch failed.', {
+      correlationId,
+      error: error instanceof Error ? error.message : 'unknown',
+    });
     return {
       status: 'error',
-      values,
-      errors: [],
-      message: 'Não foi possível salvar a oferta. Nenhuma associação foi criada.',
+      rows,
+      rowErrors: {},
+      message: 'Não foi possível salvar o lote. Nenhuma oferta foi criada.',
     };
   }
 }

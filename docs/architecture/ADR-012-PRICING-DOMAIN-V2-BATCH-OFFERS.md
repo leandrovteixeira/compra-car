@@ -115,3 +115,10 @@ Offer draft, memberships e auditoria na mesma transação.
 Policies `draft`, `needs_review` e `published` podem compor uma Offer draft; Policies rejeitadas,
 arquivadas, históricas de registration, de outro Product ou sem cobertura integral são bloqueadas.
 Publicação permanece separada e continua exigindo Policies publicadas pelo lifecycle oficial.
+# Complemento Sprint 9F — combinação em grade e vigência derivada
+
+A Offer não recebe mais MSRP e datas digitados. Para cada conjunto explícito de Policies,
+`valid_from` é o maior início, o MSRP é o único publicado válido nessa data e `valid_to` é o menor
+fim não nulo entre Policies e MSRP. Ausência de fim concreto e interseção negativa são erros. O lote
+é validado integralmente antes da persistência. `loyalty_bonus` é corrente, fixo e distinto de Varejo
+e Trade-In. Nenhuma tabela, coluna, constraint ou nulabilidade é alterada.

@@ -42,4 +42,5 @@ export * from './use-cases/create-manual-price-batch';
 export * from './repositories/manual-policy-batch-repository';
 export * from './use-cases/create-manual-policy-batch';
 export * from './repositories/commercial-offer-builder-repository';
+export * from './use-cases/create-policy-combination-batch';
 export * from './use-cases/create-commercial-offer-draft';

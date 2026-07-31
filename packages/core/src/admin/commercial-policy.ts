@@ -28,6 +28,7 @@ const TYPE_FIELDS: Readonly<
 > = {
   retail_bonus: ['amount'],
   trade_in_bonus: ['amount'],
+  loyalty_bonus: ['amount'],
   subsidized_financing: [
     'termMonths',
     'customerInterestRateMonthly',
@@ -116,6 +117,7 @@ export function validateCommercialPolicyInput(
   if (
     policyType === 'retail_bonus' ||
     policyType === 'trade_in_bonus' ||
+    policyType === 'loyalty_bonus' ||
     policyType === 'free_wallbox' ||
     policyType === 'free_maintenance' ||
     policyType === 'fuel_or_recharge_voucher' ||

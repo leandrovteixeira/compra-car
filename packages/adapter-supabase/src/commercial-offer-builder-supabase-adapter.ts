@@ -2,8 +2,10 @@ import type {
   CommercialOfferBuilderPrice,
   CommercialOfferBuilderRepository,
   CommercialOfferDraftSummary,
-  CommercialPolicy,
   ManualPriceBatchProductOption,
+  PolicyCombinationBatchResult,
+  PolicyCombinationPolicy,
+  PolicyCombinationRowInput,
   ValidatedCommercialOfferDraft,
 } from '@compra-car/core';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -72,7 +74,7 @@ export class CommercialOfferBuilderSupabaseAdapter implements CommercialOfferBui
       status: 'published',
     }));
   }
-  async listAvailablePolicies(): Promise<readonly CommercialPolicy[]> {
+  async listAvailablePolicies(): Promise<readonly PolicyCombinationPolicy[]> {
     const { data, error } = await this.client
       .from('commercial_policies')
       .select(policyColumns)
@@ -122,6 +124,32 @@ export class CommercialOfferBuilderSupabaseAdapter implements CommercialOfferBui
       });
     return this.mapSummary(data);
   }
+  async createCombinationBatch(input: {
+    readonly rows: readonly PolicyCombinationRowInput[];
+    readonly actorId: string;
+    readonly correlationId: string;
+  }): Promise<PolicyCombinationBatchResult> {
+    const { data, error } = await this.client.rpc('create_commercial_offer_batch', {
+      p_rows: input.rows.map((row) => ({
+        clientRowId: row.clientRowId,
+        productId: Number(row.productId),
+        policyIds: row.policyIds.map(Number),
+      })),
+      p_actor_id: input.actorId,
+      p_correlation_id: input.correlationId,
+    });
+    if (error)
+      throw new PricingAdapterQueryError('Não foi possível salvar o lote de combinações.', {
+        cause: error,
+      });
+    if (typeof data !== 'object' || data === null)
+      throw new PricingAdapterMappingError('Resposta inválida do lote de combinações.');
+    const result = data as Record<string, unknown>;
+    return {
+      createdCount: Number(result.createdCount),
+      offers: records(result.offers).map((offer) => this.mapSummary(offer)),
+    };
+  }
   async listRecentDrafts(): Promise<readonly CommercialOfferDraftSummary[]> {
     const { data, error } = await this.client
       .from('commercial_offers')
@@ -162,13 +190,15 @@ export class CommercialOfferBuilderSupabaseAdapter implements CommercialOfferBui
         ? (r.public_price as Record<string, unknown>)
         : {});
     const memberships = records(r.memberships);
-    const amounts = memberships.map((m) => {
+    const amounts = memberships.flatMap((m) => {
       const policy =
         records(m.policy)[0] ??
         (typeof m.policy === 'object' && m.policy !== null
           ? (m.policy as Record<string, unknown>)
           : {});
-      return money(policy.customer_benefit_amount, 'benefit');
+      return policy.customer_benefit_amount == null
+        ? []
+        : [money(policy.customer_benefit_amount, 'benefit')];
     });
     const cents = (value: string) => BigInt(value.replace('.', ''));
     const benefit = amounts.reduce((sum, value) => sum + cents(value), 0n);

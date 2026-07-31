@@ -14,7 +14,22 @@
   data de início, sem depender de `endsOn`; prévia e envio agora compartilham a mesma regra temporal.
 - A grade de Policies foi condensada em oito colunas, com títulos, taxas fixas e vigências derivados
   no servidor; a busca de Product usa tokens em AND e popup em portal para evitar clipping.
-- Nenhuma migration foi criada, Produção e `Legacy` não foram acessados ou alterados.
+- Preços e valores fixos de policies agora mantêm máscara monetária pt-BR durante a edição, sem
+  alterar o decimal canônico persistido; Taxa aceita vírgula decimal e continua usando cálculo exato.
+- A máscara monetária normaliza estados transitórios de edição antes de reagrupar milhares, evitando
+  corrupções como `1.0000,00`; parsing de persistência permanece estrito e separado do display. O
+  payload de policies também canonicaliza `amount` antes da RPC.
+- Labels administrativos foram reduzidos a `Taxa` e `Voucher`, preservando identifiers e títulos
+  persistidos existentes. A grade de policies foi compactada para caber no desktop sem scroll.
+- A migration `20260730223142_fix_manual_policy_batch_open_ended_msrp.sql` substitui somente a RPC
+  atômica para aceitar, em policy aberta, MSRP finito válido em `startsOn`; incompatibilidades reais
+  continuam rejeitando e revertendo o lote completo.
+- A migration foi aplicada somente ao Staging. Testes SQL reversíveis validaram Bônus + IPVA,
+  rejeição de MSRP expirado e Taxa 24/0,49/60, todos com zero resíduo após rollback.
+- A segunda validação no Staging persistiu atomicamente Trade-in + Taxa + IPVA no batch 16, criando
+  três policies `draft`; a Taxa 24/0,49/60 foi confirmada em R$ 6.893,41.
+- Falhas da RPC agora são registradas no servidor com correlation ID e erro técnico, mantendo a
+  mensagem segura no frontend. Produção e `Legacy` não foram acessados ou alterados.
 
 ## 2026-07-29 — Sprint 9D: Offer Builder
 
@@ -569,3 +584,16 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 - Refinamento da identidade comparável e separação entre diferença e vantagem.
 - Correção da ordem de execução: Supabase atual, inspeção mínima, adaptador legado, validação dos contratos, UI, MVP e piloto.
 - Remoção da nova carga do Excel e de alterações estruturais amplas do banco como pré-requisitos do MVP.
+# 2026-07-31 — Sprint 9F: combinação de políticas
+
+- Refatorado o Offer Builder para lote de até 100 combinações e 11 categorias determinísticas.
+- Adicionados `loyalty_bonus` e a RPC atômica `create_commercial_offer_batch`.
+- MSRP e vigência são derivados no servidor; tudo aberto é rejeitado antes da persistência.
+- Adicionados logging com correlation ID, testes e documentação.
+# 2026-07-31 — Sprint 9F.1: refinamento e proteção de status
+
+- Compactados os labels `Emplac.` e `Manut.` e centralizado verticalmente o conteúdo da matriz.
+- Corrigido o guard específico de rollover no trigger terminal compartilhado sem alterar suas regras.
+- Arquivados de forma controlada no staging os drafts de teste 17/18/19 do Dolphin; 20/21/22
+  permaneceram drafts e únicos nos respectivos tipos elegíveis.
+- Registrada a Sprint 9G de gestão de Policies e combinações como próxima etapa.

@@ -12,8 +12,8 @@ export default async function CommercialOffersPage() {
     <>
       <PageHeader
         eyebrow="Pricing"
-        title="Montador de ofertas"
-        description="Selecione explicitamente as políticas acumuláveis e salve a composição como rascunho."
+        title="Combinação de políticas"
+        description="Monte até 100 combinações por veículo. Preço e vigência são resolvidos automaticamente."
         actions={
           <Link
             href="/admin/prices"

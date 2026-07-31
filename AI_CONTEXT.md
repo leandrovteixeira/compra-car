@@ -8,7 +8,18 @@
   correspondência; a mesma função pura alimenta prévia e submissão para evitar divergência temporal.
 - IPVA usa 4% e mês derivado do início; seguro usa 3% e prazo de 12/24/36 meses; emplacamento usa 1%.
 - O combobox administrativo pesquisa todos os tokens em qualquer ordem e renderiza o popup em portal.
-- Nenhuma migration foi criada; Produção e `Legacy` permanecem fora do escopo.
+- Máscaras monetárias pt-BR são apenas apresentação; o core converte para decimal string canônica.
+  Taxa aceita `0,49`, normaliza para `0.49` e não muda a unidade percentual mensal do domínio.
+- Eventos de edição monetária usam normalização tolerante para reagrupar separadores transitórios;
+  validação e persistência usam conversão estrita, mantendo display e decimal canônico separados.
+  Em policy de valor fixo, tanto `amount` quanto o benefício chegam à RPC como decimal canônico.
+- `Taxa` e `Voucher` são labels de UI; os identifiers e títulos persistidos permanecem compatíveis.
+- A migration `20260730223142_fix_manual_policy_batch_open_ended_msrp.sql` substitui somente
+  `create_manual_policy_batch`: policy aberta aceita MSRP finito válido em `startsOn`, enquanto MSRP
+  expirado antes dessa data continua rejeitando o lote inteiro. Foi aplicada somente ao Staging;
+  Bônus + IPVA, rejeição temporal e Taxa 24/0,49/60 passaram em transações reversíveis com zero
+  resíduo. A revalidação persistente Trade-in + Taxa + IPVA criou o batch 16 e três drafts no
+  Staging, incluindo benefício de Taxa de R$ 6.893,41. Produção e `Legacy` seguem fora do escopo.
 
 ## Marco — Offer Builder (Sprint 9D, 2026-07-29)
 
@@ -532,3 +543,12 @@ O escopo da Sprint 1 fica limitado a `products` e `product_specs`, usando `specs
   autorização read-only é deduplicada por renderização, mantendo revalidação nas Server Actions.
 - Staging autorizado: `shfsjyjxmgwnlexmdkcs`. Não houve migration, acesso a Produção ou alteração em
   `Legacy`. Smoke autenticado ainda depende de credencial/sessão administrativa fornecida externamente.
+## Marco — combinação de políticas (Sprint 9F, 2026-07-31)
+
+O Offer Builder opera em lote por `create_commercial_offer_batch`. MSRP, `valid_from=max(starts_on)` e `valid_to=min(ends_on não nulo de Policies/MSRP)` são autoritativos no servidor. Tudo aberto é erro, `commercial_offers.valid_to` continua obrigatório e qualquer erro desfaz o lote. `loyalty_bonus` é um tipo corrente fixo distinto.
+## Marco — refinamento da combinação (Sprint 9F.1, 2026-07-31)
+
+O trigger terminal compartilhado separa estruturalmente o branch exclusivo de
+`financial_parameter_sets`, evitando acesso a `valid_to`/`effective_from` em outras tabelas sem
+relaxar imutabilidade terminal ou rollover. A Sprint 9G, ainda não implementada, tratará consulta e
+gestão de Policies e combinações com regras explícitas para workflow, supersession e auditoria.

@@ -11,6 +11,8 @@ Este diretório documenta o domínio da área `admin` do Compra Car. A arquitetu
   segurança e limites do batch de preços;
 - [`SPRINT_9D_OFFER_BUILDER.md`](SPRINT_9D_OFFER_BUILDER.md): composição explícita de Offers,
   validações, persistência atômica e limites do builder;
+- [`SPRINT_9G_POLICY_COMBINATION_MANAGEMENT.md`](SPRINT_9G_POLICY_COMBINATION_MANAGEMENT.md): próxima
+  etapa de consulta e gestão de Policies e combinações, ainda não implementada;
 
 Os documentos e exports do Appsmith registram uma direção anterior e permanecem preservados apenas como referência histórica. Eles não são planos vigentes e não receberão novas implementações.
 

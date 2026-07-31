@@ -1,13 +1,17 @@
 import {
   calculateManualPolicyBenefit,
+  canonicalManualPolicyPercentage,
   CreateManualPolicyBatch,
+  formatPtBrPercentageInput,
+  MANUAL_POLICY_DISPLAY_LABELS,
   normalizeManualPolicyBatchRow,
   resolveManualPolicyReferenceData,
   validateManualPolicyBatch,
   type ManualPolicyBatchRowInput,
   type ManualPolicyBatchRepository,
+  type NormalizedManualPolicyBatchRow,
 } from '../src';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 const base: ManualPolicyBatchRowInput = {
   clientRowId: 'row-1',
   productId: '1',
@@ -121,7 +125,7 @@ describe('manual policy batch', () => {
       description: '',
       startsOn: '2026-07-29',
       endsOn: null,
-      amount: '5.000,00',
+      amount: '5000.00',
       voucherType: undefined,
     });
   });
@@ -198,6 +202,53 @@ describe('manual policy batch', () => {
       customerBenefitAmount: expect.stringMatching(/^\d+\.\d{2}$/u),
     });
   });
+  it('accepts pt-BR financing percentages and preserves internal identifiers', () => {
+    const normalized = normalizeManualPolicyBatchRow({
+      ...base,
+      policyType: 'subsidized_financing',
+      termMonths: '24',
+      customerInterestRateMonthly: '0,49',
+      downPaymentPercentage: '60',
+    });
+    expect(canonicalManualPolicyPercentage('0,49')).toBe('0.49');
+    expect(formatPtBrPercentageInput('0.49')).toBe('0,49');
+    expect(formatPtBrPercentageInput('0,49')).toBe('0,49');
+    expect(normalized).toMatchObject({
+      policyType: 'subsidized_financing',
+      termMonths: '24',
+      customerInterestRateMonthly: '0.49',
+      downPaymentPercentage: '60',
+    });
+    const result = calculateManualPolicyBenefit(normalized, {
+      calculationBasePriceId: '1',
+      basePriceAmount: '200000.00',
+      financialParameterSetId: '7',
+      monthlyReferenceRate: '0.014458',
+    });
+    expect(result?.customerBenefitAmount).toMatch(/^\d+\.\d{2}$/u);
+    expect(Number(result?.customerBenefitAmount)).not.toBeNaN();
+    expect(
+      validateManualPolicyBatch([{ ...normalized, downPaymentPercentage: '100' }], {
+        [normalized.clientRowId]: {
+          calculationBasePriceId: '1',
+          basePriceAmount: '200000.00',
+          financialParameterSetId: '7',
+          monthlyReferenceRate: '0.014458',
+        },
+      }).ok,
+    ).toBe(false);
+  });
+
+  it('keeps display labels separate from persisted identifiers and titles', () => {
+    expect(MANUAL_POLICY_DISPLAY_LABELS.subsidized_financing).toBe('Taxa');
+    expect(MANUAL_POLICY_DISPLAY_LABELS.fuel_or_recharge_voucher).toBe('Voucher');
+    expect(
+      normalizeManualPolicyBatchRow({ ...base, policyType: 'subsidized_financing' }),
+    ).toMatchObject({
+      policyType: 'subsidized_financing',
+      title: 'Financiamento subsidiado',
+    });
+  });
   it('creates financing with open Policy and finite reference validity', async () => {
     let persisted: unknown;
     const repository: ManualPolicyBatchRepository = {
@@ -247,6 +298,7 @@ describe('manual policy batch', () => {
     for (const policyType of [
       'retail_bonus',
       'trade_in_bonus',
+      'loyalty_bonus',
       'free_wallbox',
       'free_maintenance',
       'fuel_or_recharge_voucher',
@@ -263,6 +315,90 @@ describe('manual policy batch', () => {
     expect(
       validateManualPolicyBatch([{ ...base, policyType: 'other', description: '' }], {}).ok,
     ).toBe(false);
+  });
+  it('persists valid trade-in, financing and free-IPVA rows atomically as one batch', async () => {
+    const createManualPolicyBatch = vi.fn(
+      async ({ rows }: { readonly rows: readonly NormalizedManualPolicyBatchRow[] }) => ({
+        batchId: 'batch-1',
+        createdCount: rows.length,
+        policyIds: rows.map((_, index) => `policy-${index + 1}`),
+      }),
+    );
+    const repository: ManualPolicyBatchRepository = {
+      listProductOptions: async () => [],
+      listBasePrices: async () => [],
+      listFinancialReferences: async () => [],
+      resolveReferences: async (rows) =>
+        Object.fromEntries(
+          rows.map((row) => [
+            row.clientRowId,
+            ['free_ipva', 'subsidized_financing'].includes(row.policyType)
+              ? {
+                  calculationBasePriceId: 'price-1',
+                  basePriceAmount: '200000.00',
+                  ...(row.policyType === 'subsidized_financing'
+                    ? {
+                        financialParameterSetId: 'reference-1',
+                        monthlyReferenceRate: '0.014458',
+                      }
+                    : {}),
+                }
+              : {},
+          ]),
+        ),
+      createManualPolicyBatch,
+    };
+    const result = await new CreateManualPolicyBatch(repository).execute(
+      [
+        { ...base, clientRowId: 'trade-in', policyType: 'trade_in_bonus', amount: '10.000,00' },
+        {
+          ...base,
+          clientRowId: 'financing',
+          policyType: 'subsidized_financing',
+          termMonths: '24',
+          customerInterestRateMonthly: '0,49',
+          downPaymentPercentage: '60',
+        },
+        { ...base, clientRowId: 'ipva', policyType: 'free_ipva' },
+      ],
+      { actorId: 'actor-1', correlationId: 'correlation-1' },
+    );
+    expect(result).toMatchObject({ ok: true, batch: { createdCount: 3 } });
+    expect(createManualPolicyBatch).toHaveBeenCalledOnce();
+    expect(createManualPolicyBatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        rows: expect.arrayContaining([
+          expect.objectContaining({
+            policyType: 'trade_in_bonus',
+            amount: '10000.00',
+            customerBenefitAmount: '10000.00',
+          }),
+          expect.objectContaining({
+            policyType: 'subsidized_financing',
+            customerInterestRateMonthly: '0.49',
+            customerBenefitAmount: expect.stringMatching(/^\d+\.\d{2}$/u),
+          }),
+          expect.objectContaining({ policyType: 'free_ipva', customerBenefitAmount: '4000.00' }),
+        ]),
+      }),
+    );
+  });
+
+  it('does not call persistence when one batch row is invalid', async () => {
+    const createManualPolicyBatch = vi.fn();
+    const repository: ManualPolicyBatchRepository = {
+      listProductOptions: async () => [],
+      listBasePrices: async () => [],
+      listFinancialReferences: async () => [],
+      resolveReferences: async () => ({}),
+      createManualPolicyBatch,
+    };
+    const result = await new CreateManualPolicyBatch(repository).execute(
+      [base, { ...base, clientRowId: 'invalid', policyType: 'trade_in_bonus', amount: '0' }],
+      { actorId: 'actor-1', correlationId: 'correlation-1' },
+    );
+    expect(result.ok).toBe(false);
+    expect(createManualPolicyBatch).not.toHaveBeenCalled();
   });
   it('enforces empty and 100 row boundaries', () => {
     expect(validateManualPolicyBatch([], {}).ok).toBe(false);

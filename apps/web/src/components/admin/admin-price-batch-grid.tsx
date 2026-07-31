@@ -6,6 +6,7 @@ import type {
   ManualPriceBatchProductOptionDto,
   ManualPriceBatchRowFieldErrorsDto,
 } from '@compra-car/contracts';
+import { formatPtBrMoneyInput, ptBrMoneyCaretPosition } from '@compra-car/core';
 import { useActionState, useEffect, useRef, useState } from 'react';
 
 import { EMPTY_MANUAL_PRICE_BATCH_ROW } from '@/application/admin/manual-price-batch';
@@ -87,6 +88,17 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
     });
   }
 
+  function updateMoney(clientRowId: string, element: HTMLInputElement) {
+    const raw = element.value;
+    const formatted = formatPtBrMoneyInput(raw);
+    const caret = ptBrMoneyCaretPosition(raw, formatted, element.selectionStart);
+    updateRow(clientRowId, { amount: formatted });
+    requestAnimationFrame(() => {
+      if (document.activeElement !== element || caret === null) return;
+      element.setSelectionRange(caret, caret);
+    });
+  }
+
   function removeRow(clientRowId: string) {
     setRows((current) => {
       const next = current.filter((row) => row.clientRowId !== clientRowId);
@@ -164,7 +176,7 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
                     className={inputClass}
                     disabled={maxReached}
                     inputMode="decimal"
-                    onChange={(event) => updateRow(row.clientRowId, { amount: event.target.value })}
+                    onChange={(event) => updateMoney(row.clientRowId, event.currentTarget)}
                     placeholder="159.990,00"
                     value={row.amount}
                   />

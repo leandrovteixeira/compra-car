@@ -4,7 +4,7 @@ import { formatAdministrativeVehicleName } from '@compra-car/core';
 import type { OfferBuilderActionStateDto } from '@compra-car/contracts';
 import { randomUUID } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
-import { executeCommercialOfferDraftCreation } from '@/application/admin/commercial-offer-builder';
+import { executePolicyCombinationBatchCreation } from '@/application/admin/commercial-offer-builder';
 import { requireRole } from '@/auth/authorization';
 import { withDevTiming } from '@/server/dev-timing';
 const authorize = async () => {
@@ -13,9 +13,8 @@ const authorize = async () => {
 };
 export async function loadCommercialOfferBuilder() {
   const repository = new CommercialOfferBuilderSupabaseAdapter();
-  const [products, prices, policies, drafts] = await Promise.all([
+  const [products, policies, drafts] = await Promise.all([
     withDevTiming('pricing.listProductOptions', () => repository.listProductOptions()),
-    withDevTiming('pricing.listBasePrices', () => repository.listPublishedPrices()),
     withDevTiming('pricing.listPolicies', () => repository.listAvailablePolicies()),
     withDevTiming('pricing.listRecentDrafts', () => repository.listRecentDrafts()),
   ]);
@@ -25,13 +24,6 @@ export async function loadCommercialOfferBuilder() {
       displayName: formatAdministrativeVehicleName(p),
       isActive: p.isActive,
       isPublic: p.isPublic,
-    })),
-    prices: prices.map((price) => ({
-      id: price.id,
-      productId: price.productId,
-      amount: price.amount,
-      startsOn: price.startsOn,
-      endsOn: price.endsOn,
     })),
     policies,
     drafts: drafts.map((d) => ({
@@ -48,7 +40,7 @@ export async function loadCommercialOfferBuilder() {
   };
 }
 export function saveCommercialOfferDraft(formData: FormData): Promise<OfferBuilderActionStateDto> {
-  return executeCommercialOfferDraftCreation(formData, {
+  return executePolicyCombinationBatchCreation(formData, {
     authorize,
     repository: () => new CommercialOfferBuilderSupabaseAdapter(),
     correlationId: randomUUID,

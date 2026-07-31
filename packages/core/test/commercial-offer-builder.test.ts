@@ -1,9 +1,16 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   CreateCommercialOfferDraft,
+  CreatePolicyCombinationBatch,
+  CURRENT_COMMERCIAL_POLICY_TYPES,
+  POLICY_COMBINATION_COLUMNS,
+  calculatePolicyCombinationTotal,
+  resolvePolicyCombinationCells,
+  validatePolicyCombinationBatch,
   type CommercialOfferBuilderRepository,
   type CommercialOfferBuilderPrice,
   type CommercialPolicy,
+  type PolicyCombinationPolicy,
   validateCommercialOfferDraft,
 } from '../src';
 const price: CommercialOfferBuilderPrice = {
@@ -30,6 +37,147 @@ const policy = (
   status: 'draft',
   lockVersion: 1,
   ...overrides,
+});
+
+describe('policy combination batch', () => {
+  const combinationPolicy = (
+    id: string,
+    overrides: Partial<PolicyCombinationPolicy> = {},
+  ): PolicyCombinationPolicy => ({
+    id,
+    productId: '42',
+    policyType: 'retail_bonus',
+    title: `Policy ${id}`,
+    description: null,
+    startsOn: '2026-08-01',
+    endsOn: null,
+    customerBenefitAmount: '1000.00',
+    status: 'draft',
+    ...overrides,
+  });
+  const row = { clientRowId: 'row-1', productId: '42', policyIds: ['1'] };
+  const finitePrice = { ...price, startsOn: '2026-01-01', endsOn: '2026-12-31' };
+
+  it('keeps the exact matrix order and Loyalty as a distinct current category', () => {
+    expect(POLICY_COMBINATION_COLUMNS.map((column) => column.label)).toEqual([
+      'Varejo',
+      'Trade-In',
+      'Loyalty',
+      'Taxa',
+      'IPVA',
+      'Seguro',
+      'Wallbox',
+      'Emplac.',
+      'Manut.',
+      'Voucher',
+      'Outro',
+    ]);
+    expect(CURRENT_COMMERCIAL_POLICY_TYPES).toContain('loyalty_bonus');
+  });
+
+  it('represents unavailable, available and conflicting cells without choosing arbitrarily', () => {
+    const cells = resolvePolicyCombinationCells('42', [
+      combinationPolicy('1'),
+      combinationPolicy('2'),
+      combinationPolicy('3', { policyType: 'loyalty_bonus' }),
+    ]);
+    expect(cells.retail_bonus.state).toBe('conflict');
+    expect(cells.loyalty_bonus.state).toBe('available');
+    expect(cells.free_ipva.state).toBe('unavailable');
+  });
+
+  it('ignores non-monetized policies in the displayed total', () => {
+    expect(
+      calculatePolicyCombinationTotal([
+        combinationPolicy('1'),
+        combinationPolicy('2', { customerBenefitAmount: null }),
+      ]),
+    ).toBe('1000.00');
+  });
+
+  it('derives A: open policies plus finite MSRP', () => {
+    expect(
+      validatePolicyCombinationBatch([row], [finitePrice], [combinationPolicy('1')]),
+    ).toMatchObject({ ok: true, rows: [{ validFrom: '2026-08-01', validTo: '2026-12-31' }] });
+  });
+
+  it('derives B: finite policy plus open MSRP', () => {
+    expect(
+      validatePolicyCombinationBatch(
+        [row],
+        [{ ...finitePrice, endsOn: null }],
+        [combinationPolicy('1', { endsOn: '2026-10-15' })],
+      ),
+    ).toMatchObject({ ok: true, rows: [{ validTo: '2026-10-15' }] });
+  });
+
+  it('derives C: the earliest end among multiple policies', () => {
+    expect(
+      validatePolicyCombinationBatch(
+        [{ ...row, policyIds: ['1', '2'] }],
+        [{ ...finitePrice, endsOn: null }],
+        [
+          combinationPolicy('1', { endsOn: '2026-11-30' }),
+          combinationPolicy('2', { policyType: 'loyalty_bonus', endsOn: '2026-09-30' }),
+        ],
+      ),
+    ).toMatchObject({ ok: true, rows: [{ validTo: '2026-09-30' }] });
+  });
+
+  it('rejects D explicitly when policies and MSRP are all open', () => {
+    const result = validatePolicyCombinationBatch(
+      [row],
+      [{ ...finitePrice, endsOn: null }],
+      [combinationPolicy('1')],
+    );
+    expect(result).toEqual({
+      ok: false,
+      issues: [
+        {
+          clientRowId: 'row-1',
+          message:
+            'Não foi possível derivar uma vigência final concreta: as políticas e o preço público selecionado não possuem data final.',
+        },
+      ],
+    });
+  });
+
+  it('rejects zero or ambiguous published MSRP and duplicate combinations', () => {
+    expect(validatePolicyCombinationBatch([row], [], [combinationPolicy('1')]).ok).toBe(false);
+    expect(
+      validatePolicyCombinationBatch(
+        [row],
+        [finitePrice, { ...finitePrice, id: '11' }],
+        [combinationPolicy('1')],
+      ).ok,
+    ).toBe(false);
+    expect(
+      validatePolicyCombinationBatch(
+        [row, { ...row, clientRowId: 'row-2' }],
+        [finitePrice],
+        [combinationPolicy('1')],
+      ).ok,
+    ).toBe(false);
+  });
+
+  it('calls the atomic repository once only after every row passes', async () => {
+    const createCombinationBatch = vi.fn(async ({ rows }) => ({
+      createdCount: rows.length,
+      offers: [],
+    }));
+    const repository = {
+      listPublishedPrices: vi.fn(async () => [finitePrice]),
+      listAvailablePolicies: vi.fn(async () => [combinationPolicy('1')]),
+      createCombinationBatch,
+    } as unknown as CommercialOfferBuilderRepository;
+    await expect(
+      new CreatePolicyCombinationBatch(repository).execute([row], {
+        actorId: 'actor',
+        correlationId: 'corr',
+      }),
+    ).resolves.toMatchObject({ ok: true, batch: { createdCount: 1 } });
+    expect(createCombinationBatch).toHaveBeenCalledOnce();
+  });
 });
 const input = {
   productId: '42',

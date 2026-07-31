@@ -53,7 +53,7 @@ const PT_BR_GROUPED_PATTERN = /^(?:[1-9]\d{0,2})(?:\.\d{3})+$/u;
 const PT_BR_DECIMAL_PATTERN = /^(?:0|[1-9]\d{0,11}),\d{1,2}$/u;
 const PT_BR_GROUPED_DECIMAL_PATTERN = /^(?:[1-9]\d{0,2})(?:\.\d{3})+,\d{1,2}$/u;
 
-export function canonicalManualPriceAmount(value: string): string | null {
+export function ptBrMoneyToCanonicalDecimal(value: string): string | null {
   const compact = value
     .trim()
     .replace(/^R\$\s*/u, '')
@@ -68,8 +68,67 @@ export function canonicalManualPriceAmount(value: string): string | null {
   else return null;
 
   const [integer, fraction = ''] = decimal.split('.');
-  if (/^0+$/u.test(integer!) && /^0*$/u.test(fraction)) return null;
   return `${integer}.${fraction.padEnd(2, '0')}`;
+}
+
+export function canonicalManualPriceAmount(value: string): string | null {
+  const decimal = ptBrMoneyToCanonicalDecimal(value);
+  if (!decimal || /^0+\.0{2}$/u.test(decimal)) return null;
+  return decimal;
+}
+
+export function canonicalDecimalToPtBrMoney(value: string): string | null {
+  if (!CANONICAL_DECIMAL_PATTERN.test(value)) return null;
+  const [integer, rawFraction = ''] = value.split('.');
+  const fraction = rawFraction.padEnd(2, '0');
+  return `${BigInt(integer!).toLocaleString('pt-BR')},${fraction}`;
+}
+
+function editableMoneyToCanonicalDecimal(value: string): string | null {
+  const compact = value
+    .trim()
+    .replace(/^R\$\s*/u, '')
+    .replace(/[\s\u00a0]/gu, '');
+  const commaParts = compact.split(',');
+  if (commaParts.length === 2) {
+    const [integerPart, fraction] = commaParts;
+    if (!integerPart || !/^\d[\d.]*$/u.test(integerPart) || !/^\d{0,2}$/u.test(fraction!)) {
+      return null;
+    }
+    const integer = integerPart.replace(/\./gu, '').replace(/^0+(?=\d)/u, '');
+    if (!PT_BR_INTEGER_PATTERN.test(integer)) return null;
+    return `${integer}.${fraction!.padEnd(2, '0')}`;
+  }
+  return ptBrMoneyToCanonicalDecimal(compact);
+}
+
+export function formatPtBrMoneyInput(value: string): string {
+  if (!value.trim()) return '';
+  const decimal = editableMoneyToCanonicalDecimal(value);
+  if (!decimal) return value;
+  return canonicalDecimalToPtBrMoney(decimal) ?? value;
+}
+
+export function ptBrMoneyCaretPosition(
+  rawValue: string,
+  formattedValue: string,
+  selectionStart: number | null,
+): number | null {
+  if (selectionStart === null) return null;
+  const formattedComma = formattedValue.indexOf(',');
+  if (formattedComma < 0) return selectionStart;
+  const rawComma = rawValue.indexOf(',');
+  if (rawComma >= 0 && selectionStart > rawComma) {
+    return Math.min(formattedValue.length, formattedComma + selectionStart - rawComma);
+  }
+  const digitsBeforeCaret = rawValue.slice(0, selectionStart).replace(/\D/gu, '').length;
+  if (digitsBeforeCaret === 0) return 0;
+  let seen = 0;
+  for (let index = 0; index < formattedComma; index += 1) {
+    if (/\d/u.test(formattedValue[index]!)) seen += 1;
+    if (seen === digitsBeforeCaret) return index + 1;
+  }
+  return formattedComma;
 }
 
 export function isValidManualPriceDate(value: string): boolean {

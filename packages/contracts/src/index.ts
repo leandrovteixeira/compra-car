@@ -9,6 +9,7 @@ import type {
   ProductPublicPriceMoney,
   ProductPublicPriceProduct,
   PricingWorkflowStatus,
+  CommercialPolicyType,
 } from '@compra-car/core';
 
 export {
@@ -241,13 +242,13 @@ export interface OfferBuilderFormDto {
 export interface OfferBuilderPolicyDto {
   readonly id: string;
   readonly productId: string;
-  readonly policyType: string;
+  readonly policyType: CommercialPolicyType;
   readonly title: string;
   readonly description: string | null;
   readonly startsOn: string;
   readonly endsOn: string | null;
-  readonly customerBenefitAmount: string;
-  readonly status: string;
+  readonly customerBenefitAmount: string | null;
+  readonly status: PricingWorkflowStatus;
 }
 export interface OfferBuilderPriceDto {
   readonly id: string;
@@ -270,22 +271,28 @@ export interface OfferBuilderDraftDto {
 export type OfferBuilderActionStateDto =
   | {
       readonly status: 'idle';
-      readonly values: OfferBuilderFormDto;
-      readonly errors: readonly string[];
+      readonly rows: readonly PolicyCombinationGridRowDto[];
+      readonly rowErrors: Readonly<Record<string, readonly string[]>>;
     }
   | {
       readonly status: 'error';
-      readonly values: OfferBuilderFormDto;
-      readonly errors: readonly string[];
+      readonly rows: readonly PolicyCombinationGridRowDto[];
+      readonly rowErrors: Readonly<Record<string, readonly string[]>>;
       readonly message: string;
     }
   | {
       readonly status: 'success';
-      readonly values: OfferBuilderFormDto;
-      readonly errors: readonly string[];
+      readonly rows: readonly PolicyCombinationGridRowDto[];
+      readonly rowErrors: Readonly<Record<string, readonly string[]>>;
       readonly message: string;
-      readonly offer: OfferBuilderDraftDto;
+      readonly createdCount: number;
     };
+
+export interface PolicyCombinationGridRowDto {
+  readonly clientRowId: string;
+  readonly productId: string;
+  readonly policyIds: readonly string[];
+}
 
 export interface AdministrativeVehicleFormValuesDto {
   readonly brand: string;

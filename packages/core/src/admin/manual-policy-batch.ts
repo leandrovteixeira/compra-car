@@ -55,6 +55,7 @@ export interface ManualPolicyBatchIssue {
 const FIXED = new Set([
   'retail_bonus',
   'trade_in_bonus',
+  'loyalty_bonus',
   'free_wallbox',
   'free_maintenance',
   'fuel_or_recharge_voucher',
@@ -63,6 +64,7 @@ const FIXED = new Set([
 export const MANUAL_POLICY_TITLES: Readonly<Record<string, string>> = Object.freeze({
   retail_bonus: 'Bônus varejo',
   trade_in_bonus: 'Bônus trade-in',
+  loyalty_bonus: 'Loyalty',
   subsidized_financing: 'Financiamento subsidiado',
   free_ipva: 'IPVA grátis',
   free_insurance: 'Seguro grátis',
@@ -72,11 +74,28 @@ export const MANUAL_POLICY_TITLES: Readonly<Record<string, string>> = Object.fre
   fuel_or_recharge_voucher: 'Voucher combustível/recarga',
   other: 'Outro benefício',
 });
+export const MANUAL_POLICY_DISPLAY_LABELS: Readonly<Record<string, string>> = Object.freeze({
+  ...MANUAL_POLICY_TITLES,
+  subsidized_financing: 'Taxa',
+  fuel_or_recharge_voucher: 'Voucher',
+});
 const DECIMAL = /^(?:0|[1-9]\d*)(?:\.\d+)?$/u;
+const PT_BR_DECIMAL = /^(?:0|[1-9]\d*)(?:[.,]\d+)?$/u;
 const integer = (value?: string) => Boolean(value && /^[1-9]\d*$/u.test(value));
 const positive = (value?: string) =>
   Boolean(value && DECIMAL.test(value) && new Decimal(value).gt(0));
 const money = (value: Decimal) => value.toDecimalPlaces(2, Decimal.ROUND_HALF_UP).toFixed(2);
+
+export function canonicalManualPolicyPercentage(value?: string): string | undefined {
+  const compact = value?.trim();
+  return compact && PT_BR_DECIMAL.test(compact) ? compact.replace(',', '.') : undefined;
+}
+
+export function formatPtBrPercentageInput(value: string): string {
+  const compact = value.trim();
+  if (!compact) return '';
+  return /^(?:0|[1-9]\d*)(?:[.,]\d*)?$/u.test(compact) ? compact.replace('.', ',') : value;
+}
 
 export function normalizeManualPolicyBatchRow(
   row: ManualPolicyBatchRowInput,
@@ -93,7 +112,7 @@ export function normalizeManualPolicyBatchRow(
   if (FIXED.has(row.policyType)) {
     return {
       ...common,
-      amount: row.amount,
+      amount: canonicalManualPriceAmount(row.amount ?? '') ?? row.amount,
       voucherType:
         row.policyType === 'fuel_or_recharge_voucher'
           ? row.voucherType || 'unspecified'
@@ -121,8 +140,8 @@ export function normalizeManualPolicyBatchRow(
     return {
       ...common,
       termMonths: row.termMonths,
-      customerInterestRateMonthly: row.customerInterestRateMonthly,
-      downPaymentPercentage: row.downPaymentPercentage,
+      customerInterestRateMonthly: canonicalManualPolicyPercentage(row.customerInterestRateMonthly),
+      downPaymentPercentage: canonicalManualPolicyPercentage(row.downPaymentPercentage),
     };
   }
   return common;

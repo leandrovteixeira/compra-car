@@ -3,91 +3,76 @@ import type {
   ManualPriceBatchProductOptionDto,
   OfferBuilderActionStateDto,
   OfferBuilderDraftDto,
-  OfferBuilderFormDto,
   OfferBuilderPolicyDto,
-  OfferBuilderPriceDto,
+  PolicyCombinationGridRowDto,
 } from '@compra-car/contracts';
-import { calculateCommercialOfferBenefit, calculateTransactionalPrice } from '@compra-car/core';
-import { useActionState, useEffect, useState } from 'react';
-import { EMPTY_OFFER_BUILDER_FORM } from '@/application/admin/commercial-offer-builder';
-import { AdminProductCombobox } from '@/components/admin/admin-product-combobox';
+import {
+  calculatePolicyCombinationTotal,
+  POLICY_COMBINATION_COLUMNS,
+  POLICY_COMBINATION_MAX_ROWS,
+  resolvePolicyCombinationCells,
+} from '@compra-car/core';
+import { useActionState, useEffect, useRef, useState } from 'react';
+import { EMPTY_POLICY_COMBINATION_ROW } from '@/application/admin/commercial-offer-builder';
+
 type Action = (
   state: OfferBuilderActionStateDto,
   data: FormData,
 ) => Promise<OfferBuilderActionStateDto>;
-const brl = (value: string) => {
-  const [integer, fraction] = value.split('.');
-  return `R$ ${BigInt(integer!).toLocaleString('pt-BR')},${fraction}`;
-};
-const labels: Readonly<Record<string, string>> = {
-  retail_bonus: 'Bônus varejo',
-  trade_in_bonus: 'Bônus trade-in',
-  subsidized_financing: 'Financiamento subsidiado',
-  free_ipva: 'IPVA grátis',
-  free_insurance: 'Seguro grátis',
-  free_wallbox: 'Wallbox grátis',
-  free_registration: 'Emplacamento grátis',
-  free_maintenance: 'Manutenção grátis',
-  fuel_or_recharge_voucher: 'Voucher combustível/recarga',
-  other: 'Outro benefício',
-};
+const brl = (value: string) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value));
+
 export function CommercialOfferBuilder({
   action,
   products,
-  prices,
   policies,
   drafts,
 }: {
   action: Action;
   products: readonly ManualPriceBatchProductOptionDto[];
-  prices: readonly OfferBuilderPriceDto[];
   policies: readonly OfferBuilderPolicyDto[];
   drafts: readonly OfferBuilderDraftDto[];
 }) {
   const initial: OfferBuilderActionStateDto = {
     status: 'idle',
-    values: EMPTY_OFFER_BUILDER_FORM,
-    errors: [],
+    rows: [EMPTY_POLICY_COMBINATION_ROW],
+    rowErrors: {},
   };
   const [state, formAction, pending] = useActionState(action, initial);
-  const [values, setValues] = useState<OfferBuilderFormDto>(initial.values);
+  const [rows, setRows] = useState<readonly PolicyCombinationGridRowDto[]>(initial.rows);
+  const sequence = useRef(1);
   useEffect(() => {
-    if (state.status === 'success') setValues(EMPTY_OFFER_BUILDER_FORM);
-    else if (state.status === 'error') setValues(state.values);
+    setRows(state.rows);
   }, [state]);
-  const productPrices = prices.filter((p) => p.productId === values.productId);
-  const productPolicies = policies.filter((p) => p.productId === values.productId);
-  const selected = productPolicies.filter((p) => values.policyIds.includes(p.id));
-  let benefit = '0.00',
-    transactional: string | null = null;
-  const price = productPrices.find((p) => p.id === values.publicPriceId);
-  try {
-    if (selected.length) benefit = calculateCommercialOfferBenefit(selected, values.productId);
-    if (price && selected.length)
-      transactional = calculateTransactionalPrice(price.amount, selected, values.productId);
-  } catch {
-    transactional = null;
-  }
-  const compatible = (p: OfferBuilderPolicyDto) =>
-    Boolean(
-      values.validFrom &&
-      values.validTo &&
-      p.startsOn <= values.validFrom &&
-      (p.endsOn === null || p.endsOn >= values.validTo) &&
-      p.status !== 'rejected' &&
-      p.status !== 'archived' &&
-      p.policyType !== 'registration',
-    );
-  const update = (change: Partial<OfferBuilderFormDto>) =>
-    setValues((current) => ({ ...current, ...change }));
+  const change = (clientRowId: string, update: Partial<PolicyCombinationGridRowDto>) => {
+    setRows((current) => {
+      let next = current.map((row) =>
+        row.clientRowId === clientRowId ? { ...row, ...update } : row,
+      );
+      const last = next.at(-1);
+      if (
+        last?.productId &&
+        last.policyIds.length > 0 &&
+        next.length < POLICY_COMBINATION_MAX_ROWS
+      ) {
+        sequence.current += 1;
+        next = [...next, { clientRowId: `row-${sequence.current}`, productId: '', policyIds: [] }];
+      }
+      return next;
+    });
+  };
+  const filledCount = rows.filter((row) => row.productId || row.policyIds.length).length;
+  const hasConflict = rows.some(
+    (row) =>
+      row.productId &&
+      Object.values(resolvePolicyCombinationCells(row.productId, policies)).some(
+        (cell) => cell.state === 'conflict',
+      ),
+  );
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(20rem,0.7fr)]">
+    <div className="space-y-8">
       <form action={formAction} className="space-y-5">
-        <input type="hidden" name="productId" value={values.productId} />
-        <input type="hidden" name="publicPriceId" value={values.publicPriceId} />
-        <input type="hidden" name="validFrom" value={values.validFrom} />
-        <input type="hidden" name="validTo" value={values.validTo} />
-        <input type="hidden" name="policyIds" value={JSON.stringify(values.policyIds)} />
+        <input type="hidden" name="rows" value={JSON.stringify(rows)} />
         {state.status !== 'idle' && (
           <div
             role={state.status === 'success' ? 'status' : 'alert'}
@@ -95,155 +80,169 @@ export function CommercialOfferBuilder({
             className={`rounded-xl border p-4 text-sm ${state.status === 'success' ? 'border-emerald-800 text-emerald-200' : 'border-rose-800 text-rose-200'}`}
           >
             {state.message}
-            {state.errors.map((e) => (
-              <p key={e}>{e}</p>
+          </div>
+        )}
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-sm text-slate-300">
+            {filledCount}/{POLICY_COMBINATION_MAX_ROWS} combinações preenchidas
+          </p>
+          <p className="text-xs text-slate-400">MSRP e vigência são derivados ao salvar.</p>
+        </div>
+        <fieldset
+          disabled={pending}
+          className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/40 2xl:overflow-visible"
+        >
+          <table className="w-full min-w-[76rem] table-fixed border-collapse text-xs">
+            <thead>
+              <tr className="border-b border-slate-700 text-slate-300">
+                <th className="w-52 p-2 text-left">Veículo</th>
+                {POLICY_COMBINATION_COLUMNS.map((column) => (
+                  <th key={column.policyType} className="w-20 p-2 text-center">
+                    {column.label}
+                  </th>
+                ))}
+                <th className="w-28 p-2 text-right">Total</th>
+                <th className="w-10">
+                  <span className="sr-only">Ações</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, index) => {
+                const cells = resolvePolicyCombinationCells(row.productId, policies);
+                const selected = policies.filter((policy) => row.policyIds.includes(policy.id));
+                const errors = state.rowErrors[row.clientRowId] ?? [];
+                return (
+                  <tr
+                    key={row.clientRowId}
+                    className="border-b border-slate-800 align-middle last:border-0"
+                  >
+                    <td className="align-middle p-2">
+                      <label className="sr-only" htmlFor={`product-${row.clientRowId}`}>
+                        Veículo da combinação {index + 1}
+                      </label>
+                      <select
+                        id={`product-${row.clientRowId}`}
+                        value={row.productId}
+                        onChange={(event) =>
+                          change(row.clientRowId, { productId: event.target.value, policyIds: [] })
+                        }
+                        className="min-h-10 w-full rounded-lg border border-slate-700 bg-slate-950 px-2 text-sm"
+                      >
+                        <option value="">Selecione</option>
+                        {products.map((product) => (
+                          <option key={product.id} value={product.id}>
+                            {product.displayName}
+                          </option>
+                        ))}
+                      </select>
+                      {errors.map((error) => (
+                        <p key={error} className="mt-1 text-xs text-rose-300">
+                          {error}
+                        </p>
+                      ))}
+                    </td>
+                    {POLICY_COMBINATION_COLUMNS.map(({ policyType, label }) => {
+                      const cell = cells[policyType];
+                      if (cell.state === 'unavailable')
+                        return (
+                          <td
+                            key={policyType}
+                            className="align-middle p-2 text-center text-slate-600"
+                            title={`${label} indisponível`}
+                          >
+                            <span aria-hidden>—</span>
+                            <span className="sr-only">{label} indisponível</span>
+                          </td>
+                        );
+                      if (cell.state === 'conflict')
+                        return (
+                          <td
+                            key={policyType}
+                            className="align-middle p-2 text-center font-semibold text-rose-300"
+                            title={`${cell.policies.length} políticas do tipo ${label}`}
+                          >
+                            Conflito
+                          </td>
+                        );
+                      const checked = row.policyIds.includes(cell.policy.id);
+                      return (
+                        <td
+                          key={policyType}
+                          className="align-middle p-2 text-center"
+                          title={`${cell.policy.title}${cell.policy.customerBenefitAmount ? ` — ${brl(cell.policy.customerBenefitAmount)}` : ''}`}
+                        >
+                          <input
+                            type="checkbox"
+                            className="h-5 w-5 accent-sky-500"
+                            aria-label={`Selecionar ${label} para ${products.find((p) => p.id === row.productId)?.displayName ?? 'veículo'}`}
+                            checked={checked}
+                            onChange={(event) =>
+                              change(row.clientRowId, {
+                                policyIds: event.target.checked
+                                  ? [...row.policyIds, cell.policy.id]
+                                  : row.policyIds.filter((id) => id !== cell.policy.id),
+                              })
+                            }
+                          />
+                        </td>
+                      );
+                    })}
+                    <td className="align-middle p-2 text-right font-semibold text-slate-100">
+                      {brl(calculatePolicyCombinationTotal(selected))}
+                    </td>
+                    <td className="align-middle p-2 text-center">
+                      {rows.length > 1 && (
+                        <button
+                          type="button"
+                          aria-label={`Remover combinação ${index + 1}`}
+                          onClick={() =>
+                            setRows((current) =>
+                              current.filter((item) => item.clientRowId !== row.clientRowId),
+                            )
+                          }
+                          className="min-h-10 px-2 text-slate-400 hover:text-rose-300"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </fieldset>
+        {hasConflict && (
+          <p role="alert" className="text-sm text-rose-300">
+            Resolva os conflitos de políticas antes de salvar.
+          </p>
+        )}
+        <button
+          disabled={pending || filledCount === 0 || hasConflict}
+          className="min-h-11 rounded-xl bg-sky-500 px-5 font-bold text-slate-950 disabled:opacity-50"
+        >
+          {pending ? 'Salvando…' : 'Salvar lote de combinações'}
+        </button>
+      </form>
+      <section>
+        <h2 className="mb-3 text-lg font-semibold">Rascunhos recentes</h2>
+        {drafts.length === 0 ? (
+          <p className="text-sm text-slate-400">Nenhuma oferta em rascunho.</p>
+        ) : (
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {drafts.map((draft) => (
+              <article key={draft.id} className="rounded-xl border border-slate-800 p-4 text-sm">
+                <strong>Oferta #{draft.id} · Rascunho</strong>
+                <p>
+                  {draft.policyCount} políticas · {brl(draft.benefitAmount)}
+                </p>
+                <p>Transacional: {brl(draft.transactionalPrice)}</p>
+              </article>
             ))}
           </div>
         )}
-        <fieldset disabled={pending} className="space-y-5">
-          <div className="grid gap-4 rounded-2xl border border-slate-800 bg-slate-900/50 p-5 md:grid-cols-2">
-            <AdminProductCombobox
-              label="Veículo"
-              onChange={(productId) => update({ productId, publicPriceId: '', policyIds: [] })}
-              options={products}
-              value={values.productId}
-            />
-            <label className="text-sm text-slate-300">
-              MSRP-base
-              <select
-                className="mt-2 min-h-11 w-full rounded-lg border border-slate-700 bg-slate-950 px-3"
-                value={values.publicPriceId}
-                onChange={(e) => {
-                  const next = productPrices.find((p) => p.id === e.target.value);
-                  update({
-                    publicPriceId: e.target.value,
-                    validFrom: next?.startsOn ?? values.validFrom,
-                    validTo: next?.endsOn ?? values.validTo,
-                    policyIds: [],
-                  });
-                }}
-              >
-                <option value="">Selecione</option>
-                {productPrices.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {brl(p.amount)} — {p.startsOn} a {p.endsOn ?? 'sem fim'}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="text-sm text-slate-300">
-              Início
-              <input
-                className="mt-2 min-h-11 w-full rounded-lg border border-slate-700 bg-slate-950 px-3"
-                type="date"
-                value={values.validFrom}
-                onChange={(e) => update({ validFrom: e.target.value, policyIds: [] })}
-              />
-            </label>
-            <label className="text-sm text-slate-300">
-              Fim
-              <input
-                className="mt-2 min-h-11 w-full rounded-lg border border-slate-700 bg-slate-950 px-3"
-                type="date"
-                value={values.validTo}
-                onChange={(e) => update({ validTo: e.target.value, policyIds: [] })}
-              />
-            </label>
-          </div>
-          <section className="space-y-3" aria-label="Políticas disponíveis">
-            <h2 className="text-lg font-semibold text-slate-100">Políticas disponíveis</h2>
-            {values.productId && productPolicies.length === 0 ? (
-              <p className="rounded-xl border border-slate-800 p-5 text-slate-400">
-                Nenhuma política disponível para este veículo.
-              </p>
-            ) : (
-              productPolicies.map((policy) => {
-                const enabled = compatible(policy);
-                return (
-                  <label
-                    key={policy.id}
-                    className={`flex min-h-11 gap-3 rounded-xl border p-4 ${enabled ? 'border-slate-700 bg-slate-900/50' : 'border-slate-800 opacity-60'}`}
-                  >
-                    <input
-                      type="checkbox"
-                      className="h-5 w-5"
-                      disabled={!enabled}
-                      checked={values.policyIds.includes(policy.id)}
-                      onChange={(e) =>
-                        update({
-                          policyIds: e.target.checked
-                            ? [...values.policyIds, policy.id]
-                            : values.policyIds.filter((id) => id !== policy.id),
-                        })
-                      }
-                    />
-                    <span>
-                      <strong className="block text-slate-100">{policy.title}</strong>
-                      <span className="text-sm text-slate-300">
-                        {labels[policy.policyType] ?? policy.policyType} ·{' '}
-                        {brl(policy.customerBenefitAmount)} ·{' '}
-                        {policy.status === 'draft' ? 'Rascunho' : 'Publicado'}
-                      </span>
-                      <span className="block text-xs text-slate-400">
-                        {policy.startsOn} → {policy.endsOn ?? 'sem fim'}
-                      </span>
-                      {!enabled && (
-                        <span className="block text-xs text-amber-300">
-                          Não cobre a vigência da oferta ou não pode compor nova oferta.
-                        </span>
-                      )}
-                    </span>
-                  </label>
-                );
-              })
-            )}
-          </section>
-        </fieldset>
-        <button
-          disabled={pending || !transactional || values.policyIds.length === 0}
-          className="min-h-11 w-full rounded-xl bg-sky-500 px-5 font-bold text-slate-950 disabled:opacity-50"
-        >
-          {pending ? 'Salvando…' : 'Salvar oferta em rascunho'}
-        </button>
-      </form>
-      <aside className="space-y-5">
-        <section className="sticky top-24 rounded-2xl border border-sky-900 bg-slate-900 p-5">
-          <h2 className="text-lg font-bold text-white">Resumo da oferta</h2>
-          <dl className="mt-4 space-y-3 text-sm">
-            <div className="flex justify-between">
-              <dt>Preço público</dt>
-              <dd>{price ? brl(price.amount) : '—'}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt>Benefícios selecionados</dt>
-              <dd>{brl(benefit)}</dd>
-            </div>
-            <div className="flex justify-between border-t border-slate-700 pt-3 text-base font-bold">
-              <dt>Preço transacional</dt>
-              <dd>{transactional ? brl(transactional) : '—'}</dd>
-            </div>
-          </dl>
-          <p className="mt-3 text-xs text-slate-400">
-            {values.policyIds.length} política(s) explicitamente selecionada(s).
-          </p>
-        </section>
-        <section>
-          <h2 className="mb-3 text-lg font-semibold">Rascunhos recentes</h2>
-          {drafts.length === 0 ? (
-            <p className="text-sm text-slate-400">Nenhuma oferta em rascunho.</p>
-          ) : (
-            drafts.map((d) => (
-              <article key={d.id} className="mb-3 rounded-xl border border-slate-800 p-4 text-sm">
-                <strong>Oferta #{d.id} · Rascunho</strong>
-                <p>
-                  {d.policyCount} políticas · {brl(d.benefitAmount)}
-                </p>
-                <p>Transacional: {brl(d.transactionalPrice)}</p>
-              </article>
-            ))
-          )}
-        </section>
-      </aside>
+      </section>
     </div>
   );
 }

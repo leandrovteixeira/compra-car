@@ -9,8 +9,12 @@ import type {
 } from '@compra-car/contracts';
 import {
   calculateManualPolicyBenefit,
+  formatPtBrMoneyInput,
+  formatPtBrPercentageInput,
+  MANUAL_POLICY_DISPLAY_LABELS,
   MANUAL_POLICY_TITLES,
   normalizeManualPolicyBatchRow,
+  ptBrMoneyCaretPosition,
   resolveManualPolicyReferenceData,
 } from '@compra-car/core';
 import { useActionState, useEffect, useRef, useState } from 'react';
@@ -18,10 +22,11 @@ import { useActionState, useEffect, useRef, useState } from 'react';
 import { EMPTY_MANUAL_POLICY_BATCH_ROW } from '@/application/admin/manual-policy-batch';
 import { AdminProductCombobox } from '@/components/admin/admin-product-combobox';
 
-const TYPES = Object.entries(MANUAL_POLICY_TITLES);
+const TYPES = Object.entries(MANUAL_POLICY_DISPLAY_LABELS);
 const FIXED = new Set([
   'retail_bonus',
   'trade_in_bonus',
+  'loyalty_bonus',
   'free_wallbox',
   'free_maintenance',
   'fuel_or_recharge_voucher',
@@ -38,7 +43,7 @@ const empty = (id: string): ManualPolicyBatchGridRowDto => ({
 const isEmpty = (row: ManualPolicyBatchGridRowDto) =>
   !row.productId && !row.policyType && !row.startsOn && !row.amount;
 const grid =
-  'grid gap-3 lg:grid-cols-[minmax(15rem,2fr)_minmax(11rem,1.4fr)_9rem_6.5rem_7rem_7rem_9rem_minmax(12rem,1.5fr)]';
+  'grid gap-3 lg:grid-cols-[minmax(8rem,2fr)_minmax(7.5rem,1fr)_7.75rem_4.25rem_4.75rem_4.5rem_7.5rem_minmax(8rem,1.4fr)]';
 const input =
   'min-h-11 w-full rounded-lg border border-slate-700 bg-slate-950 px-2.5 text-sm text-slate-100 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/25';
 
@@ -98,6 +103,17 @@ export function AdminPolicyBatchGrid({
       return result;
     });
 
+  function updateMoney(row: ManualPolicyBatchGridRowDto, element: HTMLInputElement) {
+    const raw = element.value;
+    const formatted = formatPtBrMoneyInput(raw);
+    const caret = ptBrMoneyCaretPosition(raw, formatted, element.selectionStart);
+    update(row.clientRowId, { amount: formatted });
+    requestAnimationFrame(() => {
+      if (document.activeElement !== element || caret === null) return;
+      element.setSelectionRange(caret, caret);
+    });
+  }
+
   function changeType(row: ManualPolicyBatchGridRowDto, policyType: string) {
     update(row.clientRowId, {
       ...empty(row.clientRowId),
@@ -125,7 +141,7 @@ export function AdminPolicyBatchGrid({
         </div>
       ) : null}
 
-      <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/50">
+      <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/50 lg:overflow-x-visible">
         <div
           className={`${grid} hidden border-b border-slate-800 bg-slate-900 px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-400 lg:grid`}
         >
@@ -232,7 +248,9 @@ export function AdminPolicyBatchGrid({
                         inputMode="decimal"
                         onChange={(event) =>
                           update(row.clientRowId, {
-                            customerInterestRateMonthly: event.target.value,
+                            customerInterestRateMonthly: formatPtBrPercentageInput(
+                              event.target.value,
+                            ),
                           })
                         }
                         placeholder="% a.m."
@@ -251,7 +269,9 @@ export function AdminPolicyBatchGrid({
                         className={input}
                         inputMode="decimal"
                         onChange={(event) =>
-                          update(row.clientRowId, { downPaymentPercentage: event.target.value })
+                          update(row.clientRowId, {
+                            downPaymentPercentage: formatPtBrPercentageInput(event.target.value),
+                          })
                         }
                         placeholder="%"
                         value={row.downPaymentPercentage}
@@ -268,9 +288,7 @@ export function AdminPolicyBatchGrid({
                         aria-label={`Valor da linha ${index + 1}`}
                         className={input}
                         inputMode="decimal"
-                        onChange={(event) =>
-                          update(row.clientRowId, { amount: event.target.value })
-                        }
+                        onChange={(event) => updateMoney(row, event.currentTarget)}
                         placeholder="0,00"
                         value={row.amount}
                       />

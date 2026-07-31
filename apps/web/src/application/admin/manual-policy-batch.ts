@@ -63,10 +63,11 @@ export async function executeManualPolicyBatchCreation(
       rowErrors: {},
       message: 'O lote enviado é inválido.',
     };
+  const correlationId = deps.createCorrelationId();
   try {
     const result = await new CreateManualPolicyBatch(deps.createRepository()).execute(
       rows.map((row) => ({ ...row, endsOn: row.endsOn || null })),
-      { actorId, correlationId: deps.createCorrelationId() },
+      { actorId, correlationId },
     );
     if (!result.ok) {
       const rowErrors: Record<string, Record<string, readonly string[]>> = {};
@@ -92,8 +93,8 @@ export async function executeManualPolicyBatchCreation(
       batchId: result.batch.batchId,
       createdCount: result.batch.createdCount,
     };
-  } catch {
-    console.error('Manual policy batch creation failed.');
+  } catch (error) {
+    console.error('Manual policy batch creation failed.', { correlationId, error });
     return {
       status: 'error',
       rows,

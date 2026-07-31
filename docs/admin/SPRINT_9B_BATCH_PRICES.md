@@ -15,7 +15,10 @@ publicação do veículo; a existência do ID é revalidada na fronteira SQL.
 ## Regras
 
 - linha totalmente vazia é ignorada; linha parcial é inválida;
-- `amount` aceita notação pt-BR e é transportado como string decimal com duas casas;
+- `amount` mantém máscara pt-BR durante a edição (`162990` → `162.990,00`) e é transportado
+  como string decimal canônica com duas casas, sem cálculo monetário em floating point;
+- a máscara reagrupa estados transitórios do `onChange`, enquanto o parser de domínio permanece
+  estrito; `15.000,00` ⇄ `15000.00` é estável e idempotente;
 - `startsOn` é obrigatório; `endsOn` é opcional e deve ser igual ou posterior;
 - duplicidade por `productId + startsOn`, interna ou já persistida, rejeita o lote inteiro;
 - nenhum registro existente é atualizado, arquivado ou sobrescrito;

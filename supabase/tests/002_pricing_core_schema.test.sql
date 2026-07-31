@@ -20,7 +20,7 @@ select is(
      where enumtypid = 'public.commercial_policy_type'::regtype
   ),
   array[
-    'retail_bonus', 'trade_in_bonus', 'subsidized_financing', 'free_ipva',
+    'retail_bonus', 'trade_in_bonus', 'loyalty_bonus', 'subsidized_financing', 'free_ipva',
     'free_insurance', 'free_wallbox', 'registration', 'other',
     'free_registration', 'free_maintenance', 'fuel_or_recharge_voucher'
   ],

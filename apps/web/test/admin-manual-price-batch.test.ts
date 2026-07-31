@@ -161,6 +161,7 @@ describe('admin manual price batch', () => {
     expect(grid).toContain('aria-live="polite"');
     expect(grid).toContain('type="date"');
     expect(grid).toContain('inputMode="decimal"');
+    expect(grid).toContain('formatPtBrMoneyInput');
     expect(grid).toContain('<AdminProductCombobox');
     expect(adapter).toContain(".from('products')");
     expect(adapter).not.toContain('LegacySupabaseAdapter');
