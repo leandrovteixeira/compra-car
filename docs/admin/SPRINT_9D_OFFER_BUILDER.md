@@ -14,7 +14,9 @@ O navegador envia apenas `clientRowId`, `productId` e IDs explicitamente selecio
 - Sem data final concreta, a combinação é rejeitada; nenhum horizonte é inventado.
 - Se `valid_to < valid_from`, a combinação é rejeitada.
 
-`commercial_offers.valid_to` permanece `NOT NULL`. Todo o lote é validado antes do primeiro `INSERT`; qualquer falha desfaz Offers, memberships e auditorias.
+Desde a Sprint 9G.4, `commercial_offers.valid_to` aceita `NULL` para representar explicitamente uma
+Offer draft aberta. Todo o lote é validado antes do primeiro `INSERT`; qualquer falha desfaz Offers,
+memberships e auditorias. A publicação continua bloqueada enquanto não houver `valid_to` concreto.
 
 ## Segurança
 

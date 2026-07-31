@@ -6,6 +6,7 @@ interface PageHeaderProps {
   readonly eyebrow?: string;
   readonly title: string;
   readonly compact?: boolean;
+  readonly sticky?: boolean;
 }
 
 export function PageHeader({
@@ -14,12 +15,13 @@ export function PageHeader({
   description,
   eyebrow,
   title,
+  sticky = false,
 }: PageHeaderProps) {
   return (
     <header
       className={`flex flex-col gap-5 border-b border-slate-800 sm:flex-row sm:items-end sm:justify-between ${
         compact ? 'pb-4' : 'pb-7'
-      }`}
+      } ${sticky ? 'admin-page-header' : ''}`}
     >
       <div>
         {eyebrow ? (

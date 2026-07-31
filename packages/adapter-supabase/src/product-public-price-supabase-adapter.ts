@@ -1,6 +1,7 @@
 import type {
   ListProductPublicPricesQuery,
   ProductPublicPricePage,
+  ProductPublicPrice,
   ProductPublicPriceRepository,
   ProductPublicPriceUpdateResult,
   ProductPublicPriceWriteInput,
@@ -28,11 +29,28 @@ export class ProductPublicPriceSupabaseAdapter implements ProductPublicPriceRepo
   async listProductPublicPrices(
     query: ListProductPublicPricesQuery,
   ): Promise<ProductPublicPricePage> {
-    const { data, error, count } = await this.client
+    const ascending = query.direction === 'asc';
+    let request = this.client
       .from('product_public_prices')
-      .select(PRICE_LIST_COLUMNS, { count: 'exact' })
-      .order('starts_on', { ascending: false })
-      .order('id', { ascending: false })
+      .select(PRICE_LIST_COLUMNS, { count: 'exact' });
+    if (query.sort === 'vehicle') {
+      request = request
+        .order('brand', { ascending, referencedTable: 'product' })
+        .order('model', { ascending, referencedTable: 'product' })
+        .order('version', { ascending, referencedTable: 'product' })
+        .order('model_year', { ascending, referencedTable: 'product' });
+    } else {
+      const column = {
+        amount: 'amount',
+        startsOn: 'starts_on',
+        status: 'status',
+        publishedAt: 'published_at',
+        updatedAt: 'updated_at',
+      }[query.sort];
+      request = request.order(column, { ascending, nullsFirst: false });
+    }
+    const { data, error, count } = await request
+      .order('id', { ascending })
       .range(query.offset, query.offset + query.limit - 1);
 
     if (error) throw queryError(error);
@@ -113,5 +131,21 @@ export class ProductPublicPriceSupabaseAdapter implements ProductPublicPriceRepo
       .maybeSingle();
     if (error) throw queryError(error);
     return data as ProductPublicPriceStateRow | null;
+  }
+
+  async publishProductPublicPrice(input: {
+    readonly id: string;
+    readonly expectedLockVersion: number;
+    readonly actorId: string;
+    readonly correlationId: string;
+  }): Promise<ProductPublicPrice> {
+    const { data, error } = await this.client.rpc('publish_product_public_price', {
+      p_price_id: Number(input.id),
+      p_actor_id: input.actorId,
+      p_expected_lock_version: input.expectedLockVersion,
+      p_correlation_id: input.correlationId,
+    });
+    if (error) throw queryError(error);
+    return mapProductPublicPriceRow(data as unknown as ProductPublicPriceRow);
   }
 }

@@ -32,10 +32,12 @@ export async function loadCommercialOfferBuilder() {
       publicPriceAmount: d.publicPriceAmount!,
       validFrom: d.validFrom,
       validTo: d.validTo,
-      status: 'draft' as const,
+      status: d.status,
       policyCount: d.policyIds.length,
       benefitAmount: d.benefitAmount,
       transactionalPrice: d.transactionalPrice,
+      policyIds: d.policyIds,
+      lockVersion: d.lockVersion,
     })),
   };
 }

@@ -81,6 +81,7 @@ export async function executeManualPriceBatchCreation(
       message: INVALID_PAYLOAD,
     };
   }
+  const correlationId = dependencies.createCorrelationId();
 
   try {
     const result = await new CreateManualPriceBatch(dependencies.createRepository()).execute(
@@ -90,7 +91,7 @@ export async function executeManualPriceBatchCreation(
           endsOn: row.endsOn || null,
         })),
       },
-      { actorId, correlationId: dependencies.createCorrelationId() },
+      { actorId, correlationId },
     );
     if (!result.ok) {
       const messages = {
@@ -133,7 +134,7 @@ export async function executeManualPriceBatchCreation(
           'Já existe preço para pelo menos um veículo e início informados. Nenhum preço foi criado.',
       };
     }
-    console.error('Manual price batch creation failed.');
+    console.error('Manual price batch creation failed.', { correlationId, error });
     return { status: 'error', rows, rowErrors: {}, message: SAFE_FAILURE };
   }
 }

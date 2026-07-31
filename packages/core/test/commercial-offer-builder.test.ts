@@ -53,6 +53,7 @@ describe('policy combination batch', () => {
     endsOn: null,
     customerBenefitAmount: '1000.00',
     status: 'draft',
+    lockVersion: 1,
     ...overrides,
   });
   const row = { clientRowId: 'row-1', productId: '42', policyIds: ['1'] };
@@ -124,22 +125,23 @@ describe('policy combination batch', () => {
     ).toMatchObject({ ok: true, rows: [{ validTo: '2026-09-30' }] });
   });
 
-  it('rejects D explicitly when policies and MSRP are all open', () => {
+  it('derives D: open policies plus open MSRP as an open draft', () => {
     const result = validatePolicyCombinationBatch(
       [row],
       [{ ...finitePrice, endsOn: null }],
       [combinationPolicy('1')],
     );
-    expect(result).toEqual({
-      ok: false,
-      issues: [
-        {
-          clientRowId: 'row-1',
-          message:
-            'Não foi possível derivar uma vigência final concreta: as políticas e o preço público selecionado não possuem data final.',
-        },
-      ],
-    });
+    expect(result).toMatchObject({ ok: true, rows: [{ validTo: null }] });
+  });
+
+  it('rejects E: a derived end before the latest component start', () => {
+    expect(
+      validatePolicyCombinationBatch(
+        [row],
+        [{ ...finitePrice, endsOn: '2026-07-31' }],
+        [combinationPolicy('1')],
+      ),
+    ).toMatchObject({ ok: false });
   });
 
   it('rejects zero or ambiguous published MSRP and duplicate combinations', () => {
@@ -168,6 +170,7 @@ describe('policy combination batch', () => {
     const repository = {
       listPublishedPrices: vi.fn(async () => [finitePrice]),
       listAvailablePolicies: vi.fn(async () => [combinationPolicy('1')]),
+      listRecentDrafts: vi.fn(async () => []),
       createCombinationBatch,
     } as unknown as CommercialOfferBuilderRepository;
     await expect(
@@ -177,6 +180,51 @@ describe('policy combination batch', () => {
       }),
     ).resolves.toMatchObject({ ok: true, batch: { createdCount: 1 } });
     expect(createCombinationBatch).toHaveBeenCalledOnce();
+  });
+
+  it('persists G: zero offers when any batch row fails validation', async () => {
+    const createCombinationBatch = vi.fn();
+    const repository = {
+      listPublishedPrices: vi.fn(async () => [finitePrice]),
+      listAvailablePolicies: vi.fn(async () => [combinationPolicy('1')]),
+      listRecentDrafts: vi.fn(async () => []),
+      createCombinationBatch,
+    } as unknown as CommercialOfferBuilderRepository;
+
+    await expect(
+      new CreatePolicyCombinationBatch(repository).execute(
+        [row, { ...row, clientRowId: 'row-invalid', policyIds: ['missing-policy'] }],
+        { actorId: 'actor', correlationId: 'corr' },
+      ),
+    ).resolves.toMatchObject({ ok: false });
+    expect(createCombinationBatch).not.toHaveBeenCalled();
+  });
+
+  it('identifies the exact row when an identical open draft already exists', async () => {
+    const repository = {
+      listPublishedPrices: vi.fn(async () => [{ ...finitePrice, endsOn: null }]),
+      listAvailablePolicies: vi.fn(async () => [combinationPolicy('1')]),
+      listRecentDrafts: vi.fn(async () => [
+        {
+          productId: '42',
+          status: 'draft',
+          policyIds: ['1'],
+          validFrom: '2026-08-01',
+          validTo: null,
+        },
+      ]),
+      createCombinationBatch: vi.fn(),
+    } as unknown as CommercialOfferBuilderRepository;
+    await expect(
+      new CreatePolicyCombinationBatch(repository).execute([row], {
+        actorId: 'actor',
+        correlationId: 'corr',
+      }),
+    ).resolves.toEqual({
+      ok: false,
+      issues: [{ clientRowId: 'row-1', message: 'Uma oferta draft idêntica já existe.' }],
+    });
+    expect(repository.createCombinationBatch).not.toHaveBeenCalled();
   });
 });
 const input = {

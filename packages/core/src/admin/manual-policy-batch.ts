@@ -255,7 +255,11 @@ export function validateManualPolicyBatch(
 ):
   | { ok: true; rows: readonly NormalizedManualPolicyBatchRow[] }
   | { ok: false; issues: readonly ManualPolicyBatchIssue[] } {
-  const candidates = rows.filter((r) => r.productId || r.policyType || r.title || r.startsOn);
+  const candidates = rows.filter((row) =>
+    Object.entries(row).some(
+      ([field, value]) => field !== 'clientRowId' && value != null && String(value).trim() !== '',
+    ),
+  );
   if (!candidates.length)
     return {
       ok: false,

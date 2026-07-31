@@ -11,6 +11,7 @@ export default async function CommercialOffersPage() {
   return (
     <>
       <PageHeader
+        sticky
         eyebrow="Pricing"
         title="Combinação de políticas"
         description="Monte até 100 combinações por veículo. Preço e vigência são resolvidos automaticamente."

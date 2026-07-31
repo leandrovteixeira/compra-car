@@ -1,6 +1,8 @@
 @import 'tailwindcss';
 
 :root {
+  --admin-topbar-height: 4.25rem;
+  --admin-page-header-height: 9.5rem;
   color-scheme: light;
   font-family:
     Inter,
@@ -12,6 +14,30 @@
     sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+}
+
+@media (min-width: 64rem) {
+  .admin-page-header {
+    position: sticky;
+    top: var(--admin-topbar-height);
+    z-index: 30;
+    height: var(--admin-page-header-height);
+    margin-top: -2.5rem;
+    padding-block: 0.75rem;
+    background: #020617;
+  }
+
+  .admin-page-header > div:first-child > p:last-child {
+    margin-top: 0.35rem;
+    line-height: 1.35rem;
+  }
+
+  .admin-table-header {
+    position: sticky;
+    top: calc(var(--admin-topbar-height) + var(--admin-page-header-height));
+    z-index: 20;
+    background: #0f172a;
+  }
 }
 
 * {

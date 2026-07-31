@@ -25,6 +25,7 @@ function repository(): ProductPublicPriceRepository {
     listProductPublicPrices: vi.fn(async () => ({ items: [], total: 51 })),
     createProductPublicPrice: vi.fn(async () => price),
     updateProductPublicPrice: vi.fn(async () => ({ status: 'updated' as const, price })),
+    publishProductPublicPrice: vi.fn(async () => price),
   };
 }
 
@@ -33,8 +34,21 @@ describe('ProductPublicPrice use cases', () => {
     const target = repository();
     await expect(
       new ListProductPublicPrices(target).execute({ page: 2, pageSize: 25 }),
-    ).resolves.toEqual({ items: [], total: 51, page: 2, pageSize: 25, pageCount: 3 });
-    expect(target.listProductPublicPrices).toHaveBeenCalledWith({ limit: 25, offset: 25 });
+    ).resolves.toEqual({
+      items: [],
+      total: 51,
+      page: 2,
+      pageSize: 25,
+      pageCount: 3,
+      sort: 'updatedAt',
+      direction: 'desc',
+    });
+    expect(target.listProductPublicPrices).toHaveBeenCalledWith({
+      limit: 25,
+      offset: 25,
+      sort: 'updatedAt',
+      direction: 'desc',
+    });
   });
 
   it('creates a validated decimal draft using the server actor', async () => {

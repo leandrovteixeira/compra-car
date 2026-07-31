@@ -10,6 +10,8 @@ import type {
   ProductPublicPriceProduct,
   PricingWorkflowStatus,
   CommercialPolicyType,
+  ProductPublicPriceSort,
+  SortDirection,
 } from '@compra-car/core';
 
 export {
@@ -95,6 +97,8 @@ export interface ProductPublicPriceListPageDto {
   readonly pageSize: number;
   readonly pageCount: number;
   readonly total: number;
+  readonly sort: ProductPublicPriceSort;
+  readonly direction: SortDirection;
 }
 
 export interface ProductPublicPriceFormValuesDto {
@@ -236,7 +240,7 @@ export interface OfferBuilderFormDto {
   readonly productId: string;
   readonly publicPriceId: string;
   readonly validFrom: string;
-  readonly validTo: string;
+  readonly validTo: string | null;
   readonly policyIds: readonly string[];
 }
 export interface OfferBuilderPolicyDto {
@@ -249,6 +253,7 @@ export interface OfferBuilderPolicyDto {
   readonly endsOn: string | null;
   readonly customerBenefitAmount: string | null;
   readonly status: PricingWorkflowStatus;
+  readonly lockVersion: number;
 }
 export interface OfferBuilderPriceDto {
   readonly id: string;
@@ -262,11 +267,13 @@ export interface OfferBuilderDraftDto {
   readonly productId: string;
   readonly publicPriceAmount: string;
   readonly validFrom: string;
-  readonly validTo: string;
-  readonly status: 'draft';
+  readonly validTo: string | null;
+  readonly status: 'draft' | 'published' | 'archived';
   readonly policyCount: number;
   readonly benefitAmount: string;
   readonly transactionalPrice: string;
+  readonly policyIds: readonly string[];
+  readonly lockVersion: number;
 }
 export type OfferBuilderActionStateDto =
   | {

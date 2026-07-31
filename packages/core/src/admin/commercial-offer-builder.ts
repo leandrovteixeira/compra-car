@@ -21,7 +21,7 @@ export interface CreateCommercialOfferDraftInput {
   readonly productId: string;
   readonly publicPriceId: string;
   readonly validFrom: string;
-  readonly validTo: string;
+  readonly validTo: string | null;
   readonly policyIds: readonly string[];
 }
 export interface ValidatedCommercialOfferDraft extends CreateCommercialOfferDraftInput {
@@ -41,8 +41,8 @@ export function validateCommercialOfferDraft(
   if (!/^\d+$/u.test(input.productId)) errors.push('Selecione um veículo válido.');
   if (
     !isValidManualPriceDate(input.validFrom) ||
-    !isValidManualPriceDate(input.validTo) ||
-    input.validTo < input.validFrom
+    (input.validTo !== null && !isValidManualPriceDate(input.validTo)) ||
+    (input.validTo !== null && input.validTo < input.validFrom)
   )
     errors.push('Informe uma vigência válida.');
   if (
@@ -51,7 +51,9 @@ export function validateCommercialOfferDraft(
     price.productId !== input.productId ||
     price.status !== 'published' ||
     price.startsOn > input.validFrom ||
-    (price.endsOn !== null && price.endsOn < input.validTo)
+    (input.validTo === null
+      ? price.endsOn !== null
+      : price.endsOn !== null && price.endsOn < input.validTo)
   )
     errors.push('Selecione um MSRP publicado que cubra toda a vigência.');
   if (input.policyIds.length === 0) errors.push('Selecione pelo menos uma política.');
@@ -70,7 +72,9 @@ export function validateCommercialOfferDraft(
       errors.push(`A política ${policy.title} usa tipo descontinuado.`);
     if (
       policy.startsOn > input.validFrom ||
-      (policy.endsOn !== null && policy.endsOn < input.validTo)
+      (input.validTo === null
+        ? policy.endsOn !== null
+        : policy.endsOn !== null && policy.endsOn < input.validTo)
     )
       errors.push(`A política ${policy.title} não cobre a vigência da oferta.`);
   }
@@ -119,6 +123,7 @@ export interface PolicyCombinationPolicy {
   readonly endsOn: string | null;
   readonly customerBenefitAmount: string | null;
   readonly status: PricingWorkflowStatus;
+  readonly lockVersion: number;
 }
 
 export interface PolicyCombinationRowInput {
@@ -130,7 +135,7 @@ export interface PolicyCombinationRowInput {
 export interface ValidatedPolicyCombinationRow extends PolicyCombinationRowInput {
   readonly publicPriceId: string;
   readonly validFrom: string;
-  readonly validTo: string;
+  readonly validTo: string | null;
   readonly benefitAmount: string;
 }
 
@@ -230,15 +235,8 @@ function derivePolicyCombinationRow(
   const price = matchingPrices[0]!;
   const endDates = [...usable.flatMap((policy) => (policy.endsOn ? [policy.endsOn] : []))];
   if (price.endsOn) endDates.push(price.endsOn);
-  if (endDates.length === 0) {
-    return {
-      errors: [
-        'Não foi possível derivar uma vigência final concreta: as políticas e o preço público selecionado não possuem data final.',
-      ],
-    };
-  }
-  const validTo = endDates.sort()[0]!;
-  if (validTo < validFrom)
+  const validTo = endDates.length ? endDates.sort()[0]! : null;
+  if (validTo !== null && validTo < validFrom)
     return { errors: ['As políticas selecionadas não possuem interseção temporal válida.'] };
   const benefitAmount = calculatePolicyCombinationTotal(usable);
   try {

@@ -19,10 +19,11 @@ describe('commercial offer builder UI', () => {
     expect(ui).toContain('resolvePolicyCombinationCells');
     expect(ui).toContain('type="checkbox"');
     expect(ui).toContain('Conflito');
-    expect(ui).toContain('Salvar lote de combinações');
+    expect(ui).toContain('Salvar ofertas');
+    expect(ui).toContain("draft.validTo ?? 'aberta'");
     expect(ui).toContain('min-w-[76rem]');
     expect(ui).toContain('align-middle');
-    expect(ui).toContain('Rascunhos recentes');
+    expect(ui).toContain('Combinações existentes');
     expect(ui).not.toContain('MSRP-base');
     expect(ui).not.toContain('type="date"');
   });

@@ -8,6 +8,8 @@ export const adminNavigationItems: readonly AdminNavigationItem[] = [
   { href: '/admin', label: 'Visão geral', status: 'active' },
   { href: '/admin/products', label: 'Veículos', status: 'active' },
   { href: '/admin/prices', label: 'Preços públicos', status: 'active' },
+  { href: '/admin/prices/input', label: 'Criar preços', status: 'active' },
+  { href: '/admin/prices/policies/input', label: 'Criar políticas', status: 'active' },
   { label: 'Equipamentos', status: 'planned' },
   { label: 'Categorias', status: 'planned' },
   { label: 'Marcas', status: 'planned' },

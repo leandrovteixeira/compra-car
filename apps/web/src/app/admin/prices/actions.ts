@@ -6,6 +6,7 @@ import {
   saveExistingAdminProductPublicPrice,
   saveNewAdminProductPublicPrice,
 } from '@/server/save-admin-product-public-price';
+import { publishAdminProductPublicPrice } from '@/server/admin-product-public-price-service';
 
 export async function createProductPublicPriceAction(
   _previousState: ProductPublicPriceActionStateDto,
@@ -19,4 +20,8 @@ export async function updateProductPublicPriceAction(
   formData: FormData,
 ): Promise<ProductPublicPriceActionStateDto> {
   return saveExistingAdminProductPublicPrice(formData);
+}
+
+export async function publishProductPublicPriceAction(formData: FormData) {
+  return publishAdminProductPublicPrice(formData);
 }

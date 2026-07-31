@@ -46,7 +46,9 @@ export function validateCommercialOfferComposition(
     if (policy.status !== 'published') errors.push(`Policy ${policy.id} is not published.`);
     if (
       policy.startsOn > offer.validFrom ||
-      (policy.endsOn !== null && policy.endsOn < offer.validTo)
+      (offer.validTo === null
+        ? policy.endsOn !== null
+        : policy.endsOn !== null && policy.endsOn < offer.validTo)
     ) {
       errors.push(`Policy ${policy.id} does not cover the offer period.`);
     }

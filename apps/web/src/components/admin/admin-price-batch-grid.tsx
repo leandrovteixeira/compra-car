@@ -127,8 +127,8 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/50">
-        <div className="hidden grid-cols-[minmax(18rem,2fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_3rem] gap-3 border-b border-slate-800 bg-slate-900 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400 md:grid">
+      <div className="rounded-2xl border border-slate-800 bg-slate-900/50">
+        <div className="admin-table-header hidden grid-cols-[minmax(18rem,2fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_3rem] gap-3 border-b border-slate-800 bg-slate-900 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400 md:grid">
           <span>Veículo</span>
           <span>Preço público</span>
           <span>Início</span>
@@ -238,7 +238,7 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
           disabled={pending || filledCount === 0}
           type="submit"
         >
-          {pending ? 'Salvando lote…' : 'Salvar lote de preços'}
+          {pending ? 'Salvando…' : 'Salvar preços'}
         </button>
       </div>
     </form>

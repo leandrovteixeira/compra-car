@@ -35,8 +35,8 @@ export function AdminShell({ children, displayName }: AdminShellProps) {
       </aside>
 
       <div className="min-w-0">
-        <header className="sticky top-0 z-40 border-b border-slate-800 bg-slate-950/95 px-4 py-3 backdrop-blur sm:px-6 lg:px-8">
-          <div className="mx-auto flex min-h-11 w-full max-w-7xl items-center justify-between gap-4">
+        <header className="sticky top-0 z-40 h-[var(--admin-topbar-height)] border-b border-slate-800 bg-slate-950 px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto flex h-full w-full max-w-7xl items-center justify-between gap-4">
             <div className="lg:hidden">
               <Brand />
             </div>

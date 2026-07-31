@@ -21,6 +21,38 @@ describe('CommercialOfferBuilder Supabase adapter', () => {
       p_correlation_id: 'corr',
     });
   });
+  it('deserializes an open-ended draft without inventing a date', async () => {
+    const client = {
+      rpc: vi.fn(async () => ({
+        data: {
+          createdCount: 1,
+          offers: [
+            {
+              offerId: 91,
+              productId: 42,
+              publicPriceId: 10,
+              publicPriceAmount: '200000.00',
+              validFrom: '2026-08-01',
+              validTo: null,
+              status: 'draft',
+              policyIds: [1, 2],
+              lockVersion: 1,
+              benefitAmount: '1000.00',
+              transactionalPrice: '199000.00',
+            },
+          ],
+        },
+        error: null,
+      })),
+    } as unknown as SupabaseClient;
+    await expect(
+      new CommercialOfferBuilderSupabaseAdapter(client).createCombinationBatch({
+        rows: [{ clientRowId: 'row-1', productId: '42', policyIds: ['1', '2'] }],
+        actorId: 'actor',
+        correlationId: 'corr',
+      }),
+    ).resolves.toMatchObject({ offers: [{ validTo: null }] });
+  });
   it('persists a validated draft only through the atomic domain RPC', async () => {
     const client = {
       rpc: vi.fn(async () => ({

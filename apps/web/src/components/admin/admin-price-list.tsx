@@ -13,6 +13,10 @@ import {
 interface AdminPriceListProps {
   readonly page: ProductPublicPriceListPageDto;
   readonly onEdit: (id: string, opener: HTMLButtonElement) => void;
+  readonly publishAction: (
+    formData: FormData,
+  ) => Promise<{ readonly ok: boolean; readonly message: string }>;
+  readonly onPublished: (message: string) => void;
 }
 
 function statusClass(status: PricingWorkflowStatus): string {
@@ -23,32 +27,60 @@ function statusClass(status: PricingWorkflowStatus): string {
       : 'border-slate-700 bg-slate-900 text-slate-300';
 }
 
-export function AdminPriceList({ page, onEdit }: AdminPriceListProps) {
+function SortHeader({
+  page,
+  field,
+  children,
+}: {
+  readonly page: ProductPublicPriceListPageDto;
+  readonly field: ProductPublicPriceListPageDto['sort'];
+  readonly children: React.ReactNode;
+}) {
+  const active = page.sort === field;
+  const direction = active && page.direction === 'asc' ? 'desc' : 'asc';
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/50">
-      <div className="overflow-x-auto">
+    <th
+      className="px-4 py-3 font-semibold"
+      scope="col"
+      aria-sort={active ? (page.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
+    >
+      <Link
+        className="inline-flex items-center gap-1 rounded hover:text-slate-100 focus-visible:outline-2 focus-visible:outline-cyan-300"
+        href={{ pathname: '/admin/prices', query: { sort: field, direction } }}
+      >
+        {children}
+        <span aria-hidden="true">{active ? (page.direction === 'asc' ? '↑' : '↓') : '↕'}</span>
+      </Link>
+    </th>
+  );
+}
+
+export function AdminPriceList({ page, onEdit, publishAction, onPublished }: AdminPriceListProps) {
+  return (
+    <div className="rounded-2xl border border-slate-800 bg-slate-900/50">
+      <div className="overflow-x-auto lg:overflow-visible">
         <table className="w-full min-w-[68rem] border-collapse text-left text-sm">
           <caption className="sr-only">Preços públicos cadastrados</caption>
-          <thead className="border-b border-slate-800 bg-slate-900 text-xs uppercase tracking-wide text-slate-400">
+          <thead className="admin-table-header border-b border-slate-800 bg-slate-900 text-xs uppercase tracking-wide text-slate-400">
             <tr>
-              <th className="px-4 py-3 font-semibold" scope="col">
+              <SortHeader page={page} field="vehicle">
                 Veículo
-              </th>
-              <th className="px-4 py-3 font-semibold" scope="col">
+              </SortHeader>
+              <SortHeader page={page} field="amount">
                 Preço público
-              </th>
-              <th className="px-4 py-3 font-semibold" scope="col">
+              </SortHeader>
+              <SortHeader page={page} field="startsOn">
                 Vigência
-              </th>
-              <th className="px-4 py-3 font-semibold" scope="col">
+              </SortHeader>
+              <SortHeader page={page} field="status">
                 Status
-              </th>
-              <th className="px-4 py-3 font-semibold" scope="col">
+              </SortHeader>
+              <SortHeader page={page} field="publishedAt">
                 Publicação
-              </th>
-              <th className="px-4 py-3 font-semibold" scope="col">
+              </SortHeader>
+              <SortHeader page={page} field="updatedAt">
                 Atualização
-              </th>
+              </SortHeader>
               <th className="px-4 py-3 font-semibold" scope="col">
                 Ações
               </th>
@@ -92,17 +124,42 @@ export function AdminPriceList({ page, onEdit }: AdminPriceListProps) {
                   </p>
                 </td>
                 <td className="px-4 py-4">
-                  {isProductPublicPriceEditable(price.status) ? (
-                    <button
-                      className="min-h-10 rounded-lg border border-slate-700 px-3 font-semibold text-slate-200 transition hover:bg-slate-800"
-                      onClick={(event) => onEdit(price.id, event.currentTarget)}
-                      type="button"
-                    >
-                      Editar
-                    </button>
-                  ) : (
-                    <span className="text-xs text-slate-500">Somente leitura</span>
-                  )}
+                  <div className="flex gap-2">
+                    {isProductPublicPriceEditable(price.status) ? (
+                      <button
+                        className="min-h-10 rounded-lg border border-slate-700 px-3 font-semibold text-slate-200 transition hover:bg-slate-800"
+                        onClick={(event) => onEdit(price.id, event.currentTarget)}
+                        type="button"
+                      >
+                        Editar
+                      </button>
+                    ) : (
+                      <span className="text-xs text-slate-500">Somente leitura</span>
+                    )}
+                    {price.status === 'draft' || price.status === 'needs_review' ? (
+                      <form
+                        action={async (data) => {
+                          if (
+                            !window.confirm(
+                              'Publicar preço? Este preço passará a ser utilizado pelas regras comerciais aplicáveis.',
+                            )
+                          )
+                            return;
+                          const result = await publishAction(data);
+                          onPublished(result.message);
+                        }}
+                      >
+                        <input type="hidden" name="id" value={price.id} />
+                        <input type="hidden" name="lockVersion" value={price.lockVersion} />
+                        <button
+                          className="min-h-10 rounded-lg bg-sky-500 px-3 font-semibold text-slate-950"
+                          type="submit"
+                        >
+                          Publicar
+                        </button>
+                      </form>
+                    ) : null}
+                  </div>
                 </td>
               </tr>
             ))}

@@ -153,6 +153,8 @@ describe('ProductPublicPrice Supabase adapter', () => {
       new ProductPublicPriceSupabaseAdapter(target.supabase).listProductPublicPrices({
         limit: 25,
         offset: 25,
+        sort: 'updatedAt',
+        direction: 'desc',
       }),
     ).resolves.toEqual({ items: [mapProductPublicPriceRow(row())], total: 1 });
     expect(target.supabase.from).toHaveBeenCalledWith('product_public_prices');
@@ -168,6 +170,8 @@ describe('ProductPublicPrice Supabase adapter', () => {
       new ProductPublicPriceSupabaseAdapter(empty.supabase).listProductPublicPrices({
         limit: 25,
         offset: 0,
+        sort: 'updatedAt',
+        direction: 'desc',
       }),
     ).resolves.toEqual({ items: [], total: 0 });
     const failed = client({ data: null, error: { message: 'private detail' }, count: null });
@@ -175,6 +179,8 @@ describe('ProductPublicPrice Supabase adapter', () => {
       new ProductPublicPriceSupabaseAdapter(failed.supabase).listProductPublicPrices({
         limit: 25,
         offset: 0,
+        sort: 'updatedAt',
+        direction: 'desc',
       }),
     ).rejects.toBeInstanceOf(PricingAdapterQueryError);
   });

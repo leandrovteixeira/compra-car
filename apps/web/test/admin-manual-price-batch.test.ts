@@ -159,6 +159,8 @@ describe('admin manual price batch', () => {
     expect(grid).toContain('disabled={pending || filledCount === 0}');
     expect(grid).toContain('md:grid-cols-');
     expect(grid).toContain('aria-live="polite"');
+    expect(grid).toContain('Salvar preços');
+    expect(action).toContain('JSON.parse(JSON.stringify(result))');
     expect(grid).toContain('type="date"');
     expect(grid).toContain('inputMode="decimal"');
     expect(grid).toContain('formatPtBrMoneyInput');

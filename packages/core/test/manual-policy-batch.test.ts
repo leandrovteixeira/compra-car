@@ -249,6 +249,28 @@ describe('manual policy batch', () => {
       title: 'Financiamento subsidiado',
     });
   });
+
+  it('ignores completely empty support rows but validates partially filled rows', () => {
+    const empty = {
+      ...base,
+      clientRowId: 'empty',
+      productId: '',
+      policyType: '',
+      title: '',
+      startsOn: '',
+      amount: '',
+    };
+    const valid = normalizeManualPolicyBatchRow({ ...base, clientRowId: 'valid' });
+    const accepted = validateManualPolicyBatch([valid, empty], {});
+    expect(accepted.ok).toBe(true);
+    if (accepted.ok) expect(accepted.rows).toHaveLength(1);
+
+    const partial = validateManualPolicyBatch(
+      [{ ...empty, clientRowId: 'partial', amount: '1000,00' }],
+      {},
+    );
+    expect(partial.ok).toBe(false);
+  });
   it('creates financing with open Policy and finite reference validity', async () => {
     let persisted: unknown;
     const repository: ManualPolicyBatchRepository = {

@@ -78,7 +78,6 @@ export class CommercialOfferBuilderSupabaseAdapter implements CommercialOfferBui
     const { data, error } = await this.client
       .from('commercial_policies')
       .select(policyColumns)
-      .in('status', ['draft', 'needs_review', 'published'])
       .order('policy_type')
       .order('title')
       .order('id');
@@ -87,6 +86,83 @@ export class CommercialOfferBuilderSupabaseAdapter implements CommercialOfferBui
         cause: error,
       });
     return records(data).map((row) => mapCommercialPolicyRow(row as never));
+  }
+
+  async updatePolicyDraft(input: {
+    readonly policyId: string;
+    readonly expectedLockVersion: number;
+    readonly changes: Readonly<Record<string, string>>;
+    readonly actorId: string;
+    readonly correlationId: string;
+  }) {
+    const { data, error } = await this.client.rpc('update_commercial_policy_draft', {
+      p_policy_id: Number(input.policyId),
+      p_expected_lock_version: input.expectedLockVersion,
+      p_changes: input.changes,
+      p_actor_id: input.actorId,
+      p_correlation_id: input.correlationId,
+    });
+    if (error)
+      throw new PricingAdapterQueryError('Não foi possível atualizar a política.', {
+        cause: error,
+      });
+    return mapCommercialPolicyRow(data as never);
+  }
+
+  async archivePolicy(input: {
+    readonly policyId: string;
+    readonly expectedLockVersion: number;
+    readonly actorId: string;
+    readonly correlationId: string;
+  }) {
+    const { data, error } = await this.client.rpc('archive_commercial_policy', {
+      p_policy_id: Number(input.policyId),
+      p_expected_lock_version: input.expectedLockVersion,
+      p_actor_id: input.actorId,
+      p_correlation_id: input.correlationId,
+    });
+    if (error)
+      throw new PricingAdapterQueryError('Não foi possível arquivar a política.', { cause: error });
+    return mapCommercialPolicyRow(data as never);
+  }
+
+  async replaceOfferDraft(input: {
+    readonly offerId: string;
+    readonly expectedLockVersion: number;
+    readonly policyIds: readonly string[];
+    readonly actorId: string;
+    readonly correlationId: string;
+  }) {
+    const { data, error } = await this.client.rpc('replace_commercial_offer_draft', {
+      p_offer_id: Number(input.offerId),
+      p_expected_lock_version: input.expectedLockVersion,
+      p_policy_ids: input.policyIds.map(Number),
+      p_actor_id: input.actorId,
+      p_correlation_id: input.correlationId,
+    });
+    if (error)
+      throw new PricingAdapterQueryError('Não foi possível atualizar a combinação.', {
+        cause: error,
+      });
+    return this.mapSummary(data);
+  }
+
+  async archiveOffer(input: {
+    readonly offerId: string;
+    readonly expectedLockVersion: number;
+    readonly actorId: string;
+    readonly correlationId: string;
+  }) {
+    const { error } = await this.client.rpc('archive_commercial_offer', {
+      p_offer_id: Number(input.offerId),
+      p_expected_lock_version: input.expectedLockVersion,
+      p_actor_id: input.actorId,
+      p_correlation_id: input.correlationId,
+    });
+    if (error)
+      throw new PricingAdapterQueryError('Não foi possível arquivar a combinação.', {
+        cause: error,
+      });
   }
   async getPrice(value: string) {
     const prices = await this.listPublishedPrices();
@@ -156,9 +232,7 @@ export class CommercialOfferBuilderSupabaseAdapter implements CommercialOfferBui
       .select(
         'id,product_id,public_price_id,valid_from,valid_to,status,lock_version,public_price:product_public_prices!commercial_offers_public_price_id_fkey(amount),memberships:commercial_offer_policies!commercial_offer_policies_offer_id_fkey(commercial_policy_id,policy:commercial_policies!commercial_offer_policies_policy_id_fkey(customer_benefit_amount))',
       )
-      .eq('status', 'draft')
-      .order('created_at', { ascending: false })
-      .limit(20);
+      .order('created_at', { ascending: false });
     if (error)
       throw new PricingAdapterQueryError('Não foi possível carregar as ofertas recentes.', {
         cause: error,
@@ -175,8 +249,8 @@ export class CommercialOfferBuilderSupabaseAdapter implements CommercialOfferBui
       publicPriceId: id(r.publicPriceId),
       publicPriceAmount: money(r.publicPriceAmount, 'publicPriceAmount'),
       validFrom: required(r.validFrom, 'validFrom'),
-      validTo: required(r.validTo, 'validTo'),
-      status: 'draft',
+      validTo: r.validTo == null ? null : required(r.validTo, 'validTo'),
+      status: r.status === 'published' || r.status === 'archived' ? r.status : 'draft',
       policyIds: Array.isArray(r.policyIds) ? r.policyIds.map(id) : [],
       lockVersion: Number(r.lockVersion),
       benefitAmount: money(r.benefitAmount, 'benefitAmount'),
@@ -211,7 +285,7 @@ export class CommercialOfferBuilderSupabaseAdapter implements CommercialOfferBui
       publicPriceId: id(r.public_price_id),
       publicPriceAmount: formatMoney(priceCents),
       validFrom: required(r.valid_from, 'validFrom'),
-      validTo: required(r.valid_to, 'validTo'),
+      validTo: r.valid_to == null ? null : required(r.valid_to, 'validTo'),
       status: 'draft',
       policyIds: memberships.map((m) => id(m.commercial_policy_id)),
       lockVersion: Number(r.lock_version),

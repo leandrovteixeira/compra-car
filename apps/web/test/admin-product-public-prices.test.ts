@@ -5,7 +5,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../src/auth/authorization', () => ({ requireRole: vi.fn() }));
 
-import { parseAdminPricePage } from '../src/application/admin/admin-price-query';
+import {
+  parseAdminPricePage,
+  parseAdminPriceSort,
+} from '../src/application/admin/admin-price-query';
 import {
   amountToPtBrInput,
   canonicalAmountFromPtBr,
@@ -32,6 +35,7 @@ function repository(failure = false): ProductPublicPriceRepository {
     }),
     createProductPublicPrice: vi.fn(),
     updateProductPublicPrice: vi.fn(),
+    publishProductPublicPrice: vi.fn(),
   };
 }
 
@@ -75,6 +79,11 @@ describe('admin ProductPublicPrice read slice', () => {
   it('normalizes pagination and formats critical values in pt-BR', () => {
     expect(parseAdminPricePage({ page: '2' })).toBe(2);
     expect(parseAdminPricePage({ page: '-1' })).toBe(1);
+    expect(parseAdminPriceSort({})).toEqual({ sort: 'updatedAt', direction: 'desc' });
+    expect(parseAdminPriceSort({ sort: 'amount', direction: 'asc' })).toEqual({
+      sort: 'amount',
+      direction: 'asc',
+    });
     expect(formatAdminPrice('159990.00', 'BRL')).toMatch(/159\.990(?!,)/u);
     expect(formatAdminDate('2026-07-01')).toBe('01/07/2026');
     expect(formatAdminDate(null)).toBe('Sem término');
@@ -160,7 +169,10 @@ describe('admin ProductPublicPrice read slice', () => {
     expect(manager).toContain('<AdminPriceList');
     expect(page).not.toContain('supabase');
     expect(list).toContain('Editar');
-    expect(manager).toContain('Novo preço');
+    expect(manager).not.toContain('Novo preço');
+    expect(list).toContain('Publicar');
+    expect(list).toContain('aria-sort=');
+    expect(list).toContain('field="updatedAt"');
     expect(manager).toContain('Salvar rascunho');
     expect(manager).toContain('disabled={pending}');
     expect(manager).toContain('router.refresh()');

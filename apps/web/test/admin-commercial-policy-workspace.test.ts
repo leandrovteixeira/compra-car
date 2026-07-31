@@ -1,0 +1,79 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { describe, expect, it } from 'vitest';
+
+const source = (path: string) => readFileSync(resolve(__dirname, path), 'utf8');
+
+describe('Sprint 9G commercial workspace', () => {
+  it('uses one vehicle selector and protects unsaved changes', () => {
+    const workspace = source('../src/components/admin/commercial-policy-workspace.tsx');
+    expect(workspace).toContain('<AdminProductCombobox');
+    expect(workspace).toContain('Existem alterações não salvas');
+    expect(workspace).toContain('setDirty(false)');
+    expect(workspace).toContain('onSaved={saved}');
+    expect(workspace).toContain("offerIds.length ? 'Em uso' : 'Livre'");
+    expect(workspace).toContain("draft: 'Rascunho'");
+    expect(workspace).toContain('Políticas salvas com sucesso.');
+    expect(workspace).toContain('<AdminPolicyBatchGrid');
+    expect(workspace).toContain('<CommercialOfferBuilder');
+  });
+
+  it('marks dirty before the row state update and excludes empty support rows from payload', () => {
+    const grid = source('../src/components/admin/admin-policy-batch-grid.tsx');
+    expect(grid).toContain('onDirty?.();\n    setRows((current) =>');
+    expect(grid).not.toContain('setRows((current) => {\n      onDirty?.();');
+    expect(grid).toContain('.filter((row) => !isEmpty(row))');
+  });
+
+  it('rebuilds the combination row for the selected Product after a successful reload', () => {
+    const builder = source('../src/components/admin/commercial-offer-builder.tsx');
+    const workspace = source('../src/components/admin/commercial-policy-workspace.tsx');
+    expect(builder).toContain("productId: productId ?? ''");
+    expect(builder).toContain('row.policyIds.length > 0');
+    expect(builder).toContain('withTrailingEmpty');
+    expect(builder).toContain('rows.filter((row) => row.policyIds.length > 0)');
+    expect(builder).toContain('combinações preenchidas');
+    expect(workspace).toContain('router.refresh()');
+    expect(workspace).toContain('MANUAL_POLICY_DISPLAY_LABELS[policy.policyType]');
+  });
+
+  it('uses shared stacked sticky offsets for pricing headers', () => {
+    const css = source('../src/app/globals.css');
+    const pageHeader = source('../src/components/admin/page-header.tsx');
+    const priceList = source('../src/components/admin/admin-price-list.tsx');
+    expect(css).toContain('--admin-topbar-height: 4.25rem');
+    expect(css).toContain('--admin-page-header-height: 9.5rem');
+    expect(css).toContain('margin-top: -2.5rem');
+    expect(css).toContain(
+      'top: calc(var(--admin-topbar-height) + var(--admin-page-header-height))',
+    );
+    expect(pageHeader).toContain("sticky ? 'admin-page-header' : ''");
+    expect(priceList).toContain('admin-table-header');
+    expect(priceList).toContain('lg:overflow-visible');
+  });
+
+  it('connects the four administrative RPCs through server-only actions', () => {
+    const service = source('../src/server/commercial-policy-workspace-service.ts');
+    const adapter = source(
+      '../../../packages/adapter-supabase/src/commercial-offer-builder-supabase-adapter.ts',
+    );
+    expect(service).toContain("requireRole('admin')");
+    expect(service).toContain('randomUUID()');
+    expect(adapter).toContain("rpc('update_commercial_policy_draft'");
+    expect(adapter).toContain("rpc('archive_commercial_policy'");
+    expect(adapter).toContain("rpc('replace_commercial_offer_draft'");
+    expect(adapter).toContain("rpc('archive_commercial_offer'");
+  });
+
+  it('publishes prices through the existing RPC and removes individual creation CTA', () => {
+    const adapter = source(
+      '../../../packages/adapter-supabase/src/product-public-price-supabase-adapter.ts',
+    );
+    const manager = source('../src/components/admin/admin-price-manager.tsx');
+    const list = source('../src/components/admin/admin-price-list.tsx');
+    expect(adapter).toContain("rpc('publish_product_public_price'");
+    expect(manager).not.toContain('Novo preço');
+    expect(list).toContain('Publicar preço?');
+    expect(list).toContain('onPublished');
+  });
+});

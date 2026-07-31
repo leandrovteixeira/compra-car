@@ -545,10 +545,61 @@ O escopo da Sprint 1 fica limitado a `products` e `product_specs`, usando `specs
   `Legacy`. Smoke autenticado ainda depende de credencial/sessão administrativa fornecida externamente.
 ## Marco — combinação de políticas (Sprint 9F, 2026-07-31)
 
-O Offer Builder opera em lote por `create_commercial_offer_batch`. MSRP, `valid_from=max(starts_on)` e `valid_to=min(ends_on não nulo de Policies/MSRP)` são autoritativos no servidor. Tudo aberto é erro, `commercial_offers.valid_to` continua obrigatório e qualquer erro desfaz o lote. `loyalty_bonus` é um tipo corrente fixo distinto.
+O Offer Builder opera em lote por `create_commercial_offer_batch`. MSRP, `valid_from=max(starts_on)` e `valid_to=min(ends_on não nulo de Policies/MSRP)` são autoritativos no servidor. Neste marco histórico, tudo aberto ainda era erro; a Sprint 9G.4 posteriormente tornou `valid_to` nullable para drafts. Qualquer erro desfaz o lote. `loyalty_bonus` é um tipo corrente fixo distinto.
 ## Marco — refinamento da combinação (Sprint 9F.1, 2026-07-31)
 
 O trigger terminal compartilhado separa estruturalmente o branch exclusivo de
 `financial_parameter_sets`, evitando acesso a `valid_to`/`effective_from` em outras tabelas sem
-relaxar imutabilidade terminal ou rollover. A Sprint 9G, ainda não implementada, tratará consulta e
-gestão de Policies e combinações com regras explícitas para workflow, supersession e auditoria.
+relaxar imutabilidade terminal ou rollover. Naquele momento, a Sprint 9G ainda implementaria consulta
+e gestão de Policies e combinações; o marco foi concluído posteriormente conforme registrado abaixo.
+
+## Marco — Sprint 9G (2026-07-31)
+
+O Admin passa a operar Pricing por Product em um workspace único. Quatro RPCs auditadas administram
+edição/arquivo de Policies e substituição/arquivo de Offers com controle otimista. Policies usadas
+por Offers não arquivadas não podem ser alteradas ou arquivadas. Não há DELETE nem supersession.
+Publicação de preço reutiliza `publish_product_public_price`. A etapa seguinte é importação assistida
+por IA com revisão e aprovação humana antes da persistência.
+
+A migration administrativa foi aplicada somente ao Staging `shfsjyjxmgwnlexmdkcs`, registrado pelo
+Supabase como `20260731172651_sprint_9g_administrative_pricing_workflow`. O pgTAP 016 passou com 16
+asserções dentro de transação revertida; a verificação posterior encontrou zero fixture e zero evento
+de auditoria residual. Produção e `Legacy` permaneceram intocados.
+
+## Marco — Sprint 9G.1 (2026-07-31)
+
+O grid de Policies não chama mais callbacks do pai dentro de updater funcional de estado. Linhas de
+apoio vazias são descartadas antes do envio, enquanto linhas parciais são validadas. Saves bem-sucedidos
+revalidam o servidor, executam `router.refresh()` e recompõem a matriz para o Product ainda selecionado.
+Labels curtos vêm de `MANUAL_POLICY_DISPLAY_LABELS`. A pilha sticky de Pricing usa
+`--admin-topbar-height` e `--admin-page-header-height` como offsets compartilhados.
+
+O Staging confirmado `shfsjyjxmgwnlexmdkcs` possui agora 10 Products. Os IDs 610–617 são oito
+veículos reais originados de `Legacy/products.csv`, carregados de forma idempotente por
+`scripts/staging/07-expand-admin-dataset.sql`, com 6 preços, 8 Policies, 1 Offer e 2 memberships.
+Nenhum dado anterior foi apagado ou arquivado; Produção não foi alterada.
+## Sprint 9G.2 — rollover de preço publicado
+
+`publish_product_public_price` serializa por `product_id` e, ao publicar em D, encerra o único
+predecessor publicado sobreposto em D-1. A alteração de `ends_on` continua bloqueada fora da RPC,
+gera auditoria `update` correlacionada e incrementa o lock. Publicação retroativa quando já existe
+preço publicado em D ou depois é rejeitada; múltiplos predecessores sobrepostos não são escolhidos
+automaticamente. A RPC `rollover_product_public_price` é o caminho administrativo controlado para
+reparar um par predecessor/sucessor já publicado.
+## Sprint 9G.3 — UX administrativa estabilizada
+
+A lista de preços ordena no banco por `updated_at DESC` por padrão e aceita sort/direção na URL.
+Server Actions de batch retornam somente DTO JSON simples. O workspace comercial preserva o Product
+selecionado após refresh, mostra sucesso explícito e mantém N combinações preenchidas mais uma linha
+vazia trailing. Publicação múltipla e exclusão física de Policy continuam **PENDENTE**: ambas exigem
+RPCs administrativas novas antes de qualquer frontend.
+## Sprint 9G.4 — vigência aberta de Offers
+
+Offers `draft` podem ter `validTo = null`. A derivação usa o maior início das Policies e o menor fim
+não nulo entre Policies e MSRP; ausência de fins significa vigência aberta. Batch e replace são
+atômicos, e duplicidade compara `NULL` com `IS NOT DISTINCT FROM`. `publish_commercial_offer`
+revalida o agregado e bloqueia Offers abertas com erro funcional até nova decisão de lifecycle.
+
+O checkpoint das Sprints 9G–9G.4 encerra o workflow atual após validação manual. As migrations foram
+aplicadas somente ao Staging; Produção e `Legacy` permanecem intocados. Refinamentos posteriores de
+UX para a operação mensal de Prices, Policies e Offers continuam pendentes e fora deste checkpoint.

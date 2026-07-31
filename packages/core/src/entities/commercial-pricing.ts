@@ -86,7 +86,7 @@ export interface CommercialOffer {
   readonly publicPriceId: string | null;
   readonly publicPriceAmount: string | null;
   readonly validFrom: string;
-  readonly validTo: string;
+  readonly validTo: string | null;
   readonly status: 'draft' | 'published' | 'archived';
   readonly policyIds: readonly string[];
   readonly lockVersion: number;

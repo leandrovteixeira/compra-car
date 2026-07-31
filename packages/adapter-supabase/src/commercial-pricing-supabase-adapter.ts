@@ -158,7 +158,7 @@ export function mapCommercialOfferRow(row: CommercialOfferRow): CommercialOffer 
         : identifier(row.public_price_id, 'offer.public_price_id'),
     publicPriceAmount: relatedPriceAmount(row),
     validFrom: requiredString(row.valid_from, 'offer.valid_from'),
-    validTo: requiredString(row.valid_to, 'offer.valid_to'),
+    validTo: row.valid_to == null ? null : requiredString(row.valid_to, 'offer.valid_to'),
     status,
     policyIds: Object.freeze(
       (row.memberships ?? [])

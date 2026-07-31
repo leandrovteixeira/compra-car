@@ -1,0 +1,12 @@
+begin;
+select plan(8);
+select col_is_null('public','commercial_offers','valid_to','Offer valid_to is nullable');
+select ok((select pg_get_constraintdef(oid) ilike '%valid_to IS NULL%' from pg_constraint where conrelid='public.commercial_offers'::regclass and conname='commercial_offers_validity_check'),'validity accepts open drafts');
+select has_function('public','create_commercial_offer_batch',array['jsonb','uuid','uuid'],'batch RPC remains available');
+select has_function('public','replace_commercial_offer_draft',array['bigint','integer','bigint[]','uuid','uuid'],'replace RPC remains available');
+select is((select prosecdef from pg_proc where oid='public.create_commercial_offer_batch(jsonb,uuid,uuid)'::regprocedure),true,'batch remains security definer');
+select is(replace((select proconfig[1] from pg_proc where oid='public.create_commercial_offer_batch(jsonb,uuid,uuid)'::regprocedure),'"',''),'search_path=','batch search_path remains empty');
+select ok(position('valid_to is not distinct from valid_to' in lower(pg_get_functiondef('public.create_commercial_offer_batch(jsonb,uuid,uuid)'::regprocedure)))>0,'open duplicate comparison is NULL-safe');
+select ok(position('open-ended commercial offer cannot be published' in pg_get_functiondef('public.assert_commercial_offer_publishable(bigint)'::regprocedure))>0,'open draft publication remains blocked');
+select * from finish();
+rollback;

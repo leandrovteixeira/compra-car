@@ -15,6 +15,7 @@ export default async function AdminPriceInputPage() {
   return (
     <>
       <PageHeader
+        sticky
         actions={
           <Link
             className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-700 px-4 text-sm font-semibold text-slate-200 transition hover:border-sky-600 hover:text-sky-300"

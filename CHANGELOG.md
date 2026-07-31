@@ -1,5 +1,34 @@
 # Changelog
 
+## 2026-07-31 — Sprint 9G.1: estabilização da UX e dataset de Staging
+
+- Corrigido o update do dirty state durante render: `onDirty` agora ocorre no evento antes do
+  updater funcional local, sem atualizar o workspace durante a renderização do grid.
+- Linhas auxiliares completamente vazias são removidas do payload; linhas parciais continuam
+  validadas. Após sucesso, Policies e Offers são relidos via `router.refresh()` e os formulários
+  transitórios são reconstruídos para o Product selecionado.
+- Labels administrativos usam Taxa e Voucher sem alterar identifiers nem títulos persistidos.
+- Topbar, header contextual e headers de tabela usam tokens compartilhados e offsets sticky
+  acumulados, com wrappers desktop sem ancestral de overflow vertical concorrente.
+- O script idempotente `scripts/staging/07-expand-admin-dataset.sql` ampliou exclusivamente o
+  Staging `shfsjyjxmgwnlexmdkcs` de 2 para 10 Products, reutilizando oito veículos reais de
+  `Legacy/products.csv`; 608/609 e todos os dados existentes foram preservados.
+
+## 2026-07-31 — Sprint 9G: workflow administrativo por veículo
+
+- Consolidado o workspace “Criar políticas” com seletor único de veículo, Policies e combinações.
+- Removido o CTA individual “Novo preço”; “Criar preços” passa a ser o fluxo oficial em lote.
+- A tabela de preços publica drafts/needs-review pela RPC existente, com confirmação e refresh.
+- Adicionada migration com quatro RPCs administrativas auditadas, controle otimista, archive sem
+  DELETE e substituição atômica de memberships de Offer draft.
+- Policies em uso por Offers ativas são protegidas; registros terminais permanecem imutáveis.
+- Headers do Admin e das grades longas permanecem sticky com fundo opaco e z-index explícito.
+- Adicionado pgTAP 016 para lifecycle, dependências, atomicidade, concorrência e auditoria.
+- A migration foi aplicada exclusivamente ao Staging `shfsjyjxmgwnlexmdkcs` como versão remota
+  `20260731172651`; as 16 asserções pgTAP passaram em transação revertida e a conferência posterior
+  confirmou zero fixture e zero evento de auditoria residual. Produção e `Legacy` não foram tocados.
+- Próxima etapa registrada: importação assistida por IA com staging e aprovação humana.
+
 ## 2026-07-30 — Sprint 9E: estabilização da homologação de Pricing
 
 - Corrigida a fronteira Server Action/Client Component do lote de preços, removendo objetos com
@@ -597,3 +626,32 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 - Arquivados de forma controlada no staging os drafts de teste 17/18/19 do Dolphin; 20/21/22
   permaneceram drafts e únicos nos respectivos tipos elegíveis.
 - Registrada a Sprint 9G de gestão de Policies e combinações como próxima etapa.
+## Sprint 9G.2 — rollover temporal de preços públicos
+
+- A publicação de um novo MSRP passa a encerrar, de forma atômica e auditada, o preço publicado
+  sobreposto em `starts_on - 1`, com lock otimista e serialização por produto.
+- Adicionada a RPC administrativa `rollover_product_public_price` para reparar timelines já
+  publicadas sem desabilitar a imutabilidade; publicações retroativas diante de preço posterior são
+  rejeitadas e timelines com múltiplos predecessores exigem saneamento explícito.
+- Corrigido o fixture Haval da Sprint 9G.1 para terminar em 2026-07-31.
+## Sprint 9G.3 — estabilização final de UX e workflow
+
+- A listagem de preços públicos ganhou ordenação server-side determinística, inicialmente por
+  `updated_at DESC`, e headers alternáveis em ASC/DESC.
+- O header contextual foi compactado e alinhado ao topbar desde o primeiro pixel de scroll.
+- O retorno do batch manual de preços foi normalizado para JSON simples na Server Action, com
+  correlação nos logs técnicos, e o CTA passou a “Salvar preços”.
+- O workspace de Policies ganhou feedback após persistência, badges traduzidos de status/uso,
+  ações alinhadas e matriz com exatamente uma linha vazia útil ao final.
+- Publicação múltipla e DELETE físico de Policy foram mantidos pendentes por exigirem novas RPCs
+  administrativas atômicas e auditáveis.
+## Sprint 9G.4 — Offers draft com vigência aberta
+
+- `commercial_offers.valid_to` passa a aceitar `NULL` para drafts; batch e substituição derivam o
+  menor fim disponível ou mantêm a Offer aberta quando Policies e MSRP são abertos.
+- Duplicidade de draft usa comparação NULL-safe e a aplicação identifica a linha quando uma Offer
+  idêntica já existe.
+- A publicação de Offer aberta permanece explicitamente bloqueada até definição do seu lifecycle.
+- A UX exibe vigência aberta, usa “Salvar ofertas” e comunica sucesso ou erro com correlação.
+- Checkpoint das Sprints 9G–9G.4 fechado após validação manual em Staging; Produção permaneceu sem as
+  migrations desta rodada. Refinamentos da UX para a operação mensal ficam para a próxima etapa.

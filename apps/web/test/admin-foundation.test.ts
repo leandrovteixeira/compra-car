@@ -22,6 +22,8 @@ describe('admin foundation', () => {
       { href: '/admin', label: 'Visão geral', status: 'active' },
       { href: '/admin/products', label: 'Veículos', status: 'active' },
       { href: '/admin/prices', label: 'Preços públicos', status: 'active' },
+      { href: '/admin/prices/input', label: 'Criar preços', status: 'active' },
+      { href: '/admin/prices/policies/input', label: 'Criar políticas', status: 'active' },
     ]);
   });
 

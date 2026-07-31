@@ -24,7 +24,8 @@ describe('admin manual policy batch', () => {
     expect(grid).not.toContain("['registration'");
     expect(grid).toContain('changeType');
     expect(grid).toContain('result.push(empty');
-    expect(grid).toContain("pending ? 'Salvando lote…'");
+    expect(grid).toContain("pending ? 'Salvando…'");
+    expect(grid).toContain('/10 políticas');
     expect(grid).toContain('lg:grid-cols-');
     expect(grid).toContain('lg:overflow-x-visible');
     expect(grid).toContain('formatPtBrMoneyInput');

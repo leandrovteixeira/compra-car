@@ -526,7 +526,8 @@ protegido por teste de regressão. A v2 não é consumida nem substitui `vw_prod
 | `prevent_pricing_audit_mutation()` | Implementada em `20260725182545`: bloquear UPDATE/DELETE de eventos append-only inclusive para o owner via DML. |
 | `prevent_published_pricing_delete()` | Implementada em `20260725182545`: impedir delete de registros publicados, arquivados ou promovidos. |
 | `prevent_published_pricing_identity_change()` | Implementada em `20260725182545`: congelar campos econômicos, materiais e de origem em estados terminais. |
-| `publish_product_public_price(...)` | Implementada em `20260725184656`: validar e publicar preço com lock, ator e auditoria. |
+| `publish_product_public_price(...)` | Valida e publica com lock, ator e auditoria; desde a Sprint 9G.2 encerra em D-1 o único predecessor publicado sobreposto. |
+| `rollover_product_public_price(...)` | Encerra de forma controlada e auditada um predecessor diante de sucessor válido, inclusive para reparo de timeline já publicada. |
 | `publish_financial_parameter_set(...)` | Implementada em `20260725184656`: publicar parâmetros sintáticos/versionados sem definir CDI ou spread reais. |
 | `publish_commercial_policy(...)` | Implementada em `20260725184656`: validar escopo, oito tipos, snapshots e fórmulas e publicar atomicamente. |
 | `publish_commercial_policy_accumulator(...)` | Implementada em `20260725184656`: validar membros/interseção, calcular fingerprint e materializar valores antes de publicar. |

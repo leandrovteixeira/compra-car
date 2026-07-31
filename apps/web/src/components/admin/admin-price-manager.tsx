@@ -10,10 +10,7 @@ import type {
 import { useRouter } from 'next/navigation';
 import { useActionState, useEffect, useRef, useState } from 'react';
 
-import {
-  amountToPtBrInput,
-  EMPTY_PRODUCT_PUBLIC_PRICE_VALUES,
-} from '@/application/admin/product-public-price-form';
+import { amountToPtBrInput } from '@/application/admin/product-public-price-form';
 
 import { AdminPriceList } from './admin-price-list';
 import { EmptyState } from './empty-state';
@@ -24,10 +21,12 @@ type PriceAction = (
 ) => Promise<ProductPublicPriceActionStateDto>;
 
 interface AdminPriceManagerProps {
-  readonly createAction: PriceAction;
   readonly page: ProductPublicPriceListPageDto;
   readonly products: readonly ProductPublicPriceProductOptionDto[];
   readonly updateAction: PriceAction;
+  readonly publishAction: (
+    formData: FormData,
+  ) => Promise<{ readonly ok: boolean; readonly message: string }>;
 }
 
 function valuesForPrice(price: ProductPublicPriceListItemDto): ProductPublicPriceFormValuesDto {
@@ -58,14 +57,12 @@ function FieldError({
 function PriceDialog({
   action,
   initialValues,
-  mode,
   onClose,
   onSuccess,
   products,
 }: {
   readonly action: PriceAction;
   readonly initialValues: ProductPublicPriceFormValuesDto;
-  readonly mode: 'create' | 'edit';
   readonly onClose: () => void;
   readonly onSuccess: (message: string) => void;
   readonly products: readonly ProductPublicPriceProductOptionDto[];
@@ -103,7 +100,7 @@ function PriceDialog({
         <fieldset disabled={pending}>
           <p className="text-sm font-semibold uppercase tracking-wider text-sky-300">Pricing</p>
           <h2 className="mt-2 text-2xl font-bold" id="price-dialog-title">
-            {mode === 'create' ? 'Novo preço público' : 'Editar preço público'}
+            Editar preço público
           </h2>
           {state.status === 'error' || state.status === 'conflict' ? (
             <div
@@ -124,8 +121,7 @@ function PriceDialog({
                 aria-invalid={Boolean(state.fieldErrors.productId)}
                 className={inputClass}
                 defaultValue={state.values.productId}
-                disabled={mode === 'edit'}
-                name={mode === 'edit' ? undefined : 'productId'}
+                disabled
                 required
               >
                 <option value="">Selecione</option>
@@ -135,9 +131,7 @@ function PriceDialog({
                   </option>
                 ))}
               </select>
-              {mode === 'edit' ? (
-                <input name="productId" type="hidden" value={state.values.productId} />
-              ) : null}
+              <input name="productId" type="hidden" value={state.values.productId} />
               <FieldError id="price-product-error" messages={state.fieldErrors.productId} />
             </label>
             <label className="block text-sm font-semibold text-slate-200 sm:col-span-2">
@@ -204,15 +198,14 @@ function PriceDialog({
 }
 
 export function AdminPriceManager({
-  createAction,
   page,
   products,
   updateAction,
+  publishAction,
 }: AdminPriceManagerProps) {
   const router = useRouter();
-  const newPriceButtonRef = useRef<HTMLButtonElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
-  const [editing, setEditing] = useState<ProductPublicPriceListItemDto | 'create' | null>(null);
+  const [editing, setEditing] = useState<ProductPublicPriceListItemDto | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
 
   function close() {
@@ -239,18 +232,7 @@ export function AdminPriceManager({
         ) : (
           <span />
         )}
-        <button
-          className="min-h-11 rounded-xl bg-sky-500 px-5 font-semibold text-slate-950 hover:bg-sky-400"
-          onClick={(event) => {
-            openerRef.current = event.currentTarget;
-            setFeedback(null);
-            setEditing('create');
-          }}
-          ref={newPriceButtonRef}
-          type="button"
-        >
-          Novo preço
-        </button>
+        <span />
       </div>
       {page.items.length ? (
         <AdminPriceList
@@ -259,6 +241,11 @@ export function AdminPriceManager({
             setEditing(page.items.find((price) => price.id === id) ?? null);
           }}
           page={page}
+          publishAction={publishAction}
+          onPublished={(message) => {
+            setFeedback(message);
+            router.refresh();
+          }}
         />
       ) : (
         <EmptyState
@@ -268,12 +255,9 @@ export function AdminPriceManager({
       )}
       {editing ? (
         <PriceDialog
-          action={editing === 'create' ? createAction : updateAction}
-          initialValues={
-            editing === 'create' ? EMPTY_PRODUCT_PUBLIC_PRICE_VALUES : valuesForPrice(editing)
-          }
-          key={editing === 'create' ? 'create' : `edit-${editing.id}`}
-          mode={editing === 'create' ? 'create' : 'edit'}
+          action={updateAction}
+          initialValues={valuesForPrice(editing)}
+          key={`edit-${editing.id}`}
           onClose={close}
           onSuccess={success}
           products={products}

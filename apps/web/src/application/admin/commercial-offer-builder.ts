@@ -70,7 +70,7 @@ export async function executePolicyCombinationBatchCreation(
         status: 'error',
         rows,
         rowErrors,
-        message: 'Revise as combinações. Nenhuma oferta foi criada.',
+        message: `Revise as combinações. Nenhuma oferta foi criada. Referência: ${correlationId}`,
       };
     }
     deps.revalidate('/admin/prices/offers');
@@ -78,7 +78,7 @@ export async function executePolicyCombinationBatchCreation(
       status: 'success',
       rows: [EMPTY_POLICY_COMBINATION_ROW],
       rowErrors: {},
-      message: `${result.batch.createdCount} combinação(ões) salva(s) como rascunho.`,
+      message: 'Ofertas salvas com sucesso.',
       createdCount: result.batch.createdCount,
     };
   } catch (error) {
@@ -90,7 +90,7 @@ export async function executePolicyCombinationBatchCreation(
       status: 'error',
       rows,
       rowErrors: {},
-      message: 'Não foi possível salvar o lote. Nenhuma oferta foi criada.',
+      message: `Não foi possível salvar as ofertas. Nenhuma oferta foi criada. Referência: ${correlationId}`,
     };
   }
 }

@@ -6,9 +6,9 @@ Criar rapidamente um MVP mobile-first para vendedores de concessionárias, permi
 
 ## Estado atual da Fase 1
 
-- **CONCLUÍDO:** Sprint 9D — Offer Builder administrativo com composição explícita, cálculo exato,
-  persistência atômica de drafts e validação reversível em Staging. A Sprint 9 está funcionalmente
-  encerrada; revisão integrada/manual e pgTAP local permanecem pendentes.
+- **CONCLUÍDO:** Sprints 9G–9G.4 — workspace administrativo unificado por veículo, gestão de Prices,
+  Policies e Offers, rollover temporal e Offers draft com vigência aberta. A validação manual e os
+  pgTAPs em Staging foram concluídos; as migrations ainda não foram aplicadas em Produção.
 
 - **CONCLUÍDO:** Sprint 9C — entrada manual em lote de CommercialPolicies com cálculo autoritativo,
   provenance, auditoria e persistência exclusiva em draft. Offer Builder permanece na Sprint 9D.
@@ -69,6 +69,8 @@ Criar rapidamente um MVP mobile-first para vendedores de concessionárias, permi
   spread mensal de 0,30% e rollover auditável. Reset/pgTAP local permanece pendente.
 - [x] Sprint 9C — Batch Policies.
 - [x] Sprint 9D — Offer Builder.
+- [x] Sprints 9G–9G.4 — workflow administrativo e refinamentos estabilizados e validados em Staging.
+- [ ] Refinar a UX do workspace para a operação mensal de Prices, Policies e Offers.
 - [ ] Implementar gestão de preços e políticas exclusivamente em grade.
 - [ ] Implementar comparador administrativo com indicadores financeiros e todos os specs.
 - [ ] Implementar exportação de uma comparação com bloco financeiro e specs.

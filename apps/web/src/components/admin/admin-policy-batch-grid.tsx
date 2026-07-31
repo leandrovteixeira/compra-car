@@ -41,7 +41,9 @@ const empty = (id: string): ManualPolicyBatchGridRowDto => ({
   clientRowId: id,
 });
 const isEmpty = (row: ManualPolicyBatchGridRowDto) =>
-  !row.productId && !row.policyType && !row.startsOn && !row.amount;
+  Object.entries(row).every(
+    ([field, value]) => field === 'clientRowId' || value == null || String(value).trim() === '',
+  );
 const grid =
   'grid gap-3 lg:grid-cols-[minmax(8rem,2fr)_minmax(7.5rem,1fr)_7.75rem_4.25rem_4.75rem_4.5rem_7.5rem_minmax(8rem,1.4fr)]';
 const input =
@@ -67,11 +69,17 @@ export function AdminPolicyBatchGrid({
   products,
   prices,
   references,
+  productId,
+  onDirty,
+  onSaved,
 }: {
   readonly action: Action;
   readonly products: readonly ManualPriceBatchProductOptionDto[];
   readonly prices: readonly ManualPolicyBasePriceDto[];
   readonly references: readonly ManualPolicyFinancialReferenceDto[];
+  readonly productId?: string;
+  readonly onDirty?: () => void;
+  readonly onSaved?: () => void;
 }) {
   const initial: ManualPolicyBatchActionStateDto = {
     status: 'idle',
@@ -84,17 +92,25 @@ export function AdminPolicyBatchGrid({
 
   useEffect(() => {
     if (state.status === 'idle') return;
-    if (state.status === 'success') setRows([empty(`row-${next.current++}`)]);
-    else {
+    if (state.status === 'success') {
+      setRows([empty(`row-${next.current++}`)]);
+      onSaved?.();
+    } else {
       const submitted = [...state.rows];
       if (!submitted.length || !isEmpty(submitted.at(-1)!)) {
         submitted.push(empty(`row-${next.current++}`));
       }
       setRows(submitted);
     }
-  }, [state]);
+  }, [onSaved, state]);
 
-  const update = (id: string, change: Partial<ManualPolicyBatchGridRowDto>) =>
+  useEffect(() => {
+    if (productId === undefined) return;
+    setRows([empty(`row-${next.current++}`)]);
+  }, [productId]);
+
+  const update = (id: string, change: Partial<ManualPolicyBatchGridRowDto>) => {
+    onDirty?.();
     setRows((current) => {
       const result = current.map((row) => (row.clientRowId === id ? { ...row, ...change } : row));
       if (!isEmpty(result.at(-1)!) && result.filter((row) => !isEmpty(row)).length <= 100) {
@@ -102,6 +118,7 @@ export function AdminPolicyBatchGrid({
       }
       return result;
     });
+  };
 
   function updateMoney(row: ManualPolicyBatchGridRowDto, element: HTMLInputElement) {
     const raw = element.value;
@@ -130,7 +147,15 @@ export function AdminPolicyBatchGrid({
   const filled = rows.filter((row) => !isEmpty(row)).length;
   return (
     <form action={formAction} className="space-y-5">
-      <input name="rows" type="hidden" value={JSON.stringify(rows)} />
+      <input
+        name="rows"
+        type="hidden"
+        value={JSON.stringify(
+          rows
+            .filter((row) => !isEmpty(row))
+            .map((row) => (productId === undefined ? row : { ...row, productId })),
+        )}
+      />
       {state.status !== 'idle' ? (
         <div
           aria-live="polite"
@@ -143,7 +168,7 @@ export function AdminPolicyBatchGrid({
 
       <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/50 lg:overflow-x-visible">
         <div
-          className={`${grid} hidden border-b border-slate-800 bg-slate-900 px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-400 lg:grid`}
+          className={`${grid} admin-table-header hidden border-b border-slate-800 bg-slate-900 px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-400 lg:grid`}
         >
           <span>Veículo</span>
           <span>Tipo</span>
@@ -168,14 +193,20 @@ export function AdminPolicyBatchGrid({
                 key={row.clientRowId}
               >
                 <div className={grid}>
-                  <AdminProductCombobox
-                    error={Boolean(errors.productId)}
-                    hideLabel
-                    label={`Veículo da linha ${index + 1}`}
-                    onChange={(productId) => update(row.clientRowId, { productId })}
-                    options={products}
-                    value={row.productId}
-                  />
+                  {productId === undefined ? (
+                    <AdminProductCombobox
+                      error={Boolean(errors.productId)}
+                      hideLabel
+                      label={`Veículo da linha ${index + 1}`}
+                      onChange={(productId) => update(row.clientRowId, { productId })}
+                      options={products}
+                      value={row.productId}
+                    />
+                  ) : (
+                    <output className="flex min-h-11 items-center text-sm text-slate-300">
+                      Veículo selecionado
+                    </output>
+                  )}
                   <label>
                     <CellLabel>Tipo</CellLabel>
                     <select
@@ -356,12 +387,12 @@ export function AdminPolicyBatchGrid({
         </fieldset>
       </div>
       <div className="flex items-center justify-between gap-4">
-        <p className="text-sm text-slate-400">{filled}/100 policies</p>
+        <p className="text-sm text-slate-400">{filled}/10 políticas</p>
         <button
           className="min-h-11 rounded-xl bg-sky-500 px-5 font-bold text-slate-950 disabled:opacity-50"
-          disabled={pending || filled === 0}
+          disabled={pending || filled === 0 || !productId || filled > 10}
         >
-          {pending ? 'Salvando lote…' : 'Salvar lote de policies'}
+          {pending ? 'Salvando…' : 'Salvar políticas'}
         </button>
       </div>
     </form>
