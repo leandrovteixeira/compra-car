@@ -25,6 +25,7 @@ describe('Commercial Pricing Supabase adapter', () => {
         starts_on: '2026-08-01',
         ends_on: '2026-08-31',
         customer_benefit_amount: '3000.00',
+        dealer_rebate_amount: '500.00',
         status: 'published',
         lock_version: 2,
       }),
@@ -37,6 +38,7 @@ describe('Commercial Pricing Supabase adapter', () => {
       startsOn: '2026-08-01',
       endsOn: '2026-08-31',
       customerBenefitAmount: '3000.00',
+      dealerRebateAmount: '500.00',
       status: 'published',
       lockVersion: 2,
     });

@@ -6,9 +6,9 @@ Criar rapidamente um MVP mobile-first para vendedores de concessionárias, permi
 
 ## Estado atual da Fase 1
 
-- **CONCLUÍDO:** Sprints 9G–9G.4 — workspace administrativo unificado por veículo, gestão de Prices,
-  Policies e Offers, rollover temporal e Offers draft com vigência aberta. A validação manual e os
-  pgTAPs em Staging foram concluídos; as migrations ainda não foram aplicadas em Produção.
+- **CONCLUÍDO:** Sprints 9G–9H.5 — workspace administrativo por veículo e período mensal/especial,
+  gestão de Prices, Policies e Offers, rollover temporal conjunto e criação exclusiva em draft. A
+  operação manual recebeu o polish final de estado e layout; Produção permanece inalterada.
 
 - **CONCLUÍDO:** Sprint 9C — entrada manual em lote de CommercialPolicies com cálculo autoritativo,
   provenance, auditoria e persistência exclusiva em draft. Offer Builder permanece na Sprint 9D.
@@ -70,7 +70,12 @@ Criar rapidamente um MVP mobile-first para vendedores de concessionárias, permi
 - [x] Sprint 9C — Batch Policies.
 - [x] Sprint 9D — Offer Builder.
 - [x] Sprints 9G–9G.4 — workflow administrativo e refinamentos estabilizados e validados em Staging.
-- [ ] Refinar a UX do workspace para a operação mensal de Prices, Policies e Offers.
+- [x] Sprint 9H — operação mensal, competência e rollover temporal atômico de Policies.
+- [x] Sprint 9H.2 — período mensal/especial, rollover conjunto de Policies/Offers e limpeza controlada
+  do dataset de Pricing no Staging.
+- [x] Sprint 9H.3 — cópia mensal segura, Rebate, Desconto NF e UX operacional definitiva.
+- [x] Sprint 9H.4 — substituição especial, estado vivo de Offers, modal de MSRP e compactação visual.
+- [x] Sprint 9H.5 — status visual Expirado, máscara/autofill, publicação sem falso erro e auditoria final.
 - [ ] Implementar gestão de preços e políticas exclusivamente em grade.
 - [ ] Implementar comparador administrativo com indicadores financeiros e todos os specs.
 - [ ] Implementar exportação de uma comparação com bloco financeiro e specs.
@@ -79,13 +84,15 @@ Criar rapidamente um MVP mobile-first para vendedores de concessionárias, permi
 
 ## Fase 2 administrativa — importações assistidas por IA
 
-- [ ] Importar cartas comerciais em staging com saída estruturada.
-- [ ] Importar fichas técnicas em staging e associar nomenclaturas a spec codes.
+- [ ] Sprint 10 — importar cartas comerciais e fichas técnicas em staging com saída estruturada,
+  revisão humana e persistência aprovada; preços presentes na carta podem ser capturados.
 - [ ] Exigir revisão humana antes da promoção para tabelas definitivas.
 - [ ] Registrar termos originais, mapeamentos e correções aprovadas.
 - [ ] Avaliar fine-tuning somente após medir a abordagem híbrida inicial.
 
 ## Backlog pós-MVP
+
+- Crawler dedicado de preços: baixa prioridade; não faz parte do caminho imediato da Sprint 10.
 
 - Automated CDI Reference Ingestion: consultar fonte confiável, normalizar e validar o CDI,
   comparar a referência vigente, evitar versões redundantes, executar rollover/publicação

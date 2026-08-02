@@ -96,6 +96,7 @@ export const POLICY_COMBINATION_MAX_ROWS = 100;
 
 export const POLICY_COMBINATION_COLUMNS = Object.freeze([
   { policyType: 'retail_bonus', label: 'Varejo' },
+  { policyType: 'invoice_discount', label: 'Desc. NF' },
   { policyType: 'trade_in_bonus', label: 'Trade-In' },
   { policyType: 'loyalty_bonus', label: 'Loyalty' },
   { policyType: 'subsidized_financing', label: 'Taxa' },
@@ -122,14 +123,29 @@ export interface PolicyCombinationPolicy {
   readonly startsOn: string;
   readonly endsOn: string | null;
   readonly customerBenefitAmount: string | null;
+  readonly dealerRebateAmount?: string | null;
   readonly status: PricingWorkflowStatus;
   readonly lockVersion: number;
+  readonly fixedAmount?: string | null;
+  readonly annualRate?: string | null;
+  readonly coverageYears?: string | null;
+  readonly remainingMonths?: number | null;
+  readonly offerMonth?: number | null;
+  readonly financedPrincipal?: string | null;
+  readonly downPaymentPercentage?: string | null;
+  readonly termMonths?: number | null;
+  readonly customerInterestRateMonthly?: string | null;
+  readonly voucherType?: string | null;
+  readonly policyParameters?: Readonly<Record<string, unknown>>;
 }
 
 export interface PolicyCombinationRowInput {
   readonly clientRowId: string;
   readonly productId: string;
   readonly policyIds: readonly string[];
+  readonly referenceDate?: string;
+  readonly periodEnd?: string;
+  readonly periodKind?: 'monthly' | 'special';
 }
 
 export interface ValidatedPolicyCombinationRow extends PolicyCombinationRowInput {
@@ -208,25 +224,52 @@ function derivePolicyCombinationRow(
   if (selected.some((policy) => !policy))
     errors.push('Uma política selecionada não está mais disponível.');
   const usable = selected.filter((policy): policy is PolicyCombinationPolicy => Boolean(policy));
+  const exactPeriod = row.periodEnd !== undefined;
+  if (
+    exactPeriod &&
+    (!row.referenceDate ||
+      !isValidManualPriceDate(row.referenceDate) ||
+      !isValidManualPriceDate(row.periodEnd!) ||
+      row.periodEnd! < row.referenceDate ||
+      (row.periodKind !== 'monthly' && row.periodKind !== 'special'))
+  )
+    errors.push('O período comercial informado é inválido.');
   if (usable.some((policy) => policy.productId !== row.productId))
     errors.push('Combinação e políticas devem pertencer ao mesmo veículo.');
   if (usable.some((policy) => !policyCanCompose(policy)))
     errors.push('Uma política selecionada usa tipo ou status não combinável.');
+  if (row.referenceDate && isValidManualPriceDate(row.referenceDate)) {
+    const coverageEnd = exactPeriod ? row.periodEnd! : row.referenceDate;
+    if (
+      usable.some(
+        (policy) =>
+          policy.startsOn > row.referenceDate! ||
+          (policy.endsOn !== null && policy.endsOn < coverageEnd),
+      )
+    )
+      errors.push(
+        exactPeriod
+          ? 'Uma política selecionada não cobre todo o período comercial.'
+          : 'Uma política selecionada não está vigente na data-base.',
+      );
+  }
   const types = usable.map((policy) => policy.policyType);
   if (new Set(types).size !== types.length)
     errors.push('Existe mais de uma política do mesmo tipo na combinação.');
   if (errors.length || usable.length === 0) return { errors };
 
-  const validFrom = usable
-    .map((policy) => policy.startsOn)
-    .sort()
-    .at(-1)!;
+  const validFrom = exactPeriod
+    ? row.referenceDate!
+    : usable
+        .map((policy) => policy.startsOn)
+        .sort()
+        .at(-1)!;
   const matchingPrices = prices.filter(
     (price) =>
       price.productId === row.productId &&
       price.status === 'published' &&
       price.startsOn <= validFrom &&
-      (price.endsOn === null || price.endsOn >= validFrom),
+      (price.endsOn === null || price.endsOn >= (exactPeriod ? row.periodEnd! : validFrom)),
   );
   if (matchingPrices.length === 0)
     return { errors: ['Nenhum MSRP publicado é compatível com o início derivado.'] };
@@ -235,7 +278,7 @@ function derivePolicyCombinationRow(
   const price = matchingPrices[0]!;
   const endDates = [...usable.flatMap((policy) => (policy.endsOn ? [policy.endsOn] : []))];
   if (price.endsOn) endDates.push(price.endsOn);
-  const validTo = endDates.length ? endDates.sort()[0]! : null;
+  const validTo = exactPeriod ? row.periodEnd! : endDates.length ? endDates.sort()[0]! : null;
   if (validTo !== null && validTo < validFrom)
     return { errors: ['As políticas selecionadas não possuem interseção temporal válida.'] };
   const benefitAmount = calculatePolicyCombinationTotal(usable);

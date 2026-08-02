@@ -27,6 +27,7 @@ const TYPE_FIELDS: Readonly<
   Record<Exclude<CommercialPolicyType, 'registration'>, readonly string[]>
 > = {
   retail_bonus: ['amount'],
+  invoice_discount: ['amount'],
   trade_in_bonus: ['amount'],
   loyalty_bonus: ['amount'],
   subsidized_financing: [
@@ -116,6 +117,7 @@ export function validateCommercialPolicyInput(
   let customerBenefitAmount: string | undefined;
   if (
     policyType === 'retail_bonus' ||
+    policyType === 'invoice_discount' ||
     policyType === 'trade_in_bonus' ||
     policyType === 'loyalty_bonus' ||
     policyType === 'free_wallbox' ||

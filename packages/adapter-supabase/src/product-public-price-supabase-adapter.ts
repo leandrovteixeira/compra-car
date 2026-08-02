@@ -139,6 +139,16 @@ export class ProductPublicPriceSupabaseAdapter implements ProductPublicPriceRepo
     readonly actorId: string;
     readonly correlationId: string;
   }): Promise<ProductPublicPrice> {
+    const { data: currentData, error: currentError } = await this.client
+      .from('product_public_prices')
+      .select(PRICE_LIST_COLUMNS)
+      .eq('id', Number(input.id))
+      .maybeSingle();
+    if (currentError) throw queryError(currentError);
+    if (!currentData) throw new PricingAdapterQueryError('Preço público não encontrado.');
+    const currentRow = currentData as unknown as ProductPublicPriceRow;
+    mapProductPublicPriceRow(currentRow);
+
     const { data, error } = await this.client.rpc('publish_product_public_price', {
       p_price_id: Number(input.id),
       p_actor_id: input.actorId,
@@ -146,6 +156,9 @@ export class ProductPublicPriceSupabaseAdapter implements ProductPublicPriceRepo
       p_correlation_id: input.correlationId,
     });
     if (error) throw queryError(error);
-    return mapProductPublicPriceRow(data as unknown as ProductPublicPriceRow);
+    return mapProductPublicPriceRow({
+      ...(data as unknown as ProductPublicPriceRow),
+      product: currentRow.product,
+    });
   }
 }

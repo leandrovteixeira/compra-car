@@ -35,8 +35,6 @@ export async function updateWorkspacePolicy(formData: FormData): Promise<Workspa
   const changes: Record<string, string> = {
     title: String(formData.get('title') ?? ''),
     description: String(formData.get('description') ?? ''),
-    startsOn: String(formData.get('startsOn') ?? ''),
-    endsOn: String(formData.get('endsOn') ?? ''),
   };
   const amount = String(formData.get('amount') ?? '').trim();
   if (amount) {

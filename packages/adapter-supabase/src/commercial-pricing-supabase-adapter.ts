@@ -23,6 +23,7 @@ interface CommercialPolicyRow {
   readonly starts_on: unknown;
   readonly ends_on: unknown;
   readonly customer_benefit_amount: unknown;
+  readonly dealer_rebate_amount?: unknown;
   readonly status: unknown;
   readonly lock_version: unknown;
 }
@@ -48,7 +49,7 @@ interface CommercialOfferRow {
 }
 
 const POLICY_COLUMNS =
-  'id,product_id,policy_type,title,description,starts_on,ends_on,customer_benefit_amount,status,lock_version';
+  'id,product_id,policy_type,title,description,starts_on,ends_on,customer_benefit_amount,dealer_rebate_amount,status,lock_version';
 const OFFER_COLUMNS =
   'id,product_id,public_price_id,valid_from,valid_to,status,lock_version,public_price:product_public_prices!commercial_offers_public_price_id_fkey(amount),memberships:commercial_offer_policies!commercial_offer_policies_offer_id_fkey(commercial_policy_id)';
 
@@ -128,6 +129,10 @@ export function mapCommercialPolicyRow(row: CommercialPolicyRow): CommercialPoli
     startsOn: requiredString(row.starts_on, 'policy.starts_on'),
     endsOn: nullableString(row.ends_on, 'policy.ends_on'),
     customerBenefitAmount: amount(row.customer_benefit_amount),
+    dealerRebateAmount:
+      row.dealer_rebate_amount == null
+        ? null
+        : moneyDecimalString(row.dealer_rebate_amount, 'policy.dealer_rebate_amount'),
     status: workflowStatus(row.status),
     lockVersion: positiveInteger(row.lock_version, 'policy.lock_version'),
   });

@@ -62,6 +62,7 @@ describe('policy combination batch', () => {
   it('keeps the exact matrix order and Loyalty as a distinct current category', () => {
     expect(POLICY_COMBINATION_COLUMNS.map((column) => column.label)).toEqual([
       'Varejo',
+      'Desc. NF',
       'Trade-In',
       'Loyalty',
       'Taxa',
@@ -132,6 +133,28 @@ describe('policy combination batch', () => {
       [combinationPolicy('1')],
     );
     expect(result).toMatchObject({ ok: true, rows: [{ validTo: null }] });
+  });
+
+  it('uses the exact commercial interval and requires full Policy/MSRP coverage', () => {
+    const exactRow = {
+      ...row,
+      referenceDate: '2026-08-10',
+      periodEnd: '2026-08-20',
+      periodKind: 'special' as const,
+    };
+    expect(
+      validatePolicyCombinationBatch([exactRow], [finitePrice], [combinationPolicy('1')]),
+    ).toMatchObject({
+      ok: true,
+      rows: [{ validFrom: '2026-08-10', validTo: '2026-08-20' }],
+    });
+    expect(
+      validatePolicyCombinationBatch(
+        [exactRow],
+        [finitePrice],
+        [combinationPolicy('1', { endsOn: '2026-08-15' })],
+      ),
+    ).toMatchObject({ ok: false });
   });
 
   it('rejects E: a derived end before the latest component start', () => {

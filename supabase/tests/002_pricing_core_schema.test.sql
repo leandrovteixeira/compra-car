@@ -20,7 +20,7 @@ select is(
      where enumtypid = 'public.commercial_policy_type'::regtype
   ),
   array[
-    'retail_bonus', 'trade_in_bonus', 'loyalty_bonus', 'subsidized_financing', 'free_ipva',
+    'retail_bonus', 'invoice_discount', 'trade_in_bonus', 'loyalty_bonus', 'subsidized_financing', 'free_ipva',
     'free_insurance', 'free_wallbox', 'registration', 'other',
     'free_registration', 'free_maintenance', 'fuel_or_recharge_voucher'
   ],
@@ -647,8 +647,8 @@ select is(
          'public.commercial_policy_accumulator_values'::regclass
        )
   ),
-  25::bigint,
-  'the lifecycle and publication migrations attach the expected 25 triggers to pricing core tables'
+  26::bigint,
+  'the lifecycle, publication and policy rollover migrations attach the expected 26 triggers'
 );
 select is(
   (

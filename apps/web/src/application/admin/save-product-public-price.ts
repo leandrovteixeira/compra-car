@@ -40,14 +40,24 @@ export async function executeProductPublicPriceCreation(
       };
     }
     dependencies.revalidate('/admin/prices');
+    console.info('Product public price draft created.', {
+      lockVersion: result.price.lockVersion,
+      priceId: result.price.id,
+    });
     return {
       status: 'success',
-      values,
+      values: {
+        ...values,
+        id: result.price.id,
+        lockVersion: String(result.price.lockVersion),
+      },
       fieldErrors: {},
       message: 'Preço público criado como rascunho.',
     };
-  } catch {
-    console.error('Product public price creation failed.');
+  } catch (error) {
+    console.error('Product public price creation failed.', {
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+    });
     return { status: 'error', values, fieldErrors: {}, message: SAFE_FAILURE };
   }
 }

@@ -72,8 +72,8 @@ select is(
          'set_pricing_updated_at'
        )
   ),
-  24::bigint,
-  'the four functions are attached through exactly 24 row triggers including offers'
+  23::bigint,
+  'the four shared functions retain 23 row triggers after the dedicated policy rollover guard'
 );
 
 select is(

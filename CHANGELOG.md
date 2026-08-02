@@ -1,5 +1,106 @@
 # Changelog
 
+## 2026-08-01 — Sprint 9H.5: encerramento do workspace comercial
+
+- Preços persistidos como `published` passam a exibir o badge visual “Expirado” somente quando
+  `ends_on` é anterior à data operacional de `America/Sao_Paulo`; lifecycle e status armazenado não
+  mudaram.
+- O falso erro após publicação foi corrigido no adapter: a RPC retorna a linha física sem o join de
+  Product, portanto a relação agora é carregada e validada antes da mutação e reutilizada no
+  mapeamento do retorno. Sucesso de publicação também fica separado de falha posterior de refresh.
+- O modal de MSRP reutiliza `formatPtBrMoneyInput` e `ptBrMoneyCaretPosition`, preservando máscara
+  pt-BR na digitação e decimal canônico no servidor. Formulários administrativos em escopo
+  desativam autofill nos campos monetários, numéricos e de descrição.
+- O cabeçalho mantém os três cards com altura/padding comuns; Competência, modo especial e descrição
+  do período ocupam linhas independentes, sem deslocar o seletor.
+- Auditoria somente leitura no Staging confirmou que o VW Taos (Product 617) possui apenas o preço
+  #29, publicado desde 01/08/2026, aberto, `lock_version=2`, sem duplicidade ou sobreposição e com
+  evento de publicação preservado. Haval #19/#24 confirmou a fronteira Expirado/Publicado.
+- Nenhuma migration, RPC, enum, trigger, RLS ou regra temporal foi alterada. Produção e `Legacy`
+  permaneceram intocados.
+
+## 2026-08-01 — Sprint 9H.4: polish final do workspace comercial
+
+- O período especial mantém Policies inalteradas atravessando o intervalo e cria linhas somente para
+  substituições/adições. A sucessora referencia a predecessora e as Offers trocam o membership pelo
+  `policyClientRowId`; a RPC 9H.2 encerra a predecessora em D−1 antes de criar a sucessora em D.
+- A matriz de Offers publica suas seleções locais para o workspace. Checkboxes de Offers existentes
+  ou novas recalculam imediatamente total, uso e disponibilidade das Policies, sem save ou refresh.
+- O modal oficial de MSRP ganhou “Publicar agora”: cria o draft, reutiliza o ID/lock retornado e chama
+  a publicação individual existente. Após sucesso, o refresh local atualiza cabeçalho e workspace.
+- O cabeçalho passou à proporção aproximada 55/25/20; a coluna redundante de veículo saiu do grid
+  fixado pelo workspace; ações foram alinhadas e a matriz de Offers foi compactada para desktop.
+- Nenhuma migration, RPC, trigger, regra de lifecycle, RLS, auditoria ou contrato público foi
+  alterado. Produção e `Legacy` permaneceram intocados.
+
+## 2026-08-01 — Sprint 9H.3: operação mensal definitiva de Policies e Offers
+
+- Corrigida a cópia Agosto→Setembro: cada linha local preserva o ID da Policy de origem e as Offers
+  resolvem memberships por `policyClientRowId`. Um vínculo expirado sem sucessora bloqueia o save;
+  não existe mais fallback silencioso para `policyId` do mês anterior.
+- O loader completa Policies referenciadas por Offers mesmo quando o limite de histórico não as
+  trouxe, eliminando joins parciais entre consultas paginadas independentes.
+- O grid ganhou Rebate monetário opcional, persistido em `dealer_rebate_amount` com proveniência
+  `manual`, limitado ao benefício do cliente e excluído do total/preço transacional.
+- Adicionado `invoice_discount`/Desconto NF como Policy de valor fixo, combinável e publicável.
+- Valores copiados entram no estado em pt-BR; descrição virou modal compacto; remoção usa botão
+  circular acessível; o cabeçalho desktop usa proporção 50/30/20.
+- Quando falta MSRP aplicável, “Adicionar preço” abre o formulário oficial de preço público em
+  modal e cria somente draft pelo fluxo existente, sem INSERT direto.
+- Migration `20260801201504` aplicada somente ao Staging. O cenário real do Product 616 foi
+  validado de forma reversível: três Policies e duas Offers de setembro foram criadas com
+  memberships exclusivamente de setembro; Rebate não alterou os totais.
+- Produção e `Legacy` não foram tocados. Nenhum commit ou push foi realizado.
+
+## 2026-08-01 — Sprint 9H.2: período comercial e rollover atômico de Policies/Offers
+
+- O workspace agora deriva um período mensal completo ou um intervalo especial interno à
+  competência, com cabeçalho compacto em três colunas e sem vigência editável por linha.
+- Na ausência de dados do período, Policies e Offers vigentes em D−1 são copiadas somente para o
+  estado local. O salvamento cria exclusivamente novos drafts com o intervalo exato.
+- Criada a RPC `create_commercial_period_draft`, exclusiva de `service_role`, que fecha
+  predecessoras esperadas e cria sucessoras de Policy/Offer numa transação com advisory lock,
+  optimistic locking, ator, correlation ID e auditoria append-only.
+- A exceção terminal de Offer `published` permite somente `valid_to = period_start - 1` dentro da
+  nova RPC. Status, memberships e identidade econômica permanecem imutáveis; Offer `archived` e
+  fechamento mensal retroativo de publicada são rejeitados.
+- Publicação continua individual. Não foi criado comando de publicar período nem entidade/tabela de
+  competência.
+- A migration `20260801190935` foi aplicada apenas ao Staging. A validação SQL reversível confirmou
+  D−1, intervalo exato, status/memberships, snapshots, concorrência e rollback sem deixar resíduo.
+- A limpeza aprovada foi executada por script transacional Staging-only, sem migration e sem
+  `TRUNCATE CASCADE`: 25 Policies, 14 Offers, 25 memberships, 6 batches/16 rows/16 outputs de Policy
+  e 37 auditorias correspondentes foram removidos. Permaneceram 10 Products, 17 preços, 1 parameter
+  set, 4 batches/8 rows/8 outputs de preço e suas 23 auditorias protegidas; triggers retornaram a
+  `origin`.
+- Produção e `Legacy` não foram tocados. Nenhum commit ou push foi realizado.
+
+## 2026-08-01 — Sprint 9H.1: diagnóstico do rollover e refinamento da operação mensal
+
+- Reproduzido no Staging, em transação revertida, o rollover da Taxa do Product 616 em setembro:
+  o SQLSTATE `55000` protege as Offers não arquivadas #26 e #28 que usam a Policy #66.
+- A falha de dependência agora preserva o lote editado, destaca a linha e informa Offers relacionadas
+  e correlation ID, sem arquivar, encerrar ou substituir Offers automaticamente.
+- A prévia instantânea voltou a usar o Product fixado pelo workspace e o mesmo domínio da
+  submissão para Taxa, IPVA, Seguro, Emplacamento e valores fixos, sem persistência.
+- O cabeçalho passou a uma grade 2×2 com Product, competência N−6/N+6, data-base e MSRP; Offers
+  existentes e novas compartilham uma única matriz, com memberships persistidos, edição de drafts,
+  detalhes acessíveis, archive explícito e estados published/archived somente leitura.
+- Nenhuma migration ou RPC nova foi criada nesta etapa; Produção e `Legacy` não foram tocados.
+
+## 2026-08-01 — Sprint 9H: operação mensal e rollover temporal de Policies
+
+- Adicionada competência mensal persistida na URL, data-base única do lote e leitura por interseção
+  temporal com histórico anterior recolhido e limitado.
+- A matriz de Offers passa a receber somente Policies vigentes na data-base; preço público aplicável
+  aparece como referência somente leitura.
+- Criada RPC transacional de lote com rollover por Product + tipo, controle otimista, rejeição de
+  futuro/ambiguidade, proteção de Offers não arquivadas e auditoria correlacionada.
+- A imutabilidade de Policy publicada ganhou exceção mínima e autenticada apenas para `ends_on`
+  durante o rollover. Archive, memberships e Offers históricas permanecem inalterados.
+- Adicionados testes de contexto mensal e pgTAP 019 para timeline, rollback, auditoria, Offers e
+  imutabilidade. A migration foi aplicada exclusivamente ao Staging; Produção permaneceu intacta.
+
 ## 2026-07-31 — Sprint 9G.1: estabilização da UX e dataset de Staging
 
 - Corrigido o update do dirty state durante render: `onDirty` agora ocorre no evento antes do

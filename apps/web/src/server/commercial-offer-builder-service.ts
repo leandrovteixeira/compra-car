@@ -11,13 +11,26 @@ const authorize = async () => {
   const identity = await requireRole('admin');
   return { actorId: identity.profile.id };
 };
-export async function loadCommercialOfferBuilder() {
+export async function loadCommercialOfferBuilder(period?: {
+  readonly productId: string;
+  readonly firstDay: string;
+  readonly lastDay: string;
+}) {
   const repository = new CommercialOfferBuilderSupabaseAdapter();
   const [products, policies, drafts] = await Promise.all([
     withDevTiming('pricing.listProductOptions', () => repository.listProductOptions()),
-    withDevTiming('pricing.listPolicies', () => repository.listAvailablePolicies()),
-    withDevTiming('pricing.listRecentDrafts', () => repository.listRecentDrafts()),
+    withDevTiming('pricing.listPolicies', () => repository.listAvailablePolicies(period)),
+    withDevTiming('pricing.listRecentDrafts', () => repository.listRecentDrafts(period)),
   ]);
+  const loadedPolicyIds = new Set(policies.map((policy) => policy.id));
+  const missingMembershipPolicyIds = [
+    ...new Set(drafts.flatMap((draft) => draft.policyIds).filter((id) => !loadedPolicyIds.has(id))),
+  ];
+  const linkedPolicies = missingMembershipPolicyIds.length
+    ? await withDevTiming('pricing.listMembershipPolicies', () =>
+        repository.getPolicyDetails(missingMembershipPolicyIds),
+      )
+    : [];
   return {
     products: products.map((p) => ({
       id: p.id,
@@ -25,7 +38,7 @@ export async function loadCommercialOfferBuilder() {
       isActive: p.isActive,
       isPublic: p.isPublic,
     })),
-    policies,
+    policies: [...policies, ...linkedPolicies],
     drafts: drafts.map((d) => ({
       id: d.id,
       productId: d.productId,

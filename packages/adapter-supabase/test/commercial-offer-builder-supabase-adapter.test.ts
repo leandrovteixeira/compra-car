@@ -15,8 +15,10 @@ describe('CommercialOfferBuilder Supabase adapter', () => {
         correlationId: 'corr',
       }),
     ).resolves.toEqual({ createdCount: 0, offers: [] });
-    expect(client.rpc).toHaveBeenCalledWith('create_commercial_offer_batch', {
-      p_rows: [{ clientRowId: 'row-1', productId: 42, policyIds: [1, 2] }],
+    expect(client.rpc).toHaveBeenCalledWith('create_commercial_offer_batch_at_reference', {
+      p_rows: [
+        { clientRowId: 'row-1', productId: 42, policyIds: [1, 2], referenceDate: undefined },
+      ],
       p_actor_id: 'actor',
       p_correlation_id: 'corr',
     });
@@ -52,6 +54,58 @@ describe('CommercialOfferBuilder Supabase adapter', () => {
         correlationId: 'corr',
       }),
     ).resolves.toMatchObject({ offers: [{ validTo: null }] });
+  });
+  it('uses the commercial period RPC for an exact single-product interval', async () => {
+    const client = {
+      rpc: vi.fn(async () => ({
+        data: {
+          createdOfferCount: 1,
+          offers: [
+            {
+              offerId: 92,
+              productId: 42,
+              publicPriceId: 10,
+              publicPriceAmount: '200000.00',
+              validFrom: '2026-08-10',
+              validTo: '2026-08-20',
+              status: 'draft',
+              policyIds: [1],
+              lockVersion: 1,
+              benefitAmount: '1000.00',
+              transactionalPrice: '199000.00',
+            },
+          ],
+        },
+        error: null,
+      })),
+    } as unknown as SupabaseClient;
+    await expect(
+      new CommercialOfferBuilderSupabaseAdapter(client).createCombinationBatch({
+        rows: [
+          {
+            clientRowId: 'row-1',
+            productId: '42',
+            policyIds: ['1'],
+            referenceDate: '2026-08-10',
+            periodEnd: '2026-08-20',
+            periodKind: 'special',
+          },
+        ],
+        actorId: 'actor',
+        correlationId: 'corr',
+      }),
+    ).resolves.toMatchObject({ createdCount: 1, offers: [{ id: '92', validTo: '2026-08-20' }] });
+    expect(client.rpc).toHaveBeenCalledWith('create_commercial_period_draft', {
+      p_product_id: 42,
+      p_period_start: '2026-08-10',
+      p_period_end: '2026-08-20',
+      p_period_kind: 'special',
+      p_policy_rows: [],
+      p_offer_rows: [{ clientRowId: 'row-1', policyRefs: [{ policyId: 1 }] }],
+      p_expected_offers: [],
+      p_actor_id: 'actor',
+      p_correlation_id: 'corr',
+    });
   });
   it('persists a validated draft only through the atomic domain RPC', async () => {
     const client = {

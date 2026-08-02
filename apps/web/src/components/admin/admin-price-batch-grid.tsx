@@ -107,7 +107,7 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
   }
 
   return (
-    <form action={formAction} className="space-y-5">
+    <form action={formAction} autoComplete="off" className="space-y-5">
       <input name="rows" type="hidden" value={JSON.stringify(rows)} />
 
       {state.status !== 'idle' ? (
@@ -173,6 +173,7 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
                   <input
                     aria-describedby={errors.amount ? `${prefix}-amount-error` : undefined}
                     aria-invalid={Boolean(errors.amount)}
+                    autoComplete="off"
                     className={inputClass}
                     disabled={maxReached}
                     inputMode="decimal"

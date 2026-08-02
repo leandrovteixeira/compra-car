@@ -37,8 +37,16 @@ select is(
   (select count(*) from pg_trigger
     where tgfoid='public.prevent_terminal_pricing_migration_rule_change()'::regprocedure
       and not tgisinternal),
-  4::bigint,
-  'all four existing triggers remain attached'
+  3::bigint,
+  'three non-policy shared triggers remain attached'
+);
+select is(
+  (select count(*) from pg_trigger
+    where tgfoid='public.prevent_terminal_commercial_policy_change()'::regprocedure
+      and tgrelid='public.commercial_policies'::regclass
+      and not tgisinternal),
+  1::bigint,
+  'commercial policies use the dedicated rollover-aware terminal guard'
 );
 
 select * from finish();

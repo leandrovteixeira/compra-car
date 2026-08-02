@@ -2,6 +2,7 @@ import type { PricingWorkflowStatus } from './product-public-price';
 
 export const COMMERCIAL_POLICY_TYPES = [
   'retail_bonus',
+  'invoice_discount',
   'trade_in_bonus',
   'loyalty_bonus',
   'subsidized_financing',
@@ -19,6 +20,7 @@ export type CommercialPolicyType = (typeof COMMERCIAL_POLICY_TYPES)[number];
 
 export const CURRENT_COMMERCIAL_POLICY_TYPES = [
   'retail_bonus',
+  'invoice_discount',
   'trade_in_bonus',
   'loyalty_bonus',
   'subsidized_financing',
@@ -69,6 +71,7 @@ export interface CommercialPolicy {
   readonly startsOn: string;
   readonly endsOn: string | null;
   readonly customerBenefitAmount: string;
+  readonly dealerRebateAmount?: string | null;
   readonly status: PricingWorkflowStatus;
   readonly lockVersion: number;
 }
@@ -106,6 +109,10 @@ interface FixedAmountPolicyInput extends CommercialPolicyInputBase {
 
 export interface RetailBonusPolicyInput extends FixedAmountPolicyInput {
   readonly policyType: 'retail_bonus';
+}
+
+export interface InvoiceDiscountPolicyInput extends FixedAmountPolicyInput {
+  readonly policyType: 'invoice_discount';
 }
 
 export interface TradeInBonusPolicyInput extends FixedAmountPolicyInput {
@@ -173,6 +180,7 @@ export interface FreeRegistrationPolicyInput extends CommercialPolicyInputBase {
 
 export type CommercialPolicyInput =
   | RetailBonusPolicyInput
+  | InvoiceDiscountPolicyInput
   | TradeInBonusPolicyInput
   | LoyaltyBonusPolicyInput
   | SubsidizedFinancingPolicyInput

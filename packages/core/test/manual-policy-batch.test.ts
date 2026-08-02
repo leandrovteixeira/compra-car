@@ -287,7 +287,10 @@ describe('manual policy batch', () => {
       }),
       createManualPolicyBatch: async (input) => {
         persisted = input;
-        return { batchId: 'batch-1', createdCount: 1, policyIds: ['policy-1'] };
+        return { batchId: 'batch-1', createdCount: 1, policyIds: ['policy-1'], rolloverCount: 0 };
+      },
+      createCommercialPeriodDraft: async () => {
+        throw new Error('not used');
       },
     };
     const result = await new CreateManualPolicyBatch(repository).execute(
@@ -319,6 +322,7 @@ describe('manual policy batch', () => {
   it('supports all current fixed variants and validates specialized fields', () => {
     for (const policyType of [
       'retail_bonus',
+      'invoice_discount',
       'trade_in_bonus',
       'loyalty_bonus',
       'free_wallbox',
@@ -338,12 +342,34 @@ describe('manual policy batch', () => {
       validateManualPolicyBatch([{ ...base, policyType: 'other', description: '' }], {}).ok,
     ).toBe(false);
   });
+  it('validates manual dealer rebate without changing customer benefit', () => {
+    const valid = validateManualPolicyBatch(
+      [{ ...base, policyType: 'invoice_discount', amount: '10.000,00', rebateAmount: '2.500,00' }],
+      {},
+    );
+    expect(valid).toMatchObject({
+      ok: true,
+      rows: [
+        {
+          policyType: 'invoice_discount',
+          rebateAmount: '2.500,00',
+          customerBenefitAmount: '10000.00',
+        },
+      ],
+    });
+    expect(
+      validateManualPolicyBatch([{ ...base, amount: '1.000,00', rebateAmount: '1.000,01' }], {}).ok,
+    ).toBe(false);
+    expect(validateManualPolicyBatch([{ ...base, rebateAmount: '-1,00' }], {}).ok).toBe(false);
+  });
+
   it('persists valid trade-in, financing and free-IPVA rows atomically as one batch', async () => {
     const createManualPolicyBatch = vi.fn(
       async ({ rows }: { readonly rows: readonly NormalizedManualPolicyBatchRow[] }) => ({
         batchId: 'batch-1',
         createdCount: rows.length,
         policyIds: rows.map((_, index) => `policy-${index + 1}`),
+        rolloverCount: 0,
       }),
     );
     const repository: ManualPolicyBatchRepository = {
@@ -369,6 +395,9 @@ describe('manual policy batch', () => {
           ]),
         ),
       createManualPolicyBatch,
+      createCommercialPeriodDraft: async () => {
+        throw new Error('not used');
+      },
     };
     const result = await new CreateManualPolicyBatch(repository).execute(
       [
@@ -414,6 +443,9 @@ describe('manual policy batch', () => {
       listFinancialReferences: async () => [],
       resolveReferences: async () => ({}),
       createManualPolicyBatch,
+      createCommercialPeriodDraft: async () => {
+        throw new Error('not used');
+      },
     };
     const result = await new CreateManualPolicyBatch(repository).execute(
       [base, { ...base, clientRowId: 'invalid', policyType: 'trade_in_bonus', amount: '0' }],

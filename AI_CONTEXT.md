@@ -1,5 +1,67 @@
 # Contexto para agentes de IA
 
+## Marco — encerramento do workspace comercial (Sprint 9H.5, 2026-08-01)
+
+- “Expirado” é somente apresentação de `ProductPublicPrice`: exige `status = published`, `ends_on`
+  não nulo e anterior à data operacional em `America/Sao_Paulo`. O banco continua armazenando
+  `published`; não há status, migration ou transição adicional.
+- `publish_product_public_price` retorna a linha física sem a relação PostgREST `product`. O adapter
+  deve carregar/validar essa relação antes da RPC e agregá-la ao retorno para que um COMMIT válido
+  não seja reportado como erro de mapping. Depois de `ok`, refresh nunca pode reclassificar a
+  publicação como falha nem liberar nova tentativa.
+- O modal de preço e o lote manual compartilham `formatPtBrMoneyInput` e
+  `ptBrMoneyCaretPosition`; persistência continua usando conversão decimal canônica já existente.
+- Campos administrativos de preço, valor, Rebate, Taxa, Entrada, Prazo e descrição desativam
+  autofill e preservam `inputMode`/labels acessíveis.
+- Auditoria read-only do Staging: VW Taos/Product 617 tem somente MSRP #29, publicado, iniciado em
+  01/08/2026, aberto, lock 2, sem overlap e com auditoria append-only. Produção e `Legacy` seguem
+  fora do escopo.
+
+## Marco — polish final do workspace comercial (Sprint 9H.4, 2026-08-01)
+
+- O período especial não copia como sucessoras as Policies que continuam válidas. Uma nova linha do
+  mesmo tipo resolve `expectedPredecessorId`/lock e as Offers substituem o membership antigo por
+  `policyClientRowId`. O fechamento D−1 permanece exclusivamente na RPC transacional 9H.2.
+- O estado vivo da matriz de Offers é comunicado ao workspace. Indicadores e bloqueios de Policy
+  devem usar as seleções locais, inclusive linhas novas, sem aguardar persistência ou refresh.
+- A criação oficial de preço retorna no estado de sucesso o ID e lock do draft. O modal do workspace
+  pode então chamar a publicação individual existente e atualizar os Server Components por
+  `router.refresh()`, sem navegação.
+- A Sprint 9H.4 não altera schema, RPCs, segurança, contratos públicos ou arquitetura. Produção e
+  `Legacy` permanecem fora do escopo.
+
+## Marco — operação mensal final (Sprint 9H.3, 2026-08-01)
+
+- Uma linha copiada carrega `sourcePolicyId` apenas no estado/DTO da UI. Ao copiar Offers, o ID de
+  origem precisa virar `policyClientRowId`; Policy expirada nunca pode ser reenviada como
+  `policyId`. Membership sem correspondência bloqueia o save.
+- O serviço completa por ID as Policies referenciadas nas Offers que ficaram fora da janela de
+  histórico. A RPC continua sendo a autoridade final de cobertura integral.
+- `invoice_discount` é Desconto NF, valor fixo e participante normal do benefício da Offer.
+- Rebate manual reutiliza `commercial_policies.dealer_rebate_amount` e registra método `manual`.
+  Zero é persistido como `NULL`; valor positivo deve ser menor ou igual ao benefício. Rebate não
+  compõe benefício, preço transacional ou PDF.
+- Migration `20260801201504` aplicada somente ao Staging. A validação reversível sobre o Product
+  616 confirmou Policies/Offers de setembro e memberships novos, preservando os dados reais de
+  agosto. Produção e `Legacy` permanecem fora do escopo.
+
+## Marco — período comercial mensal/especial (Sprint 9H.2, 2026-08-01)
+
+- Não existe entidade persistida de competência: `CommercialPeriod` deriva o mês completo ou um
+  intervalo especial interno e Policies/Offers usam as colunas temporais existentes.
+- `create_commercial_period_draft` é a única fronteira para rollover conjunto. Exige ator,
+  correlation ID e locks esperados, fecha em D−1, audita snapshots e cria somente drafts.
+- Offer `published` pode ter apenas `valid_to` alterado dentro dessa RPC; lifecycle, memberships e
+  identidade econômica permanecem. `archived` é imutável e rollover mensal retroativo é rejeitado
+  segundo `America/Sao_Paulo`.
+- O workspace copia a base de D−1 apenas localmente quando o período está vazio. Datas não são
+  editadas por linha; o MSRP precisa cobrir o intervalo e continua independente.
+- Migration `20260801190935` aplicada somente ao Staging. Validação reversível passou sem resíduo.
+- A limpeza transacional Staging-only deixou 0 Policies/Offers e preservou 10 Products, 17 preços,
+  1 parameter set, proveniência/auditoria de preço e dados estruturais. O bypass de triggers foi
+  `SET LOCAL` e o pós-check confirmou `origin`.
+- Produção e `Legacy` não foram tocados. Publicação permanece individual.
+
 ## Marco — estabilização de Pricing (Sprint 9E, 2026-07-30)
 
 - Batch Policies não recebe mais `title`, `endsOn` ou seleção de MSRP como autoridade do browser:
@@ -603,3 +665,23 @@ revalida o agregado e bloqueia Offers abertas com erro funcional até nova decis
 O checkpoint das Sprints 9G–9G.4 encerra o workflow atual após validação manual. As migrations foram
 aplicadas somente ao Staging; Produção e `Legacy` permanecem intocados. Refinamentos posteriores de
 UX para a operação mensal de Prices, Policies e Offers continuam pendentes e fora deste checkpoint.
+## Marco — operação mensal de Policies (Sprint 9H, 2026-08-01)
+
+O workspace comercial opera por Product, competência em `YYYY-MM` e data-base. Competência é apenas
+contexto de URL; as datas de domínio continuam `starts_on`/`ends_on`. A leitura usa interseção mensal,
+histórico limitado e matriz elegível na data-base.
+
+`create_manual_policy_batch_with_rollover` encerra, cria e audita numa única transação. O predecessor
+não terminal/`published` do mesmo tipo recebe D−1 com `lock_version`; futuro, sobreposição, estado
+stale ou Offer não arquivada incompatível rejeitam tudo. `archived`/`rejected` não participam.
+A migration foi aplicada somente ao Staging; Produção não foi tocada.
+
+Na investigação 9H.1, o rollover da Taxa #66 do Product 616 para `2026-09-01` foi reproduzido em
+transação revertida. O benefício calculado para 24 meses, taxa mensal de 0,49% e entrada de 60%
+foi R$ 8.186,01; a RPC rejeitou com SQLSTATE `55000` porque as Offers #26 e #28 ainda dependem da
+predecessora. A UX expõe esses IDs e o correlation ID e não altera lifecycle automaticamente.
+
+A prévia do grid usa o Product fixado pelo workspace e as mesmas funções puras do envio. O
+cabeçalho mensal é 2×2, a competência usa dropdown N−6/N+6 e Offers existentes/novas ocupam a
+mesma matriz. Drafts podem substituir memberships pela RPC existente; published/archived são
+somente leitura. Nenhuma migration ou RPC adicional foi necessária na 9H.1.

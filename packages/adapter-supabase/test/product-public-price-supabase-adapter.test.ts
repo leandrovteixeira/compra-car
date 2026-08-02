@@ -110,6 +110,47 @@ describe('ProductPublicPrice Supabase adapter', () => {
     expect(target.query.in).toHaveBeenCalledWith('status', ['draft', 'needs_review', 'rejected']);
   });
 
+  it('maps a successful publication response with the product loaded before the RPC', async () => {
+    const current = row({ status: 'draft', published_at: null, lock_version: 1 });
+    const publishedRpcRow = { ...row({ lock_version: 2 }), product: undefined };
+    const query = {
+      select: vi.fn(() => query),
+      eq: vi.fn(() => query),
+      maybeSingle: vi.fn(async () => ({ data: current, error: null })),
+    };
+    const supabase = {
+      from: vi.fn(() => query),
+      rpc: vi.fn(async () => ({ data: publishedRpcRow, error: null })),
+    } as unknown as SupabaseClient;
+
+    await expect(
+      new ProductPublicPriceSupabaseAdapter(supabase).publishProductPublicPrice({
+        id: '10',
+        expectedLockVersion: 1,
+        actorId: 'actor-id',
+        correlationId: 'correlation-id',
+      }),
+    ).resolves.toMatchObject({
+      id: '10',
+      product: {
+        id: '20',
+        brand: 'Toyota',
+        model: 'Corolla',
+        version: 'XRX',
+        modelYear: '2026',
+      },
+      status: 'published',
+      lockVersion: 2,
+    });
+    expect(query.maybeSingle).toHaveBeenCalledOnce();
+    expect(vi.mocked(supabase.rpc)).toHaveBeenCalledWith('publish_product_public_price', {
+      p_price_id: 10,
+      p_actor_id: 'actor-id',
+      p_expected_lock_version: 1,
+      p_correlation_id: 'correlation-id',
+    });
+  });
+
   it('classifies zero-row updates without overwriting conflicts or terminal records', async () => {
     const conflict = writeClient([
       { data: null, error: null },

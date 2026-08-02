@@ -1,4 +1,5 @@
 import type {
+  OfferBuilderDraftDto,
   OfferBuilderActionStateDto,
   PolicyCombinationGridRowDto,
 } from '@compra-car/contracts';
@@ -13,6 +14,19 @@ export const EMPTY_POLICY_COMBINATION_ROW: PolicyCombinationGridRowDto = Object.
   productId: '',
   policyIds: [],
 });
+
+export function buildLiveOfferSelections(
+  drafts: readonly OfferBuilderDraftDto[],
+  existingSelections: Readonly<Record<string, readonly string[]>>,
+  rows: readonly PolicyCombinationGridRowDto[],
+): Readonly<Record<string, readonly string[]>> {
+  return Object.fromEntries([
+    ...drafts.map((draft) => [draft.id, existingSelections[draft.id] ?? draft.policyIds] as const),
+    ...rows
+      .filter((row) => row.policyIds.length > 0)
+      .map((row) => [`new:${row.clientRowId}`, row.policyIds] as const),
+  ]);
+}
 
 function read(formData: FormData): readonly PolicyCombinationGridRowDto[] | null {
   const raw = formData.get('rows');

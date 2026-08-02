@@ -182,6 +182,7 @@ export interface ManualPriceBatchProductOptionDto {
 
 export interface ManualPolicyBatchGridRowDto {
   readonly clientRowId: string;
+  readonly sourcePolicyId: string;
   readonly productId: string;
   readonly policyType: string;
   readonly title: string;
@@ -189,6 +190,7 @@ export interface ManualPolicyBatchGridRowDto {
   readonly startsOn: string;
   readonly endsOn: string;
   readonly amount: string;
+  readonly rebateAmount: string;
   readonly maintenanceCount: string;
   readonly coverageMonths: string;
   readonly coverageKm: string;
@@ -200,6 +202,8 @@ export interface ManualPolicyBatchGridRowDto {
   readonly termMonths: string;
   readonly customerInterestRateMonthly: string;
   readonly downPaymentPercentage: string;
+  readonly expectedPredecessorId: string;
+  readonly expectedPredecessorLockVersion: string;
 }
 export interface ManualPolicyBasePriceDto {
   readonly id: string;
@@ -252,8 +256,20 @@ export interface OfferBuilderPolicyDto {
   readonly startsOn: string;
   readonly endsOn: string | null;
   readonly customerBenefitAmount: string | null;
+  readonly dealerRebateAmount?: string | null;
   readonly status: PricingWorkflowStatus;
   readonly lockVersion: number;
+  readonly fixedAmount?: string | null;
+  readonly annualRate?: string | null;
+  readonly coverageYears?: string | null;
+  readonly remainingMonths?: number | null;
+  readonly offerMonth?: number | null;
+  readonly financedPrincipal?: string | null;
+  readonly downPaymentPercentage?: string | null;
+  readonly termMonths?: number | null;
+  readonly customerInterestRateMonthly?: string | null;
+  readonly voucherType?: string | null;
+  readonly policyParameters?: Readonly<Record<string, unknown>>;
 }
 export interface OfferBuilderPriceDto {
   readonly id: string;
@@ -299,6 +315,9 @@ export interface PolicyCombinationGridRowDto {
   readonly clientRowId: string;
   readonly productId: string;
   readonly policyIds: readonly string[];
+  readonly referenceDate?: string;
+  readonly periodEnd?: string;
+  readonly periodKind?: 'monthly' | 'special';
 }
 
 export interface AdministrativeVehicleFormValuesDto {

@@ -4,12 +4,17 @@ import {
   CURRENT_COMMERCIAL_POLICY_TYPES,
   PRICING_VOUCHER_TYPES,
 } from '../entities/commercial-pricing';
-import { canonicalManualPriceAmount, isValidManualPriceDate } from './manual-price-batch';
+import {
+  canonicalManualPriceAmount,
+  isValidManualPriceDate,
+  ptBrMoneyToCanonicalDecimal,
+} from './manual-price-batch';
 
 export const MANUAL_POLICY_BATCH_MAX_ROWS = 100;
 
 export interface ManualPolicyBatchRowInput {
   readonly clientRowId: string;
+  readonly sourcePolicyId?: string;
   readonly productId: string;
   readonly policyType: string;
   readonly title: string;
@@ -17,6 +22,7 @@ export interface ManualPolicyBatchRowInput {
   readonly startsOn: string;
   readonly endsOn: string | null;
   readonly amount?: string;
+  readonly rebateAmount?: string;
   readonly maintenanceCount?: string;
   readonly coverageMonths?: string;
   readonly coverageKm?: string;
@@ -28,6 +34,8 @@ export interface ManualPolicyBatchRowInput {
   readonly termMonths?: string;
   readonly customerInterestRateMonthly?: string;
   readonly downPaymentPercentage?: string;
+  readonly expectedPredecessorId?: string;
+  readonly expectedPredecessorLockVersion?: string;
 }
 
 export interface ManualPolicyReferenceData {
@@ -37,6 +45,17 @@ export interface ManualPolicyReferenceData {
   readonly monthlyReferenceRate?: string;
   readonly basePriceResolution?: 'missing' | 'ambiguous';
   readonly financialReferenceResolution?: 'missing' | 'ambiguous';
+}
+
+export class ManualPolicyRolloverDependencyError extends Error {
+  constructor(
+    readonly offerIds: readonly string[],
+    readonly policyTypes: readonly string[],
+    options?: ErrorOptions,
+  ) {
+    super('Policy rollover is blocked by non-archived Offers.', options);
+    this.name = new.target.name;
+  }
 }
 
 export interface NormalizedManualPolicyBatchRow extends ManualPolicyBatchRowInput {
@@ -54,6 +73,7 @@ export interface ManualPolicyBatchIssue {
 
 const FIXED = new Set([
   'retail_bonus',
+  'invoice_discount',
   'trade_in_bonus',
   'loyalty_bonus',
   'free_wallbox',
@@ -63,6 +83,7 @@ const FIXED = new Set([
 ]);
 export const MANUAL_POLICY_TITLES: Readonly<Record<string, string>> = Object.freeze({
   retail_bonus: 'Bônus varejo',
+  invoice_discount: 'Desconto NF',
   trade_in_bonus: 'Bônus trade-in',
   loyalty_bonus: 'Loyalty',
   subsidized_financing: 'Financiamento subsidiado',
@@ -100,6 +121,7 @@ export function formatPtBrPercentageInput(value: string): string {
 export function normalizeManualPolicyBatchRow(
   row: ManualPolicyBatchRowInput,
 ): ManualPolicyBatchRowInput {
+  const rebateAmount = ptBrMoneyToCanonicalDecimal(row.rebateAmount ?? '');
   const common = {
     clientRowId: row.clientRowId,
     productId: row.productId,
@@ -108,6 +130,11 @@ export function normalizeManualPolicyBatchRow(
     description: row.description,
     startsOn: row.startsOn,
     endsOn: null,
+    expectedPredecessorId: row.expectedPredecessorId,
+    expectedPredecessorLockVersion: row.expectedPredecessorLockVersion,
+    ...(row.rebateAmount === undefined
+      ? {}
+      : { rebateAmount: rebateAmount ?? (row.rebateAmount.trim() ? row.rebateAmount : '0.00') }),
   };
   if (FIXED.has(row.policyType)) {
     return {
@@ -257,7 +284,12 @@ export function validateManualPolicyBatch(
   | { ok: false; issues: readonly ManualPolicyBatchIssue[] } {
   const candidates = rows.filter((row) =>
     Object.entries(row).some(
-      ([field, value]) => field !== 'clientRowId' && value != null && String(value).trim() !== '',
+      ([field, value]) =>
+        field !== 'clientRowId' &&
+        field !== 'sourcePolicyId' &&
+        field !== 'rebateAmount' &&
+        value != null &&
+        String(value).trim() !== '',
     ),
   );
   if (!candidates.length)
@@ -408,6 +440,25 @@ export function validateManualPolicyBatch(
         field: 'row',
         message: 'Não foi possível calcular o benefício.',
       });
+    const rebateAmount = ptBrMoneyToCanonicalDecimal(
+      row.rebateAmount?.trim() ? row.rebateAmount : '0.00',
+    );
+    if (!rebateAmount) {
+      issues.push({
+        clientRowId: row.clientRowId,
+        field: 'rebateAmount',
+        message: 'Informe um Rebate BRL maior ou igual a zero.',
+      });
+    } else if (
+      calculated?.customerBenefitAmount &&
+      new Decimal(rebateAmount).gt(calculated.customerBenefitAmount)
+    ) {
+      issues.push({
+        clientRowId: row.clientRowId,
+        field: 'rebateAmount',
+        message: 'O Rebate não pode superar o Valor.',
+      });
+    }
     const fingerprint = JSON.stringify({ ...row, clientRowId: undefined });
     if (fingerprints.has(fingerprint))
       issues.push({

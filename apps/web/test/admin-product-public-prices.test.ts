@@ -19,8 +19,10 @@ import {
 } from '../src/application/admin/save-product-public-price';
 import {
   adminPriceStatusLabel,
+  adminPriceVisualStatusLabel,
   formatAdminDate,
   formatAdminPrice,
+  operationalDateInSaoPaulo,
 } from '../src/components/admin/admin-price-presentation';
 import { loadAdminProductPublicPrices } from '../src/server/admin-product-public-price-service';
 
@@ -89,8 +91,19 @@ describe('admin ProductPublicPrice read slice', () => {
     expect(formatAdminDate(null)).toBe('Sem término');
     expect(adminPriceStatusLabel('needs_review')).toBe('Requer revisão');
     expect(canonicalAmountFromPtBr('159.990,50')).toBe('159990.50');
+    expect(canonicalAmountFromPtBr('199.990,00')).toBe('199990.00');
     expect(canonicalAmountFromPtBr('159.990')).toBe('159990');
     expect(amountToPtBrInput('249990.50')).toBe('249.990,50');
+  });
+
+  it('presents only ended published prices as expired on the São Paulo operational date', () => {
+    const today = '2026-08-01';
+    expect(adminPriceVisualStatusLabel('published', null, today)).toBe('Publicado');
+    expect(adminPriceVisualStatusLabel('published', '2026-07-31', today)).toBe('Expirado');
+    expect(adminPriceVisualStatusLabel('published', today, today)).toBe('Publicado');
+    expect(adminPriceVisualStatusLabel('draft', '2026-07-31', today)).toBe('Rascunho');
+    expect(adminPriceVisualStatusLabel('archived', '2026-07-31', today)).toBe('Arquivado');
+    expect(operationalDateInSaoPaulo(new Date('2026-08-01T02:30:00.000Z'))).toBe('2026-07-31');
   });
 
   it('creates with the authenticated actor and preserves field errors', async () => {
@@ -118,7 +131,10 @@ describe('admin ProductPublicPrice read slice', () => {
         createRepository: () => target,
         revalidate,
       }),
-    ).resolves.toMatchObject({ status: 'success' });
+    ).resolves.toMatchObject({
+      status: 'success',
+      values: { id: '3', lockVersion: '1' },
+    });
     expect(target.createProductPublicPrice).toHaveBeenCalledWith(
       expect.objectContaining({ actorId: 'server-actor', amount: '159990.50' }),
     );
@@ -174,6 +190,14 @@ describe('admin ProductPublicPrice read slice', () => {
     expect(list).toContain('aria-sort=');
     expect(list).toContain('field="updatedAt"');
     expect(manager).toContain('Salvar rascunho');
+    expect(manager).toContain('Publicar agora');
+    expect(manager).toContain('formatPtBrMoneyInput');
+    expect(manager).toContain('ptBrMoneyCaretPosition');
+    expect(manager).toContain('onChange={(event) => updateAmount(event.currentTarget)}');
+    expect(manager).toContain('autoComplete="off"');
+    expect(manager).toContain('publicationCompleted.current = true');
+    expect(manager).toContain('refresh failed after successful publication');
+    expect(manager).toContain("data.set('lockVersion', state.values.lockVersion)");
     expect(manager).toContain('disabled={pending}');
     expect(manager).toContain('router.refresh()');
     expect(service).toContain('ProductPublicPriceSupabaseAdapter');

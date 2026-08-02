@@ -33,7 +33,13 @@ describe('admin manual policy batch', () => {
     expect(grid).toContain("'loyalty_bonus'");
     expect(grid).toContain('<AdminProductCombobox');
     expect(grid).toContain('<span>Veículo</span>');
-    expect(grid).toContain('<span>Descrição</span>');
+    expect(grid).toContain('<span>Rebate</span>');
+    expect(grid).not.toContain('<span>Descrição</span>');
+    expect(grid).toContain('DescriptionDialog');
+    expect(grid).toContain('Adicionar descrição');
+    expect(grid).toContain('⊖');
+    expect(grid).toContain('title="Remover política"');
+    expect(grid).toContain("'invoice_discount'");
     expect(grid).not.toContain('MSRP publicado');
     expect(grid).not.toContain('Alíquota anual');
     expect(grid).not.toContain('Principal financiado');

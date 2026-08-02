@@ -1,15 +1,23 @@
 import type {
+  CommercialPeriod,
+  CommercialPeriodExpectedOffer,
+  CommercialPeriodOfferRow,
   ManualPolicyBatchRepository,
   ManualPolicyBatchRowInput,
   ManualPolicyBatchResult,
   ManualPolicyBasePrice,
   ManualPolicyFinancialReference,
+  CommercialPeriodDraftResult,
   ManualPolicyReferenceData,
   NormalizedManualPolicyBatchRow,
   ManualPriceBatchProductOption,
 } from '@compra-car/core';
-import { resolveManualPolicyReferenceData } from '@compra-car/core';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import {
+  CommercialPeriodPersistenceError,
+  ManualPolicyRolloverDependencyError,
+  resolveManualPolicyReferenceData,
+} from '@compra-car/core';
+import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js';
 
 import { assertLegacyServerRuntime, createLegacySupabaseClientFromEnv } from './client';
 import { PricingAdapterMappingError, PricingAdapterQueryError } from './errors';
@@ -115,11 +123,19 @@ export class ManualPolicyBatchSupabaseAdapter implements ManualPolicyBatchReposi
     readonly actorId: string;
     readonly correlationId: string;
   }): Promise<ManualPolicyBatchResult> {
-    const { data, error } = await this.client.rpc('create_manual_policy_batch', {
+    const { data, error } = await this.client.rpc('create_manual_policy_batch_with_rollover', {
       p_rows: input.rows,
       p_actor_id: input.actorId,
       p_correlation_id: input.correlationId,
     });
+    if (error && this.isRolloverDependencyError(error)) {
+      const offerIds = await this.findDependentOfferIds(input.rows);
+      throw new ManualPolicyRolloverDependencyError(
+        offerIds,
+        [...new Set(input.rows.map((row) => row.policyType))],
+        { cause: error },
+      );
+    }
     if (error)
       throw new PricingAdapterQueryError('Não foi possível salvar o lote de policies.', {
         cause: error,
@@ -131,6 +147,127 @@ export class ManualPolicyBatchSupabaseAdapter implements ManualPolicyBatchReposi
       batchId: id(result.batchId),
       createdCount: Number(result.createdCount),
       policyIds: result.policyIds.map(id),
+      rolloverCount: Number(result.rolloverCount ?? 0),
     };
+  }
+
+  async createCommercialPeriodDraft(input: {
+    readonly productId: string;
+    readonly period: CommercialPeriod;
+    readonly policyRows: readonly NormalizedManualPolicyBatchRow[];
+    readonly offerRows: readonly CommercialPeriodOfferRow[];
+    readonly expectedOffers: readonly CommercialPeriodExpectedOffer[];
+    readonly actorId: string;
+    readonly correlationId: string;
+  }): Promise<CommercialPeriodDraftResult> {
+    const { data, error } = await this.client.rpc('create_commercial_period_draft', {
+      p_product_id: Number(input.productId),
+      p_period_start: input.period.start,
+      p_period_end: input.period.end,
+      p_period_kind: input.period.kind,
+      p_policy_rows: input.policyRows,
+      p_offer_rows: input.offerRows.map((row) => ({
+        clientRowId: row.clientRowId,
+        policyRefs: row.policyRefs.map((reference) =>
+          'policyId' in reference
+            ? { policyId: Number(reference.policyId) }
+            : { policyClientRowId: reference.policyClientRowId },
+        ),
+      })),
+      p_expected_offers: input.expectedOffers.map((offer) => ({
+        offerId: Number(offer.offerId),
+        expectedLockVersion: offer.expectedLockVersion,
+      })),
+      p_actor_id: input.actorId,
+      p_correlation_id: input.correlationId,
+    });
+    if (error) {
+      const knownMessages = new Set([
+        'commercial period rollover requires predecessor lock version',
+        'commercial period predecessor changed by another operator',
+        'commercial period is missing an affected Offer lock',
+        'commercial period requires every affected Offer lock version',
+        'affected Offer changed by another operator',
+        'affected Offer is not eligible for temporal closing',
+        'commercial Offer cannot end before its valid_from',
+        'retroactive closing of a published Offer is not allowed for a monthly period',
+        'every Offer Policy must cover the complete commercial period',
+        'no published MSRP covers the complete commercial period',
+        'more than one published MSRP covers the commercial period',
+        'commercial period Offer benefit exceeds MSRP',
+      ]);
+      if (knownMessages.has(error.message)) {
+        throw new CommercialPeriodPersistenceError(error.code, error.message, { cause: error });
+      }
+      throw new PricingAdapterQueryError('Não foi possível salvar o período comercial.', {
+        cause: error,
+      });
+    }
+    if (typeof data !== 'object' || data === null)
+      throw new PricingAdapterMappingError('Resposta inválida do período comercial.');
+    const result = data as Record<string, unknown>;
+    const batch =
+      typeof result.policyBatch === 'object' && result.policyBatch !== null
+        ? (result.policyBatch as Record<string, unknown>)
+        : {};
+    const offers = records(result.offers);
+    return {
+      period: input.period,
+      batchId: batch.batchId == null ? '' : id(batch.batchId),
+      createdPolicyCount: Number(batch.createdCount ?? 0),
+      createdPolicyIds: Array.isArray(batch.policyIds) ? batch.policyIds.map(id) : [],
+      rolloverCount: Number(batch.rolloverCount ?? 0),
+      closedOfferIds: Array.isArray(result.closedOfferIds) ? result.closedOfferIds.map(id) : [],
+      createdOfferCount: Number(result.createdOfferCount ?? 0),
+      createdOfferIds: offers.map((offer) => id(offer.offerId)),
+    };
+  }
+
+  private isRolloverDependencyError(error: PostgrestError): boolean {
+    return (
+      error.code === '55000' &&
+      error.message === 'policy rollover would invalidate a non-archived commercial offer'
+    );
+  }
+
+  private async findDependentOfferIds(
+    rows: readonly NormalizedManualPolicyBatchRow[],
+  ): Promise<readonly string[]> {
+    const predecessors = rows.flatMap((row) =>
+      row.expectedPredecessorId ? [{ id: row.expectedPredecessorId, startsOn: row.startsOn }] : [],
+    );
+    if (!predecessors.length) return [];
+    const predecessorStarts = new Map(predecessors.map((row) => [row.id, row.startsOn]));
+    const { data: memberships, error: membershipError } = await this.client
+      .from('commercial_offer_policies')
+      .select('commercial_offer_id,commercial_policy_id')
+      .in(
+        'commercial_policy_id',
+        predecessors.map((row) => Number(row.id)),
+      );
+    if (membershipError) return [];
+    const membershipRows = records(memberships);
+    const offerIds = [...new Set(membershipRows.map((row) => id(row.commercial_offer_id)))];
+    if (!offerIds.length) return [];
+    const { data: offers, error: offerError } = await this.client
+      .from('commercial_offers')
+      .select('id,status,valid_to')
+      .in('id', offerIds.map(Number))
+      .neq('status', 'archived');
+    if (offerError) return [];
+    const offerRows = records(offers);
+    return offerRows
+      .filter((offer) => {
+        const offerId = id(offer.id);
+        return membershipRows.some((membership) => {
+          if (id(membership.commercial_offer_id) !== offerId) return false;
+          const startsOn = predecessorStarts.get(id(membership.commercial_policy_id));
+          return Boolean(
+            startsOn && (offer.valid_to == null || String(offer.valid_to) >= startsOn),
+          );
+        });
+      })
+      .map((offer) => id(offer.id))
+      .sort((left, right) => Number(left) - Number(right));
   }
 }

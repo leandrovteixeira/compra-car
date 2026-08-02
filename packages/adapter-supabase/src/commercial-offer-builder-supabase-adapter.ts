@@ -2,6 +2,7 @@ import type {
   CommercialOfferBuilderPrice,
   CommercialOfferBuilderRepository,
   CommercialOfferDraftSummary,
+  CommercialWorkspacePeriod,
   ManualPriceBatchProductOption,
   PolicyCombinationBatchResult,
   PolicyCombinationPolicy,
@@ -11,7 +12,7 @@ import type {
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { assertLegacyServerRuntime, createLegacySupabaseClientFromEnv } from './client';
 import { PricingAdapterMappingError, PricingAdapterQueryError } from './errors';
-import { moneyDecimalString } from './pricing-decimal';
+import { decimalString, moneyDecimalString } from './pricing-decimal';
 import { mapCommercialPolicyRow } from './commercial-pricing-supabase-adapter';
 const records = (value: unknown): readonly Record<string, unknown>[] =>
   Array.isArray(value)
@@ -25,7 +26,40 @@ const required = (value: unknown, field: string) => {
 };
 const money = moneyDecimalString;
 const policyColumns =
-  'id,product_id,policy_type,title,description,starts_on,ends_on,customer_benefit_amount,status,lock_version';
+  'id,product_id,policy_type,title,description,starts_on,ends_on,customer_benefit_amount,dealer_rebate_amount,status,lock_version,fixed_amount,annual_rate,coverage_years,remaining_months,offer_month,financed_principal,down_payment_percentage,term_months,customer_interest_rate_monthly,voucher_type,policy_parameters';
+
+function optionalDecimal(value: unknown, field: string): string | null {
+  return value == null ? null : decimalString(value, field);
+}
+
+function mapPolicy(row: Record<string, unknown>): PolicyCombinationPolicy {
+  return {
+    ...mapCommercialPolicyRow(row as never),
+    fixedAmount: valueOrNull(row.fixed_amount, (value) => money(value, 'fixed_amount')),
+    annualRate: optionalDecimal(row.annual_rate, 'annual_rate'),
+    coverageYears: optionalDecimal(row.coverage_years, 'coverage_years'),
+    remainingMonths: row.remaining_months == null ? null : Number(row.remaining_months),
+    offerMonth: row.offer_month == null ? null : Number(row.offer_month),
+    financedPrincipal: valueOrNull(row.financed_principal, (value) =>
+      money(value, 'financed_principal'),
+    ),
+    downPaymentPercentage: optionalDecimal(row.down_payment_percentage, 'down_payment_percentage'),
+    termMonths: row.term_months == null ? null : Number(row.term_months),
+    customerInterestRateMonthly: optionalDecimal(
+      row.customer_interest_rate_monthly,
+      'customer_interest_rate_monthly',
+    ),
+    voucherType: row.voucher_type == null ? null : String(row.voucher_type),
+    policyParameters:
+      typeof row.policy_parameters === 'object' && row.policy_parameters !== null
+        ? (row.policy_parameters as Readonly<Record<string, unknown>>)
+        : {},
+  };
+}
+
+function valueOrNull<T>(value: unknown, map: (value: unknown) => T): T | null {
+  return value == null ? null : map(value);
+}
 export class CommercialOfferBuilderSupabaseAdapter implements CommercialOfferBuilderRepository {
   constructor(private readonly client: SupabaseClient = createLegacySupabaseClientFromEnv()) {
     assertLegacyServerRuntime();
@@ -74,18 +108,40 @@ export class CommercialOfferBuilderSupabaseAdapter implements CommercialOfferBui
       status: 'published',
     }));
   }
-  async listAvailablePolicies(): Promise<readonly PolicyCombinationPolicy[]> {
-    const { data, error } = await this.client
+  async listAvailablePolicies(
+    period?: CommercialWorkspacePeriod,
+  ): Promise<readonly PolicyCombinationPolicy[]> {
+    let currentQuery = this.client
       .from('commercial_policies')
       .select(policyColumns)
       .order('policy_type')
       .order('title')
       .order('id');
+    if (period) {
+      currentQuery = currentQuery
+        .eq('product_id', Number(period.productId))
+        .lte('starts_on', period.lastDay)
+        .or(`ends_on.is.null,ends_on.gte.${period.firstDay}`);
+    }
+    const { data, error } = await currentQuery;
     if (error)
       throw new PricingAdapterQueryError('Não foi possível carregar as políticas comerciais.', {
         cause: error,
       });
-    return records(data).map((row) => mapCommercialPolicyRow(row as never));
+    const current = records(data).map(mapPolicy);
+    if (!period) return current;
+    const { data: historyData, error: historyError } = await this.client
+      .from('commercial_policies')
+      .select(policyColumns)
+      .eq('product_id', Number(period.productId))
+      .lt('ends_on', period.firstDay)
+      .order('ends_on', { ascending: false })
+      .limit(period.historyLimit ?? 50);
+    if (historyError)
+      throw new PricingAdapterQueryError('Não foi possível carregar o histórico de políticas.', {
+        cause: historyError,
+      });
+    return [...current, ...records(historyData).map(mapPolicy)];
   }
 
   async updatePolicyDraft(input: {
@@ -180,6 +236,18 @@ export class CommercialOfferBuilderSupabaseAdapter implements CommercialOfferBui
       });
     return records(data).map((row) => mapCommercialPolicyRow(row as never));
   }
+  async getPolicyDetails(ids: readonly string[]): Promise<readonly PolicyCombinationPolicy[]> {
+    if (!ids.length) return [];
+    const { data, error } = await this.client
+      .from('commercial_policies')
+      .select(policyColumns)
+      .in('id', ids.map(Number));
+    if (error)
+      throw new PricingAdapterQueryError('Não foi possível completar as Policies das Offers.', {
+        cause: error,
+      });
+    return records(data).map(mapPolicy);
+  }
   async createOfferDraft(input: {
     readonly offer: ValidatedCommercialOfferDraft;
     readonly actorId: string;
@@ -205,11 +273,51 @@ export class CommercialOfferBuilderSupabaseAdapter implements CommercialOfferBui
     readonly actorId: string;
     readonly correlationId: string;
   }): Promise<PolicyCombinationBatchResult> {
-    const { data, error } = await this.client.rpc('create_commercial_offer_batch', {
+    const first = input.rows[0];
+    const exactPeriod =
+      first?.referenceDate !== undefined &&
+      first.periodEnd !== undefined &&
+      first.periodKind !== undefined &&
+      input.rows.every(
+        (row) =>
+          row.productId === first.productId &&
+          row.referenceDate === first.referenceDate &&
+          row.periodEnd === first.periodEnd &&
+          row.periodKind === first.periodKind,
+      );
+    if (exactPeriod) {
+      const { data, error } = await this.client.rpc('create_commercial_period_draft', {
+        p_product_id: Number(first.productId),
+        p_period_start: first.referenceDate,
+        p_period_end: first.periodEnd,
+        p_period_kind: first.periodKind,
+        p_policy_rows: [],
+        p_offer_rows: input.rows.map((row) => ({
+          clientRowId: row.clientRowId,
+          policyRefs: row.policyIds.map((policyId) => ({ policyId: Number(policyId) })),
+        })),
+        p_expected_offers: [],
+        p_actor_id: input.actorId,
+        p_correlation_id: input.correlationId,
+      });
+      if (error)
+        throw new PricingAdapterQueryError('Não foi possível salvar as ofertas do período.', {
+          cause: error,
+        });
+      if (typeof data !== 'object' || data === null)
+        throw new PricingAdapterMappingError('Resposta inválida das ofertas do período.');
+      const result = data as Record<string, unknown>;
+      return {
+        createdCount: Number(result.createdOfferCount),
+        offers: records(result.offers).map((offer) => this.mapSummary(offer)),
+      };
+    }
+    const { data, error } = await this.client.rpc('create_commercial_offer_batch_at_reference', {
       p_rows: input.rows.map((row) => ({
         clientRowId: row.clientRowId,
         productId: Number(row.productId),
         policyIds: row.policyIds.map(Number),
+        referenceDate: row.referenceDate,
       })),
       p_actor_id: input.actorId,
       p_correlation_id: input.correlationId,
@@ -226,18 +334,42 @@ export class CommercialOfferBuilderSupabaseAdapter implements CommercialOfferBui
       offers: records(result.offers).map((offer) => this.mapSummary(offer)),
     };
   }
-  async listRecentDrafts(): Promise<readonly CommercialOfferDraftSummary[]> {
-    const { data, error } = await this.client
+  async listRecentDrafts(
+    period?: CommercialWorkspacePeriod,
+  ): Promise<readonly CommercialOfferDraftSummary[]> {
+    let currentQuery = this.client
       .from('commercial_offers')
       .select(
         'id,product_id,public_price_id,valid_from,valid_to,status,lock_version,public_price:product_public_prices!commercial_offers_public_price_id_fkey(amount),memberships:commercial_offer_policies!commercial_offer_policies_offer_id_fkey(commercial_policy_id,policy:commercial_policies!commercial_offer_policies_policy_id_fkey(customer_benefit_amount))',
       )
       .order('created_at', { ascending: false });
+    if (period) {
+      currentQuery = currentQuery
+        .eq('product_id', Number(period.productId))
+        .lte('valid_from', period.lastDay)
+        .or(`valid_to.is.null,valid_to.gte.${period.firstDay}`);
+    }
+    const { data, error } = await currentQuery;
     if (error)
       throw new PricingAdapterQueryError('Não foi possível carregar as ofertas recentes.', {
         cause: error,
       });
-    return records(data).map((row) => this.mapQuerySummary(row));
+    const current = records(data).map((row) => this.mapQuerySummary(row));
+    if (!period) return current;
+    const { data: historyData, error: historyError } = await this.client
+      .from('commercial_offers')
+      .select(
+        'id,product_id,public_price_id,valid_from,valid_to,status,lock_version,public_price:product_public_prices!commercial_offers_public_price_id_fkey(amount),memberships:commercial_offer_policies!commercial_offer_policies_offer_id_fkey(commercial_policy_id,policy:commercial_policies!commercial_offer_policies_policy_id_fkey(customer_benefit_amount))',
+      )
+      .eq('product_id', Number(period.productId))
+      .lt('valid_to', period.firstDay)
+      .order('valid_to', { ascending: false })
+      .limit(period.historyLimit ?? 50);
+    if (historyError)
+      throw new PricingAdapterQueryError('Não foi possível carregar o histórico de ofertas.', {
+        cause: historyError,
+      });
+    return [...current, ...records(historyData).map((row) => this.mapQuerySummary(row))];
   }
   private mapSummary(value: unknown): CommercialOfferDraftSummary {
     if (typeof value !== 'object' || value === null)
@@ -286,7 +418,7 @@ export class CommercialOfferBuilderSupabaseAdapter implements CommercialOfferBui
       publicPriceAmount: formatMoney(priceCents),
       validFrom: required(r.valid_from, 'validFrom'),
       validTo: r.valid_to == null ? null : required(r.valid_to, 'validTo'),
-      status: 'draft',
+      status: r.status === 'published' || r.status === 'archived' ? r.status : 'draft',
       policyIds: memberships.map((m) => id(m.commercial_policy_id)),
       lockVersion: Number(r.lock_version),
       benefitAmount: formatMoney(benefit),

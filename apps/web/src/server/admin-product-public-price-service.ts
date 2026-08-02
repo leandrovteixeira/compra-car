@@ -49,16 +49,32 @@ export async function publishAdminProductPublicPrice(formData: FormData): Promis
   if (!/^\d+$/u.test(id) || !Number.isSafeInteger(expectedLockVersion) || expectedLockVersion < 1) {
     return { ok: false, message: 'Preço inválido para publicação.' };
   }
+  const correlationId = randomUUID();
   try {
-    await new ProductPublicPriceSupabaseAdapter().publishProductPublicPrice({
+    console.info('Admin product public price publication started.', {
+      correlationId,
+      expectedLockVersion,
+      priceId: id,
+    });
+    const published = await new ProductPublicPriceSupabaseAdapter().publishProductPublicPrice({
       id,
       expectedLockVersion,
       actorId: profile.id,
-      correlationId: randomUUID(),
+      correlationId,
+    });
+    console.info('Admin product public price publication succeeded.', {
+      correlationId,
+      lockVersion: published.lockVersion,
+      priceId: published.id,
+      status: published.status,
     });
     return { ok: true, message: 'Preço publicado com sucesso.' };
-  } catch {
-    console.error('Admin product public price publication failed.');
+  } catch (error) {
+    console.error('Admin product public price publication failed.', {
+      correlationId,
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+      priceId: id,
+    });
     return {
       ok: false,
       message: 'Não foi possível publicar. Recarregue os dados e tente novamente.',

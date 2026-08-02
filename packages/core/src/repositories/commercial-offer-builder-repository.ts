@@ -14,10 +14,18 @@ export interface PolicyCombinationBatchResult {
   readonly createdCount: number;
   readonly offers: readonly CommercialOfferDraftSummary[];
 }
+export interface CommercialWorkspacePeriod {
+  readonly productId: string;
+  readonly firstDay: string;
+  readonly lastDay: string;
+  readonly historyLimit?: number;
+}
 export interface CommercialOfferBuilderRepository {
   listProductOptions(): Promise<readonly ManualPriceBatchProductOption[]>;
   listPublishedPrices(): Promise<readonly CommercialOfferBuilderPrice[]>;
-  listAvailablePolicies(): Promise<readonly PolicyCombinationPolicy[]>;
+  listAvailablePolicies(
+    period?: CommercialWorkspacePeriod,
+  ): Promise<readonly PolicyCombinationPolicy[]>;
   getPrice(id: string): Promise<CommercialOfferBuilderPrice | null>;
   getPolicies(ids: readonly string[]): Promise<readonly CommercialPolicy[]>;
   createOfferDraft(input: {
@@ -30,5 +38,7 @@ export interface CommercialOfferBuilderRepository {
     readonly actorId: string;
     readonly correlationId: string;
   }): Promise<PolicyCombinationBatchResult>;
-  listRecentDrafts(): Promise<readonly CommercialOfferDraftSummary[]>;
+  listRecentDrafts(
+    period?: CommercialWorkspacePeriod,
+  ): Promise<readonly CommercialOfferDraftSummary[]>;
 }

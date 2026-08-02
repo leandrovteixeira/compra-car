@@ -5,9 +5,11 @@ import { isProductPublicPriceEditable } from '@compra-car/core';
 import Link from 'next/link';
 
 import {
-  adminPriceStatusLabel,
+  adminPriceVisualStatusLabel,
   formatAdminDate,
   formatAdminPrice,
+  isAdminPriceExpired,
+  operationalDateInSaoPaulo,
 } from './admin-price-presentation';
 
 interface AdminPriceListProps {
@@ -19,7 +21,8 @@ interface AdminPriceListProps {
   readonly onPublished: (message: string) => void;
 }
 
-function statusClass(status: PricingWorkflowStatus): string {
+function statusClass(status: PricingWorkflowStatus, expired: boolean): string {
+  if (expired) return 'border-slate-600 bg-slate-800/70 text-slate-200';
   return status === 'published'
     ? 'border-emerald-800 bg-emerald-950/50 text-emerald-300'
     : status === 'needs_review'
@@ -56,6 +59,7 @@ function SortHeader({
 }
 
 export function AdminPriceList({ page, onEdit, publishAction, onPublished }: AdminPriceListProps) {
+  const operationalDate = operationalDateInSaoPaulo();
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900/50">
       <div className="overflow-x-auto lg:overflow-visible">
@@ -109,9 +113,9 @@ export function AdminPriceList({ page, onEdit, publishAction, onPublished }: Adm
                 </td>
                 <td className="px-4 py-4">
                   <span
-                    className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${statusClass(price.status)}`}
+                    className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${statusClass(price.status, isAdminPriceExpired(price.status, price.endsOn, operationalDate))}`}
                   >
-                    {adminPriceStatusLabel(price.status)}
+                    {adminPriceVisualStatusLabel(price.status, price.endsOn, operationalDate)}
                   </span>
                 </td>
                 <td className="whitespace-nowrap px-4 py-4 text-slate-300">
