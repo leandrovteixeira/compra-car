@@ -95,7 +95,9 @@ select is(
     'created_by:uuid:false:', 'updated_at:timestamp with time zone:true:',
     'updated_by:uuid:false:', 'reviewed_at:timestamp with time zone:false:',
     'reviewed_by:uuid:false:', 'promoted_at:timestamp with time zone:false:',
-    'promoted_by:uuid:false:', 'lock_version:integer:true:'
+    'promoted_by:uuid:false:', 'lock_version:integer:true:',
+    'plugin_key:text:true:', 'dossier_title:text:false:',
+    'competence:date:false:', 'notes:text:false:'
   ],
   'pricing_import_batches columns match the target schema exactly'
 );
@@ -304,10 +306,14 @@ select is(
     'pricing_audit_events_aggregate_type_check',
     'pricing_audit_events_reason_check',
     'pricing_audit_events_snapshot_check',
+    'pricing_import_batches_competence_check',
     'pricing_import_batches_content_sha256_check',
     'pricing_import_batches_dates_check',
+    'pricing_import_batches_dossier_title_check',
     'pricing_import_batches_idempotency_key_check',
     'pricing_import_batches_lock_version_check',
+    'pricing_import_batches_notes_check',
+    'pricing_import_batches_plugin_key_check',
     'pricing_import_batches_schema_version_check',
     'pricing_import_row_outputs_exactly_one_check',
     'pricing_import_row_reviews_notes_check',
@@ -317,7 +323,7 @@ select is(
     'pricing_import_rows_source_page_check',
     'pricing_import_rows_source_row_number_check'
   ],
-  'all 15 documented local checks exist after manual batches are enabled'
+  'all 19 documented local checks include the Import Engine dossier fields'
 );
 
 select is(
@@ -335,8 +341,8 @@ select is(
        and not index_record.indisprimary
        and not index_record.indisunique
   ),
-  14::bigint,
-  'all 14 documented non-unique indexes exist'
+  15::bigint,
+  'all 15 documented non-unique indexes include the Import Engine dossier lookup'
 );
 
 select is(

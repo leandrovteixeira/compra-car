@@ -34,8 +34,7 @@ insert into combination_results values
 select is((select valid_to from public.commercial_offers where product_id=2135000001),'2026-12-31'::date,'A uses finite MSRP end');
 select is((select valid_to from public.commercial_offers where product_id=2135000002),'2026-10-15'::date,'B uses finite policy end');
 select is((select valid_to from public.commercial_offers where product_id=2135000003),'2026-09-30'::date,'C uses earliest policy end');
-select throws_ok($$select public.create_commercial_offer_batch('[{"clientRowId":"d","productId":2135000004,"policyIds":[213500105]}]','ad000000-0000-4000-8000-000000000001','cd000000-0000-4000-8000-000000000004')$$,'23514','NÃ£o foi possÃ­vel derivar uma vigÃªncia final concreta: as polÃ­ticas e o preÃ§o pÃºblico selecionado nÃ£o possuem data final.','D rejects all-open combination explicitly');
-select throws_ok($$select public.create_commercial_offer_batch('[{"clientRowId":"e","productId":2135000005,"policyIds":[213500106]},{"clientRowId":"d2","productId":2135000004,"policyIds":[213500105]}]','ad000000-0000-4000-8000-000000000001','cd000000-0000-4000-8000-000000000005')$$,'23514','NÃ£o foi possÃ­vel derivar uma vigÃªncia final concreta: as polÃ­ticas e o preÃ§o pÃºblico selecionado nÃ£o possuem data final.','E rejects complete mixed batch');
-select is((select count(*) from public.commercial_offers where product_id=2135000005),0::bigint,'E leaves zero offers from otherwise valid rows');
+select lives_ok($$select public.create_commercial_offer_batch('[{"clientRowId":"d","productId":2135000004,"policyIds":[213500105]}]','ad000000-0000-4000-8000-000000000001','cd000000-0000-4000-8000-000000000004')$$,'D accepts the approved open-ended Offer lifecycle');
+select is((select valid_to from public.commercial_offers where product_id=2135000004),null::date,'D remains open-ended when MSRP and Policies are open');
 select * from finish();
 rollback;

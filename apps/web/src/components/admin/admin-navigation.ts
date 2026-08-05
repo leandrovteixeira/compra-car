@@ -13,7 +13,7 @@ export const adminNavigationItems: readonly AdminNavigationItem[] = [
   { label: 'Equipamentos', status: 'planned' },
   { label: 'Categorias', status: 'planned' },
   { label: 'Marcas', status: 'planned' },
-  { label: 'Importação', status: 'planned' },
+  { href: '/admin/imports', label: 'Importações', status: 'active' },
   { label: 'Usuários', status: 'planned' },
   { label: 'Configurações', status: 'planned' },
 ];

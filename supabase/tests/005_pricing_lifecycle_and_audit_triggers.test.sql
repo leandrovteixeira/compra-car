@@ -72,8 +72,8 @@ select is(
          'set_pricing_updated_at'
        )
   ),
-  23::bigint,
-  'the four shared functions retain 23 row triggers after the dedicated policy rollover guard'
+  24::bigint,
+  'the shared functions include the Import Engine document automation trigger'
 );
 
 select is(
@@ -84,8 +84,8 @@ select is(
      where not trigger_record.tgisinternal
        and procedure.proname = 'set_pricing_updated_at'
   ),
-  8::bigint,
-  'updated_at and lock_version automation includes the eight approved tables'
+  9::bigint,
+  'updated_at and lock_version automation includes Import Engine documents'
 );
 
 insert into auth.users (id, email, raw_user_meta_data)
@@ -182,11 +182,11 @@ insert into public.financial_parameter_sets (
   id, version, name, effective_from, cdi_monthly_percentage,
   spread_monthly_percentage, status, source_type, published_at, published_by
 ) values (
-  95301, 95301, 'Lifecycle parameters', date '2026-07-01', 1, 1,
+  95301, 95301, 'Lifecycle parameters', date '2026-07-01', 1, 0.300000,
   'published', 'manual', now(), '99999999-9999-4999-8999-999999999999'
 );
 select throws_ok(
-  $$update public.financial_parameter_sets set spread_monthly_percentage = 2 where id = 95301$$,
+  $$update public.financial_parameter_sets set spread_monthly_percentage = 0.400000 where id = 95301$$,
   '55000',
   'published or archived financial_parameter_sets economic identity is immutable',
   'published financial parameters reject a material rate change'
@@ -215,7 +215,7 @@ insert into public.commercial_policies (
 select throws_ok(
   $$update public.commercial_policies set title = 'Changed published policy' where id = 95402$$,
   '55000',
-  'published or archived commercial_policies economic identity is immutable',
+  'published or archived commercial policy economic identity is immutable',
   'published policy rejects a material title change'
 );
 

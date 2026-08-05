@@ -1,5 +1,27 @@
 # Contexto para agentes de IA
 
+## Marco — fundação do Import Engine (Sprint 10B, 2026-08-02)
+
+- O Import Engine é módulo oficial e segue o ADR-013: batch é dossiê, documento é arquivo físico e
+  rows futuras são unidades de revisão. “A IA interpreta. O domínio decide.”
+- O primeiro plugin é `commercial_letters`; nenhum contrato específico de provider, SDK, extração,
+  row por MMV, review ou promoção foi conectado nesta etapa.
+- PDFs são enviados somente pelo backend admin ao bucket privado `import-engine-documents`, limitados
+  a 20 por dossiê e 32 MiB cada, com assinatura mínima, SHA-256 real, duplicidade explícita, retry
+  idempotente e compensação de Storage.
+- `pricing_import_documents` preserva proveniência, lifecycle e lock. Criação/adição são RPCs
+  transacionais server-only; ajuste de papel, rejeição e arquivo exigem CAS e auditoria append-only.
+- `page_count` permanece nulo sem leitor local confiável; rejeição/arquivo não removem objetos. A
+  política de retenção e o contrato maduro de provider ficam para a Sprint 10C.
+- Produção e `Legacy` permanecem intocados. O único remoto autorizado é Compra Car Staging
+  (`shfsjyjxmgwnlexmdkcs`).
+- A correção autorizada restaurou em migration separada os guards financeiro e de Offer de
+  `prevent_terminal_pricing_migration_rule_change`, com acesso a colunas isolado por tabela. A suíte
+  pgTAP local passou com 611 testes.
+- As três migrations novas foram aplicadas somente ao Staging. **PENDENTE:** pgTAP e smokes remotos
+  não foram iniciados porque o conector administrativo atingiu o limite de uso imediatamente após o
+  deploy. Não há artefatos de smoke a limpar; Produção não foi consultada.
+
 ## Marco — encerramento do workspace comercial (Sprint 9H.5, 2026-08-01)
 
 - “Expirado” é somente apresentação de `ProductPublicPrice`: exige `status = published`, `ends_on`

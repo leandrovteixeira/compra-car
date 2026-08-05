@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-08-02 — Sprint 10B: fundação do Import Engine
+
+- Formalizado o Import Engine no ADR-013, com core independente, plugin `commercial_letters`, batch
+  como dossiê, documentos físicos próprios e payload normalizado como boundary futura.
+- Criada `pricing_import_documents` e campos explícitos de plugin/dossiê no batch, preservando
+  colunas e registros históricos sem backfill artificial.
+- Adicionado bucket privado `import-engine-documents`, upload administrativo de múltiplos PDFs,
+  SHA-256 dos bytes, limites de 20 arquivos/32 MiB, detecção de duplicidade, idempotência e
+  compensação de objetos em falha.
+- Criadas RPCs server-only para criar dossiê, adicionar documentos, alterar papel, rejeitar e
+  arquivar, com ator, correlation ID, CAS, lifecycle e auditoria append-only.
+- Adicionadas listagem, criação, detalhe e inclusão posterior em `/admin/imports`, com signed URLs de
+  curta duração e sem progresso/processamento artificial.
+- Nenhum provider externo, extração, row por MMV, review ou promoção foi implementado. Produção e
+  `Legacy` permaneceram intocados.
+- Uma migration separada restaurou os ramos históricos financeiro e de Offer em
+  `prevent_terminal_pricing_migration_rule_change`, isolando acessos a colunas por tabela. A suíte
+  pgTAP local passou com 611 testes.
+- As três migrations novas foram aplicadas somente ao Staging. A validação remota ficou pendente
+  porque o conector administrativo atingiu o limite de uso antes do primeiro teste/smoke; nenhum
+  artefato temporário chegou a ser criado.
+
 ## 2026-08-01 — Sprint 9H.5: encerramento do workspace comercial
 
 - Preços persistidos como `published` passam a exibir o badge visual “Expirado” somente quando

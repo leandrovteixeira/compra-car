@@ -1,0 +1,118 @@
+{
+  "schemaVersion": "commercial-letter/mmv-review/1",
+  "importRowId": 9001,
+  "expectedLockVersion": 3,
+  "decision": "approve",
+  "notes": "Confirmados Product e interpretação de/por após leitura do bloco completo.",
+  "confirmation": {
+    "confirmed": true,
+    "summaryHash": "sha256:6b03ce0a43cbca1fd1f32550241289903e454575342d1c8cd735bb1edbdfb25d"
+  },
+  "payload": {
+    "schemaVersion": "commercial-letter/mmv-payload/1",
+    "source": {
+      "originalFileName": "43.26 - Carta Comercial - Junho 2026.pdf",
+      "sourceRowNumber": 1,
+      "primaryPage": 4,
+      "applicablePages": [4],
+      "applicableBlockKeys": ["geely-ex5-pro-junho-2026"],
+      "fullApplicableBlockRead": true,
+      "inheritedRulePages": [],
+      "notes": ["Exemplo baseado no Golden Example GE-02 do guia canônico."]
+    },
+    "mmv": {
+      "brand": { "value": "Geely", "meta": { "origin": "source", "confidence": { "score": 99, "band": "high", "rationale": "Marca explícita." }, "evidence": [{ "documentPage": 4, "excerpt": "Geely EX5", "blockKey": "geely-ex5-pro-junho-2026" }] } },
+      "model": { "value": "EX5", "meta": { "origin": "source", "confidence": { "score": 99, "band": "high", "rationale": "Modelo explícito." }, "evidence": [{ "documentPage": 4, "excerpt": "Geely EX5", "blockKey": "geely-ex5-pro-junho-2026" }] } },
+      "version": { "value": "PRO", "meta": { "origin": "source", "confidence": { "score": 94, "band": "high", "rationale": "Versão explícita." }, "evidence": [{ "documentPage": 4, "excerpt": "EX5 PRO", "blockKey": "geely-ex5-pro-junho-2026" }] } },
+      "modelYear": { "value": null, "meta": { "origin": "source", "confidence": { "score": 30, "band": "low", "rationale": "O ano-modelo continua ausente da carta; a escolha do Product fica registrada separadamente." }, "evidence": [{ "documentPage": 4, "excerpt": "EX5 PRO", "blockKey": "geely-ex5-pro-junho-2026" }] } },
+      "productionYear": { "value": null, "meta": { "origin": "source", "confidence": { "score": 30, "band": "low", "rationale": "O ano de fabricação continua ausente da carta; a escolha do Product fica registrada separadamente." }, "evidence": [{ "documentPage": 4, "excerpt": "EX5 PRO", "blockKey": "geely-ex5-pro-junho-2026" }] } },
+      "externalCodes": [],
+      "variantRestrictions": []
+    },
+    "productMatch": {
+      "status": "confirmed",
+      "selectedProductId": 4201,
+      "selectedBy": "operator",
+      "candidates": [{ "productId": 4201, "displayName": "Geely EX5 PRO 2025/2026", "matchMethod": "manual", "score": 100 }],
+      "expectedProductFingerprint": "GEELY|EX5|PRO|2026|2025",
+      "issueIds": []
+    },
+    "commercialPeriod": {
+      "competence": "2026-06",
+      "kind": "monthly",
+      "startsOn": { "value": "2026-06-01", "meta": { "origin": "system", "confidence": { "score": 90, "band": "high", "rationale": "Primeiro dia da competência." }, "evidence": [{ "documentPage": 4, "excerpt": "Carta Comercial - Junho 2026", "blockKey": "geely-ex5-pro-junho-2026" }] } },
+      "endsOn": { "value": "2026-06-30", "meta": { "origin": "system", "confidence": { "score": 90, "band": "high", "rationale": "Último dia da competência." }, "evidence": [{ "documentPage": 4, "excerpt": "Carta Comercial - Junho 2026", "blockKey": "geely-ex5-pro-junho-2026" }] } },
+      "timezone": "America/Sao_Paulo",
+      "issueIds": []
+    },
+    "publicPrice": {
+      "presence": "mentioned",
+      "candidate": {
+        "amount": { "amount": "205800.00", "currency": "BRL", "meta": { "origin": "operator", "confidence": { "score": 100, "band": "high", "rationale": "Operador confirmou o valor De como MSRP." }, "evidence": [{ "documentPage": 4, "excerpt": "De: R$ 205.800 — Por: R$ 195.800", "blockKey": "geely-ex5-pro-junho-2026" }] } },
+        "startsOn": { "value": "2026-06-01", "meta": { "origin": "system", "confidence": { "score": 90, "band": "high", "rationale": "Herdado do período." }, "evidence": [{ "documentPage": 4, "excerpt": "Carta Comercial - Junho 2026", "blockKey": "geely-ex5-pro-junho-2026" }] } },
+        "endsOn": { "value": "2026-06-30", "meta": { "origin": "system", "confidence": { "score": 90, "band": "high", "rationale": "Herdado do período." }, "evidence": [{ "documentPage": 4, "excerpt": "Carta Comercial - Junho 2026", "blockKey": "geely-ex5-pro-junho-2026" }] } },
+        "promotionAction": "create_draft",
+        "existingPriceId": null,
+        "expectedLockVersion": null,
+        "issueIds": []
+      },
+      "issueIds": []
+    },
+    "policies": [
+      {
+        "clientPolicyId": "policy_invoice_discount",
+        "sourceLabel": { "value": "De/Por", "meta": { "origin": "source", "confidence": { "score": 76, "band": "medium", "rationale": "Expressão original preservada." }, "evidence": [{ "documentPage": 4, "excerpt": "De: R$ 205.800 — Por: R$ 195.800", "blockKey": "geely-ex5-pro-junho-2026" }] } },
+        "canonicalType": "invoice_discount",
+        "mappingStatus": "mapped",
+        "title": { "value": "Desconto NF", "meta": { "origin": "operator", "confidence": { "score": 100, "band": "high", "rationale": "Mapeamento confirmado pelo operador." }, "evidence": [{ "documentPage": 4, "excerpt": "De: R$ 205.800 — Por: R$ 195.800", "blockKey": "geely-ex5-pro-junho-2026" }] } },
+        "description": { "value": "Diferença entre o MSRP e o preço promocional.", "meta": { "origin": "operator", "confidence": { "score": 100, "band": "high", "rationale": "Descrição revisada." }, "evidence": [{ "documentPage": 4, "excerpt": "De: R$ 205.800 — Por: R$ 195.800", "blockKey": "geely-ex5-pro-junho-2026" }] } },
+        "startsOn": { "value": "2026-06-01", "meta": { "origin": "system", "confidence": { "score": 90, "band": "high", "rationale": "Herdado do período." }, "evidence": [{ "documentPage": 4, "excerpt": "Carta Comercial - Junho 2026", "blockKey": "geely-ex5-pro-junho-2026" }] } },
+        "endsOn": { "value": "2026-06-30", "meta": { "origin": "system", "confidence": { "score": 90, "band": "high", "rationale": "Herdado do período." }, "evidence": [{ "documentPage": 4, "excerpt": "Carta Comercial - Junho 2026", "blockKey": "geely-ex5-pro-junho-2026" }] } },
+        "customerBenefitAmount": { "amount": "10000.00", "currency": "BRL", "meta": { "origin": "system", "confidence": { "score": 100, "band": "high", "rationale": "205800.00 menos 195800.00." }, "evidence": [{ "documentPage": 4, "excerpt": "De: R$ 205.800 — Por: R$ 195.800", "blockKey": "geely-ex5-pro-junho-2026" }] } },
+        "dealerRebateAmount": null,
+        "parameters": { "termMonths": null, "customerInterestRateMonthly": null, "downPaymentPercentage": null, "annualRate": null, "coverageYears": null, "offerMonth": null, "maintenanceCount": null, "coverageMonths": null, "coverageKm": null, "voucherType": null, "balloonAmount": null, "firstPaymentOn": null },
+        "restrictions": [],
+        "promotionAction": "create_draft",
+        "existingPolicyId": null,
+        "predecessor": null,
+        "issueIds": []
+      }
+    ],
+    "offers": [
+      {
+        "clientOfferId": "offer_cash_discount",
+        "label": { "value": "Preço promocional EX5 PRO", "meta": { "origin": "operator", "confidence": { "score": 100, "band": "high", "rationale": "Composição confirmada." }, "evidence": [{ "documentPage": 4, "excerpt": "De: R$ 205.800 — Por: R$ 195.800", "blockKey": "geely-ex5-pro-junho-2026" }] } },
+        "policyClientIds": ["policy_invoice_discount"],
+        "sourceRelation": { "value": "standalone", "meta": { "origin": "operator", "confidence": { "score": 100, "band": "high", "rationale": "Nenhuma segunda Policy aplicável no bloco revisado." }, "evidence": [{ "documentPage": 4, "excerpt": "De: R$ 205.800 — Por: R$ 195.800", "blockKey": "geely-ex5-pro-junho-2026" }] } },
+        "startsOn": { "value": "2026-06-01", "meta": { "origin": "system", "confidence": { "score": 90, "band": "high", "rationale": "Herdado do período." }, "evidence": [{ "documentPage": 4, "excerpt": "Carta Comercial - Junho 2026", "blockKey": "geely-ex5-pro-junho-2026" }] } },
+        "endsOn": { "value": "2026-06-30", "meta": { "origin": "system", "confidence": { "score": 90, "band": "high", "rationale": "Herdado do período." }, "evidence": [{ "documentPage": 4, "excerpt": "Carta Comercial - Junho 2026", "blockKey": "geely-ex5-pro-junho-2026" }] } },
+        "restrictions": [],
+        "promotionAction": "create_draft",
+        "existingOfferId": null,
+        "issueIds": ["issue_price_publication_gate"]
+      }
+    ],
+    "promotionPlan": {
+      "mode": "two_phase_awaiting_price_publication",
+      "publishedPriceIdForOffers": null,
+      "affectedOffers": [],
+      "requiresExplicitConfirmation": true,
+      "issueIds": ["issue_price_publication_gate"]
+    },
+    "issues": [
+      {
+        "issueId": "issue_price_publication_gate",
+        "code": "MSRP_PUBLICATION_REQUIRED_FOR_OFFER",
+        "severity": "info",
+        "blocking": false,
+        "path": "/promotionPlan",
+        "message": "A etapa de Offer aguardará a publicação individual do novo MSRP.",
+        "evidence": [],
+        "status": "open",
+        "resolution": null
+      }
+    ],
+    "overallConfidence": { "score": 100, "band": "high", "rationale": "Product, MSRP e desconto confirmados pelo operador." },
+    "validation": { "blockingIssueCount": 0, "warningCount": 0, "readyForApproval": true, "readyForPromotion": true }
+  }
+}

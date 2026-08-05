@@ -17,13 +17,14 @@ describe('admin foundation', () => {
     expect(layout).not.toContain('user_metadata');
   });
 
-  it('publishes overview and products links from one navigation definition', () => {
+  it('publishes active admin modules from one navigation definition', () => {
     expect(adminNavigationItems.filter((item) => item.status === 'active')).toEqual([
       { href: '/admin', label: 'Visão geral', status: 'active' },
       { href: '/admin/products', label: 'Veículos', status: 'active' },
       { href: '/admin/prices', label: 'Preços públicos', status: 'active' },
       { href: '/admin/prices/input', label: 'Criar preços', status: 'active' },
       { href: '/admin/prices/policies/input', label: 'Criar políticas', status: 'active' },
+      { href: '/admin/imports', label: 'Importações', status: 'active' },
     ]);
   });
 
@@ -37,7 +38,6 @@ describe('admin foundation', () => {
       'Equipamentos',
       'Categorias',
       'Marcas',
-      'Importação',
       'Usuários',
       'Configurações',
     ]);

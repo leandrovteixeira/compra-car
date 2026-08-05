@@ -78,6 +78,109 @@ export type {
   ManualPriceBatchProductOption,
 } from '@compra-car/core';
 
+export interface ImportBatchListItemDto {
+  readonly id: string;
+  readonly title: string;
+  readonly pluginKey: 'commercial_letters';
+  readonly competence: string;
+  readonly status: string;
+  readonly documentCount: number;
+  readonly mmvCount: number;
+  readonly createdByName: string | null;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+  readonly lockVersion: number;
+}
+
+export interface ImportDocumentDto {
+  readonly id: string;
+  readonly originalFileName: string;
+  readonly fileSizeBytes: number;
+  readonly contentSha256: string;
+  readonly pageCount: number | null;
+  readonly status: string;
+  readonly sourceOrder: number;
+  readonly documentRole: string;
+  readonly lockVersion: number;
+}
+
+export interface ImportBatchDetailsDto extends ImportBatchListItemDto {
+  readonly notes: string | null;
+  readonly documents: readonly ImportDocumentDto[];
+}
+
+export interface ImportDuplicateDto {
+  readonly contentSha256: string;
+  readonly originalFileName: string;
+  readonly batchId: string;
+  readonly batchTitle: string;
+  readonly batchStatus: string;
+  readonly createdAt: string;
+}
+
+export interface ImportBatchFormValuesDto {
+  readonly title: string;
+  readonly competence: string;
+  readonly notes: string;
+  readonly idempotencyKey: string;
+  readonly acknowledgeDuplicates: boolean;
+}
+
+export type ImportBatchActionStateDto =
+  | {
+      readonly status: 'idle';
+      readonly values: ImportBatchFormValuesDto;
+      readonly fieldErrors: Readonly<Record<string, readonly string[]>>;
+      readonly duplicates: readonly ImportDuplicateDto[];
+    }
+  | {
+      readonly status: 'error' | 'duplicate';
+      readonly values: ImportBatchFormValuesDto;
+      readonly fieldErrors: Readonly<Record<string, readonly string[]>>;
+      readonly duplicates: readonly ImportDuplicateDto[];
+      readonly message: string;
+      readonly correlationId?: string;
+    }
+  | {
+      readonly status: 'success';
+      readonly values: ImportBatchFormValuesDto;
+      readonly fieldErrors: Readonly<Record<string, readonly string[]>>;
+      readonly duplicates: readonly ImportDuplicateDto[];
+      readonly message: string;
+      readonly batchId: string;
+    };
+
+export interface ImportDocumentsFormValuesDto {
+  readonly batchId: string;
+  readonly expectedLockVersion: string;
+  readonly operationId: string;
+  readonly acknowledgeDuplicates: boolean;
+}
+
+export type ImportDocumentsActionStateDto =
+  | {
+      readonly status: 'idle';
+      readonly values: ImportDocumentsFormValuesDto;
+      readonly fieldErrors: Readonly<Record<string, readonly string[]>>;
+      readonly duplicates: readonly ImportDuplicateDto[];
+    }
+  | {
+      readonly status: 'error' | 'duplicate';
+      readonly values: ImportDocumentsFormValuesDto;
+      readonly fieldErrors: Readonly<Record<string, readonly string[]>>;
+      readonly duplicates: readonly ImportDuplicateDto[];
+      readonly message: string;
+      readonly correlationId?: string;
+    }
+  | {
+      readonly status: 'success';
+      readonly values: ImportDocumentsFormValuesDto;
+      readonly fieldErrors: Readonly<Record<string, readonly string[]>>;
+      readonly duplicates: readonly ImportDuplicateDto[];
+      readonly message: string;
+      readonly batchId: string;
+    };
+
 export interface ProductPublicPriceListItemDto {
   readonly id: string;
   readonly product: ProductPublicPriceProduct;

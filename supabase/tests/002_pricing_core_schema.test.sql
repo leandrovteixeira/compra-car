@@ -50,7 +50,7 @@ select is(
       from pg_enum
      where enumtypid = 'public.pricing_source_type'::regtype
   ),
-  array['manual', 'legacy_backfill', 'ai_extraction', 'api_import'],
+  array['manual', 'legacy_backfill', 'ai_extraction', 'api_import', 'document_upload'],
   'pricing_source_type has the approved values in order'
 );
 

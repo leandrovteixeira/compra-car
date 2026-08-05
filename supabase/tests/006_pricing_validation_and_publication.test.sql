@@ -272,12 +272,12 @@ insert into public.financial_parameter_sets (
   id, version, name, effective_from, cdi_monthly_percentage,
   spread_monthly_percentage, source_type, source_snapshot
 ) values
-  (97101, 1, 'Synthetic parameters', date '2026-07-01', 0.900000, 0.200000, 'manual', '{}'),
-  (97102, 2, 'Invalid snapshot', date '2026-07-01', 0.500000, 0.100000, 'manual', '[]'),
-  (97104, 4, 'Draft parameters', date '2026-07-01', 0.700000, 0.100000, 'manual', '{}');
+  (97101, 1, 'Synthetic parameters', date '2026-07-01', 0.900000, 0.300000, 'manual', '{}'),
+  (97102, 2, 'Invalid snapshot', date '2026-07-01', 0.500000, 0.300000, 'manual', '[]'),
+  (97104, 4, 'Draft parameters', date '2026-07-01', 0.700000, 0.300000, 'manual', '{}');
 
 select throws_ok(
-  $$insert into public.financial_parameter_sets (version, name, effective_from, cdi_monthly_percentage, spread_monthly_percentage, source_type) values (3, 'Invalid rate', date '2026-07-01', 100.000001, 0, 'manual')$$,
+  $$insert into public.financial_parameter_sets (version, name, effective_from, cdi_monthly_percentage, spread_monthly_percentage, source_type) values (3, 'Invalid rate', date '2026-07-01', -0.000001, 0.300000, 'manual')$$,
   '23514', null,
   'financial parameter rates outside physical limits are rejected'
 );
@@ -301,7 +301,7 @@ select is(
   'parameter publication creates one audit event'
 );
 select throws_ok(
-  $$insert into public.financial_parameter_sets (version, name, effective_from, cdi_monthly_percentage, spread_monthly_percentage, source_type) values (1, 'Duplicate version', date '2026-08-01', 0, 0, 'manual')$$,
+  $$insert into public.financial_parameter_sets (version, name, effective_from, cdi_monthly_percentage, spread_monthly_percentage, source_type) values (1, 'Duplicate version', date '2026-08-01', 0, 0.300000, 'manual')$$,
   '23505', null,
   'the physical unique constraint rejects a duplicate parameter version'
 );
@@ -342,9 +342,9 @@ insert into public.commercial_policy_applications (
 with finance as (
   select 50000::numeric as principal,
          (50000::numeric / 24) as payment,
-         0.011::numeric as reference_rate,
+         0.012::numeric as reference_rate,
          (50000::numeric / 24)
-           * (1 - power(1.011::numeric, -24)) / 0.011::numeric as present_value
+           * (1 - power(1.012::numeric, -24)) / 0.012::numeric as present_value
 ), result as (
   select *, principal - present_value as unrounded from finance
 )
@@ -369,7 +369,7 @@ select
       'customerPresentValue', present_value::text
     ),
     '{"id":97001,"amount":"100000.00","startsOn":"2026-07-01"}',
-    '{"id":97101,"version":"1","cdiMonthlyPercentage":"0.900000","spreadMonthlyPercentage":"0.200000"}',
+    '{"id":97101,"version":"1","cdiMonthlyPercentage":"0.900000","spreadMonthlyPercentage":"0.300000"}',
     'financed_principal - present_value_customer_payments',
     unrounded,
     round(unrounded, 2)
@@ -444,7 +444,7 @@ select is(
 );
 select is(
   (select monetary_value from public.commercial_policy_applications where id = 97309),
-  6265.40::numeric,
+  6779.17::numeric,
   'financing uses the documented high-precision decimal formula and HALF_UP result'
 );
 
@@ -504,7 +504,7 @@ insert into public.commercial_policy_applications (
   (97903, 97803, 2100000101, null, 0, 0, pg_temp.pricing_test_snapshot('retail_bonus', 'fixed_amount', 'a1000000-0000-4000-8000-000000000001', 0, '{}', null, null, 'input_monetary_value', 0, 0)),
   (97904, 97804, 2100000101, 97002, null, 4800, pg_temp.pricing_test_snapshot('free_ipva', 'percentage_of_msrp', 'a1000000-0000-4000-8000-000000000001', null, '{"benefitPercentage":"4.000000"}', '{"id":97002,"amount":"120000.00","startsOn":"2026-07-01"}', null, 'MSRP * percentage / 100', 4800, 4800)),
   (97905, 97805, 2100000101, 97005, null, 4200, pg_temp.pricing_test_snapshot('free_ipva', 'percentage_of_msrp', 'a1000000-0000-4000-8000-000000000001', null, '{"benefitPercentage":"4.000000"}', '{"id":97005,"amount":"105000.00","startsOn":"2026-09-01"}', null, 'MSRP * percentage / 100', 4200, 4200)),
-  (97906, 97806, 2100000101, 97001, null, 1, pg_temp.pricing_test_snapshot('subsidized_financing', 'present_value_subsidy', 'a1000000-0000-4000-8000-000000000001', null, '{"downPaymentPercentage":"50.000000","termMonths":"24","customerInterestRateMonthly":"0.000000"}', '{"id":97001,"amount":"100000.00","startsOn":"2026-07-01"}', '{"id":97104,"version":"4","cdiMonthlyPercentage":"0.700000","spreadMonthlyPercentage":"0.100000"}', 'financed_principal - present_value_customer_payments', 1, 1)),
+  (97906, 97806, 2100000101, 97001, null, 1, pg_temp.pricing_test_snapshot('subsidized_financing', 'present_value_subsidy', 'a1000000-0000-4000-8000-000000000001', null, '{"downPaymentPercentage":"50.000000","termMonths":"24","customerInterestRateMonthly":"0.000000"}', '{"id":97001,"amount":"100000.00","startsOn":"2026-07-01"}', '{"id":97104,"version":"4","cdiMonthlyPercentage":"0.700000","spreadMonthlyPercentage":"0.300000"}', 'financed_principal - present_value_customer_payments', 1, 1)),
   (97907, 97807, 2100000101, 97001, null, 4000, pg_temp.pricing_test_snapshot('free_ipva', 'percentage_of_msrp', 'a1000000-0000-4000-8000-000000000001', null, '{"benefitPercentage":"4.000000"}', '{"id":97001,"amount":"100000.00","startsOn":"2026-07-01"}', null, 'wrong formula', 4000, 4000));
 
 select throws_ok($$select public.publish_commercial_policy(97801, 'a1000000-0000-4000-8000-000000000001', 1, 'c1000000-0000-4000-8000-000000000041')$$, '23514', null, 'an invalid type and calculation method combination is rejected');

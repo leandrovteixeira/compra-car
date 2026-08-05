@@ -84,6 +84,12 @@ Criar rapidamente um MVP mobile-first para vendedores de concessionárias, permi
 
 ## Fase 2 administrativa — importações assistidas por IA
 
+- [x] Sprint 10A/10A.2 — auditar o pipeline e definir guia, contrato canônico e UX de revisão por MMV.
+- [x] Sprint 10B — formalizar o Import Engine e entregar dossiês com múltiplos PDFs, Storage privado,
+  hash/idempotência, lifecycle inicial e UI administrativa, sem provider ou extração.
+- [ ] Sprint 10C — definir provider/job maduros, indexar documentos e gerar prévia normalizada por
+  MMV, mantendo revisão humana e domínio soberano.
+
 - [ ] Sprint 10 — importar cartas comerciais e fichas técnicas em staging com saída estruturada,
   revisão humana e persistência aprovada; preços presentes na carta podem ser capturados.
 - [ ] Exigir revisão humana antes da promoção para tabelas definitivas.
