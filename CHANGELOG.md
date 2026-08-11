@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-08-11 — validação de retomada da Sprint 10B
+
+- Protegido o corpus local de pesquisa com `/data/research/` no `.gitignore`; 167 PDFs reais foram
+  inventariados localmente sem alteração de nomes ou bytes e sem envio em massa.
+- Executados no Compra Car Staging (`shfsjyjxmgwnlexmdkcs`) os smokes controlados de upload,
+  duplicidade no mesmo dossiê e entre dossiês, signed URL, ausência de acesso público, expiração,
+  compensação de Storage e reconciliação de órfãos.
+- O estado final do Staging contém seis documentos de smoke reconciliados com seis objetos, sem
+  órfãos, documentos ausentes ou resíduo da compensação.
+- O pgTAP local do Import Engine passou com 34/34 assertions; a suíte SQL completa executou 611
+  assertions e teve uma única falha textual preexistente sensível ao checkout CRLF, fora da 10B.
+- Lint, typecheck, build e testes focados do Import Engine passaram. A falha web e o format check
+  global foram classificados como baseline preexistente e não bloqueante.
+- Corrigido mojibake localizado nas mensagens runtime do fluxo 10B de adicionar documentos, sem
+  alterar contratos ou comportamento.
+
 ## 2026-08-02 — Sprint 10B: fundação do Import Engine
 
 - Formalizado o Import Engine no ADR-013, com core independente, plugin `commercial_letters`, batch

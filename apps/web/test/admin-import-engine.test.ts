@@ -195,7 +195,7 @@ describe('admin Import Engine', () => {
     ]);
     await expect(addAdminImportDocuments(addForm(), dependencies(target))).resolves.toMatchObject({
       status: 'error',
-      message: 'Este arquivo jÃ¡ foi adicionado a este dossiÃª.',
+      message: 'Este arquivo já foi adicionado a este dossiê.',
     });
     expect(target.uploadDocument).not.toHaveBeenCalled();
   });

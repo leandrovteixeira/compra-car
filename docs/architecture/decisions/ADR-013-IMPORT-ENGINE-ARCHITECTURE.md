@@ -49,6 +49,16 @@ Todo conhecimento específico pertence ao plugin, nunca ao provider.
 
 Nenhum fornecedor externo é parte do contrato do domínio.
 
+O nome original do arquivo é metadata de proveniência, nunca fonte de verdade semântica. O corpus
+real contém PDFs byte a byte idênticos, confirmados por SHA-256, com filenames diferentes e até com
+nomes que sugerem marcas distintas. Portanto, marca, competência, vigência, MMV e natureza comercial
+devem ser determinados prioritariamente pelo conteúdo do documento. O filename pode ser fornecido ao
+provider apenas como contexto auxiliar e não pode decidir esses campos.
+
+A Sprint 10C deverá incluir um teste obrigatório de `filename invariance`: processar o mesmo PDF com
+o nome original e com um nome opaco, e exigir payloads normalizados semanticamente equivalentes,
+desconsiderando somente metadata de proveniência ligada ao filename.
+
 ## Consequências positivas
 
 - providers podem ser substituídos e testados por contrato;

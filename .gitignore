@@ -55,5 +55,8 @@ snapshots/
 snapshot-manifest.json
 pricing-snapshot-tmp/
 
+# Corpus local de pesquisa / documentos reais
+/data/research/
+
 # TypeScript build cache
 *.tsbuildinfo

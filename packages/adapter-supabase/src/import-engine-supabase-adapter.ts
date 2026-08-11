@@ -282,9 +282,9 @@ export class ImportEngineSupabaseAdapter implements ImportEngineRepository {
       p_actor_id: input.actorId,
       p_correlation_id: input.correlationId,
     });
-    if (error) throw queryError('NÃ£o foi possÃ­vel adicionar os documentos.', error);
+    if (error) throw queryError('Não foi possível adicionar os documentos.', error);
     if (typeof data !== 'object' || data === null)
-      throw new PricingAdapterMappingError('Resposta invÃ¡lida da inclusÃ£o de documentos.');
+      throw new PricingAdapterMappingError('Resposta inválida da inclusão de documentos.');
     const row = data as Row;
     return Promise.resolve(
       Object.freeze({

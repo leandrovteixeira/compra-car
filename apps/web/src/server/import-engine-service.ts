@@ -296,16 +296,16 @@ export async function addAdminImportDocuments(
   const fieldErrors: Record<string, readonly string[]> = {};
 
   try {
-    if (!/^\d+$/u.test(current.batchId)) fieldErrors.batchId = ['DossiÃª invÃ¡lido.'];
+    if (!/^\d+$/u.test(current.batchId)) fieldErrors.batchId = ['Dossiê inválido.'];
     const expectedLockVersion = Number(current.expectedLockVersion);
     if (!Number.isSafeInteger(expectedLockVersion) || expectedLockVersion < 1)
-      fieldErrors.expectedLockVersion = ['VersÃ£o do dossiÃª invÃ¡lida.'];
+      fieldErrors.expectedLockVersion = ['Versão do dossiê inválida.'];
     if (
       !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(
         current.operationId,
       )
     )
-      fieldErrors.operationId = ['Identificador da operaÃ§Ã£o invÃ¡lido.'];
+      fieldErrors.operationId = ['Identificador da operação inválido.'];
 
     const files = formData
       .getAll('documents')
@@ -318,13 +318,13 @@ export async function addAdminImportDocuments(
     const batch = /^\d+$/u.test(current.batchId)
       ? await repository.getBatch(current.batchId)
       : null;
-    if (!batch) fieldErrors.batchId = ['DossiÃª nÃ£o encontrado.'];
+    if (!batch) fieldErrors.batchId = ['Dossiê não encontrado.'];
     else {
       if (!['uploaded', 'ready'].includes(batch.status))
-        fieldErrors.documents = ['Este dossiÃª nÃ£o aceita novos documentos no status atual.'];
+        fieldErrors.documents = ['Este dossiê não aceita novos documentos no status atual.'];
       if (batch.documentCount + files.length > IMPORT_ENGINE_MAX_DOCUMENTS)
         fieldErrors.documents = [
-          `O dossiÃª aceita no mÃ¡ximo ${IMPORT_ENGINE_MAX_DOCUMENTS} documentos.`,
+          `O dossiê aceita no máximo ${IMPORT_ENGINE_MAX_DOCUMENTS} documentos.`,
         ];
     }
 
@@ -346,7 +346,7 @@ export async function addAdminImportDocuments(
       const bytes = new Uint8Array(await file.arrayBuffer());
       const documentErrors = [...errors];
       if (!hasPdfSignature(bytes))
-        documentErrors.push('A assinatura do arquivo nÃ£o corresponde a um PDF.');
+        documentErrors.push('A assinatura do arquivo não corresponde a um PDF.');
       if (documentErrors.length) {
         fieldErrors[`document.${index}`] = Object.freeze(documentErrors);
         continue;
@@ -377,8 +377,8 @@ export async function addAdminImportDocuments(
     );
     const sameBatch = duplicates.filter((duplicate) => duplicate.batchId === current.batchId);
     if (sameBatch.length)
-      return addDocumentError(current, 'Este arquivo jÃ¡ foi adicionado a este dossiÃª.', {
-        documents: ['Remova da seleÃ§Ã£o o PDF que jÃ¡ pertence ao dossiÃª.'],
+      return addDocumentError(current, 'Este arquivo já foi adicionado a este dossiê.', {
+        documents: ['Remova da seleção o PDF que já pertence ao dossiê.'],
       });
     if (duplicates.length && !current.acknowledgeDuplicates) {
       return {
@@ -387,7 +387,7 @@ export async function addAdminImportDocuments(
         fieldErrors: {},
         duplicates: duplicates.map(duplicateDto),
         message:
-          'Um ou mais documentos jÃ¡ pertencem a outro dossiÃª. Confirme o reprocessamento para continuar.',
+          'Um ou mais documentos já pertencem a outro dossiê. Confirme o reprocessamento para continuar.',
       };
     }
 
@@ -437,11 +437,11 @@ export async function addAdminImportDocuments(
     };
   } catch (error) {
     if (error instanceof ImportEngineConflictError)
-      return addDocumentError(current, 'O documento jÃ¡ foi registrado.', {}, correlationId);
+      return addDocumentError(current, 'O documento já foi registrado.', {}, correlationId);
     if (error instanceof ImportEngineStorageError)
       return addDocumentError(
         current,
-        'NÃ£o foi possÃ­vel armazenar um dos PDFs. A operaÃ§Ã£o foi compensada.',
+        'Não foi possível armazenar um dos PDFs. A operação foi compensada.',
         {},
         correlationId,
       );
