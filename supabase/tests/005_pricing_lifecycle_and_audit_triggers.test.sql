@@ -72,7 +72,7 @@ select is(
          'set_pricing_updated_at'
        )
   ),
-  24::bigint,
+  25::bigint,
   'the shared functions include the Import Engine document automation trigger'
 );
 
@@ -84,7 +84,7 @@ select is(
      where not trigger_record.tgisinternal
        and procedure.proname = 'set_pricing_updated_at'
   ),
-  9::bigint,
+  10::bigint,
   'updated_at and lock_version automation includes Import Engine documents'
 );
 

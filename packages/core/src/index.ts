@@ -38,6 +38,7 @@ export * from './admin/commercial-offer-builder';
 export * from './admin/commercial-period';
 export * from './admin/import-engine';
 export * from './services/commercial-offer-calculator';
+export * from './services/import-processing';
 export * from './use-cases/create-product-public-price';
 export * from './use-cases/update-product-public-price';
 export * from './use-cases/load-administrative-product-specs';

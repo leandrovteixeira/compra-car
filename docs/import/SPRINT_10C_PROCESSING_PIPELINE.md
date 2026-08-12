@@ -1,0 +1,53 @@
+# Sprint 10C — Fundação do processamento do Import Engine
+
+Status: implementada e validada funcionalmente no Staging `shfsjyjxmgwnlexmdkcs` em 2026-08-12.
+
+## Escopo entregue
+
+- job auditável por tentativa (`queued`, `processing`, `succeeded`, `failed`), claim token e índices de concorrência;
+- provider genérico, registry e provider `fake` determinístico;
+- plugin `commercial_letters` sobre `commercial-letter/mmv-payload/1`;
+- uma `pricing_import_row` por MMV, com ordinal semântico independente do nome do arquivo;
+- matching na ordem normativa: código externo, chave exata, tokens somente como sugestão;
+- persistência atômica das rows e transição do batch para `needs_review`;
+- retry explícito de batch `failed`, sem apagar rows e sem duas tentativas ativas;
+- ação administrativa mínima para processar um dossiê `ready`.
+
+## Hardening pré-Staging
+
+O resultado do provider é entrada não confiável. A pipeline remove previamente toda autoridade sobre `productMatch`, IDs persistidos, resoluções, locks, `validation` e `promotionPlan`; força ações de promoção a `blocked`; executa o JSON Schema Draft 2020-12 com Ajv; aplica invariantes complementares de IDs locais, referências de Offer e coerência confidence/band; faz matching e enriquecimento no servidor; e executa novamente o schema antes da persistência.
+
+Cada payload por MMV é limitado a 256 KiB, cada tentativa a 100 rows e o envelope transacional a 10 MiB somando `raw_payload` e `normalized_payload`. `raw_payload` é o rascunho já sanitizado de campos server-owned; `normalized_payload` é o documento canônico final enriquecido. Bytes/base64/texto integral de PDF não pertencem a esses campos. A retenção definitiva permanece uma decisão futura antes do provider real.
+
+Claims possuem lease entre 30 e 900 segundos; o worker web usa 300 segundos. Um job `processing` expirado pode ser recuperado na mesma tentativa por novo token. O token anterior não pode finalizar nem falhar. `claim`, `finalize` e `fail` bloqueiam job e batch e revalidam `ready|failed → extracting`, `extracting → needs_review` e `extracting → failed`.
+
+O correlation ID é estável por tentativa e deve coincidir em enqueue, claim/reclaim, finalize e fail. Auditoria append-only registra enqueue, claim/reclaim, success/failure e as transições correspondentes do batch, sem bytes, URLs, secrets ou payload integral. `lock_version` é uma versão auditável incrementada pelo trigger; a exclusão concorrente é feita por row locks e claim token, não por optimistic locking de cliente.
+
+Matching consulta primeiro a chave exata e, quando necessário, um conjunto direcionado e limitado de candidatos da mesma marca/modelo; não existe truncamento silencioso do catálogo em 5.000 linhas. External codes continuam apenas no contrato puro até existir fonte canônica — nenhuma tabela legada é consultada. Tokens nunca confirmam automaticamente.
+
+O ordinal usa MMV, competência, início/fim, restrições/canal serializados e block keys, com desempate pelo payload canônico. Filename não participa da chave. O teste de filename invariance usa os mesmos bytes com nomes descritivo e opaco e compara MMV, período, preço, Policies, Offers e evidências.
+
+As garantias PostgreSQL possuem pgTAP local em `supabase/tests/022_sprint_10c_processing_hardening.test.sql`, cobrindo grants/RLS, enqueue, claim concorrente, lease/reclaim, token antigo, atomicidade, replay, batch concorrente, failure, retry, lineage e auditoria.
+
+O ambiente remoto não disponibiliza pgTAP. O reset local e a suíte SQL completa passaram com 648/648 assertions; no Staging, application flow, adapters, Storage, RPCs e FakeProvider reais validaram os cenários funcionais críticos, incluindo reclaim, matching suggested e invariância de filename. Os smokes não alteraram Products, preços públicos, Policies, Offers ou memberships, e seus objetos transitórios de Storage foram removidos.
+
+## Transação e idempotência
+
+O provider executa fora do banco. `enqueue_import_processing_job` serializa por batch; `claim_import_processing_job` registra a posse e move documentos/batch para processamento. `finalize_import_processing_job` valida e insere todas as rows, conclui documentos/job e move o batch para `needs_review` numa única transação. Se a resposta se perder após commit, repetir a finalização com o mesmo claim retorna o resultado persistido.
+
+Uma falha antes da finalização não deixa rows parciais. O retry cria nova tentativa somente quando o batch não tem rows. Reprocessamento deliberado de um resultado concluído fica fora deste sprint, pois exigiria política explícita de versionamento em vez de exclusão.
+
+## Segurança
+
+Storage continua privado e é lido apenas no servidor. A tabela de jobs usa RLS sem policies para clientes; tabelas, sequência e RPCs são concedidas exclusivamente a `service_role`. RPCs usam `security definer`, `search_path = ''`, ator, correlation ID e locks de linha. Erros persistidos são limitados a 2.000 caracteres e não armazenam bytes, prompts secretos ou credenciais.
+
+## Limites conhecidos
+
+- O provider fake prova orquestração e persistência, mas não interpreta o PDF.
+- O provider fake usa fixtures e não interpreta precedência documental; cenários de primary/errata/complement são representados por fixtures configuráveis, não por heurística falsa.
+- O catálogo canônico atual não expõe códigos externos. O algoritmo e testes suportam código inequívoco, mas o adapter retorna somente a chave de negócio até existir um contrato canônico de códigos — sem consultar tabelas legadas.
+- Provider real está **PENDENTE** de decisão de modelo, credenciais no servidor, limites, custo e política de retenção. Nenhuma promoção comercial faz parte da Sprint 10C.
+
+## Gate de Staging
+
+Único alvo remoto autorizado: Compra Car Staging, ref `shfsjyjxmgwnlexmdkcs`. Antes de qualquer `db push`, revisar o diff local, confirmar o alvo novamente e executar o smoke test com PDF real. Produção permanece proibida.

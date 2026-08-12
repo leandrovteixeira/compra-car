@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-08-12 — Sprint 10C: fundação do processamento
+
+- Adicionado lifecycle auditável de jobs, claim concorrente, retry seguro e finalização atômica das rows.
+- Adicionados contrato/registry de provider, provider fake determinístico, plugin de cartas comerciais e matching conservador de Product.
+- Adicionada ação administrativa mínima de processamento e documentação operacional/de segurança.
+- Hardening pré-Staging: JSON Schema executado com invariantes complementares, campos server-owned reconstruídos, lease/reclaim, locks de batch, auditoria ponta a ponta, limites de payload, matching direcionado, filename invariance e 34 assertions pgTAP.
+- Staging validado funcionalmente em `shfsjyjxmgwnlexmdkcs` com o application flow, adapters, Storage, RPCs e FakeProvider reais: happy path, replay, retry, reclaim, concorrência, matching exact/suggested/unmatched, invariância de filename, campos server-owned, rejeição canônica e limites passaram sem efeito comercial. A ausência de pgTAP remoto foi compensada por 648/648 assertions locais e smokes remotos explícitos.
+- Provider real permanece PENDENTE; a Sprint 10C não promove preços, Policies ou Offers automaticamente.
+
 ## 2026-08-11 — Sprint 10B: correção final do fluxo manual
 
 - Removidos `encType` explícitos dos formulários ligados a Server Actions, deixando React/Next
@@ -21,7 +30,6 @@
   identificador estável no `FormData`, eliminando o pareamento frágil entre dois arrays por índice.
   Pares ausentes ou duplicados falham explicitamente, sem fallback silencioso de papel.
 - Sprint 10C não foi iniciada. A Sprint 10B continua pendente do teste manual final com dois PDFs.
-
 ## 2026-08-11 — validação de retomada da Sprint 10B
 
 - Protegido o corpus local de pesquisa com `/data/research/` no `.gitignore`; 167 PDFs reais foram
@@ -107,7 +115,7 @@
   circular acessível; o cabeçalho desktop usa proporção 50/30/20.
 - Quando falta MSRP aplicável, “Adicionar preço” abre o formulário oficial de preço público em
   modal e cria somente draft pelo fluxo existente, sem INSERT direto.
-- Migration `20260801201504` aplicada somente ao Staging. O cenário real do Product 616 foi
+- Migration canônica `20260801202216` aplicada somente ao Staging. O cenário real do Product 616 foi
   validado de forma reversível: três Policies e duas Offers de setembro foram criadas com
   memberships exclusivamente de setembro; Rebate não alterou os totais.
 - Produção e `Legacy` não foram tocados. Nenhum commit ou push foi realizado.

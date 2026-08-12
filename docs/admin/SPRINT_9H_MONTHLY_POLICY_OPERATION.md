@@ -131,7 +131,7 @@ transacional ou PDF.
 `invoice_discount` representa Desconto NF. É uma Policy fixa, segue as mesmas regras de Bônus
 Varejo, participa da matriz e da soma de benefícios e continua com publicação individual.
 
-A migration `20260801201504_sprint_9h3_policy_rebate_invoice_discount.sql` altera os dois enums, a
+A migration `20260801202216_sprint_9h3_policy_rebate_invoice_discount.sql` altera os dois enums, a
 constraint de Rebate, `create_manual_policy_batch` e
 `validate_commercial_policy_for_publication`. `create_commercial_period_draft` não mudou: ela delega
 a criação de Policies à RPC de lote e mantém o contrato transacional 9H.2.

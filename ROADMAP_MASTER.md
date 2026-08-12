@@ -1,5 +1,7 @@
 # Compra Car — Cronograma Mestre do Projeto
 
+> Atualização 2026-08-12: Sprint 10C implementou e validou no Staging a fundação do pipeline (jobs, FakeProvider, plugin, matching, reclaim e persistência atômica). Provider real permanece gate posterior; nenhuma promoção comercial é automática.
+
 ## Objetivo
 
 Criar rapidamente um MVP mobile-first para vendedores de concessionárias, permitindo comparar 2 ou 3 veículos, destacar diferenças e vantagens e gerar um PDF completo com aviso legal.

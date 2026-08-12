@@ -30,7 +30,7 @@ select is(
 );
 select matches(
   pg_get_functiondef('public.prevent_terminal_pricing_migration_rule_change()'::regprocedure),
-  E'if tg_table_name = ''financial_parameter_sets'' then\n    if old.status::text = ''published''',
+  E'if tg_table_name = ''financial_parameter_sets'' then[[:space:]]+if old.status::text = ''published''',
   'financial rollover field access is structurally isolated by table'
 );
 select is(

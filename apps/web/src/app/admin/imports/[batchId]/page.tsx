@@ -10,6 +10,7 @@ import {
   openImportDocumentAction,
   rejectImportDocumentAction,
   updateImportDocumentRoleAction,
+  processImportBatchAction,
 } from '../actions';
 
 const ROLE_LABELS: Readonly<Record<string, string>> = {
@@ -176,6 +177,15 @@ export default async function AdminImportDetailsPage({
           <span className="mt-3 inline-flex rounded-full border border-emerald-700 px-3 py-1 text-xs font-bold">
             Pronto para extração
           </span>
+          <form action={processImportBatchAction} className="mt-3">
+            <input name="batchId" type="hidden" value={batch.id} />
+            <button
+              className="min-h-11 rounded-xl bg-emerald-500 px-4 text-sm font-bold text-slate-950"
+              type="submit"
+            >
+              Processar documentos
+            </button>
+          </form>
         </div>
       ) : null}
 

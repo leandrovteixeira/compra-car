@@ -1,5 +1,11 @@
 # Contexto para agentes de IA
 
+## Marco — processamento do Import Engine (Sprint 10C, 2026-08-12)
+
+A fundação possui job por tentativa, provider abstrato/FakeProvider, plugin `commercial_letters`, matching conservador e persistência transacional em `pricing_import_rows`. As migrations da Sprint 10C e do reclaim foram aplicadas e a pipeline foi validada funcionalmente no Staging `shfsjyjxmgwnlexmdkcs`. Provider real e promoção comercial continuam fora do escopo/PENDENTE.
+
+O hardening adicionou validação JSON Schema real, ownership server-side, lease/reclaim com token, locks e revalidação de batch, correlation/auditoria, limites de payload, ordinal semântico, matching direcionado e pgTAP. O pgTAP remoto não está disponível no projeto, mas reset e 648/648 assertions passaram localmente e os fluxos críticos foram exercitados pelas RPCs, Storage, adapters e application flow reais no Staging. Nenhuma promoção comercial automática foi introduzida.
+
 ## Marco — correção final da UI da Sprint 10B (2026-08-11)
 
 - A UI não solicita `dossier_title`; o serviço server-only gera `Importação <data/hora>` em
@@ -20,7 +26,6 @@
   layer aceitam até 60 MiB de arquivos por request, preservando margem multipart e 32 MiB por PDF.
 - **PENDENTE:** repetir o teste manual da UI com dois PDFs. Não declarar a Sprint 10B validada antes
   disso.
-
 ## Marco — fundação do Import Engine (Sprint 10B, 2026-08-02)
 
 - O Import Engine é módulo oficial e segue o ADR-013: batch é dossiê, documento é arquivo físico e
@@ -84,7 +89,7 @@
 - Rebate manual reutiliza `commercial_policies.dealer_rebate_amount` e registra método `manual`.
   Zero é persistido como `NULL`; valor positivo deve ser menor ou igual ao benefício. Rebate não
   compõe benefício, preço transacional ou PDF.
-- Migration `20260801201504` aplicada somente ao Staging. A validação reversível sobre o Product
+- Migration canônica `20260801202216` aplicada somente ao Staging. A validação reversível sobre o Product
   616 confirmou Policies/Offers de setembro e memberships novos, preservando os dados reais de
   agosto. Produção e `Legacy` permanecem fora do escopo.
 

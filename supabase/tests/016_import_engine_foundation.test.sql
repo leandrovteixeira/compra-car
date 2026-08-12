@@ -99,6 +99,9 @@ update public.profiles set role='seller',status='active',accepted_at=pg_catalog.
 insert into storage.objects(id,bucket_id,name,owner,metadata) values
   ('d1000000-0000-4000-8000-000000000001','import-engine-documents',
    'commercial_letters/11000000-0000-4000-8000-000000000001/12000000-0000-4000-8000-000000000001/carta.pdf',
+   'a1000000-0000-4000-8000-000000000001','{"mimetype":"application/pdf","size":100}'::jsonb),
+  ('d1000000-0000-4000-8000-000000000004','import-engine-documents',
+   'commercial_letters/11000000-0000-4000-8000-000000000003/12000000-0000-4000-8000-000000000003/carta.pdf',
    'a1000000-0000-4000-8000-000000000001','{"mimetype":"application/pdf","size":100}'::jsonb);
 
 create temporary table import_result(payload jsonb);
@@ -116,6 +119,16 @@ select is(
     and dossier_title='Jeep — Julho/2026' and competence=date '2026-07-01'),
   1::bigint,
   'batch stores explicit plugin and dossier fields'
+);
+
+select lives_ok(
+  $$select public.create_import_engine_batch(
+    'Dossiê sem competência','commercial_letters',null,null,
+    '11000000-0000-4000-8000-000000000003',
+    '[{"documentType":"pdf","originalFileName":"Carta sem competencia.pdf","storageBucket":"import-engine-documents","storageObjectPath":"commercial_letters/11000000-0000-4000-8000-000000000003/12000000-0000-4000-8000-000000000003/carta.pdf","mimeType":"application/pdf","fileSizeBytes":100,"contentSha256":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","sourceOrder":1,"documentRole":"primary","duplicateAcknowledged":false}]'::jsonb,
+    'a1000000-0000-4000-8000-000000000001','c1000000-0000-4000-8000-000000000004'
+  )$$,
+  'optional competence migration accepts a null operator hint'
 );
 select is(
   (select count(*) from public.pricing_import_documents where batch_id=(select (payload->>'batchId')::bigint from import_result)

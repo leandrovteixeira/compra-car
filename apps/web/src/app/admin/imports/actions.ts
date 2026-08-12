@@ -14,6 +14,7 @@ import {
   createAdminImportDocumentSignedUrl,
   rejectAdminImportDocument,
   updateAdminImportDocumentRole,
+  processAdminImportBatch,
 } from '@/server/import-engine-service';
 
 export async function addImportDocumentsAction(
@@ -35,6 +36,12 @@ export async function openImportDocumentAction(formData: FormData) {
   const url = await createAdminImportDocumentSignedUrl(documentId);
   if (!url) redirect('/admin/imports?error=document-not-found');
   redirect(url);
+}
+
+export async function processImportBatchAction(formData: FormData) {
+  const batchId = String(formData.get('batchId') ?? '');
+  await processAdminImportBatch(batchId);
+  revalidatePath(`/admin/imports/${batchId}`);
 }
 
 export async function updateImportDocumentRoleAction(formData: FormData) {

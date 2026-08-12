@@ -121,7 +121,8 @@ select is(
     'matched_product_id:integer:false:', 'status:pricing_import_row_status:true:',
     'issue_codes:text[]:true:', 'created_at:timestamp with time zone:true:',
     'created_by:uuid:false:', 'updated_at:timestamp with time zone:true:',
-    'updated_by:uuid:false:', 'lock_version:integer:true:'
+    'updated_by:uuid:false:', 'lock_version:integer:true:',
+    'generation_job_id:bigint:false:'
   ],
   'pricing_import_rows columns match the target schema exactly'
 );
@@ -341,8 +342,8 @@ select is(
        and not index_record.indisprimary
        and not index_record.indisunique
   ),
-  15::bigint,
-  'all 15 documented non-unique indexes include the Import Engine dossier lookup'
+  16::bigint,
+  'all 16 documented non-unique indexes include processing job lineage'
 );
 
 select is(

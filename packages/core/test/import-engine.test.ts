@@ -1,4 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- mutation tests exercise malformed untyped provider JSON */
 import { describe, expect, it } from 'vitest';
+import schema from '../../../docs/import/schemas/commercial-letter-mmv-payload-v1.schema.json';
+import fixture from '../../../docs/import/examples/commercial-letter-mmv-example-v1.json';
+import { createCommercialLetterPayloadValidator } from '../src/services/commercial-letter-payload-validator';
 
 import {
   COMMERCIAL_LETTERS_PLUGIN,
@@ -9,6 +13,11 @@ import {
   validateImportBatchForm,
   validateImportDocumentCount,
   validateImportDocumentMetadata,
+  ExtractionProviderRegistry,
+  CommercialLetterPayloadValidationError,
+  enrichCommercialLetterRow,
+  matchProduct,
+  prepareCommercialLetterRows,
 } from '../src';
 
 describe('Import Engine core', () => {
@@ -84,5 +93,184 @@ describe('Import Engine core', () => {
       'Politica-Comercial-Julho.pdf',
     );
     expect(sanitizeImportFileName('🔥.pdf')).toBe('documento.pdf');
+  });
+});
+
+describe('canonical commercial letter payload', () => {
+  const validate = createCommercialLetterPayloadValidator(schema as Record<string, unknown>);
+  const clone = () => structuredClone(fixture) as Record<string, any>;
+
+  it('executes the canonical JSON Schema and complementary invariants', () => {
+    expect(() => validate(fixture)).not.toThrow();
+    for (const mutate of [
+      (value: Record<string, any>) => {
+        value.extra = true;
+      },
+      (value: Record<string, any>) => {
+        value.publicPrice.candidate.amount.amount = 205800;
+      },
+      (value: Record<string, any>) => {
+        value.publicPrice.candidate.amount.currency = 'USD';
+      },
+      (value: Record<string, any>) => {
+        value.commercialPeriod.competence = '2026-13';
+      },
+      (value: Record<string, any>) => {
+        value.commercialPeriod.startsOn.value = 'not-a-date';
+      },
+      (value: Record<string, any>) => {
+        value.overallConfidence.band = 'high';
+      },
+      (value: Record<string, any>) => {
+        delete value.mmv.brand.meta.evidence;
+      },
+      (value: Record<string, any>) => {
+        value.mmv.brand.meta.evidence[0].documentPage = 0;
+      },
+      (value: Record<string, any>) => {
+        value.offers[0].policyClientIds = ['unknown'];
+      },
+      (value: Record<string, any>) => {
+        value.policies.push(structuredClone(value.policies[0]));
+      },
+      (value: Record<string, any>) => {
+        delete value.issues[0].path;
+      },
+    ]) {
+      const invalid = clone();
+      mutate(invalid);
+      expect(() => validate(invalid)).toThrow(CommercialLetterPayloadValidationError);
+    }
+  });
+
+  it('discards provider authority and rebuilds server-owned fields', () => {
+    const malicious = clone();
+    malicious.productMatch.selectedProductId = 999999;
+    malicious.productMatch.selectedBy = 'operator';
+    malicious.validation = {
+      blockingIssueCount: 0,
+      warningCount: 0,
+      readyForApproval: true,
+      readyForPromotion: true,
+    };
+    malicious.promotionPlan = {
+      mode: 'single_phase',
+      publishedPriceIdForOffers: 999999,
+      affectedOffers: [],
+      requiresExplicitConfirmation: true,
+      issueIds: [],
+    };
+    const row = prepareCommercialLetterRows([malicious], validate)[0]!;
+    expect(row.normalizedPayload.productMatch).toMatchObject({
+      selectedProductId: null,
+      selectedBy: 'none',
+    });
+    expect(row.normalizedPayload.validation).toMatchObject({
+      readyForApproval: false,
+      readyForPromotion: false,
+    });
+    expect(row.normalizedPayload.promotionPlan).toMatchObject({
+      mode: 'blocked',
+      publishedPriceIdForOffers: null,
+    });
+    const enriched = enrichCommercialLetterRow(
+      row,
+      { status: 'unmatched', candidates: [] },
+      validate,
+    );
+    expect(enriched.status).toBe('unmatched');
+    expect(enriched.issueCodes).toEqual(['PRODUCT_UNMATCHED']);
+  });
+
+  it('keeps deterministic ordinals across input order and distinguishes semantic blocks', () => {
+    const first = clone();
+    const second = clone();
+    second.source.applicableBlockKeys = ['second-block'];
+    second.mmv.version.value = 'MAX';
+    const forward = prepareCommercialLetterRows([first, second], validate);
+    const reverse = prepareCommercialLetterRows([second, first], validate);
+    expect(forward.map((row) => row.matchInput.version)).toEqual(
+      reverse.map((row) => row.matchInput.version),
+    );
+    expect(forward.map((row) => row.sourceRowNumber)).toEqual([1, 2]);
+  });
+});
+
+describe('Import processing foundation', () => {
+  const catalog = [
+    {
+      id: '1',
+      brand: 'Geely',
+      model: 'EX5',
+      version: 'Pro',
+      modelYear: '2026',
+      productionYear: '2025',
+      externalCodes: ['MVS-10'],
+    },
+    {
+      id: '2',
+      brand: 'Geely',
+      model: 'EX5',
+      version: 'Max',
+      modelYear: '2026',
+      productionYear: '2025',
+      externalCodes: ['MVS-20'],
+    },
+  ];
+  it('registers and resolves provider implementations without leaking them into the plugin', () => {
+    const registry = new ExtractionProviderRegistry();
+    const provider = {
+      key: 'fake',
+      version: '1',
+      extract: async () => ({
+        providerRunId: 'run',
+        payloads: [],
+        usage: { inputUnits: 0, outputUnits: 0 },
+      }),
+    };
+    registry.register(provider);
+    expect(registry.require('fake')).toBe(provider);
+    expect(() => registry.register(provider)).toThrow(/duplicado/i);
+  });
+  it('auto-confirms only exact external code or full business key', () => {
+    expect(
+      matchProduct(
+        {
+          brand: '?',
+          model: '?',
+          version: '?',
+          modelYear: '?',
+          productionYear: '?',
+          externalCodes: ['mvs-10'],
+        },
+        catalog,
+      ),
+    ).toMatchObject({ status: 'confirmed', method: 'external_code' });
+    expect(
+      matchProduct(
+        {
+          brand: ' GEELY ',
+          model: 'EX5',
+          version: 'Pro',
+          modelYear: '2026',
+          productionYear: '2025',
+        },
+        catalog,
+      ),
+    ).toMatchObject({ status: 'confirmed', method: 'business_key' });
+  });
+  it('keeps token candidates as suggestions and reports no match', () => {
+    expect(
+      matchProduct(
+        { brand: 'Geely', model: 'EX5', version: '', modelYear: '2026', productionYear: '2025' },
+        catalog,
+      ).status,
+    ).not.toBe('confirmed');
+    expect(
+      matchProduct(
+        { brand: 'Outra', model: 'Nada', version: 'X', modelYear: '2026', productionYear: '2025' },
+        catalog,
+      ),
+    ).toEqual({ status: 'unmatched', candidates: [] });
   });
 });

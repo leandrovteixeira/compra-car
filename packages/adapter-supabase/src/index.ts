@@ -10,3 +10,4 @@ export * from './manual-price-batch-supabase-adapter';
 export * from './manual-policy-batch-supabase-adapter';
 export * from './commercial-offer-builder-supabase-adapter';
 export * from './import-engine-supabase-adapter';
+export * from './import-processing-supabase-adapter';

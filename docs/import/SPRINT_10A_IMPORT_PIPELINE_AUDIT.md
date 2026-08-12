@@ -959,9 +959,10 @@ probabilidade calibrada sem medição.
    controlada das Sprints 9H, tem 190/306 e somente 2 Products cobertos.
 4. seções antigas dos ADRs/target schema ainda dizem que objetos foram validados só localmente ou
    permanecem pendentes; o Staging possui migrations até 9H.3.
-5. migration local `20260801201504_sprint_9h3_policy_rebate_invoice_discount.sql` aparece no remoto
-   com versão `20260801202216` e mesmo nome lógico. O conteúdo equivalente não foi provado nesta
-   auditoria. **PENDENTE:** reconciliar a provenance da versão antes da próxima migration.
+5. à época desta auditoria, a migration local
+   `20260801201504_sprint_9h3_policy_rebate_invoice_discount.sql` aparecia no remoto com versão
+   `20260801202216` e mesmo nome lógico. O conteúdo equivalente não foi provado nesta auditoria
+   histórica e a provenance permaneceu pendente naquele momento.
 6. ROADMAP e CHANGELOG estão coerentes ao marcar Sprint 10/IA como próxima etapa, ainda não entregue.
 
 Este relatório não altera os documentos históricos.

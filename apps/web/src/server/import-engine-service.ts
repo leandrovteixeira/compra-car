@@ -18,7 +18,17 @@ import {
   type ImportBatchListQuery,
   type ImportDocumentRole,
   type ImportEngineRepository,
+  ExtractionProviderRegistry,
+  COMMERCIAL_LETTER_PAYLOAD_SCHEMA_VERSION,
+  IMPORT_PROCESSING_LEASE_SECONDS,
+  enrichCommercialLetterRow,
+  matchProduct,
+  prepareCommercialLetterRows,
+  sanitizeProcessingError,
+  type ImportProcessingRepository,
+  type ExtractionProvider,
 } from '@compra-car/core';
+import { createCommercialLetterPayloadValidator } from '@compra-car/core/commercial-letter-payload-validator';
 import type {
   ImportBatchActionStateDto,
   ImportBatchDetailsDto,
@@ -32,7 +42,10 @@ import {
   ImportEngineConflictError,
   ImportEngineStorageError,
   ImportEngineSupabaseAdapter,
+  ImportProcessingSupabaseAdapter,
 } from '@compra-car/adapter-supabase';
+import schema from '../../../../docs/import/schemas/commercial-letter-mmv-payload-v1.schema.json';
+import { FakeExtractionProvider } from './fake-extraction-provider';
 
 import { requireRole } from '@/auth/authorization';
 import {
@@ -42,6 +55,107 @@ import {
 import { parseImportDocumentSubmissions } from '@/application/admin/import-document-submission';
 
 const createRepository = (): ImportEngineRepository => new ImportEngineSupabaseAdapter();
+
+export async function processAdminImportBatch(
+  batchId: string,
+  dependencies: {
+    readonly repository?: ImportEngineRepository;
+    readonly processingRepository?: ImportProcessingRepository;
+    readonly authorize?: () => Promise<{ readonly actorId: string }>;
+    readonly createCorrelationId?: () => string;
+    readonly extractionProvider?: ExtractionProvider;
+  } = {},
+): Promise<{ readonly rowCount: number; readonly idempotentReplay: boolean }> {
+  const identity = dependencies.authorize
+    ? await dependencies.authorize()
+    : await requireRole('admin').then(({ profile }) => ({ actorId: profile.id }));
+  const correlationId = dependencies.createCorrelationId?.() ?? randomUUID();
+  const repository = dependencies.repository ?? createRepository();
+  const processing = dependencies.processingRepository ?? new ImportProcessingSupabaseAdapter();
+  const batch = await repository.getBatch(batchId);
+  if (!batch) throw new Error('Dossiê de importação não encontrado.');
+  const registry = new ExtractionProviderRegistry();
+  registry.register(dependencies.extractionProvider ?? new FakeExtractionProvider());
+  const provider = registry.require('fake');
+  const validatePayload = createCommercialLetterPayloadValidator(schema as Record<string, unknown>);
+  const queued = await processing.enqueue({
+    batchId,
+    pluginVersion: COMMERCIAL_LETTERS_PLUGIN.version,
+    providerKey: provider.key,
+    providerVersion: provider.version,
+    schemaVersion: COMMERCIAL_LETTER_PAYLOAD_SCHEMA_VERSION,
+    actorId: identity.actorId,
+    correlationId,
+  });
+  const claimToken = randomUUID();
+  await processing.claim({
+    jobId: queued.jobId,
+    claimToken,
+    leaseSeconds: IMPORT_PROCESSING_LEASE_SECONDS,
+    actorId: identity.actorId,
+    correlationId,
+  });
+  try {
+    const documents = await Promise.all(
+      batch.documents
+        .filter((document) => document.status !== 'rejected')
+        .map(async (document) => ({
+          id: document.id,
+          role: document.documentRole,
+          mimeType: 'application/pdf' as const,
+          contentSha256: document.contentSha256,
+          originalFileName: document.originalFileName,
+          bytes: await processing.downloadDocument(
+            document.storageBucket,
+            document.storageObjectPath,
+          ),
+        })),
+    );
+    const extracted = await provider.extract({
+      documents,
+      schemaVersion: COMMERCIAL_LETTER_PAYLOAD_SCHEMA_VERSION,
+      schema: schema as Record<string, unknown>,
+      instructions:
+        'Extraia somente fatos explícitos no bloco completo aplicável ao MMV; dúvidas materiais permanecem REVIEW.',
+    });
+    const rows = await Promise.all(
+      prepareCommercialLetterRows(extracted.payloads, validatePayload).map(async (row) => {
+        const catalog = await processing.findMatchCandidates(row.matchInput);
+        return enrichCommercialLetterRow(
+          row,
+          matchProduct(row.matchInput, catalog),
+          validatePayload,
+        );
+      }),
+    );
+    const finalized = await processing.finalize({
+      jobId: queued.jobId,
+      claimToken,
+      rows,
+      providerRunId: extracted.providerRunId,
+      usage: extracted.usage,
+      actorId: identity.actorId,
+      correlationId,
+    });
+    return {
+      rowCount: finalized.rowCount ?? rows.length,
+      idempotentReplay: finalized.idempotentReplay,
+    };
+  } catch (error) {
+    const safeError = sanitizeProcessingError(error);
+    await processing
+      .fail({
+        jobId: queued.jobId,
+        claimToken,
+        errorCode: safeError.code,
+        errorMessage: safeError.message,
+        actorId: identity.actorId,
+        correlationId,
+      })
+      .catch(() => undefined);
+    throw error;
+  }
+}
 
 function formValue(formData: FormData, name: string): string {
   const value = formData.get(name);
