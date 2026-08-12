@@ -7,6 +7,8 @@
 - Visibilidade: privada.
 - MIME: `application/pdf`.
 - Limite por objeto: 32 MiB.
+- Limite por request administrativo: 64 MiB no Next.js, com no máximo 60 MiB de arquivos para
+  reservar overhead multipart.
 - Limite de aplicação: 20 documentos por dossiê.
 - Acesso: backend admin com `service_role`; nunca pelo browser.
 - Leitura: signed URL com TTL de 300 segundos, gerada após `requireRole('admin')`.

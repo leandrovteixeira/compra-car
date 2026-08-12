@@ -6,13 +6,12 @@ import {
 } from '../entities/import-engine';
 
 export interface ImportBatchFormInput {
-  readonly title: string;
   readonly competence: string;
   readonly notes: string;
   readonly idempotencyKey: string;
 }
 
-export type ImportBatchField = 'title' | 'competence' | 'documents' | 'idempotencyKey';
+export type ImportBatchField = 'competence' | 'documents' | 'idempotencyKey';
 export type ImportBatchFieldErrors = Partial<Readonly<Record<ImportBatchField, readonly string[]>>>;
 
 export function isImportDocumentRole(value: string): value is ImportDocumentRole {
@@ -21,9 +20,7 @@ export function isImportDocumentRole(value: string): value is ImportDocumentRole
 
 export function validateImportBatchForm(input: ImportBatchFormInput): ImportBatchFieldErrors {
   const errors: Partial<Record<ImportBatchField, string[]>> = {};
-  const title = input.title.trim();
-  if (!title || title.length > 160) errors.title = ['Informe um título de até 160 caracteres.'];
-  if (!/^\d{4}-(?:0[1-9]|1[0-2])$/u.test(input.competence))
+  if (input.competence && !/^\d{4}-(?:0[1-9]|1[0-2])$/u.test(input.competence))
     errors.competence = ['Informe uma competência válida.'];
   if (!/^[0-9a-f-]{36}$/iu.test(input.idempotencyKey))
     errors.idempotencyKey = ['Recarregue o formulário e tente novamente.'];

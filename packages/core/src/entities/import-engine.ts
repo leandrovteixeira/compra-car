@@ -83,7 +83,7 @@ export interface ImportBatch {
   readonly id: string;
   readonly title: string;
   readonly pluginKey: typeof IMPORT_ENGINE_PLUGIN_KEY;
-  readonly competence: string;
+  readonly competence: string | null;
   readonly notes: string | null;
   readonly status: ImportBatchStatus;
   readonly documentCount: number;

@@ -11,7 +11,6 @@ export default async function NewAdminImportPage() {
   const initialState: ImportBatchActionStateDto = {
     status: 'idle',
     values: {
-      title: '',
       competence: '',
       notes: '',
       idempotencyKey: randomUUID(),

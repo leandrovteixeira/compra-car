@@ -25,7 +25,9 @@ ocupado pelo domínio de Pricing v2.
 
 ## Modelo implementado
 
-`pricing_import_batches` ganhou `plugin_key`, `dossier_title`, `competence` e `notes`. A tabela
+`pricing_import_batches` ganhou `plugin_key`, `dossier_title`, `competence` e `notes`. `competence`
+é anulável e representa somente um hint opcional informado pelo operador na ingestão; não é
+inventada nem derivada do filename. A tabela
 `pricing_import_documents` registra tipo, papel, nome original, bucket/path privado, MIME, tamanho,
 SHA-256, páginas, status, ordem, metadados, payload de índice futuro, erros, locks, atores e timestamps.
 
@@ -38,6 +40,8 @@ Limites centralizados:
 
 - 20 documentos por dossiê;
 - 32 MiB por PDF;
+- 64 MiB no boundary de Server Action/middleware e 60 MiB de arquivos por submissão, reservando
+  margem para o envelope multipart;
 - `application/pdf`, extensão `.pdf` e assinatura `%PDF-`;
 - `page_count = null` até existir leitor confiável já aprovado; nenhuma dependência foi instalada.
 
@@ -60,7 +64,11 @@ ou segredo.
 ## UI administrativa
 
 - `/admin/imports`: lista com busca, status e competência, ordenada por atualização.
-- `/admin/imports/new`: título, plugin fixo, competência, notas, múltiplos PDFs e papel por arquivo.
+- `/admin/imports/new`: plugin fixo, competência opcional, notas, múltiplos PDFs e papel por arquivo.
+  O serviço gera um título operacional neutro. Seleções sucessivas e drag-and-drop acumulam PDFs,
+  preservam ordem/papel e informam duplicatas locais ou excesso do limite.
+  Arquivo e papel usam a mesma chave estável no `FormData`; o serviço rejeita pareamento ausente ou
+  duplicado em vez de assumir papel por posição ou aplicar fallback silencioso.
 - `/admin/imports/[batchId]`: cabeçalho, documentos, hash, tamanho, páginas, status, signed URL,
   alteração de papel, rejeição lógica e arquivamento.
 - `/admin/imports/[batchId]/add`: inclusão idempotente de PDFs enquanto o batch está editável.
@@ -98,3 +106,41 @@ login não possui acesso ao schema `extensions`. Antes da execução administrat
 conector atingiu seu limite de uso. Portanto, pgTAP administrativo, smokes de upload/signed URL/
 duplicidade/compensação/autorização, advisors e reconciliação final permanecem pendentes. Nenhum
 objeto ou registro de smoke chegou a ser criado. Produção não foi consultada ou alterada.
+
+## Correção final da UI em 2026-08-11
+
+A auditoria confirmou que os 12 batches históricos não exigem alteração: a coluna
+`pricing_import_batches.competence` e seu constraint já aceitam `NULL`. A migration
+`20260811232647_sprint_10b_optional_import_competence.sql` substitui somente
+`create_import_engine_batch` para aceitar a ausência do hint, mantendo a validação de primeiro dia
+quando um mês for informado. Não há backfill nem competência artificial.
+
+O título deixa de ser entrada do operador. O serviço server-only produz
+`Importação <data/hora>` em `America/Sao_Paulo`; nomes originais permanecem metadata de proveniência
+e não determinam marca, competência, vigência ou MMV. Os formulários com function action não
+declaram `encType`/`method`, conforme o contrato React/Next.
+
+A migration foi aplicada exclusivamente ao Staging `shfsjyjxmgwnlexmdkcs` como versão remota
+`20260811232647`. O pgTAP relevante passou com 36/36 assertions, incluindo ingestão com
+`competence = NULL`, idempotência, duplicidade, Storage e permissões; seu rollback deixou zero
+batches e objetos residuais. O engine Docker local não ficou disponível, portanto o pgTAP local não
+foi executado nesta correção. Advisors mantiveram apenas avisos globais preexistentes, sem alerta
+novo para a função alterada.
+
+**PENDENTE:** concluir o teste manual da UI com dois PDFs. A Sprint 10B não está declarada validada.
+
+## Blocker de transporte da Server Action
+
+O Next.js 15.5.20 aplicava o default de 1 MiB antes de decodificar o `FormData` e invocar
+`createImportBatchAction`. Como `middleware.ts` cobre as rotas administrativas, seu clone de body
+também possuía default de 10 MiB. `apps/web/next.config.ts` passou a configurar ambos com a constante
+`64mb`.
+
+A UI e o serviço bloqueiam acima de 60 MiB de arquivos com mensagem amigável antes de ler bytes ou
+iniciar uploads. A margem de 4 MiB acomoda multipart e campos da Server Action. O limite individual
+de 32 MiB, quantidade de documentos, MIME, assinatura PDF, SHA-256 e idempotência permanecem.
+
+Multipart por Server Action é aceitável somente para este MVP administrativo. A evolução de
+uploads volumosos deverá avaliar upload direto/controlado ao Storage, signed upload, envio individual,
+batch separado do transporte, retry e progresso reais por documento. Nenhuma dessas mudanças faz
+parte desta correção e a Sprint 10C não foi iniciada.

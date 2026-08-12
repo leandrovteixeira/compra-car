@@ -41,6 +41,19 @@ Nesta etapa, o contrato `ExtractionProvider` foi deliberadamente adiado para a S
 extração e normalização ainda não têm requisitos operacionais maduros; publicar métodos agora criaria
 uma abstração especulativa. Nenhum provider real ou falso foi conectado ao upload.
 
+Para o MVP administrativo, o transporte usa multipart por Server Action. O teto do Next.js e do
+middleware é 64 MiB por request; UI e application layer aceitam no máximo 60 MiB de arquivos para
+reservar margem ao envelope multipart. Esse limite de transporte não substitui os limites de 20
+documentos e 32 MiB por PDF, nem validações de MIME, assinatura, hash, duplicidade e idempotência.
+
+Cada documento selecionado é uma unidade `{ file, role }` com identificador estável. O input de
+arquivo e o controle de papel usam essa mesma chave no `FormData`; a application layer rejeita
+chaves ausentes ou duplicadas. A persistência não depende da posição de arrays paralelos.
+
+Esse desenho não é a arquitetura final para uploads volumosos. Na próxima evolução do Import Engine,
+avaliar upload direto e controlado ao Storage, signed upload, uploads individuais, separação entre
+criação do batch e transporte, retry por documento e progresso real por documento.
+
 ## Princípios normativos
 
 > A IA interpreta. O domínio decide.
@@ -72,6 +85,7 @@ desconsiderando somente metadata de proveniência ligada ao filename.
 - existem mais contratos e estados intermediários;
 - o pipeline exige observabilidade, filas e recuperação em etapas futuras;
 - Storage e persistência precisam de compensação transacional explícita;
+- o multipart síncrono mantém bytes em trânsito/memória no servidor e limita o volume por request;
 - review e promoção aumentam a quantidade de gates antes da conclusão.
 
 ## Alternativas rejeitadas

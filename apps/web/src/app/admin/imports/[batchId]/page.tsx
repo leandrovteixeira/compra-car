@@ -50,7 +50,7 @@ export default async function AdminImportDetailsPage({
         </div>
         <div>
           <p className="text-xs text-slate-500">Competência</p>
-          <p className="text-sm text-white">{batch.competence}</p>
+          <p className="text-sm text-white">{batch.competence ?? 'Não informada'}</p>
         </div>
         <div>
           <p className="text-xs text-slate-500">Status</p>

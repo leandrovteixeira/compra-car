@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-08-11 — Sprint 10B: correção final do fluxo manual
+
+- Removidos `encType` explícitos dos formulários ligados a Server Actions, deixando React/Next
+  definirem método e codificação do `FormData`.
+- A seleção de PDFs passou a ser cumulativa para seletor e drag-and-drop, preservando ordem e papel
+  por documento, sincronizando `input.files` e informando duplicatas locais e excesso do limite.
+- O operador não informa mais título: o servidor gera um identificador operacional neutro no fuso
+  `America/Sao_Paulo`, sem inferir dados comerciais ou usar filename como fonte semântica.
+- `competence` virou hint opcional do plugin `commercial_letters`. A coluna e o constraint existentes
+  já aceitavam `NULL`; uma migration altera somente a validação da RPC, preservando batches
+  históricos e evitando competência artificial.
+- A migration foi aplicada exclusivamente ao Staging `shfsjyjxmgwnlexmdkcs` (versão remota
+  `20260811232647`). O pgTAP relevante passou com 36/36 assertions e rollback sem batches/objetos
+  residuais. Produção e `Legacy` permaneceram intocados.
+- Corrigido o blocker de transporte dos uploads: Server Actions e middleware do Next.js usam teto
+  centralizado de 64 MiB, enquanto UI e application layer limitam os arquivos de uma submissão a
+  60 MiB para reservar overhead multipart. O limite de 32 MiB por PDF permanece inalterado.
+- Corrigida a persistência do papel documental: arquivo e `documentRole` agora compartilham um
+  identificador estável no `FormData`, eliminando o pareamento frágil entre dois arrays por índice.
+  Pares ausentes ou duplicados falham explicitamente, sem fallback silencioso de papel.
+- Sprint 10C não foi iniciada. A Sprint 10B continua pendente do teste manual final com dois PDFs.
+
 ## 2026-08-11 — validação de retomada da Sprint 10B
 
 - Protegido o corpus local de pesquisa com `/data/research/` no `.gitignore`; 167 PDFs reais foram

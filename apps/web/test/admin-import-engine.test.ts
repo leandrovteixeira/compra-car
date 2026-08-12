@@ -3,9 +3,17 @@ import { resolve } from 'node:path';
 import type { ImportEngineRepository } from '@compra-car/core';
 import { describe, expect, it, vi } from 'vitest';
 
+import { appendImportDocumentSubmission } from '../src/application/admin/import-document-submission';
+
+import {
+  IMPORT_ENGINE_MAX_SELECTION_BYTES,
+  IMPORT_ENGINE_REQUEST_TOO_LARGE_MESSAGE,
+} from '../src/config/import-engine-upload';
+
 import {
   addAdminImportDocuments,
   createAdminImportBatch,
+  generateOperationalImportTitle,
 } from '../src/server/import-engine-service';
 
 function source(relativePath: string) {
@@ -44,15 +52,32 @@ function form(
       type: 'application/pdf',
     }),
   ],
+  roles: readonly ('primary' | 'errata' | 'other')[] = files.map(() => 'primary'),
 ) {
   const data = new FormData();
-  data.set('title', 'Jeep — Julho/2026');
   data.set('competence', '2026-07');
   data.set('notes', 'Carta e anexos');
   data.set('idempotencyKey', '10000000-0000-4000-8000-000000000001');
-  for (const file of files) data.append('documents', file);
-  for (let index = 0; index < files.length; index += 1) data.append('documentRoles', 'primary');
+  files.forEach((file, index) =>
+    appendImportDocumentSubmission(data, {
+      id: `document-${index}`,
+      file,
+      role: roles[index] ?? 'other',
+    }),
+  );
   return data;
+}
+
+function sizedPdf(size: number, name = 'Carta.pdf'): File {
+  const signature = new TextEncoder().encode('%PDF-');
+  const identity = new TextEncoder().encode(name);
+  return new File(
+    [signature, identity, new Uint8Array(size - signature.length - identity.length)],
+    name,
+    {
+      type: 'application/pdf',
+    },
+  );
 }
 
 function addForm() {
@@ -60,13 +85,13 @@ function addForm() {
   data.set('batchId', '91');
   data.set('expectedLockVersion', '2');
   data.set('operationId', '40000000-0000-4000-8000-000000000001');
-  data.append(
-    'documents',
-    new File([new TextEncoder().encode('%PDF-1.7\nerrata')], 'Errata.pdf', {
+  appendImportDocumentSubmission(data, {
+    id: 'errata',
+    file: new File([new TextEncoder().encode('%PDF-1.7\nerrata')], 'Errata.pdf', {
       type: 'application/pdf',
     }),
-  );
-  data.append('documentRoles', 'errata');
+    role: 'errata',
+  });
   return data;
 }
 
@@ -90,6 +115,7 @@ const dependencies = (target: ImportEngineRepository) => ({
   repository: target,
   authorize: vi.fn(async () => ({ actorId: '20000000-0000-4000-8000-000000000001' })),
   createCorrelationId: () => '30000000-0000-4000-8000-000000000001',
+  now: () => new Date('2026-08-11T18:42:00.000Z'),
 });
 
 describe('admin Import Engine', () => {
@@ -106,10 +132,85 @@ describe('admin Import Engine', () => {
       expect.objectContaining({
         actorId: '20000000-0000-4000-8000-000000000001',
         correlationId: '30000000-0000-4000-8000-000000000001',
+        title: 'Importação 11/08/2026 15:42',
+        competence: '2026-07',
         documents: [
           expect.objectContaining({ contentSha256: expect.stringMatching(/^[0-9a-f]{64}$/u) }),
         ],
       }),
+    );
+  });
+
+  it('accepts a PDF larger than the former 1 MB boundary', async () => {
+    const target = repository();
+    const file = sizedPdf(2 * 1024 * 1024);
+
+    await expect(createAdminImportBatch(form([file]), dependencies(target))).resolves.toMatchObject(
+      {
+        status: 'success',
+      },
+    );
+    expect(target.uploadDocument).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    {
+      label: 'A primary / B other',
+      roles: ['primary', 'other'] as const,
+    },
+    {
+      label: 'A other / B primary',
+      roles: ['other', 'primary'] as const,
+    },
+    {
+      label: 'A primary / B primary',
+      roles: ['primary', 'primary'] as const,
+    },
+  ])('persists the roles submitted by each selected file: $label', async ({ roles }) => {
+    const target = repository();
+    const files = [sizedPdf(1024, 'A.pdf'), sizedPdf(1024, 'B.pdf')];
+
+    await expect(
+      createAdminImportBatch(form(files, roles), dependencies(target)),
+    ).resolves.toMatchObject({
+      status: 'success',
+    });
+    expect(target.createBatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        documents: [
+          expect.objectContaining({ originalFileName: 'A.pdf', documentRole: roles[0] }),
+          expect.objectContaining({ originalFileName: 'B.pdf', documentRole: roles[1] }),
+        ],
+      }),
+    );
+  });
+
+  it('blocks an oversized total before reading or uploading the files', async () => {
+    const target = repository();
+    const files = [sizedPdf(31 * 1024 * 1024, 'A.pdf'), sizedPdf(31 * 1024 * 1024, 'B.pdf')];
+
+    await expect(createAdminImportBatch(form(files), dependencies(target))).resolves.toMatchObject({
+      status: 'error',
+      fieldErrors: { documents: [IMPORT_ENGINE_REQUEST_TOO_LARGE_MESSAGE] },
+    });
+    expect(files.reduce((total, file) => total + file.size, 0)).toBeGreaterThan(
+      IMPORT_ENGINE_MAX_SELECTION_BYTES,
+    );
+    expect(target.uploadDocument).not.toHaveBeenCalled();
+  });
+
+  it('creates without a manual title or competence and keeps an optional competence hint', async () => {
+    expect(generateOperationalImportTitle(new Date('2026-08-11T18:42:00.000Z'))).toBe(
+      'Importação 11/08/2026 15:42',
+    );
+    const withoutCompetence = form();
+    withoutCompetence.delete('competence');
+    const target = repository();
+    await expect(
+      createAdminImportBatch(withoutCompetence, dependencies(target)),
+    ).resolves.toMatchObject({ status: 'success' });
+    expect(target.createBatch).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Importação 11/08/2026 15:42', competence: null }),
     );
   });
 
@@ -206,6 +307,7 @@ describe('admin Import Engine', () => {
     const details = source('../src/app/admin/imports/[batchId]/page.tsx');
     const addDocuments = source('../src/app/admin/imports/[batchId]/add/page.tsx');
     const formSource = source('../src/components/admin/admin-import-form.tsx');
+    const addFormSource = source('../src/components/admin/admin-import-documents-form.tsx');
     const navigation = source('../src/components/admin/admin-navigation.ts');
     expect(list).toContain("await requireRole('admin')");
     expect(create).toContain("await requireRole('admin')");
@@ -216,6 +318,13 @@ describe('admin Import Engine', () => {
     expect(formSource).toContain('onDrop');
     expect(formSource).toContain('disabled={pending}');
     expect(formSource).toContain('aria-label');
+    expect(formSource).not.toContain('encType=');
+    expect(addFormSource).not.toContain('encType=');
+    expect(formSource + addFormSource).toContain('AdminImportFileInput');
+    expect(formSource + addFormSource).toContain('importDocumentRoleFieldName(item.id)');
+    expect(formSource + addFormSource).not.toContain('name="documentRoles"');
+    expect(formSource).not.toContain('name="title"');
+    expect(formSource).toContain('Competência, se conhecida');
     expect(navigation).toContain("href: '/admin/imports'");
     expect(navigation).toContain("label: 'Importações'");
   });

@@ -91,7 +91,7 @@ function mapBatch(row: Row): ImportBatch {
   const pluginKey = text(row.plugin_key, 'plugin_key');
   if (pluginKey !== IMPORT_ENGINE_PLUGIN_KEY)
     throw new PricingAdapterMappingError('Plugin inesperado no Import Engine.');
-  const competence = text(row.competence, 'competence').slice(0, 7);
+  const competence = optionalText(row.competence)?.slice(0, 7) ?? null;
   return Object.freeze({
     id: id(row.id, 'batch.id'),
     title: text(row.dossier_title, 'dossier_title'),
@@ -226,7 +226,7 @@ export class ImportEngineSupabaseAdapter implements ImportEngineRepository {
     const { data, error } = await this.client.rpc('create_import_engine_batch', {
       p_title: input.title,
       p_plugin_key: IMPORT_ENGINE_PLUGIN_KEY,
-      p_competence: `${input.competence}-01`,
+      p_competence: input.competence ? `${input.competence}-01` : null,
       p_notes: input.notes,
       p_idempotency_key: input.idempotencyKey,
       p_documents: input.documents.map((document) => ({

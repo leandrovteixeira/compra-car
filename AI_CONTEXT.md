@@ -1,5 +1,26 @@
 # Contexto para agentes de IA
 
+## Marco — correção final da UI da Sprint 10B (2026-08-11)
+
+- A UI não solicita `dossier_title`; o serviço server-only gera `Importação <data/hora>` em
+  `America/Sao_Paulo`. Filename continua sendo somente proveniência conforme ADR-013.
+- Para `commercial_letters`, `competence` é hint opcional na ingestão. Ausência trafega como `NULL`;
+  nunca usar data atual ou filename. Detecção/confirmação futura pertencem à 10C ou posterior.
+- A tabela e o constraint de `pricing_import_batches.competence` já eram anuláveis. A migration
+  `20260811232647_sprint_10b_optional_import_competence.sql` substitui somente a RPC de criação.
+- A seleção local mantém pares arquivo/papel e acumula seletor e drag-and-drop até 20 PDFs.
+  Cada item possui identificador estável usado no input de arquivo e no controle de papel; o
+  servidor resolve os pares pela chave do `FormData`, sem arrays paralelos por índice ou fallback.
+- A migration foi aplicada apenas no Staging `shfsjyjxmgwnlexmdkcs` como versão remota
+  `20260811232647`. O pgTAP relevante passou 36/36 e o rollback deixou zero batches/objetos de teste.
+- A auditoria remota confirmou 12 batches históricos `pricing_workflow/manual` com competência nula
+  e 2 batches `commercial_letters` existentes com hint preenchido; nenhuma linha foi reescrita.
+- Next.js 15.5.20 limita Server Actions a 1 MiB por padrão e o middleware clona 10 MiB por padrão.
+  `apps/web/next.config.ts` usa o teto compartilhado de 64 MiB nos dois boundaries; UI e application
+  layer aceitam até 60 MiB de arquivos por request, preservando margem multipart e 32 MiB por PDF.
+- **PENDENTE:** repetir o teste manual da UI com dois PDFs. Não declarar a Sprint 10B validada antes
+  disso.
+
 ## Marco — fundação do Import Engine (Sprint 10B, 2026-08-02)
 
 - O Import Engine é módulo oficial e segue o ADR-013: batch é dossiê, documento é arquivo físico e

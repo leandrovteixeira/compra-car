@@ -34,7 +34,7 @@ export function AdminImportList({ items }: { readonly items: readonly ImportBatc
           </div>
           <div>
             <p className="text-xs text-slate-500">Competência</p>
-            <p className="text-sm text-slate-200">{item.competence}</p>
+            <p className="text-sm text-slate-200">{item.competence ?? 'Não informada'}</p>
           </div>
           <div>
             <p className="text-xs text-slate-500">Status</p>

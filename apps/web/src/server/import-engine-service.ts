@@ -35,6 +35,11 @@ import {
 } from '@compra-car/adapter-supabase';
 
 import { requireRole } from '@/auth/authorization';
+import {
+  exceedsImportSelectionLimit,
+  IMPORT_ENGINE_REQUEST_TOO_LARGE_MESSAGE,
+} from '@/config/import-engine-upload';
+import { parseImportDocumentSubmissions } from '@/application/admin/import-document-submission';
 
 const createRepository = (): ImportEngineRepository => new ImportEngineSupabaseAdapter();
 
@@ -45,12 +50,26 @@ function formValue(formData: FormData, name: string): string {
 
 function values(formData: FormData): ImportBatchFormValuesDto {
   return {
-    title: formValue(formData, 'title'),
     competence: formValue(formData, 'competence'),
     notes: formValue(formData, 'notes'),
     idempotencyKey: formValue(formData, 'idempotencyKey'),
     acknowledgeDuplicates: formValue(formData, 'acknowledgeDuplicates') === 'true',
   };
+}
+
+export function generateOperationalImportTitle(now: Date): string {
+  const timestamp = new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  })
+    .format(now)
+    .replace(',', '');
+  return `Importação ${timestamp}`;
 }
 
 function errorState(
@@ -88,6 +107,7 @@ export async function createAdminImportBatch(
     readonly repository?: ImportEngineRepository;
     readonly authorize?: () => Promise<{ readonly actorId: string }>;
     readonly createCorrelationId?: () => string;
+    readonly now?: () => Date;
   } = {},
 ): Promise<ImportBatchActionStateDto> {
   const identity = dependencies.authorize
@@ -113,13 +133,16 @@ export async function createAdminImportBatch(
       };
     }
 
-    const files = formData
-      .getAll('documents')
-      .filter((value): value is File => value instanceof File && value.size > 0);
-    const roles = formData.getAll('documentRoles').map(String);
+    const submission = parseImportDocumentSubmissions(formData);
+    const files = submission.documents.map(({ file }) => file);
     const countErrors = validateImportDocumentCount(files.length);
     if (countErrors.length) fieldErrors.documents = countErrors;
-    if (roles.length !== files.length) fieldErrors.documents = ['Selecione o papel de cada PDF.'];
+    if (submission.hasInvalidPairing) fieldErrors.documents = ['Selecione o papel de cada PDF.'];
+    if (exceedsImportSelectionLimit(files))
+      return errorState(current, 'Revise os dados e os PDFs selecionados.', {
+        ...fieldErrors,
+        documents: [IMPORT_ENGINE_REQUEST_TOO_LARGE_MESSAGE],
+      });
 
     const prepared: {
       file: File;
@@ -129,8 +152,8 @@ export async function createAdminImportBatch(
       safeName: string;
       path: string;
     }[] = [];
-    for (const [index, file] of files.entries()) {
-      const role = roles[index] ?? '';
+    for (const [index, document] of submission.documents.entries()) {
+      const { file, role } = document;
       const metadataErrors = validateImportDocumentMetadata({
         originalFileName: file.name,
         mimeType: file.type,
@@ -192,8 +215,8 @@ export async function createAdminImportBatch(
         uploadedPaths.push(document.path);
       }
       const result = await repository.createBatch({
-        title: current.title.trim(),
-        competence: current.competence,
+        title: generateOperationalImportTitle(dependencies.now?.() ?? new Date()),
+        competence: current.competence || null,
         notes: current.notes.trim() || null,
         idempotencyKey: current.idempotencyKey,
         documents: prepared.map((document, index) => ({
@@ -307,13 +330,16 @@ export async function addAdminImportDocuments(
     )
       fieldErrors.operationId = ['Identificador da operação inválido.'];
 
-    const files = formData
-      .getAll('documents')
-      .filter((value): value is File => value instanceof File && value.size > 0);
-    const roles = formData.getAll('documentRoles').map(String);
+    const submission = parseImportDocumentSubmissions(formData);
+    const files = submission.documents.map(({ file }) => file);
     const countErrors = validateImportDocumentCount(files.length);
     if (countErrors.length) fieldErrors.documents = countErrors;
-    if (roles.length !== files.length) fieldErrors.documents = ['Selecione o papel de cada PDF.'];
+    if (submission.hasInvalidPairing) fieldErrors.documents = ['Selecione o papel de cada PDF.'];
+    if (exceedsImportSelectionLimit(files))
+      return addDocumentError(current, 'Revise os PDFs selecionados.', {
+        ...fieldErrors,
+        documents: [IMPORT_ENGINE_REQUEST_TOO_LARGE_MESSAGE],
+      });
 
     const batch = /^\d+$/u.test(current.batchId)
       ? await repository.getBatch(current.batchId)
@@ -335,8 +361,8 @@ export async function addAdminImportDocuments(
       role: ImportDocumentRole;
       path: string;
     }[] = [];
-    for (const [index, file] of files.entries()) {
-      const role = roles[index] ?? '';
+    for (const [index, document] of submission.documents.entries()) {
+      const { file, role } = document;
       const errors = validateImportDocumentMetadata({
         originalFileName: file.name,
         mimeType: file.type,

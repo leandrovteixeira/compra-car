@@ -51,7 +51,7 @@ export interface ImportEngineRepository {
   removeUploadedDocuments(paths: readonly string[]): Promise<void>;
   createBatch(input: {
     readonly title: string;
-    readonly competence: string;
+    readonly competence: string | null;
     readonly notes: string | null;
     readonly idempotencyKey: string;
     readonly documents: readonly ImportDocumentUpload[];

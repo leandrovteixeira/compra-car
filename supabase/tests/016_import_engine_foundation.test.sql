@@ -130,6 +130,27 @@ select is(
   'batch creation records append-only dossier and document audit events'
 );
 
+insert into storage.objects(id,bucket_id,name,owner,metadata) values
+  ('d1000000-0000-4000-8000-000000000003','import-engine-documents',
+   'commercial_letters/31000000-0000-4000-8000-000000000001/32000000-0000-4000-8000-000000000001/carta-sem-competencia.pdf',
+   'a1000000-0000-4000-8000-000000000001','{"mimetype":"application/pdf","size":90}'::jsonb);
+select lives_ok(
+  $$select public.create_import_engine_batch(
+    'Importação 11/08/2026 15:42','commercial_letters',null,null,
+    '31000000-0000-4000-8000-000000000001',
+    '[{"documentType":"pdf","originalFileName":"Carta sem competencia.pdf","storageBucket":"import-engine-documents","storageObjectPath":"commercial_letters/31000000-0000-4000-8000-000000000001/32000000-0000-4000-8000-000000000001/carta-sem-competencia.pdf","mimeType":"application/pdf","fileSizeBytes":90,"contentSha256":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","sourceOrder":1,"documentRole":"primary","duplicateAcknowledged":false}]'::jsonb,
+    'a1000000-0000-4000-8000-000000000001','c1000000-0000-4000-8000-000000000010'
+  )$$,
+  'commercial letters ingestion accepts an absent competence hint'
+);
+select is(
+  (select count(*) from public.pricing_import_batches
+    where idempotency_key='31000000-0000-4000-8000-000000000001'
+      and plugin_key='commercial_letters' and competence is null),
+  1::bigint,
+  'an absent competence is stored as null without a fabricated month'
+);
+
 select is(
   (select public.create_import_engine_batch(
     'Jeep — Julho/2026','commercial_letters',date '2026-07-01','retry',

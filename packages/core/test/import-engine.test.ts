@@ -21,23 +21,27 @@ describe('Import Engine core', () => {
     });
   });
 
-  it('validates dossier identity and competence', () => {
+  it('accepts an absent competence hint and validates an informed value', () => {
     expect(
       validateImportBatchForm({
-        title: '',
         competence: '2026-13',
         notes: '',
         idempotencyKey: 'forged',
       }),
     ).toEqual({
-      title: expect.any(Array),
       competence: expect.any(Array),
       idempotencyKey: expect.any(Array),
     });
     expect(
       validateImportBatchForm({
-        title: 'Jeep — Julho/2026',
         competence: '2026-07',
+        notes: '',
+        idempotencyKey: '10000000-0000-4000-8000-000000000001',
+      }),
+    ).toEqual({});
+    expect(
+      validateImportBatchForm({
+        competence: '',
         notes: '',
         idempotencyKey: '10000000-0000-4000-8000-000000000001',
       }),
@@ -57,7 +61,15 @@ describe('Import Engine core', () => {
       validateImportDocumentMetadata({
         originalFileName: 'carta.pdf',
         mimeType: 'application/pdf',
-        fileSizeBytes: 100,
+        fileSizeBytes: IMPORT_ENGINE_MAX_PDF_BYTES + 1,
+        role: 'primary',
+      }),
+    ).toContain('O PDF excede o limite de 32 MiB.');
+    expect(
+      validateImportDocumentMetadata({
+        originalFileName: 'carta.pdf',
+        mimeType: 'application/pdf',
+        fileSizeBytes: IMPORT_ENGINE_MAX_PDF_BYTES,
         role: 'primary',
       }),
     ).toEqual([]);

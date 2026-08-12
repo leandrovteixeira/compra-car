@@ -82,7 +82,7 @@ export interface ImportBatchListItemDto {
   readonly id: string;
   readonly title: string;
   readonly pluginKey: 'commercial_letters';
-  readonly competence: string;
+  readonly competence: string | null;
   readonly status: string;
   readonly documentCount: number;
   readonly mmvCount: number;
@@ -119,7 +119,6 @@ export interface ImportDuplicateDto {
 }
 
 export interface ImportBatchFormValuesDto {
-  readonly title: string;
   readonly competence: string;
   readonly notes: string;
   readonly idempotencyKey: string;

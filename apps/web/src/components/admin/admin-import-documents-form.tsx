@@ -1,10 +1,24 @@
 'use client';
 
 import type { ChangeEvent, DragEvent } from 'react';
-import { useActionState, useRef, useState } from 'react';
+import { useActionState, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import type { ImportDocumentsActionStateDto } from '@compra-car/contracts';
 import { IMPORT_DOCUMENT_ROLES, IMPORT_ENGINE_MAX_PDF_BYTES } from '@compra-car/core';
+
+import {
+  IMPORT_ENGINE_MAX_SELECTION_BYTES,
+  IMPORT_ENGINE_REQUEST_TOO_LARGE_MESSAGE,
+} from '@/config/import-engine-upload';
+import { importDocumentRoleFieldName } from '@/application/admin/import-document-submission';
+
+import { AdminImportFileInput } from './admin-import-file-input';
+import {
+  appendImportFiles,
+  removeImportFile,
+  updateImportFileRole,
+  type SelectedImportFile,
+} from './admin-import-file-selection';
 
 const ROLE_LABELS: Readonly<Record<string, string>> = {
   primary: 'Carta principal',
@@ -46,29 +60,36 @@ export function AdminImportDocumentsForm({
   readonly maximumFiles: number;
 }) {
   const [state, formAction] = useActionState(action, initialState);
-  const [files, setFiles] = useState<readonly File[]>([]);
-  const [roles, setRoles] = useState<readonly string[]>([]);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const replaceFiles = (next: readonly File[]) => {
-    const limited = next.slice(0, maximumFiles);
-    setFiles(limited);
-    setRoles((current) => limited.map((_, index) => current[index] ?? 'other'));
-    if (inputRef.current && typeof DataTransfer !== 'undefined') {
-      const transfer = new DataTransfer();
-      limited.forEach((file) => transfer.items.add(file));
-      inputRef.current.files = transfer.files;
-    }
+  const [selection, setSelection] = useState<readonly SelectedImportFile[]>([]);
+  const [selectionNotice, setSelectionNotice] = useState<string | null>(null);
+  const addFiles = (incoming: readonly File[]) => {
+    const result = appendImportFiles(
+      selection,
+      incoming,
+      maximumFiles,
+      IMPORT_ENGINE_MAX_SELECTION_BYTES,
+      'other',
+    );
+    setSelection(result.selection);
+    const notices: string[] = [];
+    if (result.duplicateNames.length)
+      notices.push(`Arquivo já selecionado: ${[...new Set(result.duplicateNames)].join(', ')}.`);
+    if (result.rejectedByLimit)
+      notices.push(`Você pode adicionar no máximo ${maximumFiles} documento(s).`);
+    if (result.rejectedByTotalBytes) notices.push(IMPORT_ENGINE_REQUEST_TOO_LARGE_MESSAGE);
+    setSelectionNotice(notices.length ? notices.join(' ') : null);
   };
-  const onFiles = (event: ChangeEvent<HTMLInputElement>) =>
-    replaceFiles(Array.from(event.target.files ?? []));
+  const onFiles = (event: ChangeEvent<HTMLInputElement>) => {
+    addFiles(Array.from(event.target.files ?? []));
+    event.target.value = '';
+  };
   const onDrop = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
-    replaceFiles(Array.from(event.dataTransfer.files));
+    addFiles(Array.from(event.dataTransfer.files));
   };
 
   return (
-    <form action={formAction} className="grid gap-5" encType="multipart/form-data">
+    <form action={formAction} className="grid gap-5">
       <input name="batchId" type="hidden" value={state.values.batchId} />
       <input name="expectedLockVersion" type="hidden" value={state.values.expectedLockVersion} />
       <input name="operationId" type="hidden" value={state.values.operationId} />
@@ -83,13 +104,10 @@ export function AdminImportDocumentsForm({
             AtÃ© {maximumFiles} arquivo(s), {formatBytes(IMPORT_ENGINE_MAX_PDF_BYTES)} por PDF.
           </span>
           <input
-            ref={inputRef}
             accept="application/pdf,.pdf"
             className="sr-only"
             multiple
-            name="documents"
             onChange={onFiles}
-            required
             type="file"
           />
         </label>
@@ -99,15 +117,21 @@ export function AdminImportDocumentsForm({
           {error}
         </p>
       ))}
+      {selectionNotice ? (
+        <p className="text-sm text-amber-300" role="status">
+          {selectionNotice}
+        </p>
+      ) : null}
       <ul className="grid gap-3">
-        {files.map((file, index) => (
+        {selection.map((item, index) => (
           <li
             className="grid gap-3 rounded-xl border border-slate-800 bg-slate-950 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(11rem,auto)_auto] sm:items-center"
-            key={`${file.name}-${file.size}-${index}`}
+            key={item.id}
           >
+            <AdminImportFileInput item={item} />
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-white">{file.name}</p>
-              <p className="text-xs text-slate-500">{formatBytes(file.size)}</p>
+              <p className="truncate text-sm font-semibold text-white">{item.file.name}</p>
+              <p className="text-xs text-slate-500">{formatBytes(item.file.size)}</p>
               {state.fieldErrors[`document.${index}`]?.map((error) => (
                 <p className="text-xs text-rose-300" key={error}>
                   {error}
@@ -115,17 +139,19 @@ export function AdminImportDocumentsForm({
               ))}
             </div>
             <select
-              aria-label={`Papel de ${file.name}`}
+              aria-label={`Papel de ${item.file.name}`}
               className="min-h-11 rounded-xl border border-slate-700 bg-slate-900 px-3 text-sm text-white"
-              name="documentRoles"
+              name={importDocumentRoleFieldName(item.id)}
               onChange={(event) =>
-                setRoles((current) =>
-                  current.map((role, candidate) =>
-                    candidate === index ? event.target.value : role,
+                setSelection((current) =>
+                  updateImportFileRole(
+                    current,
+                    index,
+                    event.target.value as SelectedImportFile['role'],
                   ),
                 )
               }
-              value={roles[index] ?? 'other'}
+              value={item.role}
             >
               {IMPORT_DOCUMENT_ROLES.map((role) => (
                 <option key={role} value={role}>
@@ -135,7 +161,10 @@ export function AdminImportDocumentsForm({
             </select>
             <button
               className="min-h-11 rounded-xl border border-slate-700 px-3 text-sm text-slate-200"
-              onClick={() => replaceFiles(files.filter((_, candidate) => candidate !== index))}
+              onClick={() => {
+                setSelection((current) => removeImportFile(current, index));
+                setSelectionNotice(null);
+              }}
               type="button"
             >
               Remover
