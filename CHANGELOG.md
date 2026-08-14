@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-08-14 — Integridade referencial Policy/Offer da Sprint 10C.2
+
+- Auditado localmente o `unknownPolicy` do Volvo batch 113/Job 35: transport, parsing,
+  reconstrução e sanitização preservam literalmente os client IDs e não removem nem deduplicam
+  Policies. A inconsistência, portanto, já estava no output do provider e foi corretamente recusada
+  antes do matching.
+- Mantida a rejeição canônica para Offers parcial ou totalmente órfãs, sem placeholder, associação
+  fuzzy ou descarte silencioso. Diagnóstico seguro agora expõe somente contagens, paths afetados e
+  remappings (zero enquanto não existir transformação determinística de Policies).
+- Adicionados 15 cenários sintéticos de integridade referencial. Prompt v2, schemas e provider não
+  mudaram; nenhum retry, chamada OpenAI/Supabase, migration ou efeito comercial foi realizado.
+
+## 2026-08-14 — Hardening do matching em volume da Sprint 10C.2
+
+- Corrigido o fan-out sem limite do matching pós-provider: até 100 rows agora têm chaves MMV
+  normalizadas e deduplicadas, processadas em chunks dirigidos de 10, sem full catalogue scan nem
+  expressão textual `.or()`.
+- Chaves com ano ausente ou não canônico não enviam valores inválidos às colunas `smallint` e não
+  são elegíveis a confirmação por business key; fallback por tokens continua somente `suggested`.
+- Adicionado diagnóstico local/test sanitizado para operação, volume, chunk, filtro, status e code
+  PostgREST, mantendo genérico o erro persistido. Fixtures cobrem 100 MMVs, dedupe, caracteres
+  especiais, anos opcionais e falha atômica de chunk. Nenhum provider ou remoto foi executado.
+
 ## 2026-08-14 — Lifecycle de timeout da Sprint 10C.2
 
 - Substituído o timeout de negócio implícito do Vitest por deadline server-side configurável no

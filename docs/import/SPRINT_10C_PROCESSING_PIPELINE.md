@@ -17,6 +17,33 @@ Status: implementada e validada funcionalmente no Staging `shfsjyjxmgwnlexmdkcs`
 
 O resultado do provider é entrada não confiável. A pipeline remove previamente toda autoridade sobre `productMatch`, IDs persistidos, resoluções, locks, `validation` e `promotionPlan`; força ações de promoção a `blocked`; executa o JSON Schema Draft 2020-12 com Ajv; aplica invariantes complementares de IDs locais, referências de Offer e coerência confidence/band; faz matching e enriquecimento no servidor; e executa novamente o schema antes da persistência.
 
+### Integridade referencial de Policy/Offer
+
+`clientPolicyId` e `policyClientIds` são obrigatórios no contrato transport e são copiados sem
+renomeação pela leitura JSON, normalização de opcionais, reconstrução canônica e sanitização
+server-owned. Não existe remoção nem deduplicação de Policies nessa cadeia. Structured Outputs garante
+a forma definida pelo subset de JSON Schema aceito, mas não consegue impor a relação dinâmica entre
+IDs de dois arrays; essa integridade permanece uma invariante server-side.
+
+No Volvo batch 113/Job 35, cinco Offers chegaram à validação com referências ausentes em Policies.
+Como não existe transformação server-side capaz de originar ou remapear essa perda, o resultado
+correto permanece `CANONICAL_PAYLOAD_INVALID`. Offers parcialmente válidas e totalmente órfãs são
+recusadas por inteiro: remover referências não tem representação explícita de REVIEW nesta etapa e
+mascararia perda semântica. Não se cria Policy placeholder, não há associação textual/fuzzy e não se
+inventa destino. O diagnóstico permitido contém somente contagens de Policies, Offers, referências,
+órfãs, remappings determinísticos (atualmente zero) e paths de Offers afetadas.
+
+O Job 35 não foi reexecutado após esta auditoria; Prompt v2, schema semântico, provider e benchmark
+continuam congelados. A investigação e os testes sintéticos fizeram zero chamadas OpenAI e Supabase.
+
+Para até 100 rows, o boundary de catálogo normaliza e deduplica a chave
+`brand/model/version/modelYear/productionYear`, processando no máximo 10 chaves simultaneamente.
+Cada consulta continua dirigida; não há scan global nem `.or()` textual. Uma chave completa usa os
+dois anos numéricos na busca exata. Se qualquer ano estiver ausente ou não for um ano canônico de
+quatro dígitos, a busca exata é omitida e somente candidatos conservadores podem ser sugeridos pelo
+matcher; nunca há confirmação por chave incompleta. Falha em qualquer chunk aborta todo o matching,
+sem tratar catálogo parcial como sucesso.
+
 Cada payload por MMV é limitado a 256 KiB, cada tentativa a 100 rows e o envelope transacional a 10 MiB somando `raw_payload` e `normalized_payload`. `raw_payload` é o rascunho já sanitizado de campos server-owned; `normalized_payload` é o documento canônico final enriquecido. Bytes/base64/texto integral de PDF não pertencem a esses campos. A retenção definitiva permanece uma decisão futura antes do provider real.
 
 Claims possuem lease entre 30 e 900 segundos; o worker web usa 300 segundos. Um job `processing` expirado pode ser recuperado na mesma tentativa por novo token. O token anterior não pode finalizar nem falhar. `claim`, `finalize` e `fail` bloqueiam job e batch e revalidam `ready|failed → extracting`, `extracting → needs_review` e `extracting → failed`.

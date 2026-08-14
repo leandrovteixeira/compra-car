@@ -1,5 +1,26 @@
 # Contexto para agentes de IA
 
+## Marco — integridade Policy/Offer do Volvo (Sprint 10C.2, 2026-08-14)
+
+O Volvo batch 113/Job 35 concluiu o provider, mas foi recusado antes do matching por cinco Offers com
+`policyClientIds: unknownPolicy`; nenhuma row foi persistida. A auditoria local provou que o transport,
+parser, reconstrução e sanitização preservam os IDs e não removem/deduplicam Policies, portanto a
+orfandade já veio do output do provider. O validator canônico continua recusando Offers parcial ou
+totalmente órfãs: não há placeholder, fuzzy matching nem remoção silenciosa. Diagnóstico sanitizado
+registra somente volumes e paths. Prompt v2 e benchmark permanecem congelados; Volvo não foi
+reexecutado, VW não foi executado e não houve acesso remoto.
+
+## Marco — matching pós-provider robusto em volume (Sprint 10C.2, 2026-08-14)
+
+O retry Fiat Job 33 provou que o provider completava, mas o matching disparava até duas queries por
+row em um `Promise.all` de até 100 rows, sem dedupe ou limite de concorrência; anos textuais não
+canônicos também podiam chegar a filtros `smallint`. O boundary agora deduplica chaves MMV e usa
+chunks de 10 consultas dirigidas. Ano ausente/inválido pula a busca exata e nunca vira wildcard ou
+match confirmado; tokens permanecem apenas sugestão. Falha de qualquer chunk aborta o conjunto sem
+catálogo parcial. Diagnóstico local/test é sanitizado e a persistência remota continua genérica.
+Esta correção foi validada somente com fixtures locais; batch 111 não foi reexecutado e permanece
+pendente de autorização separada.
+
 ## Marco — timeout determinístico do provider (Sprint 10C.2, 2026-08-14)
 
 O benchmark cross-brand permanece incompleto e congelado. GWM batch 110/Job 31 sucedeu, mas extraiu

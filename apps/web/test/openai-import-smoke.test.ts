@@ -22,6 +22,82 @@ const BENCHMARK_BATCHES: Readonly<Record<string, string>> = {
 };
 const enabled = process.env.RUN_OPENAI_IMPORT_SMOKE === '1';
 
+type OpenAIImportSmokeMode = 'FIRST_RUN' | 'RETRY';
+
+export function assertOpenAIImportSmokeLifecyclePreconditions(input: {
+  readonly batchStatus: string;
+  readonly documentStatuses: readonly string[];
+  readonly activeJobCount: number;
+}): OpenAIImportSmokeMode {
+  if (input.activeJobCount !== 0)
+    throw new Error('OpenAI import smoke requires zero active processing jobs.');
+  if (input.batchStatus === 'ready') {
+    if (input.documentStatuses.some((status) => status !== 'ready'))
+      throw new Error('FIRST_RUN requires every eligible document to be ready.');
+    return 'FIRST_RUN';
+  }
+  if (input.batchStatus === 'failed') {
+    if (input.documentStatuses.some((status) => status !== 'failed'))
+      throw new Error('RETRY requires every eligible document to be failed.');
+    return 'RETRY';
+  }
+  throw new Error(`Batch status ${input.batchStatus} is not eligible for the OpenAI import smoke.`);
+}
+
+describe('OpenAI import smoke lifecycle preconditions', () => {
+  it('accepts a first run only when batch and document are ready', () => {
+    expect(
+      assertOpenAIImportSmokeLifecyclePreconditions({
+        batchStatus: 'ready',
+        documentStatuses: ['ready'],
+        activeJobCount: 0,
+      }),
+    ).toBe('FIRST_RUN');
+  });
+
+  it('accepts an official retry with failed batch/document and preserved historical jobs', () => {
+    const historicalJobs = [{ attempt: 1, status: 'failed' }];
+    expect(historicalJobs).toHaveLength(1);
+    expect(
+      assertOpenAIImportSmokeLifecyclePreconditions({
+        batchStatus: 'failed',
+        documentStatuses: ['failed'],
+        activeJobCount: 0,
+      }),
+    ).toBe('RETRY');
+  });
+
+  it.each(['extracting', 'needs_review', 'promoted'])('rejects batch status %s', (batchStatus) => {
+    expect(() =>
+      assertOpenAIImportSmokeLifecyclePreconditions({
+        batchStatus,
+        documentStatuses: ['ready'],
+        activeJobCount: 0,
+      }),
+    ).toThrow(/not eligible/u);
+  });
+
+  it('rejects a failed batch with an incompatible document status', () => {
+    expect(() =>
+      assertOpenAIImportSmokeLifecyclePreconditions({
+        batchStatus: 'failed',
+        documentStatuses: ['ready'],
+        activeJobCount: 0,
+      }),
+    ).toThrow(/RETRY requires/u);
+  });
+
+  it('rejects an active job without rejecting historical failed attempts', () => {
+    expect(() =>
+      assertOpenAIImportSmokeLifecyclePreconditions({
+        batchStatus: 'failed',
+        documentStatuses: ['failed'],
+        activeJobCount: 1,
+      }),
+    ).toThrow(/zero active/u);
+  });
+});
+
 describe.skipIf(!enabled)('Sprint 10C.2 OpenAI real smoke', () => {
   it(
     'processes one explicitly selected Staging commercial letter without promotion',
@@ -37,11 +113,22 @@ describe.skipIf(!enabled)('Sprint 10C.2 OpenAI real smoke', () => {
       const client = createLegacySupabaseClientFromEnv();
       const repository = new ImportEngineSupabaseAdapter(client);
       const batch = await repository.getBatch(batchId);
-      expect(batch?.status).toBe('ready');
+      expect(batch).toBeTruthy();
       expect(batch?.documents).toHaveLength(1);
       expect(batch?.documents[0]).toMatchObject({
         originalFileName: expectedFileName,
         documentRole: 'primary',
+      });
+      const { data: activeJobs, error: activeJobsError } = await client
+        .from('pricing_import_processing_jobs')
+        .select('id,status')
+        .eq('batch_id', batchId)
+        .in('status', ['queued', 'processing']);
+      expect(activeJobsError).toBeNull();
+      const executionMode = assertOpenAIImportSmokeLifecyclePreconditions({
+        batchStatus: batch!.status,
+        documentStatuses: batch!.documents.map((document) => document.status),
+        activeJobCount: activeJobs?.length ?? 0,
       });
       const { data: actor } = await client
         .from('profiles')
@@ -84,6 +171,7 @@ describe.skipIf(!enabled)('Sprint 10C.2 OpenAI real smoke', () => {
         'OPENAI_IMPORT_BENCHMARK',
         JSON.stringify({
           projectRef: STAGING_REF,
+          executionMode,
           model: process.env.OPENAI_IMPORT_MODEL,
           providerRunId: job?.provider_run_id,
           latencyMs: Math.round(performance.now() - started),

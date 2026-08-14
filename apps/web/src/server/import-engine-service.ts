@@ -124,15 +124,16 @@ export async function processAdminImportBatch(
       instructions:
         'Extraia somente fatos explícitos no bloco completo aplicável ao MMV; dúvidas materiais permanecem REVIEW.',
     });
-    const rows = await Promise.all(
-      prepareCommercialLetterRows(extracted.payloads, validatePayload).map(async (row) => {
-        const catalog = await processing.findMatchCandidates(row.matchInput);
-        return enrichCommercialLetterRow(
-          row,
-          matchProduct(row.matchInput, catalog),
-          validatePayload,
-        );
-      }),
+    const preparedRows = prepareCommercialLetterRows(extracted.payloads, validatePayload);
+    const catalogs = await processing.findMatchCandidatesBatch(
+      preparedRows.map((row) => row.matchInput),
+    );
+    const rows = preparedRows.map((row, index) =>
+      enrichCommercialLetterRow(
+        row,
+        matchProduct(row.matchInput, catalogs[index] ?? []),
+        validatePayload,
+      ),
     );
     const finalized = await processing.finalize({
       jobId: queued.jobId,

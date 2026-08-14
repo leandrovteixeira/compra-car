@@ -15,6 +15,7 @@ import {
   validateImportDocumentMetadata,
   ExtractionProviderRegistry,
   CommercialLetterPayloadValidationError,
+  analyzeCommercialLetterReferenceIntegrity,
   deriveConfidenceBand,
   enrichCommercialLetterRow,
   matchProduct,
@@ -259,6 +260,156 @@ describe('canonical commercial letter payload', () => {
     );
     expect(forward.map((row) => row.sourceRowNumber)).toEqual([1, 2]);
   });
+
+  describe('Policy/Offer referential integrity', () => {
+    const withSecondPolicy = () => {
+      const value = clone();
+      const second = structuredClone(value.policies[0]);
+      second.clientPolicyId = 'policy_second';
+      value.policies.push(second);
+      return value;
+    };
+    const validationError = (value: Record<string, any>) => {
+      try {
+        validate(value);
+      } catch (error) {
+        expect(error).toBeInstanceOf(CommercialLetterPayloadValidationError);
+        return error as CommercialLetterPayloadValidationError;
+      }
+      throw new Error('Expected canonical validation failure.');
+    };
+
+    it('1. preserves a valid Offer to Policy reference', () => {
+      const value = clone();
+      expect(() => validate(value)).not.toThrow();
+      expect(value.offers[0].policyClientIds).toEqual(fixture.offers[0].policyClientIds);
+    });
+
+    it('2. does not silently deduplicate semantic Policies or remap their IDs', () => {
+      const value = withSecondPolicy();
+      value.offers[0].policyClientIds = ['policy_second'];
+      expect(() => validate(value)).not.toThrow();
+      expect(value.policies).toHaveLength(fixture.policies.length + 1);
+      expect(value.offers[0].policyClientIds).toEqual(['policy_second']);
+    });
+
+    it('3. preserves several Offers that reference the second semantic Policy', () => {
+      const value = withSecondPolicy();
+      value.offers.push(structuredClone(value.offers[0]));
+      value.offers[0].clientOfferId = 'offer_first';
+      value.offers[1].clientOfferId = 'offer_second';
+      value.offers.forEach((offer: Record<string, any>) => {
+        offer.policyClientIds = ['policy_second'];
+      });
+      expect(() => validate(value)).not.toThrow();
+      expect(value.offers.map((offer: Record<string, any>) => offer.policyClientIds)).toEqual([
+        ['policy_second'],
+        ['policy_second'],
+      ]);
+    });
+
+    it('4. rejects a reference when its Policy is removed before canonical validation', () => {
+      const value = clone();
+      value.policies = [];
+      expect(validationError(value).issues).toContain('/offers/0/policyClientIds: unknownPolicy');
+    });
+
+    it('5. rejects an ID that never existed in provider Policies', () => {
+      const value = clone();
+      value.offers[0].policyClientIds = ['policy_never_existed'];
+      expect(validationError(value).referenceIntegrity).toMatchObject({
+        orphanReferenceCount: 1,
+        deterministicRemappingCount: 0,
+      });
+    });
+
+    it('6. rejects the entire payload when an Offer mixes valid and unknown references', () => {
+      const value = clone();
+      value.offers[0].policyClientIds.push('policy_unknown');
+      expect(validationError(value).issues).toContain('/offers/0/policyClientIds: unknownPolicy');
+      expect(value.offers[0].policyClientIds).toContain(fixture.policies[0].clientPolicyId);
+    });
+
+    it('7. rejects an Offer containing only unknown references', () => {
+      const value = clone();
+      value.offers[0].policyClientIds = ['policy_unknown'];
+      expect(validationError(value).referenceIntegrity?.affectedOfferPaths).toEqual([
+        '/offers/0/policyClientIds',
+      ]);
+    });
+
+    it('8. counts multiple unknown references without logging their values', () => {
+      const value = clone();
+      value.offers[0].policyClientIds = ['unknown_a', 'unknown_b'];
+      expect(analyzeCommercialLetterReferenceIntegrity(value)).toEqual({
+        policyCount: value.policies.length,
+        offerCount: value.offers.length,
+        referenceCount: 2,
+        orphanReferenceCount: 2,
+        deterministicRemappingCount: 0,
+        affectedOfferPaths: ['/offers/0/policyClientIds'],
+      });
+    });
+
+    it('9. rejects repeated IDs inside one Offer', () => {
+      const value = clone();
+      const id = value.offers[0].policyClientIds[0];
+      value.offers[0].policyClientIds = [id, id];
+      expect(() => validate(value)).toThrow(CommercialLetterPayloadValidationError);
+    });
+
+    it('10. leaves E/OU Offer grouping unchanged', () => {
+      const value = withSecondPolicy();
+      value.offers.push(structuredClone(value.offers[0]));
+      value.offers[1].clientOfferId = 'offer_alternative';
+      value.offers[1].policyClientIds = ['policy_second'];
+      const before = structuredClone(value.offers);
+      expect(() => validate(value)).not.toThrow();
+      expect(value.offers).toEqual(before);
+    });
+
+    it('11. leaves economic values unchanged', () => {
+      const value = clone();
+      const before = structuredClone({ publicPrice: value.publicPrice, policies: value.policies });
+      expect(() => validate(value)).not.toThrow();
+      expect({ publicPrice: value.publicPrice, policies: value.policies }).toEqual(before);
+    });
+
+    it('12. leaves evidence unchanged', () => {
+      const value = clone();
+      const before = structuredClone(value.mmv.brand.meta.evidence);
+      expect(() => validate(value)).not.toThrow();
+      expect(value.mmv.brand.meta.evidence).toEqual(before);
+    });
+
+    it('13. never creates a placeholder Policy for an orphan reference', () => {
+      const value = clone();
+      value.offers[0].policyClientIds = ['policy_placeholder_candidate'];
+      validationError(value);
+      expect(value.policies).toEqual(fixture.policies);
+    });
+
+    it('14. never associates a textual or fuzzy-similar unknown ID', () => {
+      const value = clone();
+      const known = String(value.policies[0].clientPolicyId);
+      value.offers[0].policyClientIds = [`${known}_typo`];
+      expect(validationError(value).referenceIntegrity?.orphanReferenceCount).toBe(1);
+    });
+
+    it('15. keeps the canonical validator as the authority for genuine unknownPolicy', () => {
+      const value = clone();
+      value.offers[0].policyClientIds = ['genuine_unknown'];
+      const error = validationError(value);
+      expect(error.issues).toEqual(['/offers/0/policyClientIds: unknownPolicy']);
+      expect(error.referenceIntegrity).toMatchObject({
+        policyCount: value.policies.length,
+        offerCount: value.offers.length,
+        referenceCount: 1,
+        orphanReferenceCount: 1,
+        deterministicRemappingCount: 0,
+      });
+    });
+  });
 });
 
 describe('Import processing foundation', () => {
@@ -337,5 +488,19 @@ describe('Import processing foundation', () => {
         catalog,
       ),
     ).toEqual({ status: 'unmatched', candidates: [] });
+  });
+  it('never confirms an incomplete year key from token similarity', () => {
+    expect(
+      matchProduct(
+        {
+          brand: 'Geely',
+          model: 'EX5',
+          version: 'Pro',
+          modelYear: '',
+          productionYear: '',
+        },
+        catalog,
+      ),
+    ).toMatchObject({ status: 'suggested' });
   });
 });

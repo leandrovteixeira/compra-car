@@ -136,10 +136,51 @@ const fieldValue = (payload: JsonObject, field: string): string => {
 };
 
 export class CommercialLetterPayloadValidationError extends Error {
-  constructor(readonly issues: readonly string[]) {
+  constructor(
+    readonly issues: readonly string[],
+    readonly referenceIntegrity?: CommercialLetterReferenceIntegrityDiagnostic,
+  ) {
     super(`Payload canônico inválido (${issues.length} violação(ões)).`);
     this.name = 'CommercialLetterPayloadValidationError';
   }
+}
+
+export interface CommercialLetterReferenceIntegrityDiagnostic {
+  readonly policyCount: number;
+  readonly offerCount: number;
+  readonly referenceCount: number;
+  readonly orphanReferenceCount: number;
+  readonly deterministicRemappingCount: number;
+  readonly affectedOfferPaths: readonly string[];
+}
+
+export function analyzeCommercialLetterReferenceIntegrity(
+  payload: Readonly<JsonObject>,
+): CommercialLetterReferenceIntegrityDiagnostic {
+  const policies = Array.isArray(payload.policies) ? (payload.policies as JsonObject[]) : [];
+  const offers = Array.isArray(payload.offers) ? (payload.offers as JsonObject[]) : [];
+  const knownPolicies = new Set(policies.map((policy) => String(policy.clientPolicyId)));
+  let referenceCount = 0;
+  let orphanReferenceCount = 0;
+  const affectedOfferPaths: string[] = [];
+  offers.forEach((offer, index) => {
+    const references = Array.isArray(offer.policyClientIds)
+      ? (offer.policyClientIds as unknown[]).map(String)
+      : [];
+    referenceCount += references.length;
+    const orphanCount = references.filter((id) => !knownPolicies.has(id)).length;
+    orphanReferenceCount += orphanCount;
+    if (orphanCount) affectedOfferPaths.push(`/offers/${index}/policyClientIds`);
+  });
+  return Object.freeze({
+    policyCount: policies.length,
+    offerCount: offers.length,
+    referenceCount,
+    orphanReferenceCount,
+    // No Policy transformation currently exists, so there is no legitimate remapping source.
+    deterministicRemappingCount: 0,
+    affectedOfferPaths: Object.freeze(affectedOfferPaths),
+  });
 }
 
 export type ConfidenceBand = 'high' | 'medium' | 'low';
@@ -186,6 +227,7 @@ export function validateCommercialLetterInvariants(payload: JsonObject): void {
   if (hasDuplicates(policyIds)) errors.push('/policies: duplicateClientPolicyId');
   if (hasDuplicates(offerIds)) errors.push('/offers: duplicateClientOfferId');
   if (hasDuplicates(issueIds)) errors.push('/issues: duplicateIssueId');
+  const referenceIntegrity = analyzeCommercialLetterReferenceIntegrity(payload);
   const knownPolicies = new Set(policyIds);
   offers.forEach((offer, index) =>
     (offer.policyClientIds as string[]).forEach((id) => {
@@ -196,7 +238,7 @@ export function validateCommercialLetterInvariants(payload: JsonObject): void {
   const expectedBand = deriveConfidenceBand(confidence.score as number);
   if (confidence.band !== expectedBand)
     errors.push('/overallConfidence/band: inconsistentWithScore');
-  if (errors.length) throw new CommercialLetterPayloadValidationError(errors);
+  if (errors.length) throw new CommercialLetterPayloadValidationError(errors, referenceIntegrity);
 }
 
 function sanitizeServerOwnedFields(value: unknown): JsonObject {
@@ -295,6 +337,9 @@ export interface ImportProcessingRepository {
   }): Promise<ImportProcessingJobResult>;
   downloadDocument(bucket: string, path: string): Promise<Uint8Array>;
   findMatchCandidates(input: ProductMatchInput): Promise<readonly ProductMatchCandidate[]>;
+  findMatchCandidatesBatch(
+    inputs: readonly ProductMatchInput[],
+  ): Promise<readonly (readonly ProductMatchCandidate[])[]>;
   finalize(input: {
     readonly jobId: string;
     readonly claimToken: string;
