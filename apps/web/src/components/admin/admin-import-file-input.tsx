@@ -6,15 +6,21 @@ import { importDocumentFileFieldName } from '@/application/admin/import-document
 
 import type { SelectedImportFile } from './admin-import-file-selection';
 
-export function AdminImportFileInput({ item }: { readonly item: SelectedImportFile }) {
+export function AdminImportFileInput({
+  item,
+  rehydrationToken,
+}: {
+  readonly item: SelectedImportFile;
+  readonly rehydrationToken: object;
+}) {
   const assignFile = useCallback(
     (input: HTMLInputElement | null) => {
-      if (!input || typeof DataTransfer === 'undefined') return;
+      if (!input || !rehydrationToken || typeof DataTransfer === 'undefined') return;
       const transfer = new DataTransfer();
       transfer.items.add(item.file);
       input.files = transfer.files;
     },
-    [item.file],
+    [item.file, rehydrationToken],
   );
 
   return (

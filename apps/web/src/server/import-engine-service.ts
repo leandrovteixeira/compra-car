@@ -46,6 +46,7 @@ import {
 } from '@compra-car/adapter-supabase';
 import schema from '../../../../docs/import/schemas/commercial-letter-mmv-payload-v1.schema.json';
 import { FakeExtractionProvider } from './fake-extraction-provider';
+import { createConfiguredExtractionProvider } from './openai-extraction-provider';
 
 import { requireRole } from '@/auth/authorization';
 import {
@@ -75,8 +76,12 @@ export async function processAdminImportBatch(
   const batch = await repository.getBatch(batchId);
   if (!batch) throw new Error('Dossiê de importação não encontrado.');
   const registry = new ExtractionProviderRegistry();
-  registry.register(dependencies.extractionProvider ?? new FakeExtractionProvider());
-  const provider = registry.require('fake');
+  const fakeProvider = new FakeExtractionProvider();
+  registry.register(fakeProvider);
+  const configuredProvider =
+    dependencies.extractionProvider ?? createConfiguredExtractionProvider();
+  if (configuredProvider.key !== fakeProvider.key) registry.register(configuredProvider);
+  const provider = registry.require(configuredProvider.key);
   const validatePayload = createCommercialLetterPayloadValidator(schema as Record<string, unknown>);
   const queued = await processing.enqueue({
     batchId,
@@ -101,6 +106,7 @@ export async function processAdminImportBatch(
         .filter((document) => document.status !== 'rejected')
         .map(async (document) => ({
           id: document.id,
+          ordinal: document.sourceOrder,
           role: document.documentRole,
           mimeType: 'application/pdf' as const,
           contentSha256: document.contentSha256,

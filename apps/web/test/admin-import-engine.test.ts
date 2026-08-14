@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import type { ImportEngineRepository } from '@compra-car/core';
+import type { ImportDocumentRole, ImportEngineRepository } from '@compra-car/core';
 import { describe, expect, it, vi } from 'vitest';
 
 import { appendImportDocumentSubmission } from '../src/application/admin/import-document-submission';
@@ -52,7 +52,7 @@ function form(
       type: 'application/pdf',
     }),
   ],
-  roles: readonly ('primary' | 'errata' | 'other')[] = files.map(() => 'primary'),
+  roles: readonly ImportDocumentRole[] = files.map(() => 'primary'),
 ) {
   const data = new FormData();
   data.set('competence', '2026-07');
@@ -234,6 +234,41 @@ describe('admin Import Engine', () => {
     expect(target.uploadDocument).not.toHaveBeenCalled();
   });
 
+  it.each(['primary', 'complement'] as const)(
+    'creates a new dossier for an acknowledged duplicate and preserves the %s role',
+    async (role) => {
+      const target = repository();
+      vi.mocked(target.findDuplicateDocuments).mockResolvedValue([
+        {
+          contentSha256: 'a'.repeat(64),
+          documentId: '7',
+          originalFileName: 'Carta.pdf',
+          batchId: '4',
+          batchTitle: 'Outro dossiê',
+          batchStatus: 'ready',
+          createdAt: '2026-08-01T00:00:00Z',
+        },
+      ]);
+      const acknowledged = form(undefined, [role]);
+      acknowledged.set('acknowledgeDuplicates', 'true');
+
+      await expect(
+        createAdminImportBatch(acknowledged, dependencies(target)),
+      ).resolves.toMatchObject({ status: 'success', batchId: '91' });
+      expect(target.uploadDocument).toHaveBeenCalledOnce();
+      expect(target.createBatch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          documents: [
+            expect.objectContaining({
+              documentRole: role,
+              duplicateAcknowledged: true,
+            }),
+          ],
+        }),
+      );
+    },
+  );
+
   it('compensates uploaded objects when database persistence fails', async () => {
     const target = repository();
     vi.mocked(target.findBatchByIdempotencyKey).mockResolvedValue(null);
@@ -308,6 +343,7 @@ describe('admin Import Engine', () => {
     const addDocuments = source('../src/app/admin/imports/[batchId]/add/page.tsx');
     const formSource = source('../src/components/admin/admin-import-form.tsx');
     const addFormSource = source('../src/components/admin/admin-import-documents-form.tsx');
+    const fileInputSource = source('../src/components/admin/admin-import-file-input.tsx');
     const navigation = source('../src/components/admin/admin-navigation.ts');
     expect(list).toContain("await requireRole('admin')");
     expect(create).toContain("await requireRole('admin')");
@@ -321,6 +357,9 @@ describe('admin Import Engine', () => {
     expect(formSource).not.toContain('encType=');
     expect(addFormSource).not.toContain('encType=');
     expect(formSource + addFormSource).toContain('AdminImportFileInput');
+    expect(formSource + addFormSource).toContain('rehydrationToken={state}');
+    expect(fileInputSource).toContain('[item.file, rehydrationToken]');
+    expect(fileInputSource).toContain('transfer.items.add(item.file)');
     expect(formSource + addFormSource).toContain('importDocumentRoleFieldName(item.id)');
     expect(formSource + addFormSource).not.toContain('name="documentRoles"');
     expect(formSource).not.toContain('name="title"');

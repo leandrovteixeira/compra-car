@@ -1,8 +1,21 @@
 # Contexto para agentes de IA
 
+## Marco — timeout determinístico do provider (Sprint 10C.2, 2026-08-14)
+
+O benchmark cross-brand permanece incompleto e congelado. GWM batch 110/Job 31 sucedeu, mas extraiu
+1/13 MMVs nominais. Fiat batch 111/Job 32 excedeu o timeout externo de 180 s; o job órfão foi
+recuperado pelo reclaim oficial e finalizado atomicamente como `PROVIDER_TIMEOUT`, com batch e
+documento 42 em `failed`, zero rows e zero efeito comercial. Volvo 113 e VW 112 não foram
+executados. O provider agora aplica deadline server-only configurável (default 480 s, faixa 30–600
+s), propaga AbortSignal e converte timeout em `PROVIDER_TIMEOUT`; o application flow usa a fail RPC
+atômica. Lease = 900 s e harness = 900 s. Prompt v2, schema, matching, confidence e FakeProvider
+permanecem inalterados. Após o checkpoint, retomar Fiat → Volvo → VW.
+
 ## Marco — processamento do Import Engine (Sprint 10C, 2026-08-12)
 
-A fundação possui job por tentativa, provider abstrato/FakeProvider, plugin `commercial_letters`, matching conservador e persistência transacional em `pricing_import_rows`. As migrations da Sprint 10C e do reclaim foram aplicadas e a pipeline foi validada funcionalmente no Staging `shfsjyjxmgwnlexmdkcs`. Provider real e promoção comercial continuam fora do escopo/PENDENTE.
+A fundação possui job por tentativa, provider abstrato/FakeProvider, plugin `commercial_letters`, matching conservador e persistência transacional em `pricing_import_rows`. As migrations da Sprint 10C e do reclaim foram aplicadas e a pipeline foi validada funcionalmente no Staging `shfsjyjxmgwnlexmdkcs`. O primeiro baseline semântico válido da 10C.2 usou batch 109, `Geely 202602-01.pdf`, `gpt-5.6-terra` e Prompt/provider v1: 43.804 tokens, custo estimado ~US$ 0,285, quatro rows, 4/4 MMVs e MSRP corretos, precision observada alta, nenhum false positive observado e zero efeito comercial. O recall foi incompleto: faltaram condições financeiras/taxa zero/carência no EX2 MAX e Wallbox ou recarga/carência no EX5 PRO/MAX; confidence 96–98 não refletiu as lacunas. Classificação: `REAL PROVIDER SMOKE TECHNICALLY PASS / QUALITY FAIL`.
+
+O Prompt v1 original permanece identificável e reproduzível. O Prompt/provider v2 adiciona escopo documental explícito, matriz de cobertura por MMV, reconciliação, herança correta de benefícios gerais entre alternativas, contexto de tabelas, completeness em confidence/REVIEW e evidence de escopo. O primeiro A/B v2, batch 114/Job 29, recebeu output do provider mas falhou antes de persistir rows por `overallConfidence.band: inconsistentWithScore`. Após a correção server-owned das bands, o retry oficial Job 30 sucedeu com 46.290 tokens, quatro rows/4 MMVs e confidence 92–94; melhorou sinais de cobertura, mas permaneceu todo `unmatched` e não estabeleceu sozinho qualidade semântica suficiente. A correção mantém o score da IA e deriva todas as bands server-side pelos thresholds canônicos 90/70, sem mudar Prompt v2, schema, matching ou provider version. Score inválido continua recusado. Preservar provider run/usage em falha pós-provider exige migration/RPC separada e permanece PENDENTE. Prompt v2 está congelado, Prompt v3 não foi criado e a Sprint ainda não está semanticamente validada.
 
 O hardening adicionou validação JSON Schema real, ownership server-side, lease/reclaim com token, locks e revalidação de batch, correlation/auditoria, limites de payload, ordinal semântico, matching direcionado e pgTAP. O pgTAP remoto não está disponível no projeto, mas reset e 648/648 assertions passaram localmente e os fluxos críticos foram exercitados pelas RPCs, Storage, adapters e application flow reais no Staging. Nenhuma promoção comercial automática foi introduzida.
 

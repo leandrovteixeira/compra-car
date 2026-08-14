@@ -15,6 +15,7 @@ import {
   validateImportDocumentMetadata,
   ExtractionProviderRegistry,
   CommercialLetterPayloadValidationError,
+  deriveConfidenceBand,
   enrichCommercialLetterRow,
   matchProduct,
   prepareCommercialLetterRows,
@@ -141,6 +142,70 @@ describe('canonical commercial letter payload', () => {
       mutate(invalid);
       expect(() => validate(invalid)).toThrow(CommercialLetterPayloadValidationError);
     }
+  });
+
+  it.each([
+    [0, 'low'],
+    [69, 'low'],
+    [70, 'medium'],
+    [89, 'medium'],
+    [90, 'high'],
+    [100, 'high'],
+  ] as const)('derives confidence band deterministically for score %s', (score, band) => {
+    expect(deriveConfidenceBand(score)).toBe(band);
+  });
+
+  it.each([-1, 101, 70.5, Number.NaN])('rejects invalid confidence score %s', (score) => {
+    expect(() => deriveConfidenceBand(score)).toThrow(CommercialLetterPayloadValidationError);
+  });
+
+  it.each([
+    [95, 'low', 'high'],
+    [75, 'high', 'medium'],
+    [40, 'medium', 'low'],
+    [90, 'low', 'high'],
+    [70, 'high', 'medium'],
+  ] as const)(
+    'ignores provider band for score %s and normalizes it from %s to %s',
+    (score, providerBand, expectedBand) => {
+      const extracted = clone();
+      extracted.overallConfidence = {
+        ...extracted.overallConfidence,
+        score,
+        band: providerBand,
+      };
+      extracted.mmv.brand.meta.confidence = {
+        ...extracted.mmv.brand.meta.confidence,
+        score,
+        band: providerBand,
+      };
+
+      const row = prepareCommercialLetterRows([extracted], validate)[0]!;
+      expect((row.rawPayload.overallConfidence as Record<string, unknown>).band).toBe(expectedBand);
+      expect(
+        (
+          (row.rawPayload.mmv as Record<string, any>).brand.meta.confidence as Record<
+            string,
+            unknown
+          >
+        ).band,
+      ).toBe(expectedBand);
+    },
+  );
+
+  it('keeps an already correct provider band unchanged', () => {
+    const row = prepareCommercialLetterRows([clone()], validate)[0]!;
+    expect((row.rawPayload.overallConfidence as Record<string, unknown>).band).toBe(
+      fixture.overallConfidence.band,
+    );
+  });
+
+  it('rejects invalid provider score before deriving any band', () => {
+    const extracted = clone();
+    extracted.overallConfidence.score = 101;
+    expect(() => prepareCommercialLetterRows([extracted], validate)).toThrow(
+      CommercialLetterPayloadValidationError,
+    );
   });
 
   it('discards provider authority and rebuilds server-owned fields', () => {

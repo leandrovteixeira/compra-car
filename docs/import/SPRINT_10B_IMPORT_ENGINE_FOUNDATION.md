@@ -1,5 +1,18 @@
 # Sprint 10B — Fundação do Import Engine
 
+## Correção do reenvio confirmado entre dossiês
+
+O navegador limpa inputs `type=file` depois de uma submissão. Na resposta de duplicate, o estado
+React ainda exibia o arquivo e seu papel, mas o input oculto permanecia vazio; a confirmação seguinte
+enviava o role sem um `File` válido e o parser rejeitava o pareamento. Os formulários de criação e de
+adição agora renovam o callback-ref a cada resultado da Server Action e reidratam o input oculto com
+o mesmo `File` mantido na seleção. File e role continuam unidos pelo identificador estável.
+
+A identidade de duplicate entre dossiês é o SHA-256 do conteúdo. O banco permite o mesmo hash em
+batches diferentes e restringe apenas `(batch_id, content_sha256)`; o aceite exige
+`duplicateAcknowledged=true`. Replay da mesma criação continua protegido por `idempotency_key`, e a
+adição a batch existente por `operation_id`. Nenhuma migration foi necessária.
+
 ## Resultado
 
 O Import Engine recebeu sua fundação operacional para cartas comerciais: dossiês com múltiplos PDFs,

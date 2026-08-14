@@ -1,6 +1,10 @@
 # Compra Car — Cronograma Mestre do Projeto
 
-> Atualização 2026-08-12: Sprint 10C implementou e validou no Staging a fundação do pipeline (jobs, FakeProvider, plugin, matching, reclaim e persistência atômica). Provider real permanece gate posterior; nenhuma promoção comercial é automática.
+> Atualização 2026-08-14: o benchmark Prompt v2 segue incompleto. GWM concluiu com recall 1/13;
+> Fiat expôs timeout externo; o Job 32 órfão foi recuperado pelo reclaim oficial e finalizado pela
+> fail RPC como `PROVIDER_TIMEOUT`, sem rows nem efeito comercial. Volvo/VW não foram executados. O
+> lifecycle local agora possui timeout funcional capturável, fail atômica e margem de lease/runner.
+> Prompt v2 permanece congelado e nenhuma promoção comercial é automática.
 
 ## Objetivo
 

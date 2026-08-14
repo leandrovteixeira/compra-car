@@ -4,13 +4,14 @@ export const IMPORT_PROCESSING_JOB_STATUSES = [
   'succeeded',
   'failed',
 ] as const;
-export const IMPORT_PROCESSING_LEASE_SECONDS = 300;
+export const IMPORT_PROCESSING_LEASE_SECONDS = 900;
 export const IMPORT_PROCESSING_MAX_PAYLOAD_BYTES = 256 * 1024;
 export const IMPORT_PROCESSING_MAX_ROWS = 100;
 export type ImportProcessingJobStatus = (typeof IMPORT_PROCESSING_JOB_STATUSES)[number];
 
 export interface ExtractionDocument {
   readonly id: string;
+  readonly ordinal?: number;
   readonly role: string;
   readonly mimeType: 'application/pdf';
   readonly contentSha256: string;
@@ -26,6 +27,7 @@ export interface ExtractionRequest {
 export interface ExtractionUsage {
   readonly inputUnits: number;
   readonly outputUnits: number;
+  readonly totalUnits?: number;
 }
 export interface ExtractionResult {
   readonly providerRunId: string;
@@ -139,6 +141,39 @@ export class CommercialLetterPayloadValidationError extends Error {
     this.name = 'CommercialLetterPayloadValidationError';
   }
 }
+
+export type ConfidenceBand = 'high' | 'medium' | 'low';
+
+export function deriveConfidenceBand(score: number): ConfidenceBand {
+  if (!Number.isInteger(score) || score < 0 || score > 100)
+    throw new CommercialLetterPayloadValidationError(['/confidence/score: invalid']);
+  return score >= 90 ? 'high' : score >= 70 ? 'medium' : 'low';
+}
+
+function normalizeConfidenceBands(value: unknown, path = ''): void {
+  if (!value || typeof value !== 'object') return;
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => normalizeConfidenceBands(item, `${path}/${index}`));
+    return;
+  }
+  const current = value as JsonObject;
+  for (const [key, nested] of Object.entries(current)) {
+    const nestedPath = `${path}/${key}`;
+    if (key === 'confidence' || key === 'overallConfidence') {
+      const confidence = object(nested, nestedPath);
+      try {
+        confidence.band = deriveConfidenceBand(confidence.score as number);
+      } catch (error) {
+        if (error instanceof CommercialLetterPayloadValidationError)
+          throw new CommercialLetterPayloadValidationError([`${nestedPath}/score: invalid`]);
+        throw error;
+      }
+    } else {
+      normalizeConfidenceBands(nested, nestedPath);
+    }
+  }
+}
+
 export function validateCommercialLetterInvariants(payload: JsonObject): void {
   const errors: string[] = [];
   const policies = payload.policies as JsonObject[];
@@ -158,8 +193,7 @@ export function validateCommercialLetterInvariants(payload: JsonObject): void {
     }),
   );
   const confidence = object(payload.overallConfidence, 'overallConfidence');
-  const score = Number(confidence.score);
-  const expectedBand = score >= 90 ? 'high' : score >= 70 ? 'medium' : 'low';
+  const expectedBand = deriveConfidenceBand(confidence.score as number);
   if (confidence.band !== expectedBand)
     errors.push('/overallConfidence/band: inconsistentWithScore');
   if (errors.length) throw new CommercialLetterPayloadValidationError(errors);
@@ -185,7 +219,7 @@ function sanitizeServerOwnedFields(value: unknown): JsonObject {
     ...(kind === 'offer' ? { existingOfferId: null } : {}),
   });
   const publicPrice = object(raw.publicPrice, 'publicPrice');
-  return {
+  const sanitized = {
     ...raw,
     productMatch: {
       status: 'unmatched',
@@ -222,6 +256,8 @@ function sanitizeServerOwnedFields(value: unknown): JsonObject {
       readyForPromotion: false,
     },
   };
+  normalizeConfidenceBands(sanitized);
+  return sanitized;
 }
 
 export interface PreparedImportRow {
@@ -486,6 +522,22 @@ export function sanitizeProcessingError(error: unknown): {
       code: 'CANONICAL_PAYLOAD_INVALID',
       message: `Payload canônico recusado: ${error.issues.slice(0, 10).join('; ')}`.slice(0, 1000),
     };
+  if (error && typeof error === 'object' && 'code' in error) {
+    const code = String(error.code);
+    const providerCodes = new Set([
+      'PROVIDER_AUTH_ERROR',
+      'PROVIDER_RATE_LIMITED',
+      'PROVIDER_TIMEOUT',
+      'PROVIDER_INVALID_OUTPUT',
+      'PROVIDER_REFUSAL',
+      'PROVIDER_FILE_UPLOAD_FAILED',
+      'PROVIDER_FILE_CLEANUP_FAILED',
+      'PROVIDER_REQUEST_INVALID',
+      'PROVIDER_UNKNOWN_ERROR',
+    ]);
+    if (providerCodes.has(code))
+      return { code, message: 'O provider de extração falhou. Consulte o correlation ID.' };
+  }
   return {
     code: 'PROCESSING_FAILED',
     message: 'O processamento falhou sem persistir rows. Consulte o correlation ID.',

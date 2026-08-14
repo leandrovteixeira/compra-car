@@ -1,5 +1,63 @@
 # Changelog
 
+## 2026-08-14 — Lifecycle de timeout da Sprint 10C.2
+
+- Substituído o timeout de negócio implícito do Vitest por deadline server-side configurável no
+  OpenAIExtractionProvider, com AbortSignal, erro seguro `PROVIDER_TIMEOUT`, cleanup em `finally` e
+  fail RPC atômica; lease e harness agora têm margem superior ao timeout funcional.
+- Registrado o benchmark congelado: GWM/Job 31 sucedeu com 1/13 MMVs nominais; Fiat/Job 32 excedeu
+  180 s; Volvo/VW não foram executados. O Job 32 foi recuperado pelo reclaim oficial e finalizado
+  pela fail RPC como `PROVIDER_TIMEOUT`, com batch/documento `failed`, zero rows e hashes comerciais
+  inalterados. Prompt v2, schemas, matching e FakeProvider foram preservados.
+- Consolidado o resultado Geely v2: o retry oficial Job 30 sucedeu com 46.290 tokens e quatro rows,
+  apresentou melhora parcial de cobertura e confidence 92–94, mas permaneceu todo `unmatched` e não
+  encerrou a validação semântica. Prompt v3 não foi criado.
+
+## 2026-08-13 — Sprint 10C.2 OpenAI extraction provider
+
+- Corrigido localmente o blocker do Job 29 sem nova chamada OpenAI: toda confidence fornecida pelo
+  provider conserva somente o score; o servidor deriva `high` (90–100), `medium` (70–89) ou `low`
+  (0–69) antes da validação canônica. Band do provider deixou de ser autoritativa tanto no overall
+  quanto nos metadados de campo; score inválido continua recusado.
+- Prompt/provider permanecem v2 e os schemas canônico/transport não mudaram. A preservação de
+  provider run/usage em falha pós-provider foi documentada para migration/RPC separada, sem update
+  direto não atômico.
+- Corrigido o reenvio confirmado de PDF já usado em outro dossiê: após a Server Action, o input
+  oculto agora é reidratado com o `File` mantido no estado e preserva o role pareado pelo ID estável.
+  A detecção por SHA-256, a confirmação explícita e a idempotência por submissão permanecem ativas;
+  nenhuma migration ou chamada OpenAI foi realizada.
+- Preparado localmente o Prompt/provider v2, sem chamada OpenAI: escopo documental explícito,
+  coverage matrix por MMV, segunda passagem de reconciliação, herança de benefícios gerais em
+  alternativas, contexto de tabelas, completeness em confidence/REVIEW e evidence de escopo.
+- Preservado o Prompt v1 como baseline reproduzível e versionado o provider ativo como `2`, sem
+  alterar `CommercialLetterExtraction/1`, transport schema, matching ou autoridade server-owned.
+- Documentado o baseline real Geely v1: 43.804 tokens, ~US$ 0,285, quatro rows, 4/4 MMVs/MSRP,
+  precision observada alta e nenhum false positive observado; recall incompleto em condições do
+  EX2 MAX e EX5 PRO/MAX e confidence 96–98 sem penalização. A Sprint continua não validada.
+- O segundo probe opt-in, ainda sem PDF, Files API ou Supabase, confirmou que a Responses API aceita
+  o transport schema após a tipagem explícita de `enum`/`const`. O batch real não foi executado.
+- Um probe opt-in sem PDF nem Supabase isolou a rejeição remanescente em
+  `properties.timezone`: schemas `enum`/`const` sem `type` explícito. A derivação agora declara
+  `type: string` para esses casos comprovadamente textuais e o auditor cobre os limites globais
+  oficiais e cada branch de `anyOf`; nenhuma segunda chamada foi feita.
+- Corrigida definitivamente a derivação Structured Outputs: `$defs` alcançáveis ficam na raiz,
+  todos os `$ref` são validados, opcionais usam nullable no wire e keywords fora da allowlist são
+  removidas apenas do transporte. Um auditor fail-fast e testes negativos impedem regressão antes
+  de qualquer chamada externa.
+- Diagnóstico opt-in de `invalid_json_schema` inclui somente `param` e mensagem curta sanitizada,
+  sem body, headers, request, credenciais, URLs ou payloads.
+- Diagnosticado o primeiro smoke real: o schema de transporte strict continha `oneOf` e
+  propriedades opcionais incompatíveis com o subconjunto da Responses API. O schema canônico não
+  mudou; a derivação para Structured Outputs agora usa `anyOf` e requer todas as propriedades.
+- O provider passou a classificar 403 como auth e 400/422 como `PROVIDER_REQUEST_INVALID`, com
+  diagnóstico local opt-in por etapa sem bodies, headers, credenciais ou payloads.
+
+- Adicionado provider OpenAI server-only opt-in sobre Responses API, PDF nativo temporário,
+  Structured Outputs strict, validação local, reconstrução server-owned, cleanup e erros seguros.
+- Adicionados testes sem custo e smoke real separado com gates de Staging; nenhuma migration,
+  promoção ou mudança em `Legacy` foi realizada.
+- Adicionados `openai@6.49.0` (fixado e compatível com Node 20) e Ajv ao pacote web.
+
 ## 2026-08-12 — Sprint 10C: fundação do processamento
 
 - Adicionado lifecycle auditável de jobs, claim concorrente, retry seguro e finalização atômica das rows.

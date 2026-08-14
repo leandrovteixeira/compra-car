@@ -128,7 +128,7 @@ export function AdminImportDocumentsForm({
             className="grid gap-3 rounded-xl border border-slate-800 bg-slate-950 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(11rem,auto)_auto] sm:items-center"
             key={item.id}
           >
-            <AdminImportFileInput item={item} />
+            <AdminImportFileInput item={item} rehydrationToken={state} />
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-white">{item.file.name}</p>
               <p className="text-xs text-slate-500">{formatBytes(item.file.size)}</p>
