@@ -1,7 +1,8 @@
 # Sprint 10C.2 — OpenAI Real Extraction Provider
 
-Status: provider tecnicamente validado em smoke real; Prompt v1 com recall incompleto e Prompt v2
-com resultado Geely misto e benchmark cross-brand ainda incompleto.
+Status: provider tecnicamente validado; Prompts v1–v3 preservados; A/B Geely v3 com melhora
+substancial e underpropagation ampla residual; Prompt/provider v4 implementado estaticamente e ainda
+não executado.
 
 ## Arquitetura
 
@@ -24,7 +25,7 @@ Cada file tem expiração defensiva de uma hora e é apagado em `finally`, tanto
 falha. Falha de cleanup é observada por código e contagem, sem mascarar o resultado principal e sem
 persistir file IDs. A Responses API usa `store: false` e nenhuma tool.
 
-## Structured extraction e prompts v1/v2
+## Structured extraction e prompts v1/v2/v3/v4
 
 O schema strict `CommercialLetterExtraction/1` contém somente `rows`. Cada row reutiliza as formas
 de source, MMV, período, preço, Policies, Offers, issues e confidence do contrato v1, removendo:
@@ -33,7 +34,7 @@ promoção. A saída é validada localmente antes de o servidor reinserir valore
 pipeline 10C valida novamente o payload canônico, aplica invariantes e faz matching.
 
 O texto original permanece exportado como Prompt v1 e o provider v1 identifica o baseline Geely.
-O Prompt v2 é a instrução ativa e o provider passa a registrar versão `2`, sem migration e sem mudar
+O Prompt v2 foi a instrução ativa do segundo baseline e o provider registrou versão `2`, sem migration e sem mudar
 `CommercialLetterExtraction/1`. Ele adiciona classificação explícita de escopo, propagação apenas
 documental, matriz interna de cobertura por MMV e uma segunda passagem de reconciliação. Também
 explicita herança de benefícios gerais entre Offers alternativas, contexto de tabelas, completude na
@@ -43,6 +44,34 @@ verificações são internas; somente o Structured Output é retornado. Não há
 O schema atual já representa Policies, Offers, alternativas, evidence e restrições. Por isso, a
 iteração semântica não altera o schema canônico nem o transport schema aceito pela OpenAI. Matching,
 IDs, fingerprints, validação, locks e promoção continuam exclusivamente server-owned.
+
+O Prompt v2 permanece exportado e congelado como histórico. O Prompt v3 usa sete fases
+conceituais internas: inventário documental; inventário nominal de MMVs/tabelas; Policies primeiro;
+composição de Offers; reconciliação quantitativa/familiar; integridade referencial; e output final.
+Ele proíbe amostragem de tabelas, separa PY/MY, trata canal como dimensão, reforça contexto
+multipágina, classificação de preços, E/OU e propagação documental. Confidence passa a depender
+também de completeness e integridade; gaps usam os códigos existentes `SOURCE_BLOCK_INCOMPLETE`,
+`MMV_YEAR_AMBIGUOUS`, `OFFER_COVERAGE_GAP` e correlatos. As fases não são chain-of-thought e nunca
+integram o output. O provider v3 identifica essa mudança semântica como `openai/3`.
+
+No A/B real Geely v3, batch 115/Job 36, o provider consumiu 48.384 tokens e produziu quatro rows com
+4/4 MMVs, 4/4 MSRP, período, E/OU, evidence e integridade Offer→Policy corretos, sem false positive
+material observado. Houve recuperação substancial sobre v2, mas uma regra documental ampla ainda não
+foi materializada em duas rows abrangidas e confidence permaneceu 97–98/high. O gap conceitual é que
+a reconciliação v3 fecha formalmente inventário de MMVs→rows, mas não conserva toda regra ampla como
+obrigação verificável na direção regra→todos os destinatários.
+
+O Prompt v4 preserva v1/v2/v3 e adiciona `RULE INVENTORY / SCOPE LEDGER` interno, exceptions first,
+reconciliação bidirecional row-centric/rule-centric e gate HIGH condicionado ao fechamento de toda
+regra ampla. Regras cumulativas gerais devem integrar todas as Offers alternativas aplicáveis, com
+exclusões documentais respeitadas. O ledger não é retornado. O provider ativo é `openai/4`; schemas,
+matching, thresholds e ownership server-side não mudaram.
+
+O A/B real v4 posterior, batch 116/Job 37, preservou 4/4 MMVs/MSRP, período, E/OU, evidence local,
+zero referência órfã e zero false positive material observado, mas não recuperou nem sinalizou a
+regra ampla atribuída às rows EX5; confidence permaneceu 96–97/high. Classificação: mixed result.
+Prompt v5 foi pausado em favor da spike arquitetural 10C.3 documentada em
+`SPRINT_10C3_INTERMEDIATE_EXTRACTION_ARCHITECTURE.md`. Nenhuma arquitetura nova está ativa.
 
 ## Baseline real Geely — Prompt v1
 
@@ -65,8 +94,30 @@ mesmos 4/4 MMVs. A extração passou a representar financiamento do EX2 MAX, man
 dos demais MMVs e reduziu a confidence geral para 92–94. O resultado foi misto: trouxe sinais de
 melhora sobre as lacunas do v1, mas continuou todo `unmatched`, não estabeleceu sozinho recall
 semântico suficiente e não autorizou promoção. O benchmark cross-brand posterior confirmou a
-instabilidade com GWM em apenas 1/13 MMVs nominais. Prompt v2 permanece congelado, Prompt v3 não foi
-criado e a Sprint 10C.2 não está semanticamente validada.
+instabilidade: GWM retornou 1/13 MMVs; Fiat retornou somente duas rows para cerca de 100 combinações,
+omitiu 10/12 famílias e compactou PY/MY em `modelYear`; Volvo concluiu a Responses API, mas cinco
+Offers referenciaram Policies inexistentes e foram corretamente recusadas antes do matching. Em todos
+os resultados válidos, precision local permaneceu boa e não houve false positive material observado,
+mas underpropagation, perda de contexto tabular e confidence excessiva foram sistêmicas. VW ainda não
+foi executado.
+
+## Capacidade, limite de rows e pressão de output
+
+O transport e a pipeline aceitam no máximo 100 rows; fixtures locais validam envelopes com 20 e 100
+MMVs. Um documento com mais de 100 combinações exige desenho arquitetural separado — segmentação por
+família/seção, múltiplas extraction units e reconciliação posterior — e não pode ser truncado pelo
+prompt nem resolvido aumentando o limite silenciosamente.
+
+O request atual não define `max_output_tokens`. O modelo de benchmark `gpt-5.6-terra` possui teto
+publicado de 128.000 tokens de saída, mas quatro rows Geely já consumiram dezenas de milhares de
+tokens totais e o schema repete metadata/evidence em muitos campos. Assim, 100 rows densas podem
+exceder a capacidade prática ou sofrer `incomplete`; não há estimativa segura linear porque usage
+inclui input/reasoning. Como referência estática superior, a fixture canônica verbosa atual tem cerca
+de 11,7 KiB/~2,9 mil tokens por row pela aproximação de quatro caracteres por token; repetida 100
+vezes, aproximaria 289 mil tokens, acima do teto do modelo. Antes de benchmark de grande volume,
+deve-se medir output tokens e considerar segmentação, redução contratual de repetição ou budget
+explícito em tarefa separada. Nenhuma configuração de tokens foi alterada no v3 ou v4; o ledger v4
+permanece interno e não cria campos de output.
 
 ## Erros, timeout e retry
 
@@ -163,7 +214,10 @@ O teste termina em review/unmatched e não executa promoção.
 
 ## Limitações e pendências
 
-- O benchmark A/B do Prompt v2 com a mesma carta é obrigatório antes de declarar a Sprint validada.
+- Prompt tuning one-shot está pausado; o próximo gate pertence ao rollout 10C.3 e requer autorização
+  e implementação separadas.
+- Documentos com mais de 100 combinações e pressão de output exigem trabalho de pipeline antes de
+  cobertura exaustiva garantida.
 - Preservar `provider_run_id`/usage em falha pós-provider depende da migration/RPC descrita acima.
 - Falha parcial de cleanup requer observabilidade operacional; a expiração de uma hora é defesa
   adicional.
@@ -174,7 +228,8 @@ O teste termina em review/unmatched e não executa promoção.
 O benchmark congelado executou GWM (batch 110, Job 31) com sucesso técnico e apenas 1/13 MMVs
 nominais, sem false positive material observado. Fiat (batch 111, Job 32) excedeu o timeout externo
 de 180 s do Vitest; o processo foi encerrado antes do `catch` do application flow e deixou job,
-batch e documento em `processing`/`extracting`. Volvo 113 e VW 112 não foram executados.
+batch e documento em `processing`/`extracting`. Naquele checkpoint, Volvo 113 e VW 112 ainda não
+tinham sido executados; o resultado Volvo posterior está consolidado acima e VW continua pendente.
 
 O runner não é mais controle de negócio. `OPENAI_IMPORT_TIMEOUT_MS` define, somente no servidor, o
 deadline total de upload + Responses: default 480.000 ms, mínimo 30.000 e máximo 600.000. Cada

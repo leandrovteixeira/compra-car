@@ -1,10 +1,21 @@
 # Compra Car — Cronograma Mestre do Projeto
 
-> Atualização 2026-08-14: o benchmark Prompt v2 segue incompleto. GWM concluiu com recall 1/13;
-> Fiat expôs timeout externo; o Job 32 órfão foi recuperado pelo reclaim oficial e finalizado pela
-> fail RPC como `PROVIDER_TIMEOUT`, sem rows nem efeito comercial. Volvo/VW não foram executados. O
-> lifecycle local agora possui timeout funcional capturável, fail atômica e margem de lease/runner.
-> Prompt v2 permanece congelado e nenhuma promoção comercial é automática.
+> Atualização 2026-08-14: o A/B Geely v4 preservou precision, 4/4 MMVs/MSRP, E/OU e integridade, mas
+> não resolveu broad-rule propagation. Prompt v5/one-shot tuning foi pausado. A spike 10C.3 recomenda
+> document map + extraction units + intermediate facts + merge/reconciliation + domain mapping. Essa
+> arquitetura ainda não está ativa; provider continua `openai/4`, schemas v1 permanecem e não houve
+> migration. VW segue não executado. Nenhuma promoção comercial é automática.
+
+### Sprint 10C.3 — Extração intermediária segmentada (proposta)
+
+- **10C.3A:** arquitetura, contrato experimental e fixtures puras.
+- **10C.3B:** document map e inventário verificável.
+- **10C.3C:** extraction units segmentadas e retry granular.
+- **10C.3D:** merge, continuações, dedupe e reconciliation bidirecional.
+- **10C.3E:** domain mapping para `commercial-letter/mmv-payload/1`.
+- **10C.3F:** benchmark controlado de precision, recall, escala, integridade e custo.
+
+Status: roadmap proposto; nenhuma fase acima foi implementada.
 
 ## Objetivo
 

@@ -1,5 +1,41 @@
 # Changelog
 
+## 2026-08-14 — Spike de extração intermediária da Sprint 10C.3
+
+- Consolidado o A/B Geely v4: precision, MMVs/MSRP, período, E/OU e integridade preservados, mas a
+  broad-rule propagation ainda não fechou e confidence continuou alta; tuning one-shot foi pausado.
+- Documentada a decisão por pipeline segmentado em duas camadas: document map/extraction units,
+  intermediate facts, merge/reconciliation e somente então domain mapping para o contrato canônico.
+- Proposto `CommercialDocumentExtraction/1` conceitual, com blocos, tabelas, identities, fatos,
+  relações, scope, coverage e evidence, sem autoridade de Product/Policy/Offer/promoção.
+- Definidos provider genérico, orchestration/plugin boundaries, artifacts JSON privados, retry por
+  stage/unit, human review e rollout 10C.3A–F. Runtime, schemas, migrations e remotos não mudaram.
+
+## 2026-08-14 — Prompt v4 estático da Sprint 10C.2
+
+- Consolidado o A/B real Geely v3: 4/4 MMVs e MSRP, período e E/OU corretos, zero false positive
+  material, recuperação substancial de Policies, Offers e evidence, mas permanência de
+  underpropagation de uma regra documental ampla para duas rows abrangidas.
+- Preservados Prompts v1/v2/v3 e ativado o v4 com `RULE INVENTORY / SCOPE LEDGER`, reconciliação
+  bidirecional row-centric/rule-centric, exceptions first, propagação independente de proximidade,
+  cobertura cumulativa de alternativas e gate de confidence por completude de regras.
+- Provider atualizado para `openai/4`; schemas `CommercialLetterExtraction/1` e
+  `commercial-letter/mmv-payload/1`, matching e ownership server-side permanecem inalterados.
+- Fixtures sintéticas cobrem escopos DOCUMENT/MODEL, exceção explícita, Policy compartilhada,
+  alternativas, coverage issue e a fronteira do gate HIGH. Nenhuma OpenAI ou escrita remota ocorreu;
+  v4 ainda aguarda A/B autorizado.
+
+## 2026-08-14 — Prompt v3 estático da Sprint 10C.2
+
+- Preservados Prompts v1/v2 e ativado o v3 com inventários documental/MMV, enumeração exaustiva de
+  tabelas, PY/MY separados, Policy-first, integridade Offer→Policy, coverage quantitativa/familiar,
+  canais, contexto multipágina, preços, E/OU e confidence orientada a completeness.
+- Provider semântico atualizado de `openai/2` para `openai/3`; schemas transport/canônico continuam
+  v1 e toda autoridade de matching/promoção permanece server-side.
+- Testes estáticos cobrem as regras do prompt e fixtures provam 20/100 MMVs, Policies compartilhadas,
+  canais, anos separados, referências válidas e REVIEW existente. Limite >100 e pressão de output
+  foram registrados como arquitetura futura; nenhuma chamada OpenAI ou escrita remota foi feita.
+
 ## 2026-08-14 — Integridade referencial Policy/Offer da Sprint 10C.2
 
 - Auditado localmente o `unknownPolicy` do Volvo batch 113/Job 35: transport, parsing,

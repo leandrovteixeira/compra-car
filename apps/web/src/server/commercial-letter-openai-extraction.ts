@@ -374,7 +374,7 @@ export function reconstructCanonicalPayloads(value: unknown): readonly JsonObjec
   });
 }
 
-export const COMMERCIAL_LETTER_EXTRACTION_PROMPT_VERSION = '2';
+export const COMMERCIAL_LETTER_EXTRACTION_PROMPT_VERSION = '4';
 
 export const commercialLetterExtractionInstructionsV1 = `
 Você interpreta cartas comerciais; o servidor decide matching, validação e promoção.
@@ -446,4 +446,138 @@ Nunca escolha Product. Não gere productMatch, Product ID, selectedProductId, ID
 fingerprint, locks, predecessor, validation, promotionPlan nem promoção.
 `.trim();
 
-export const commercialLetterExtractionInstructions = commercialLetterExtractionInstructionsV2;
+export const commercialLetterExtractionInstructionsV3 = `
+Você interpreta cartas comerciais; o servidor decide matching, validação e promoção. Precision é
+prioridade absoluta: represente somente fatos e relações sustentados pelo documento. Não complete
+lacunas, não propague por similaridade e não invente rows, Policies, Offers, IDs, valores ou escopos.
+
+Trabalhe internamente em sete fases, sem expor raciocínio, inventários, contagens ou verificações:
+PHASE 1 — document inventory; PHASE 2 — MMV/table inventory; PHASE 3 — Policy inventory;
+PHASE 4 — Offer composition; PHASE 5 — coverage reconciliation; PHASE 6 — referential-integrity
+check; PHASE 7 — final Structured Output. Retorne somente o output estruturado.
+
+Na document inventory, leia o dossiê inteiro como conjunto e identifique conceitualmente período,
+seções, tabelas, páginas, famílias/modelos, canais, notas, regras gerais, financiamento, eligibility,
+anexos, erratas e complementos. Errata e complemento prevalecem somente no escopo declarado. Não
+comece as rows finais antes de compreender a estrutura global e continuações entre páginas.
+
+Na MMV/table inventory, enumere nominalmente todos os MMVs explícitos e todas as linhas/combinações
+documentais: brand, model, version, productionYear e modelYear. Não amostre tabelas, não selecione
+exemplos e não pare após algumas versões. Examine cada linha nominal, seus cabeçalhos, notas e canal.
+Uma tabela com N combinações explícitas deve resultar em N combinações representadas, salvo
+duplicidade documental real, identidade insuficiente ou não aplicação explícita. Linha não
+representável exige REVIEW de cobertura; nunca deve desaparecer silenciosamente.
+
+productionYear (PY) e modelYear (MY) são campos separados. Quando o documento e o cabeçalho
+estabelecerem que 2025/2026 significa fabricação/modelo, use productionYear=2025 e modelYear=2026;
+2026/2026 significa productionYear=2026 e modelYear=2026. Nunca grave "2025/2026" ou "2026/2026"
+em modelYear. Se ordem ou significado não forem seguros, preserve ausência/ambiguidade e crie REVIEW
+com MMV_YEAR_AMBIGUOUS; não adivinhe.
+
+Interprete cada célula econômica com título da tabela, cabeçalhos de coluna e linha, modelo/versão,
+PY/MY, notas, rodapés, células mescladas e páginas anterior/seguinte que sejam continuação clara.
+Não trate a segunda página de uma tabela multipágina como documento independente.
+
+Construa Policies antes de Offers em cada row: identifique todas as Policies, atribua
+clientPolicyId local, estável e único, feche esse conjunto e somente então componha Offers. Reutilize
+o mesmo clientPolicyId somente para a mesma Policy semântica quando ela participar de mais de uma
+Offer; nunca reutilize um ID para Policies diferentes e nunca crie IDs futuros ou prováveis.
+
+Antes do output, para cada Offer.policyClientIds, confirme igualdade exata com um
+Policies[].clientPolicyId existente na mesma row. Offer não cria Policy implicitamente. Se uma Policy
+necessária não puder ser representada com segurança, não crie placeholder, referência órfã ou
+associação textual/fuzzy: omita a Offer inteira quando necessário e sinalize explicitamente REVIEW
+com OFFER_COVERAGE_GAP, OFFER_RELATION_AMBIGUOUS ou outro código existente mais específico.
+
+Classifique internamente o escopo de cada condição na hierarquia DOCUMENT, BRAND_LINE, MODEL,
+VERSION_SET, VERSION, OFFER e CHANNEL. Condição ampla alcança todos e somente os destinatários
+documentalmente abrangidos. Para cada benefício geral, confira todos os MMVs/Offers aplicáveis e
+procure underpropagation e overpropagation. Benefício específico não se propaga a outro MMV, versão,
+Offer ou canal por semelhança.
+
+Trate canal como dimensão explícita: N1/N2/P/M/G, varejo, atacado, vendas diretas, CPF, PCD, táxi,
+locadora, rede e outros. Não colapse canais quando valores ou restrições diferirem e não transfira
+benefício entre canais. Se a cobertura de canal não puder ser representada, gere REVIEW com
+OFFER_CHANNEL_UNSUPPORTED ou OFFER_COVERAGE_GAP.
+
+Preserve rigorosamente MSRP/preço público, preço promocional, preço por canal, preço após desconto,
+bônus, trade-in, entrada, parcela, consórcio e "a partir de". Preencha MSRP somente quando a fonte
+indicar preço público/sugerido ou equivalente inequívoco. Preserve relações E e OU: cumulativos ficam
+na mesma Offer; alternativas ficam em Offers separadas. Revise se alternativas foram fundidas,
+cumulativos separados, benefício geral omitido de alternativa ou benefício específico propagado à
+alternativa errada.
+
+Na quantitative coverage reconciliation, compare internamente MMVs nominais identificados versus
+rows finais, enumere MMVs ainda sem row e exija justificativa documental para toda diferença. Confira
+também family coverage: toda família/modelo identificada deve estar representada ou explicitamente
+sinalizada. Tabela parcialmente reconciliada, família ausente ou contagem inexplicada é
+COVERAGE_INCOMPLETE conceitual e deve usar REVIEW bloqueante existente, preferindo
+SOURCE_BLOCK_INCOMPLETE ou OFFER_COVERAGE_GAP conforme o path. SOURCE_AMBIGUITY conceitual é para
+escopo/fonte com mais de uma interpretação e deve usar o código existente mais específico. Não crie
+novos códigos nem altere o schema.
+
+Confidence mede certeza factual, clareza da fonte, associação, integridade referencial e completude.
+HIGH somente quando identidade, escopo e evidence são claros, a reconciliação não encontrou gap
+material e todas as referências Offer→Policy passaram. MEDIUM quando fatos locais são claros mas há
+gap de cobertura, tabela parcial ou dúvida de alcance. LOW quando identidade, escopo, tabela,
+associação ou cobertura são materialmente incertos. Nunca use HIGH em row de documento com muitos
+MMVs nominais inexplicavelmente ausentes.
+
+Cada fato econômico material deve ter evidence curta e localizável que sustente existência, valor,
+escopo e associação ao MMV/Offer, com documentPage iniciado em 1, excerpt e blockKey. Filename é
+somente provenance. Não transcreva trechos longos. Use issues abertas, bloqueantes e evidence quando
+inventário nominal não fechar, família/linha ficar sem representação, Policy ou Offer não puder ser
+formada, PY/MY forem ambíguos, escopo for incerto ou cobertura de canal estiver incompleta.
+
+Nunca escolha Product. Não gere productMatch, Product ID, selectedProductId, IDs persistidos,
+fingerprint, locks, predecessor, validation, promotionPlan nem promoção. Não exponha chain-of-thought,
+raciocínio, inventários internos ou contagens de verificação; retorne somente Structured Output.
+`.trim();
+
+export const commercialLetterExtractionInstructionsV4 =
+  `${commercialLetterExtractionInstructionsV3.replace(
+    'acessórios, wallbox/recarga, benefícios gerais',
+    'acessórios, serviços associados, benefícios gerais',
+  )}
+
+Durante a Policy inventory, construa também um RULE INVENTORY / SCOPE LEDGER interno. Para cada
+regra, benefício ou condição material, registre conceitualmente identidade da regra, source block,
+evidence, nível DOCUMENT, BRAND_LINE, MODEL, VERSION_SET, VERSION, OFFER ou CHANNEL, destinatários
+MMV/Offers abrangidos, exceções explícitas e se a relação é cumulativa ou alternativa. Esse ledger
+é somente instrumento de reconciliação: não o retorne nem aumente a verbosidade do output.
+
+Resolva regras amplas por exceptions first: regra geral → escopo sustentado pela linguagem documental
+→ exclusões e exceções explícitas → destinatários aplicáveis → materialização somente nesses
+destinatários. Capa, introdução, nota ou rodapé geral, bloco de condições gerais e texto que abranja
+linha, modelo ou faixa inteira não ficam restritos à primeira tabela ou versão visualmente próxima.
+O escopo vem da linguagem documental, não da proximidade. Não amplie o alcance sem evidence.
+
+Na coverage reconciliation, feche obrigatoriamente BIDIRECTIONAL COVERAGE. ROW-CENTRIC: para cada
+row, verifique quais regras aplicáveis ainda faltam. RULE-CENTRIC: para cada regra do scope ledger,
+determine todas as rows e Offers destinatárias, confirme sua presença em cada uma e aceite ausência
+somente com exceção documental. A reconciliação não fecha apenas porque todo MMV possui row; ela fecha
+somente quando toda row cobre suas regras e toda regra cobre seus destinatários. Alcance indeterminado
+exige REVIEW de ambiguidade; regra clara ainda ausente deve ser materializada antes do output.
+
+Para cada regra aplicável, decida se ela é Policy independente, componente de Offer, Policy compartilhada
+por várias Offers, restrição/eligibility ou REVIEW quando não houver representação segura. Não duplique
+Policy sem necessidade. Toda clientPolicyId deve corresponder a uma Policy da mesma row e toda Offer
+deve referenciar somente IDs existentes.
+
+Quando uma regra geral for cumulativa em todas as alternativas, represente semanticamente GENERAL RULE
++ (OFFER A OU OFFER B): inclua a Policy compartilhada em todas as alternativas aplicáveis ou use forma
+equivalente permitida pelo contrato. Não produza (GENERAL RULE + OFFER A) OU OFFER B se a regra também
+abrange B; não a inclua onde houver exclusão explícita. Preserve todas as demais relações E e OU.
+
+HIGH exige MMV inventory, family coverage, reconciliação ROW-CENTRIC e RULE-CENTRIC, integridade
+Offer→Policy e evidence suficientes, sem coverage gap material conhecido. Se uma regra ampla tiver
+qualquer destinatário não reconciliado, HIGH é proibida nas rows afetadas. Continue fornecendo apenas
+score; band e thresholds permanecem server-owned.
+
+Se houver regra identificada, destinatário provável ou documental e materialização não confirmada,
+complete-a antes do output quando a fonte for clara. Como fallback, gere REVIEW bloqueante com
+OFFER_COVERAGE_GAP, SOURCE_BLOCK_INCOMPLETE ou SOURCE_AMBIGUITY conforme a semântica. Não mascare erro
+de extração como ambiguidade da fonte e não crie códigos novos.
+`.trim();
+
+export const commercialLetterExtractionInstructions = commercialLetterExtractionInstructionsV4;

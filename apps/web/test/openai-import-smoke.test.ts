@@ -15,6 +15,8 @@ import {
 
 const STAGING_REF = 'shfsjyjxmgwnlexmdkcs';
 const BENCHMARK_BATCHES: Readonly<Record<string, string>> = {
+  '116': 'Geely 202602-01.pdf',
+  '115': 'Geely 202602-01.pdf',
   '110': 'GWM 202602-01.pdf',
   '111': 'Fiat 202603-01.pdf',
   '113': 'Volvo 202606-02.pdf',

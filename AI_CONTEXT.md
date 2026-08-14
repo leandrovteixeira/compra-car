@@ -1,5 +1,57 @@
 # Contexto para agentes de IA
 
+## Marco — spike de extração intermediária da Sprint 10C.3 (2026-08-14)
+
+O A/B real Geely v4 (batch 116/Job 37) preservou 4/4 MMVs, 4/4 MSRP, período, E/OU, evidence local,
+zero Offer→Policy órfã e zero false positive material observado, mas não recuperou nem sinalizou a
+regra ampla atribuída às rows EX5; confidence permaneceu 96–97/high. A decisão é pausar tuning
+one-shot/Prompt v5 e evoluir a arquitetura, não continuar acumulando instruções no mesmo output.
+
+A spike em `docs/import/SPRINT_10C3_INTERMEDIATE_EXTRACTION_ARCHITECTURE.md` recomenda pipeline
+segmentado: document map → extraction units → `CommercialDocumentExtraction/1` conceitual → merge e
+reconciliation → domain map → contrato canônico v1 atual. O intermediate preserva blocos, tabelas,
+identidades, fatos, relações, scope e evidence, mas não contém Product IDs, Policies/Offers finais,
+matching ou promoção. Provider permanece genérico; estratégia, schema intermediário e mapper ficam no
+plugin `commercial_letters`; validação, IDs, coverage, matching e lifecycle permanecem server-owned.
+
+Persistência recomendada para evolução futura: artifacts JSON imutáveis no Storage privado e metadata
+operacional mínima server-only, após decisão explícita de retention/versioning e migration própria.
+Nada disso está ativo: provider continua `openai/4`, schemas atuais continuam v1 e nenhuma OpenAI,
+batch, remoto, migration ou Legacy foi tocado nesta spike. Rollout proposto: 10C.3A–F, de contrato a
+benchmark.
+
+## Marco — Prompt v4 estático da Sprint 10C.2 (2026-08-14)
+
+O primeiro A/B real Geely v3 (batch 115/Job 36, `gpt-5.6-terra`) sucedeu com 48.384 tokens e quatro
+rows: 4/4 MMVs, 4/4 MSRP, período e E/OU corretos, zero Offer→Policy órfã e nenhum false positive
+material observado. O v3 recuperou substancialmente financiamento, condição diferida e serviços
+associados, mas uma regra documental de escopo amplo ainda não foi propagada para duas rows
+abrangidas; confidence permaneceu 97–98/high. Classificação: technically pass / quality fail.
+
+Prompts v1/v2/v3 permanecem exportados. O Prompt v4 ativo e provider `openai/4` acrescentam um
+`RULE INVENTORY / SCOPE LEDGER` interno e fecham cobertura nas direções row→regras e
+regra→destinatários, com exceptions first, escopo guiado pela linguagem documental, materialização
+de regra geral em todas as alternativas aplicáveis e proibição de HIGH diante de destinatário não
+reconciliado. Schemas transport/canônico continuam v1; matching e thresholds permanecem server-owned.
+O ledger não integra o output. Nenhuma chamada OpenAI ou escrita remota foi feita para o v4; próximo
+gate: A/B Geely v4 autorizado separadamente.
+
+## Marco — Prompt v3 estático da Sprint 10C.2 (2026-08-14)
+
+O benchmark v2 revelou perda sistêmica de coverage/contexto: Geely 4/4 com underpropagation e
+confidence 92–94; GWM 1/13 e confidence 96; Fiat duas rows para cerca de 100 combinações, 10/12
+famílias ausentes e PY/MY compactados; Volvo com cinco Offers referindo Policies inexistentes,
+corretamente recusadas antes do matching. Precision local permaneceu prioritária e sem false positive
+material observado. VW não foi executado.
+
+Prompt v1/v2 permanecem exportados; v2 está congelado. O Prompt v3 e provider `openai/3`
+adicionam inventários, enumeração exaustiva, PY/MY separados, Policy-first, integridade Offer→Policy,
+reconciliação quantitativa/familiar, canais, contexto multipágina, E/OU e confidence/completeness.
+Schemas continuam v1: fixtures validam 20/100 rows e REVIEW com vocabulário existente. O request não
+define `max_output_tokens`; 128k é o teto publicado do modelo, não garantia de caberem 100 rows
+verbosas. Mais de 100 combinações exige segmentação futura. Nenhuma OpenAI ou escrita remota foi
+executada; próximo gate: A/B Geely v3 controlado e autorizado separadamente.
+
 ## Marco — integridade Policy/Offer do Volvo (Sprint 10C.2, 2026-08-14)
 
 O Volvo batch 113/Job 35 concluiu o provider, mas foi recusado antes do matching por cinco Offers com
@@ -26,8 +78,9 @@ pendente de autorização separada.
 O benchmark cross-brand permanece incompleto e congelado. GWM batch 110/Job 31 sucedeu, mas extraiu
 1/13 MMVs nominais. Fiat batch 111/Job 32 excedeu o timeout externo de 180 s; o job órfão foi
 recuperado pelo reclaim oficial e finalizado atomicamente como `PROVIDER_TIMEOUT`, com batch e
-documento 42 em `failed`, zero rows e zero efeito comercial. Volvo 113 e VW 112 não foram
-executados. O provider agora aplica deadline server-only configurável (default 480 s, faixa 30–600
+documento 42 em `failed`, zero rows e zero efeito comercial. Volvo 113 e VW 112 não foram executados
+naquele checkpoint; Volvo foi executado posteriormente conforme o marco atual e VW segue pendente. O
+provider agora aplica deadline server-only configurável (default 480 s, faixa 30–600
 s), propaga AbortSignal e converte timeout em `PROVIDER_TIMEOUT`; o application flow usa a fail RPC
 atômica. Lease = 900 s e harness = 900 s. Prompt v2, schema, matching, confidence e FakeProvider
 permanecem inalterados. Após o checkpoint, retomar Fiat → Volvo → VW.
@@ -36,7 +89,7 @@ permanecem inalterados. Após o checkpoint, retomar Fiat → Volvo → VW.
 
 A fundação possui job por tentativa, provider abstrato/FakeProvider, plugin `commercial_letters`, matching conservador e persistência transacional em `pricing_import_rows`. As migrations da Sprint 10C e do reclaim foram aplicadas e a pipeline foi validada funcionalmente no Staging `shfsjyjxmgwnlexmdkcs`. O primeiro baseline semântico válido da 10C.2 usou batch 109, `Geely 202602-01.pdf`, `gpt-5.6-terra` e Prompt/provider v1: 43.804 tokens, custo estimado ~US$ 0,285, quatro rows, 4/4 MMVs e MSRP corretos, precision observada alta, nenhum false positive observado e zero efeito comercial. O recall foi incompleto: faltaram condições financeiras/taxa zero/carência no EX2 MAX e Wallbox ou recarga/carência no EX5 PRO/MAX; confidence 96–98 não refletiu as lacunas. Classificação: `REAL PROVIDER SMOKE TECHNICALLY PASS / QUALITY FAIL`.
 
-O Prompt v1 original permanece identificável e reproduzível. O Prompt/provider v2 adiciona escopo documental explícito, matriz de cobertura por MMV, reconciliação, herança correta de benefícios gerais entre alternativas, contexto de tabelas, completeness em confidence/REVIEW e evidence de escopo. O primeiro A/B v2, batch 114/Job 29, recebeu output do provider mas falhou antes de persistir rows por `overallConfidence.band: inconsistentWithScore`. Após a correção server-owned das bands, o retry oficial Job 30 sucedeu com 46.290 tokens, quatro rows/4 MMVs e confidence 92–94; melhorou sinais de cobertura, mas permaneceu todo `unmatched` e não estabeleceu sozinho qualidade semântica suficiente. A correção mantém o score da IA e deriva todas as bands server-side pelos thresholds canônicos 90/70, sem mudar Prompt v2, schema, matching ou provider version. Score inválido continua recusado. Preservar provider run/usage em falha pós-provider exige migration/RPC separada e permanece PENDENTE. Prompt v2 está congelado, Prompt v3 não foi criado e a Sprint ainda não está semanticamente validada.
+O Prompt v1 original permanece identificável e reproduzível. O Prompt/provider v2 adicionou escopo documental explícito, matriz de cobertura por MMV, reconciliação, herança correta de benefícios gerais entre alternativas, contexto de tabelas, completeness em confidence/REVIEW e evidence de escopo. O primeiro A/B v2, batch 114/Job 29, recebeu output do provider mas falhou antes de persistir rows por `overallConfidence.band: inconsistentWithScore`. Após a correção server-owned das bands, o retry oficial Job 30 sucedeu com 46.290 tokens, quatro rows/4 MMVs e confidence 92–94; melhorou sinais de cobertura, mas permaneceu todo `unmatched` e não estabeleceu sozinho qualidade semântica suficiente. A correção mantém o score da IA e deriva todas as bands server-side pelos thresholds canônicos 90/70. Score inválido continua recusado. Preservar provider run/usage em falha pós-provider exige migration/RPC separada e permanece PENDENTE. Prompt v2 está congelado como histórico, Prompt/provider v3 está implementado estaticamente conforme o marco acima e a Sprint ainda não está semanticamente validada.
 
 O hardening adicionou validação JSON Schema real, ownership server-side, lease/reclaim com token, locks e revalidação de batch, correlation/auditoria, limites de payload, ordinal semântico, matching direcionado e pgTAP. O pgTAP remoto não está disponível no projeto, mas reset e 648/648 assertions passaram localmente e os fluxos críticos foram exercitados pelas RPCs, Storage, adapters e application flow reais no Staging. Nenhuma promoção comercial automática foi introduzida.
 

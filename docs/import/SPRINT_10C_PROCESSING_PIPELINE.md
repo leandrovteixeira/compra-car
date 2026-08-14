@@ -73,7 +73,46 @@ Storage continua privado e é lido apenas no servidor. A tabela de jobs usa RLS 
 - O provider fake prova orquestração e persistência, mas não interpreta o PDF.
 - O provider fake usa fixtures e não interpreta precedência documental; cenários de primary/errata/complement são representados por fixtures configuráveis, não por heurística falsa.
 - O catálogo canônico atual não expõe códigos externos. O algoritmo e testes suportam código inequívoco, mas o adapter retorna somente a chave de negócio até existir um contrato canônico de códigos — sem consultar tabelas legadas.
-- Provider real está **PENDENTE** de decisão de modelo, credenciais no servidor, limites, custo e política de retenção. Nenhuma promoção comercial faz parte da Sprint 10C.
+- Provider real existe, mas Prompt v4, limites de volume/custo e política definitiva de retenção
+  ainda exigem validação. Nenhuma promoção comercial faz parte da Sprint 10C.
+
+## Prompt v3 estático
+
+O benchmark v2 mostrou padrões cross-brand: GWM 1/13 MMVs; Fiat duas rows para cerca de 100
+combinações, famílias omitidas e PY/MY compactados; Volvo com cinco Offers órfãs corretamente
+recusadas; e Geely ainda com underpropagation/confidence alta. O Prompt v3 adiciona inventários
+documental e nominal, enumeração exaustiva de tabelas, Policy-first, reconciliação quantitativa e
+familiar, checagem Offer→Policy, canais, contexto multipágina e confidence orientada a completeness.
+Prompt v1/v2 permanecem preservados e o provider dessa iteração foi `openai/3`.
+
+O schema v1 não mudou: testes sintéticos validam 20/100 rows, PY/MY separados, canais, Policies
+compartilhadas, referências válidas e REVIEW com códigos existentes. Mais de 100 combinações e risco
+de output excessivo permanecem problemas arquiteturais; o request não configura `max_output_tokens`.
+O A/B Geely v3 posterior produziu 4/4 MMVs/MSRP, E/OU e integridade corretos e recuperou coverage
+substancial, mas ainda omitiu uma regra ampla de duas rows abrangidas com confidence 97–98/high.
+
+## Prompt v4 estático
+
+O v4 preserva integralmente as dimensões do v3 e acrescenta um `RULE INVENTORY / SCOPE LEDGER`
+interno. A reconciliação passa a fechar tanto row→regras quanto regra→rows/Offers, depois de computar
+exceções explícitas e sem usar proximidade visual como substituto de escopo documental. Regras gerais
+cumulativas integram todas as alternativas aplicáveis; gaps usam issues existentes e proíbem HIGH nas
+rows afetadas. O provider ativo é `openai/4`; `CommercialLetterExtraction/1`, o schema canônico v1,
+matching e thresholds server-owned permanecem inalterados.
+
+Fixtures sintéticas validam escopos DOCUMENT/MODEL, exceção, Policy compartilhada, alternativas e
+coverage issue. O ledger não é retornado, portanto não acrescenta campos nem resolve a pressão de
+output: limite de 100 rows e necessidade futura de segmentation/extraction units permanecem. O v4
+foi executado posteriormente: preservou precision e estrutura, mas não resolveu a broad-rule
+propagation. VW continua não executado.
+
+## Direção 10C.3 — intermediate extraction
+
+Prompt tuning one-shot foi pausado. A spike
+`SPRINT_10C3_INTERMEDIATE_EXTRACTION_ARCHITECTURE.md` recomenda document map, extraction units,
+`CommercialDocumentExtraction/1` conceitual, merge/reconciliation e domain mapping separado. O
+provider deve continuar genérico; contratos e estratégia pertencem ao plugin `commercial_letters`.
+Essa direção não alterou runtime, schemas, jobs, RPCs ou persistência atuais.
 
 ## Gate de Staging
 

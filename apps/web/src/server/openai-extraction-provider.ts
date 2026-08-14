@@ -214,7 +214,7 @@ function hasRefusal(output: readonly unknown[] | undefined): boolean {
 
 export class OpenAIExtractionProvider implements ExtractionProvider {
   readonly key = 'openai';
-  readonly version = '2';
+  readonly version = '4';
   private readonly client: OpenAIClientBoundary;
   constructor(
     private readonly config: {
