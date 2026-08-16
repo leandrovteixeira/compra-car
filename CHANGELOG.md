@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-08-16 — Contrato intermediário da Sprint 10C.3A
+
+- Implementado no core o contrato provider-agnostic `CommercialDocumentExtraction/1`, com types e
+  JSON Schema Draft 2020-12 strict para documents, blocks, tables, identities, facts, scopes,
+  composição e coverage.
+- Adicionado validator puro para limites de payload, páginas/anos/valores, IDs locais, referências,
+  continuação de tabelas, scopes, grupos/relações e consistência de coverage.
+- Adicionadas fixtures sintéticas Geely-like, GWM-like 13/13, Fiat-like de doze famílias/cem
+  identities e Volvo-like por canal, além de testes positivos, negativos e de boundary.
+- Documentadas invariantes, limites, autoridade server-owned de IDs e separação do payload canônico.
+  Runtime, providers, adapter Supabase, jobs, RPCs, migrations, Staging, Production e Legacy não foram
+  alterados; nenhuma OpenAI, batch ou chamada externa foi executada.
+- Marcada 10C.3A como implementada; a próxima etapa permanece 10C.3B — Document Map.
+
 ## 2026-08-14 — Spike de extração intermediária da Sprint 10C.3
 
 - Consolidado o A/B Geely v4: precision, MMVs/MSRP, período, E/OU e integridade preservados, mas a

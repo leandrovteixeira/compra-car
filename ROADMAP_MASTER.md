@@ -1,21 +1,20 @@
 # Compra Car — Cronograma Mestre do Projeto
 
-> Atualização 2026-08-14: o A/B Geely v4 preservou precision, 4/4 MMVs/MSRP, E/OU e integridade, mas
-> não resolveu broad-rule propagation. Prompt v5/one-shot tuning foi pausado. A spike 10C.3 recomenda
-> document map + extraction units + intermediate facts + merge/reconciliation + domain mapping. Essa
-> arquitetura ainda não está ativa; provider continua `openai/4`, schemas v1 permanecem e não houve
-> migration. VW segue não executado. Nenhuma promoção comercial é automática.
+> Atualização 2026-08-16: 10C.3A implementou o contrato experimental
+> `CommercialDocumentExtraction/1`, JSON Schema, validator puro e fixtures sintéticas no core. Nenhum
+> runtime, provider, schema persistido ou migration mudou. A próxima etapa é 10C.3B — Document Map.
+> VW segue não executado. Nenhuma promoção comercial é automática.
 
-### Sprint 10C.3 — Extração intermediária segmentada (proposta)
+### Sprint 10C.3 — Extração intermediária segmentada
 
-- **10C.3A:** arquitetura, contrato experimental e fixtures puras.
-- **10C.3B:** document map e inventário verificável.
+- **10C.3A — IMPLEMENTADA:** arquitetura, contrato experimental, validator e fixtures puras.
+- **10C.3B — PRÓXIMA:** document map e inventário verificável.
 - **10C.3C:** extraction units segmentadas e retry granular.
 - **10C.3D:** merge, continuações, dedupe e reconciliation bidirecional.
 - **10C.3E:** domain mapping para `commercial-letter/mmv-payload/1`.
 - **10C.3F:** benchmark controlado de precision, recall, escala, integridade e custo.
 
-Status: roadmap proposto; nenhuma fase acima foi implementada.
+Status: 10C.3A concluída sem integração runtime; 10C.3B–F permanecem pendentes.
 
 ## Objetivo
 

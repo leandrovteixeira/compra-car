@@ -1,0 +1,319 @@
+import Ajv2020 from 'ajv/dist/2020.js';
+import { describe, expect, it } from 'vitest';
+import {
+  COMMERCIAL_DOCUMENT_EXTRACTION_LIMITS,
+  COMMERCIAL_DOCUMENT_SCOPE_TYPES,
+  type CommercialDocumentExtractionV1,
+} from '../src/import/commercial-document-extraction';
+import { commercialDocumentExtractionSchemaV1 } from '../src/import/commercial-document-extraction-schema';
+import {
+  CommercialDocumentExtractionValidationError,
+  validateCommercialDocumentExtraction,
+} from '../src/import/commercial-document-extraction-validator';
+import {
+  fiatLikeCommercialDocumentExtractionFixture,
+  geelyLikeCommercialDocumentExtractionFixture,
+  gwmLikeCommercialDocumentExtractionFixture,
+  volvoLikeCommercialDocumentExtractionFixture,
+} from './fixtures/import/commercial-document-extraction-fixtures';
+
+const fixtures = [
+  ['Geely-like', geelyLikeCommercialDocumentExtractionFixture],
+  ['GWM-like', gwmLikeCommercialDocumentExtractionFixture],
+  ['Fiat-like', fiatLikeCommercialDocumentExtractionFixture],
+  ['Volvo-like', volvoLikeCommercialDocumentExtractionFixture],
+] as const;
+const expectInvalid = (artifact: unknown, issue?: string): void => {
+  try {
+    validateCommercialDocumentExtraction(artifact);
+    throw new Error('Expected validation to fail.');
+  } catch (error) {
+    expect(error).toBeInstanceOf(CommercialDocumentExtractionValidationError);
+    if (issue)
+      expect((error as CommercialDocumentExtractionValidationError).issues.join('\n')).toContain(
+        issue,
+      );
+  }
+};
+
+describe('CommercialDocumentExtraction/1', () => {
+  it('publishes a valid Draft 2020-12 JSON Schema', () => {
+    const ajv = new Ajv2020({ strict: true });
+    expect(ajv.validateSchema(commercialDocumentExtractionSchemaV1)).toBe(true);
+    expect(commercialDocumentExtractionSchemaV1.$schema).toBe(
+      'https://json-schema.org/draft/2020-12/schema',
+    );
+    expect(commercialDocumentExtractionSchemaV1.additionalProperties).toBe(false);
+  });
+
+  it.each(fixtures)('accepts the %s synthetic fixture', (_name, fixture) => {
+    expect(() => validateCommercialDocumentExtraction(fixture)).not.toThrow();
+  });
+
+  it('rejects duplicate IDs', () => {
+    expectInvalid(
+      {
+        ...geelyLikeCommercialDocumentExtractionFixture,
+        blocks: [
+          ...geelyLikeCommercialDocumentExtractionFixture.blocks,
+          geelyLikeCommercialDocumentExtractionFixture.blocks[0],
+        ],
+      },
+      'duplicateId:block-heading',
+    );
+  });
+
+  it('rejects dangling evidence, fact scope and composition references', () => {
+    const fixture = geelyLikeCommercialDocumentExtractionFixture;
+    expectInvalid(
+      {
+        ...fixture,
+        facts: fixture.facts.map((fact, index) =>
+          index === 0
+            ? {
+                ...fact,
+                scopeIds: ['scope-missing'],
+                evidence: { ...fact.evidence, blockIds: ['block-missing'] },
+              }
+            : fact,
+        ),
+        composition: {
+          ...fixture.composition,
+          groups: fixture.composition.groups.map((group, index) =>
+            index === 0
+              ? { ...group, memberFactIds: ['fact-missing', ...group.memberFactIds] }
+              : group,
+          ),
+        },
+      },
+      'unknownRef',
+    );
+  });
+
+  it('rejects an invalid source page', () => {
+    const fixture = geelyLikeCommercialDocumentExtractionFixture;
+    expectInvalid(
+      {
+        ...fixture,
+        blocks: fixture.blocks.map((block, index) => (index === 0 ? { ...block, page: 4 } : block)),
+      },
+      'pageOutOfRange',
+    );
+  });
+
+  it('rejects an invalid vehicle year', () => {
+    const fixture = geelyLikeCommercialDocumentExtractionFixture;
+    expectInvalid({
+      ...fixture,
+      vehicleIdentities: fixture.vehicleIdentities.map((vehicle, index) =>
+        index === 0 ? { ...vehicle, productionYear: 1700 } : vehicle,
+      ),
+    });
+  });
+
+  it('rejects malformed monetary facts and percentages above 100', () => {
+    const fixture = geelyLikeCommercialDocumentExtractionFixture;
+    expectInvalid({
+      ...fixture,
+      facts: fixture.facts.map((fact, index) =>
+        index === 0
+          ? { ...fact, value: { kind: 'money', amount: 'R$ 1.000,00', currency: 'reais' } }
+          : fact,
+      ),
+    });
+    expectInvalid(
+      {
+        ...fixture,
+        facts: fixture.facts.map((fact) =>
+          fact.factId === 'fact-financing-alternative'
+            ? { ...fact, value: { kind: 'percentage', percentage: '101' } }
+            : fact,
+        ),
+      },
+      'above100',
+    );
+  });
+
+  it('preserves a single logical table across pages with inherited headers and footnotes', () => {
+    const fixture = gwmLikeCommercialDocumentExtractionFixture;
+    const table = fixture.tables[0]!;
+    expect(table.tableId).toBe('table-mmv');
+    expect(table.pages).toEqual([2, 3]);
+    expect(table.rows).toHaveLength(13);
+    expect(table.continuation.continuedAcrossPages).toBe(true);
+    expect(table.continuation.segments[1]?.inheritsHeadersFromPage).toBe(2);
+    expect(table.footnoteBlockIds).toEqual(['block-table-footnote']);
+    expectInvalid(
+      {
+        ...fixture,
+        tables: [
+          {
+            ...table,
+            continuation: {
+              ...table.continuation,
+              segments: [
+                table.continuation.segments[0],
+                { ...table.continuation.segments[1], inheritsHeadersFromPage: 3 },
+              ],
+            },
+          },
+        ],
+      },
+      'inheritsHeadersFromPage: invalid',
+    );
+  });
+
+  it('covers every structured scope kind, exclusions, overlap and one-to-many applicability', () => {
+    const fixture = geelyLikeCommercialDocumentExtractionFixture;
+    expect(new Set(fixture.scopes.map((scope) => scope.scopeType))).toEqual(
+      new Set(COMMERCIAL_DOCUMENT_SCOPE_TYPES),
+    );
+    const broadScope = fixture.scopes.find((item) => item.scopeId === 'scope-model');
+    expect(broadScope?.selector.vehicleIdentityIds).toHaveLength(4);
+    expect(broadScope?.exclusions.vehicleIdentityIds).toEqual(['vehicle-version-4']);
+    expect(
+      fixture.composition.groups.find((item) => item.groupId === 'group-alternatives')
+        ?.sharedFactIds,
+    ).toContain('fact-general-bonus');
+    expect(fixture.scopes.filter((item) => item.scopeType === 'VEHICLE')).toHaveLength(4);
+  });
+
+  it('represents cumulative and alternative composition without dangling relations', () => {
+    const composition = geelyLikeCommercialDocumentExtractionFixture.composition;
+    expect(composition.groups.map((group) => group.groupType).sort()).toEqual([
+      'ALTERNATIVE',
+      'CUMULATIVE',
+    ]);
+    expect(composition.relationships.map((relation) => relation.relationType)).toEqual(
+      expect.arrayContaining([
+        'APPLIES_TOGETHER',
+        'MUTUALLY_EXCLUSIVE',
+        'GENERAL_RULE',
+        'EXCEPTION',
+      ]),
+    );
+  });
+
+  it('validates complete, partial and ambiguous coverage states', () => {
+    const fixture = geelyLikeCommercialDocumentExtractionFixture;
+    const partial: CommercialDocumentExtractionV1 = {
+      ...fixture,
+      coverage: {
+        ...fixture.coverage,
+        status: 'partial',
+        completedUnitCount: 1,
+        units: fixture.coverage.units.map((unit, index) =>
+          index === 1 ? { ...unit, status: 'incomplete', extractedItemCount: 4 } : unit,
+        ),
+        gaps: [
+          {
+            gapId: 'gap-incomplete-rules',
+            gapType: 'INCOMPLETE_BLOCK',
+            message: 'Uma regra sintética permaneceu incompleta.',
+            unitId: 'unit-commercial-rules',
+            blockId: 'block-options',
+          },
+        ],
+        incompleteBlockIds: ['block-options'],
+      },
+    };
+    const ambiguous: CommercialDocumentExtractionV1 = {
+      ...partial,
+      scopes: partial.scopes.map((item) =>
+        item.scopeId === 'scope-model' ? { ...item, ambiguous: true, requiresReview: true } : item,
+      ),
+      coverage: {
+        ...partial.coverage,
+        status: 'ambiguous',
+        gaps: [
+          {
+            gapId: 'gap-ambiguous-scope',
+            gapType: 'AMBIGUITY',
+            message: 'Escopo sintético não resolvido.',
+            scopeId: 'scope-model',
+          },
+        ],
+        unresolvedScopeIds: ['scope-model'],
+      },
+    };
+    expect(() => validateCommercialDocumentExtraction(partial)).not.toThrow();
+    expect(() => validateCommercialDocumentExtraction(ambiguous)).not.toThrow();
+    expectInvalid({ ...partial, coverage: { ...partial.coverage, status: 'complete' } });
+  });
+
+  it('proves exhaustive GWM-like coverage of 13/13 rows', () => {
+    const fixture = gwmLikeCommercialDocumentExtractionFixture;
+    expect(fixture.tables[0]?.rows).toHaveLength(13);
+    expect(fixture.vehicleIdentities).toHaveLength(13);
+    expect(fixture.facts).toHaveLength(13);
+    expect(fixture.coverage.expectedVehicleCount).toBe(13);
+    expect(fixture.coverage.extractedVehicleCount).toBe(13);
+  });
+
+  it('supports Fiat-like scale without the canonical 100-row limit', () => {
+    const fixture = fiatLikeCommercialDocumentExtractionFixture;
+    expect(fixture.coverage.expectedFamilies).toHaveLength(12);
+    expect(fixture.vehicleIdentities).toHaveLength(100);
+    expect(fixture.facts.length).toBeGreaterThan(100);
+    expect(fixture.composition.groups).toHaveLength(100);
+    expect(JSON.stringify(fixture).length).toBeLessThan(
+      COMMERCIAL_DOCUMENT_EXTRACTION_LIMITS.maxPayloadBytes,
+    );
+  });
+
+  it('keeps Volvo-like channel prices and financing eligibility distinct', () => {
+    const fixture = volvoLikeCommercialDocumentExtractionFixture;
+    expect(fixture.vehicleIdentities).toHaveLength(20);
+    expect(fixture.facts.filter((fact) => fact.factType === 'promotional_price')).toHaveLength(60);
+    expect(fixture.facts.filter((fact) => fact.factType === 'financing_rate')).toHaveLength(40);
+    expect(
+      fixture.facts.some(
+        (fact) => fact.factType === 'financing_rate' && fact.channel === 'Diretas',
+      ),
+    ).toBe(false);
+  });
+
+  it('rejects domain-authority fields at every strict object boundary', () => {
+    const fixture = geelyLikeCommercialDocumentExtractionFixture;
+    for (const field of [
+      'productId',
+      'matchedProduct',
+      'selectedProductId',
+      'productFingerprint',
+      'pricingImportRowId',
+      'commercialPolicyId',
+      'commercialOfferId',
+      'lockVersion',
+      'predecessorId',
+      'promotionPlan',
+      'promotionAction',
+      'publicationStatus',
+      'matchingStrategy',
+    ])
+      expectInvalid({ ...fixture, [field]: 'forbidden' });
+    expectInvalid({
+      ...fixture,
+      facts: [{ ...fixture.facts[0], selectedProductId: 123 }, ...fixture.facts.slice(1)],
+    });
+  });
+
+  it('enforces the total serialized payload limit before schema traversal', () => {
+    expectInvalid(
+      {
+        ...geelyLikeCommercialDocumentExtractionFixture,
+        oversized: 'x'.repeat(COMMERCIAL_DOCUMENT_EXTRACTION_LIMITS.maxPayloadBytes),
+      },
+      'maxPayloadBytes',
+    );
+  });
+
+  it('keeps the core boundary provider-agnostic', () => {
+    const publicContract = JSON.stringify({
+      schema: commercialDocumentExtractionSchemaV1,
+      fixture: geelyLikeCommercialDocumentExtractionFixture,
+    });
+    expect(publicContract).not.toMatch(
+      /from ['"](?:openai|@openai)|Responses API|providerRunId|fileId|usage/iu,
+    );
+  });
+});

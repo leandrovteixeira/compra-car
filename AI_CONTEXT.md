@@ -1,5 +1,24 @@
 # Contexto para agentes de IA
 
+## Marco — contrato intermediário da Sprint 10C.3A (2026-08-16)
+
+`CommercialDocumentExtraction/1` foi implementado experimentalmente em `packages/core` com types,
+JSON Schema Draft 2020-12 e validator puro. O artifact representa documents, source blocks, tabelas
+lógicas/continuações, vehicle identities documentais, facts atômicos tipados, scopes explícitos,
+composição alternativa/cumulativa e coverage complete/partial/ambiguous. Todos os objetos são strict;
+IDs prefixados são locais ao artifact e todas as referências dinâmicas são validadas sem banco.
+
+Fixtures sintéticas provam quatro identities com broad rule/exceção/E-OU, tabela 13/13 multipágina,
+escala de doze famílias/cem identities/>100 facts e vinte identities com prices/financiamento por
+canal. O contrato recusa campos de autoridade de Product, matching, IDs persistidos, Policy/Offer,
+locks, promoção e publicação. A decisão é que IDs do artifact reconciliado sejam server-owned; a
+reconstrução pertence às fases futuras de document map/merge, não ao validator 10C.3A.
+
+Nada foi integrado ao runtime: `processAdminImportBatch`, registry/providers, plugin canônico,
+adapter Supabase, RPCs, banco, migrations, Staging, Production e Legacy permanecem inalterados.
+Nenhuma OpenAI ou batch foi executada. Documento normativo:
+`docs/import/SPRINT_10C3A_INTERMEDIATE_CONTRACT.md`. Próxima etapa: **10C.3B — Document Map**.
+
 ## Marco — spike de extração intermediária da Sprint 10C.3 (2026-08-14)
 
 O A/B real Geely v4 (batch 116/Job 37) preservou 4/4 MMVs, 4/4 MSRP, período, E/OU, evidence local,
