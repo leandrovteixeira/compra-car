@@ -1,12 +1,14 @@
 # Sprint 10C.3 — Arquitetura de extração intermediária
 
-Status: **arquitetura aprovada; contrato experimental 10C.3A implementado sem runtime**
+Status: **arquitetura aprovada; contratos 10C.3A e 10C.3B implementados sem runtime**
 Data: 2026-08-16
 Decisão recomendada: **pipeline intermediário segmentado (Option C)**
 
 Implementação do contrato: `docs/import/SPRINT_10C3A_INTERMEDIATE_CONTRACT.md`. Types, JSON Schema,
-validator puro e fixtures sintéticas de 10C.3A vivem em `packages/core`; Document Map e fases 10C.3B+
-permanecem pendentes.
+validator puro e fixtures sintéticas de 10C.3A vivem em `packages/core`. A 10C.3B adicionou
+`CommercialDocumentMap/1`, planner server-owned e `CommercialExtractionUnitPlan/1`; execução por
+unit e fases 10C.3C+ permanecem pendentes. Detalhes:
+`docs/import/SPRINT_10C3B_DOCUMENT_MAP.md`.
 
 ## Resumo executivo
 
@@ -432,7 +434,8 @@ sintéticas. Nenhum runtime.
 
 ### 10C.3B — document map
 
-**Próxima:** plugin gera inventário versionado e mede cobertura de páginas/tabelas/famílias.
+**Implementada em 2026-08-16 sem runtime:** contrato versionado, schema/validator, planner puro,
+coverage estrutural e fixtures sintéticas de escala. O provider ativo não foi conectado.
 
 ### 10C.3C — segmented extraction
 

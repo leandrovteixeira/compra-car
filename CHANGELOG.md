@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-08-16 — Document Map da Sprint 10C.3B
+
+- Implementados `CommercialDocumentMap/1` e `CommercialExtractionUnitPlan/1`, com types estruturais,
+  JSON Schemas Draft 2020-12 strict e validators puros de limites, ownership, referências,
+  continuações e coverage.
+- Adicionado planner determinístico server-owned com prioridade por tabela/seção/família/canal,
+  fallback limitado, partitions de tabela lógica, headers/notas como context-only e overlap
+  rastreável.
+- Adicionadas fixtures sintéticas Geely/GWM/Fiat/Volvo/VW-like e testes de tabela multipágina,
+  13/13 rows estimadas, regra geral posterior, 12 famílias/100 combinações, canais, volume,
+  determinismo e zero órfãos.
+- Schema, validator e planner ficaram fora do barrel raiz/Edge; somente types puros foram exportados.
+  Runtime, providers, Supabase, RPCs, migrations, remotos e Legacy não mudaram; nenhum batch ou
+  chamada de modelo foi executado.
+
 ## 2026-08-16 — Contrato intermediário da Sprint 10C.3A
 
 - Implementado no core o contrato provider-agnostic `CommercialDocumentExtraction/1`, com types e

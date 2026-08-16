@@ -1,5 +1,25 @@
 # Contexto para agentes de IA
 
+## Marco — Document Map da Sprint 10C.3B (2026-08-16)
+
+`CommercialDocumentMap/1` foi implementado em `packages/core` como inventário provider-agnostic de
+documents/pages/content blocks, sections, logical tables sem células, notes, entity hints e context
+edges. JSON Schema Draft 2020-12 e invariantes puras validam limites, ownership, back-references,
+continuações, headers herdados e ausência de dangling refs. O mapa não contém facts comerciais
+finais, Policy, Offer, Product, matching ou promoção.
+
+O planner server-owned deriva deterministicamente `CommercialExtractionUnitPlan/1` com units
+TABLE/SECTION/FAMILY/CHANNEL/fallback, primary versus context-only, overlap reason, partitions de
+tabela lógica e coverage recalculável. Fixtures sintéticas Geely/GWM/Fiat/Volvo/VW-like cobrem regra
+geral posterior, tabela 13/13, 17 páginas/12 famílias/100 combinações, canais/eligibility e tabela
+densa particionada. Types puros entram no barrel; schema, validator e planner permanecem em subpaths
+fora do barrel raiz para não levar Ajv ao Edge.
+
+Runtime, provider `openai/4`, prompts, jobs, adapter Supabase, RPCs, banco, migrations, Staging,
+Production e Legacy permanecem inalterados. Nenhum batch/modelo foi executado. Documento normativo:
+`docs/import/SPRINT_10C3B_DOCUMENT_MAP.md`. Próxima etapa: **10C.3C — execução segmentada**, ainda
+não iniciada.
+
 ## Marco — contrato intermediário da Sprint 10C.3A (2026-08-16)
 
 `CommercialDocumentExtraction/1` foi implementado experimentalmente em `packages/core` com types,
