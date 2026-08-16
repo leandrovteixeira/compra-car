@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-08-16 — Segmented Extraction da Sprint 10C.3C
+
+- Adicionados provider/source session genéricos para Structured Outputs, com upload único por
+  documento, reuse entre units, `store:false`, usage por response e cleanup após convergência.
+- Implementados contexto/prompt brand-agnostic por unit, projeção strict com round-trip,
+  canonicalização determinística server-owned e validação canônica de cada artifact.
+- Adicionado scheduler com concorrência limitada, deadline por unit/total, ordem lógica, stop
+  scheduling, abort de siblings, erros sanitizados e resultado operacional retryable em memória.
+- Cobertas fixtures sintéticas 4/13/100/20, partitions, contexto, relações, falhas, determinismo,
+  source reuse e cleanup. Runtime one-shot, Supabase, migrations, remotos e Legacy não mudaram;
+  nenhuma chamada de modelo foi executada.
+
 ## 2026-08-16 — Document Map da Sprint 10C.3B
 
 - Implementados `CommercialDocumentMap/1` e `CommercialExtractionUnitPlan/1`, com types estruturais,

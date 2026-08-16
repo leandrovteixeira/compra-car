@@ -99,7 +99,7 @@ export interface OpenAIClientBoundary {
   deleteFile(id: string): Promise<void>;
 }
 
-class OfficialOpenAIClient implements OpenAIClientBoundary {
+export class OfficialOpenAIClient implements OpenAIClientBoundary {
   private readonly client: OpenAI;
   constructor(apiKey: string, timeoutMs: number) {
     this.client = new OpenAI({ apiKey, maxRetries: 2, timeout: timeoutMs });

@@ -1,14 +1,16 @@
 # Sprint 10C.3 — Arquitetura de extração intermediária
 
-Status: **arquitetura aprovada; contratos 10C.3A e 10C.3B implementados sem runtime**
+Status: **arquitetura aprovada; 10C.3A–C implementadas sem runtime ativo**
 Data: 2026-08-16
 Decisão recomendada: **pipeline intermediário segmentado (Option C)**
 
 Implementação do contrato: `docs/import/SPRINT_10C3A_INTERMEDIATE_CONTRACT.md`. Types, JSON Schema,
 validator puro e fixtures sintéticas de 10C.3A vivem em `packages/core`. A 10C.3B adicionou
-`CommercialDocumentMap/1`, planner server-owned e `CommercialExtractionUnitPlan/1`; execução por
-unit e fases 10C.3C+ permanecem pendentes. Detalhes:
-`docs/import/SPRINT_10C3B_DOCUMENT_MAP.md`.
+`CommercialDocumentMap/1`, planner server-owned e `CommercialExtractionUnitPlan/1`. A 10C.3C
+adicionou execução interna por unit, source reuse, concorrência/deadlines e canonicalização local;
+merge e fases 10C.3D+ permanecem pendentes. Detalhes:
+`docs/import/SPRINT_10C3B_DOCUMENT_MAP.md` e
+`docs/import/SPRINT_10C3C_SEGMENTED_EXTRACTION.md`.
 
 ## Resumo executivo
 
@@ -439,7 +441,9 @@ coverage estrutural e fixtures sintéticas de escala. O provider ativo não foi 
 
 ### 10C.3C — segmented extraction
 
-Extraction units, concorrência limitada, artifacts e retry por unit.
+**Implementada em 2026-08-16 sem runtime ativo:** source session genérica, instructions por unit,
+projeção strict de transporte, canonicalização server-owned, concorrência limitada, deadlines,
+artifacts e resultado retryable em memória. O pipeline one-shot não foi conectado.
 
 ### 10C.3D — merge and reconciliation
 

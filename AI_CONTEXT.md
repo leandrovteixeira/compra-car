@@ -1,5 +1,23 @@
 # Contexto para agentes de IA
 
+## Marco — Segmented Extraction da Sprint 10C.3C (2026-08-16)
+
+A execução interna/testável recebe `CommercialDocumentMap/1`, plano validado e source privada,
+reutiliza um upload por documento e executa N structured extractions delimitadas por unit. O provider
+novo é genérico (`source/instructions/schema/signal/metadata`); o plugin/orchestrator cria contexto
+primary versus context-only, inherited headers, notes/edges e aplica concorrência default 2,
+deadlines por unit/total, stop scheduling e abort de siblings.
+
+O wire usa projeção strict do schema intermediário e round-trip testado. IDs locais são
+canonicalizados deterministicamente por unit antes do validator canônico. Correlation, provider run,
+usage, duração e erros seguros permanecem fora do domínio, em resultado em memória retryable. Upload
+é removido somente após convergência de todas as units; cleanup failure não mascara falha primária.
+
+Nada foi registrado no runtime: `processAdminImportBatch`, provider `openai/4`, registry, prompt
+one-shot, matching, adapter/RPCs, banco, migrations, Staging, Production e Legacy permanecem
+inalterados. Não houve chamada de modelo nem batch. Próxima etapa: **10C.3D — merge e
+reconciliation**. Documento normativo: `docs/import/SPRINT_10C3C_SEGMENTED_EXTRACTION.md`.
+
 ## Marco — Document Map da Sprint 10C.3B (2026-08-16)
 
 `CommercialDocumentMap/1` foi implementado em `packages/core` como inventário provider-agnostic de

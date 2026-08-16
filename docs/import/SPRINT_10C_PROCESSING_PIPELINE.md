@@ -114,6 +114,18 @@ Prompt tuning one-shot foi pausado. A spike
 provider deve continuar genérico; contratos e estratégia pertencem ao plugin `commercial_letters`.
 Essa direção não alterou runtime, schemas, jobs, RPCs ou persistência atuais.
 
+### Execução segmentada interna da 10C.3C
+
+A implementação interna agora consegue abrir uma source session genérica, reutilizar uploads em N
+requests delimitados pelo `CommercialExtractionUnitPlan/1`, reconstruir a projeção strict de
+transporte, canonicalizar IDs locais server-side e validar N artifacts
+`CommercialDocumentExtraction/1`. O scheduler usa concorrência/deadlines limitados, ordem lógica,
+abort de siblings e resultado operacional em memória por unit.
+
+Essa primitive não está registrada no composition root: `processAdminImportBatch`, provider
+`openai/4`, prompt one-shot, matching, RPCs e persistência continuam exatamente no caminho acima.
+Merge/reconciliation e qualquer ativação pertencem a checkpoints posteriores.
+
 ## Gate de Staging
 
 Único alvo remoto autorizado: Compra Car Staging, ref `shfsjyjxmgwnlexmdkcs`. Antes de qualquer `db push`, revisar o diff local, confirmar o alvo novamente e executar o smoke test com PDF real. Produção permanece proibida.

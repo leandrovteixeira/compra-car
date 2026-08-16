@@ -28,6 +28,15 @@ const ajv = new Ajv2020({ allErrors: true, strict: true, validateFormats: true }
 ajv.addFormat('date', isIsoCalendarDate);
 const validateSchema: ValidateFunction = ajv.compile(commercialDocumentExtractionSchemaV1);
 
+export function validateCommercialDocumentExtractionTransport(
+  payload: unknown,
+): asserts payload is CommercialDocumentExtractionV1 {
+  if (serializedByteLength(payload) > COMMERCIAL_DOCUMENT_EXTRACTION_LIMITS.maxPayloadBytes)
+    throw new CommercialDocumentExtractionValidationError(['/: maxPayloadBytes']);
+  if (!validateSchema(payload))
+    throw new CommercialDocumentExtractionValidationError(safeSchemaErrors(validateSchema.errors));
+}
+
 const addDuplicates = (issues: string[], path: string, values: readonly string[]): void => {
   const seen = new Set<string>();
   for (const value of values) {
@@ -356,9 +365,6 @@ export function validateCommercialDocumentExtractionInvariants(
 export function validateCommercialDocumentExtraction(
   payload: unknown,
 ): asserts payload is CommercialDocumentExtractionV1 {
-  if (serializedByteLength(payload) > COMMERCIAL_DOCUMENT_EXTRACTION_LIMITS.maxPayloadBytes)
-    throw new CommercialDocumentExtractionValidationError(['/: maxPayloadBytes']);
-  if (!validateSchema(payload))
-    throw new CommercialDocumentExtractionValidationError(safeSchemaErrors(validateSchema.errors));
+  validateCommercialDocumentExtractionTransport(payload);
   validateCommercialDocumentExtractionInvariants(payload as CommercialDocumentExtractionV1);
 }
