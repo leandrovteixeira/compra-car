@@ -1,5 +1,17 @@
 # Sprint 10C — Fundação do processamento do Import Engine
 
+## Fundação 10C.4A — lifecycle de artifacts (runtime inativo)
+
+O pipeline segmentado possui agora contrato puro para manifests versionados, lifecycle
+`queued → processing → succeeded|failed`, SHA-256 do JSON canônico, idempotência, lineage, DAG e ports
+de Storage/manifest/auditoria. O alvo persistente aprovado é body imutável em Storage privado com
+metadata mínima no Postgres. A migration/adapter foi adiada para 10C.4B, quando houver orquestração
+consumidora e testes pgTAP do boundary service-role.
+
+O caminho one-shot descrito abaixo permanece o único runtime ativo. `processAdminImportBatch`,
+registry, provider `openai/4`, Prompt v4, matching, RPCs e finalize não consomem artifacts 10C.4A.
+Detalhes: `SPRINT_10C4A_LIFECYCLE_ARTIFACTS.md`.
+
 Status: implementada e validada funcionalmente no Staging `shfsjyjxmgwnlexmdkcs` em 2026-08-12.
 
 ## Escopo entregue

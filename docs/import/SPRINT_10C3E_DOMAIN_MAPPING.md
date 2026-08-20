@@ -171,7 +171,7 @@ Limitações deliberadas:
 - o wrapper é interno e ainda não possui persistência/retention;
 - nenhum benchmark real ou documento de fabricante foi executado.
 
-Próximo passo: 10C.3F deve medir precision, recall, coverage, custo e latência antes de qualquer
-proposta de ativação runtime.
+O rollout foi replanejado: 10C.4A define lifecycle/artifacts; 10C.4B orquestração; 10C.4C dry run;
+10C.4D mede precision, recall, coverage, custo e latência antes de qualquer ativação ampla.
 
 **RUNTIME SEGMENTED DOMAIN MAPPING ACTIVE? NO.**

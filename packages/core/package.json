@@ -16,6 +16,7 @@
     "./commercial-document-reconciliation": "./src/import/commercial-document-reconciliation.ts",
     "./commercial-document-semantic-reconciliation": "./src/import/commercial-document-semantic-reconciliation.ts",
     "./commercial-document-domain-mapping": "./src/import/commercial-document-domain-mapping.ts",
+    "./segmented-artifact-lifecycle": "./src/import/segmented-artifact-lifecycle.ts",
     "./segmented-extraction-orchestrator": "./src/import/segmented-extraction-orchestrator.ts"
   },
   "types": "./src/index.ts",

@@ -1,11 +1,24 @@
 # Compra Car — Cronograma Mestre do Projeto
 
-> Atualização 2026-08-16: 10C.3A implementou `CommercialDocumentExtraction/1`; 10C.3B implementou
+> Atualização 2026-08-20: 10C.3A–E estão concluídas internamente, ainda sem runtime. A 10C.4A
+> implementou contratos/lifecycle/hash/idempotência/DAG e ports de artifacts sem migration ou
+> integração. Sequência aprovada: 10C.4B Runtime Orchestration → 10C.4C End-to-End Dry Run → 10C.4D
+> Real Benchmark.
+
+### Sprint 10C.4 — Operacionalização segmentada
+
+- **10C.4A — IMPLEMENTADA:** Lifecycle & Artifacts puros; Storage privado + manifest DB aprovado
+  como alvo; persistência e runtime ainda inativos.
+- **10C.4B:** Runtime Orchestration, migration/adapter, security e integração controlada.
+- **10C.4C:** End-to-End Dry Run sem efeito comercial.
+- **10C.4D:** Real Benchmark de qualidade, escala, latência e custo.
+
+> Histórico 2026-08-16: 10C.3A implementou `CommercialDocumentExtraction/1`; 10C.3B implementou
 > `CommercialDocumentMap/1`, `CommercialExtractionUnitPlan/1`, validators e planner determinístico;
 > 10C.3C implementou source session genérica, execução por unit, canonicalização, concorrência,
 > deadlines e resultados operacionais em memória. Nenhum runtime ativo, schema persistido ou
 > migration mudou. Foundation/Semantic Reconciliation da 10C.3D e Domain Mapping da 10C.3E foram
-> concluídas em 2026-08-20; a próxima etapa é 10C.3F.
+> concluídas em 2026-08-20. O benchmark foi replanejado como 10C.4D após lifecycle, runtime e dry run.
 > VW segue não executado. Nenhuma promoção comercial é automática.
 
 ### Sprint 10C.3 — Extração intermediária segmentada
@@ -19,9 +32,7 @@
   e precedência documental, sem runtime.
 - **10C.3E — IMPLEMENTADA:** domain mapping determinístico para
   `commercial-letter/mmv-payload/1`, sem runtime.
-- **10C.3F:** benchmark controlado de precision, recall, escala, integridade e custo.
-
-Status: 10C.3A–E concluídas sem integração runtime; 10C.3F permanece pendente.
+Status: 10C.3 concluída internamente sem integração runtime.
 
 ## Objetivo
 

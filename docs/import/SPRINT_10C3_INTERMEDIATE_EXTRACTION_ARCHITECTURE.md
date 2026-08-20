@@ -1,6 +1,6 @@
 # Sprint 10C.3 — Arquitetura de extração intermediária
 
-Status: **arquitetura aprovada; 10C.3A–E implementadas sem runtime ativo**
+Status: **10C.3 concluída internamente; lifecycle 10C.4A implementada sem runtime ativo**
 Data: 2026-08-16
 Decisão recomendada: **pipeline intermediário segmentado (Option C)**
 
@@ -464,24 +464,28 @@ validação canônica foi exercitada localmente; matching/finalize atuais contin
 
 ### 10C.3F — benchmark
 
-A/B controlado Geely-like→GWM-like→Fiat-like→Volvo-like, medindo precision, recall, coverage,
-integridade, tokens, latência, custo e efeito comercial zero antes de qualquer promoção.
+Replanejado como **10C.4D — Real Benchmark**, depois de Lifecycle & Artifacts, Runtime Orchestration
+e End-to-End Dry Run. A 10C.3 encerra as primitives internas sem ativação.
 
 ## Riscos e decisões pendentes
+
+A 10C.4A encerrou as decisões pendentes de contrato mínimo, versionamento, hash, idempotência, DAG,
+atomicidade compensável e retenção inicial. O alvo é Storage privado + manifest DB; a migration e o
+adapter ficam para 10C.4B, junto ao consumidor runtime e ao security/pgTAP review. Deletion
+automática permanece desligada até validação jurídica/privacidade.
 
 - qualidade do document map pode virar novo ponto único de falha;
 - overlap de units pode duplicar ou conflitar fatos;
 - paralelismo sem limite aumenta rate limit/custo;
 - artifacts ampliam retenção de dados e superfície operacional;
-- versionamento de artifacts/mapper precisa ser normativo;
 - correção humana de intermediário exige modelo de autorização/auditoria;
 - merge semântico não pode fingir ser determinístico quando aliases/escopo forem ambíguos;
 - PDFs escaneados/OCR exigem estratégia própria;
 - cache e reuse de arquivos do provider dependem de política de privacidade/retention.
 
-Blockers antes de runtime: aprovar contrato mínimo, artifact retention, lifecycle/versioning, limites
-de units/concurrency e desenho transacional de metadata. Nenhum desses blockers impede o checkpoint
-documental desta spike.
+Blockers antes de runtime: implementar migration/adapter com security/pgTAP, definir autorização de
+orquestração e cleanup, validar limites de units/concurrency e executar dry run local sem efeito
+comercial. Lifecycle/versioning/hash/retention inicial foram definidos na 10C.4A.
 
 ## Decisão
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-08-20 — Lifecycle & Artifacts da Sprint 10C.4A
+
+- Adicionado `SegmentedImportArtifactManifest/1` com stages/status centralizados, versões separadas,
+  correlation, lineage, dependências e metadata de provider allow-listed.
+- Implementados canonical JSON + SHA-256, idempotency/artifact IDs determinísticos, path Storage
+  server-owned, lifecycle terminal imutável, DAG validator e resolução de latest succeeded.
+- Adicionados ports de manifest/Storage/audit e protocolo puro de publicação com verificação do body,
+  compensação failed e orphan observável; 41 testes dirigidos cobrem lifecycle, replay, segurança e
+  falhas DB/Storage.
+- Aprovado Storage privado + manifest DB como alvo, sem migration nesta etapa. Runtime one-shot,
+  registry, Prompt v4, matching, persistência/promotion, remotos, Legacy e lockfile não mudaram.
+
 ## 2026-08-20 — Domain Mapping da Sprint 10C.3E
 
 - Adicionado `CommercialDocumentDomainMappingResult/1` e mapper puro para materializar rows

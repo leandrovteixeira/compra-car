@@ -1,5 +1,23 @@
 # Contexto para agentes de IA
 
+## Marco — Lifecycle & Artifacts da Sprint 10C.4A (2026-08-20)
+
+`SegmentedImportArtifactManifest/1` define lifecycle provider-agnostic para Document Map, Unit Plan,
+Unit Extraction, Merge, Semantic Reconciliation e Domain Mapping. O core agora oferece
+canonicalização JSON/SHA-256, idempotency key, paths server-owned, DAG/lineage validators,
+transições imutáveis, resolução do latest succeeded e ports para manifest, Storage e auditoria.
+
+Decisão de persistência: JSON imutável em Storage privado + manifest mínimo no Postgres. Migration
+foi deliberadamente adiada para 10C.4B, quando o adapter e a orquestração tiverem consumidor real.
+O protocolo reserva queued, marca processing, grava/relê/verifica hash e só então finaliza succeeded;
+falha pós-write produz orphan observável, sem deletion automática. Retenção inicial: succeeded 365
+dias, failed manifest 180 dias, revisão de orphan após 30 dias, sujeita à decisão jurídica.
+
+10C.3 está concluída internamente. Pipeline segmentado, `processAdminImportBatch`, registry,
+one-shot, Prompt v4, matching, persistência comercial e promotion continuam inalterados/inativos.
+Documento normativo: `docs/import/SPRINT_10C4A_LIFECYCLE_ARTIFACTS.md`. Próxima etapa: **10C.4B —
+Runtime Orchestration**, ainda dependente de migration/adapter/security review.
+
 ## Marco — Domain Mapping da Sprint 10C.3E (2026-08-20)
 
 `mapCommercialDocumentToDomain` consome `SemanticallyReconciledCommercialDocument/1` mais source e
