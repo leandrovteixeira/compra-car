@@ -1,94 +1,105 @@
-# Sprint 10C.3D — Merge e reconciliation
+# Sprint 10C.3D — Reconciliation
 
-Status: **10C.3D-A implementada como primitive pura; 10C.3D-B permanece pendente; runtime inalterado**
+Status: **Foundation e Semantic Reconciliation implementadas como primitives puras; runtime inalterado**
 Data: 2026-08-20
 
-## Fases
+## Foundation — CONCLUÍDA
 
-### 10C.3D-A — foundation determinística
+`reconcileCommercialDocumentExtractions` combina `CommercialDocumentMap/1`,
+`CommercialExtractionUnitPlan/1` e envelopes `{ unitId, ordinal, artifact }`. Produz
+`CommercialDocumentReconciliationResult/1` com identities, facts, scopes, composition, provenance,
+coverage, duplicates, conflitos, ambiguidades e issues.
 
-Implementa o subpath interno `@compra-car/core/commercial-document-reconciliation`. A entrada combina
-`CommercialDocumentMap/1`, `CommercialExtractionUnitPlan/1` e envelopes `{ unitId, ordinal,
-artifact }`. O envelope é necessário porque IDs internos de `CommercialDocumentExtraction/1` são
-locais/canonicalizados por unit e não substituem a identidade server-owned do UnitPlan.
+A foundation valida mapa, plano e artifacts; faz somente dedupe documental exato; remapeia IDs e
+referências; reconcilia units e partitions; preserva inherited headers; e nunca escolhe um valor por
+last-write-wins. IDs, mensagens, provenance e output possuem ordem canônica.
 
-`reconcileCommercialDocumentExtractions` valida mapa, plano e artifacts sem modificar os inputs e
-produz `CommercialDocumentReconciliationResult/1` em memória. O resultado contém source artifacts,
-identities, facts, scopes, composition, provenance, coverage, duplicates, conflicts, ambiguidades e
-issues. Não foi criado JSON Schema público: TypeScript e validator puro são suficientes neste
-checkpoint interno; versionamento explícito permite adicionar uma fronteira de transporte futura.
+## Semantic Reconciliation — IMPLEMENTADA
 
-### 10C.3D-B — semantic reconciliation / scope propagation
+O subpath interno `@compra-car/core/commercial-document-semantic-reconciliation` consome a foundation
+e directives documentais explícitas opcionais. Produz
+`SemanticallyReconciledCommercialDocument/1`, ainda composto somente de fatos e aplicabilidade
+documentais.
 
-Permanece **PENDENTE**: aliases sem equivalência documental exata, aplicação de regras gerais a
-grandes conjuntos de MMVs, precedência semântica de errata/complemento, interpretação de headers e
-footnotes incompatíveis, propagação de scope, resolução de ambiguidades e decisões assistidas/human
-review. A fase B consumirá issues e provenance da fase A; não deve reextrair nem apagar evidência.
+### Rules e recipients
 
-## Contrato e provenance
+Cada fact origina uma documentary rule com source fact/scope refs, valor tipado, validity, channel
+constraints, exclusions, composition groups, estado documental e provenance. Recipients possuem os
+tipos `DOCUMENT`, `BRAND_LINE`, `MODEL`, `VERSION_SET`, `VEHICLE`, `CHANNEL` e `GROUP`. Aplicabilidade
+materializada termina em vehicle identities reconciliadas; não cria Product nem Policy.
 
-Cada entidade reconciliada possui ID server-owned, valor documental e uma lista canonicamente
-ordenada de source refs. Cada source ref identifica artifact, unit, ordinal, ID local e evidence
-quando aplicável. Assim, dedupe preserva todos os contributors e permite retornar a
-document/block/table/row pelo evidence original. Mensagens de issue são fixas e não incluem conteúdo
-bruto do documento.
+### Scope propagation e exclusions
 
-O status geral é `complete`, `partial` ou `conflicted`. `conflicted` nunca escolhe um valor;
-`partial` representa coverage incompleta, ambiguity/review ou issue estrutural; `complete` exige
-coverage integral sem issue ou ambiguidade.
+Indexes determinísticos por brand, model, version, identity, channel e group resolvem selectors:
 
-## Merge e dedupe
+- `DOCUMENT` alcança todos os vehicles documentais elegíveis;
+- `BRAND_LINE`, `MODEL` e `VERSION_SET` usam igualdade normalizada controlada;
+- `VEHICLE` usa o ID reconciliado;
+- `CHANNEL` usa associações explícitas fact/scope→vehicle;
+- `GROUP` percorre scopes dos groups e de seus member/shared facts.
 
-Equivalência usa serialização canônica de campos documentais normalizados: chaves de objeto
-ordenadas, whitespace textual normalizado, listas cuja semântica é de conjunto ordenadas antes da
-chave e exclusão apenas de ID local, evidence e confidence. Não há fuzzy matching, embedding, LLM ou
-last-write-wins.
+Scopes simultâneos são interseccionados. Exclusions de identity, brand, model, version, channel e
+group são removidas antes da materialização. Selector não resolvível vira issue; não existe fallback
+por proximidade ou similaridade.
 
-- identities iguais preservam brand, model, version, productionYear, modelYear e rawYearText;
-- facts iguais exigem tipo, valor tipado, channel, eligibility, restrictions, validity e scope iguais;
-- scopes iguais exigem tipo, selector, exclusions e flags iguais;
-- groups e relationships são remapeados para IDs reconciliados e deduplicados estruturalmente;
-- facts diferentes e cumulativos permanecem distintos e composition cumulativa/alternativa é mantida.
+### Bidirectional reconciliation e coverage
 
-Valores incompatíveis no mesmo contexto tipado geram `IDENTITY_CONFLICT`, `FACT_CONFLICT` ou
-`SCOPE_CONFLICT`, com os dois lados e sua provenance. A foundation não decide qual lado prevalece.
+`ruleApplicability` registra expected, resolved, excluded e unresolved recipients por rule.
+`recipientApplicability` registra applicable, excluded e unresolved rules por recipient. O validator
+recalcula as duas projeções e recusa divergência.
 
-## UnitPlan, partitions e coverage
+Coverage é derivada dessas relações, não de confidence: conta rules totalmente reconciliadas,
+recipients totalmente cobertos e scopes não resolvidos. Status final é `complete`, `partial` ou
+`conflicted`.
 
-A reconciliação detecta unit planejada ausente, artifact não planejado, artifact/unit duplicado,
-artifact inválido, ordinal inconsistente e coverage declarada não completa. Artifacts inválidos não
-contribuem para entidades reconciliadas.
+### Aliases, notes e context
 
-Partitions usam `logicalTableId` e `{ index, count }` server-owned. O resultado ordena índices,
-detecta missing/duplicate partition, preserva inherited-header block IDs vindos do DocumentMap e
-marca `structurallyContinuous` somente quando todos os índices planejados aparecem exatamente uma
-vez e o plano é coerente. Conteúdo de tabela não é concatenado quando essa prova estrutural falha;
-divergências semânticas de header/footnote viram trabalho da 10C.3D-B.
+Normalização trivial controla case, whitespace, diacríticos e pontuação. Aliases não triviais só são
+aceitos por `ExplicitDocumentaryAlias`; dois targets para o mesmo alias geram `AMBIGUOUS_ALIAS`. Não
+existe fuzzy matching.
 
-## Issues
+Notes/footnotes/context são aplicáveis apenas quando uma `DocumentaryContextAssertion` declara scope
+explícito. Contexto apenas posicional gera `UNRESOLVED_CONTEXT`; a engine não inventa scope.
 
-Codes implementados: `MISSING_UNIT_ARTIFACT`, `UNPLANNED_ARTIFACT`,
-`DUPLICATE_UNIT_ARTIFACT`, `INVALID_ARTIFACT`, `INCONSISTENT_UNIT_ORDINAL`,
-`MISSING_TABLE_PARTITION`, `DUPLICATE_TABLE_PARTITION`, `TABLE_CONTINUITY_UNPROVEN`,
-`IDENTITY_CONFLICT`, `FACT_CONFLICT`, `SCOPE_CONFLICT`, `DANGLING_REFERENCE` e
-`COVERAGE_MISMATCH`. Cada issue possui ID determinístico, severity, affected refs, provenance e
-mensagem segura.
+### Errata, complements, validity e conflicts
 
-## Determinismo, imutabilidade e complexidade
+`ExplicitDocumentaryPrecedence` representa `REPLACES`, `CORRECTS` ou `SUPPLEMENTS`. Replacement ou
+correction resolve deterministicamente o conflito, preserva provenance e liga a rule anterior por
+`supersededByRuleId`. Supplement adiciona rule, mas não implica replacement.
 
-Não são usados relógio, UUID, random, locale do host ou ordem incidental de `Map`/`Set`. Inputs e
-provenance são ordenados por comparação ordinal explícita; IDs são atribuídos depois de ordenar as
-chaves canônicas. Testes com input permutado exigem `JSON.stringify` byte-equivalente e executam com
-inputs deep-frozen.
+Valores incompatíveis só conflitam quando fact dimension, recipients e períodos se sobrepõem.
+Períodos disjuntos coexistem. Sem precedência explícita, o conflito permanece `unresolved`; página ou
+ordem de artifact nunca são usadas como last-write-wins.
 
-O merge principal usa índices `Map`: O(N) para agrupar e O(U log U) para ordenar entidades únicas.
-Detecção de conflitos agrupa por contexto. Não existe comparação par-a-par global de identities ou
-facts, suportando fixtures de 4, 13, 20 e 100 identities sem algoritmo obviamente quadrático.
+### Semantic issues
+
+O modelo inclui `UNRESOLVED_SCOPE`, `UNRESOLVED_RECIPIENT`, `OVERLAPPING_RULE_CONFLICT`,
+`AMBIGUOUS_ALIAS`, `GENERAL_RULE_PARTIAL_COVERAGE`, `INVALID_EXCLUSION`,
+`UNRESOLVED_PRECEDENCE`, `COMPOSITION_SCOPE_CONFLICT`, `CHANNEL_SCOPE_CONFLICT` e
+`UNRESOLVED_CONTEXT`. Issues têm ID determinístico, severity, rule/recipient refs, provenance e
+mensagem fixa segura.
+
+### Determinismo, imutabilidade e performance
+
+Não são usados clock, UUID, random, locale do host, embeddings ou modelo semântico. Ordenação é
+ordinal explícita e o mesmo input produz JSON byte-equivalente. Foundation e directives podem estar
+deep-frozen.
+
+Indexes evitam matching global rule×recipient. Cada scope consulta o índice correspondente;
+`DOCUMENT` naturalmente toca N recipients. A fixture Fiat-like cobre 100 identities.
+
+## Limites semânticos preservados
+
+Julgamento de linguagem natural, aliases implícitos, precedência não declarada, scope inferido por
+posição e conflitos sem prova estrutural permanecem para assisted/human reconciliation futura. Não
+existe heurística probabilística.
 
 ## Fronteiras
 
-Não há Product matching, Policy/Offer final, `promotionPlan`, domain mapping, persistência, migration,
-RPC, Supabase, Storage, provider, OpenAI ou UI. A primitive não foi conectada a
-`processAdminImportBatch`, segmented extraction runtime, registry ou Server Actions.
+Não há Product matching, CommercialPolicy, CommercialOffer, `promotionPlan`, domain mapping,
+persistência, migration, RPC, Supabase, Storage, provider, OpenAI ou UI. Nenhuma primitive foi
+conectada a segmented extraction, `processAdminImportBatch`, registry ou Server Actions.
 
-**RUNTIME MERGE/RECONCILIATION ACTIVE? NO.**
+Próximo estágio: **10C.3E — Domain Mapping**.
+
+**RUNTIME SEMANTIC RECONCILIATION ACTIVE? NO.**

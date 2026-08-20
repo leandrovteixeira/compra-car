@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-08-20 — Semantic Reconciliation da Sprint 10C.3D
+
+- Adicionado `SemanticallyReconciledCommercialDocument/1` com documentary rules, recipients,
+  aplicabilidade bidirecional, coverage, conflicts resolvidos/não resolvidos e semantic issues.
+- Implementadas propagation e exclusions determinísticas para DOCUMENT, BRAND_LINE, MODEL,
+  VERSION_SET, VEHICLE, CHANNEL e GROUP usando indexes exatos, sem fuzzy matching ou IA.
+- Adicionadas directives documentais explícitas para aliases, notes/context e precedência
+  `REPLACES|CORRECTS|SUPPLEMENTS`; validity disjunta não produz conflito.
+- Cobertos 29 cenários sintéticos, incluindo general rules para 4/20/100 identities, channels,
+  alternatives/cumulative, errata, determinismo, imutabilidade e ausência de domínio final.
+- Mantidas zero integração runtime, migration, persistência, chamada externa ou alteração de Legacy.
+
 ## 2026-08-20 — Merge/Reconciliation Foundation da Sprint 10C.3D-A
 
 - Adicionados contrato TypeScript versionado e primitive pura para reconciliar DocumentMap,

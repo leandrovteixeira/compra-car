@@ -1,6 +1,20 @@
 # Contexto para agentes de IA
 
-## Marco — Merge/Reconciliation Foundation da Sprint 10C.3D-A (2026-08-20)
+## Marco — Semantic Reconciliation da Sprint 10C.3D (2026-08-20)
+
+`reconcileCommercialDocumentSemantics` consome `CommercialDocumentReconciliationResult/1` e produz
+`SemanticallyReconciledCommercialDocument/1`. Rules propagam scopes estruturados para vehicle
+recipients usando indexes exatos de brand/model/version/identity/channel/group; exclusions são
+aplicadas antes da materialização e as projeções rule→recipients e recipient→rules são validadas
+bidirecionalmente. General rules cobrem deterministicamente 4, 20 e 100 identities.
+
+Aliases não triviais, contexts e precedência só entram por directives documentais explícitas.
+Validity disjunta não conflita; overlap incompatível sem `REPLACES`/`CORRECTS` permanece unresolved.
+Não há fuzzy inference, IA, Product, Policy, Offer, persistence, migration ou runtime. A Sprint
+10C.3D está concluída em core; próximo estágio: **10C.3E — Domain Mapping**. Documento normativo:
+`docs/import/SPRINT_10C3D_MERGE_RECONCILIATION.md`.
+
+## Marco histórico — Merge/Reconciliation Foundation da Sprint 10C.3D (2026-08-20)
 
 `reconcileCommercialDocumentExtractions` agora consome DocumentMap, UnitPlan e envelopes de artifacts
 unitários em uma primitive pura interna. O resultado versionado reconcilia identities, facts, scopes
@@ -11,7 +25,7 @@ ordinais, dangling refs e mismatch.
 
 Ordenação canônica, testes byte-equivalentes e deep-freeze garantem determinismo/imutabilidade. Não
 há Product, Policy, Offer, domain mapping, Supabase, migration, provider, chamada externa ou ativação
-runtime. Próxima etapa: **10C.3D-B — semantic reconciliation / scope propagation**. Documento
+runtime. A etapa seguinte foi **Semantic Reconciliation / scope propagation**. Documento
 normativo: `docs/import/SPRINT_10C3D_MERGE_RECONCILIATION.md`.
 
 ## Marco — Segmented Extraction da Sprint 10C.3C (2026-08-16)

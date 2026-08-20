@@ -1,6 +1,6 @@
 # Sprint 10C.3 — Arquitetura de extração intermediária
 
-Status: **arquitetura aprovada; 10C.3A–C e foundation 10C.3D-A implementadas sem runtime ativo**
+Status: **arquitetura aprovada; 10C.3A–D implementadas sem runtime ativo**
 Data: 2026-08-16
 Decisão recomendada: **pipeline intermediário segmentado (Option C)**
 
@@ -8,8 +8,8 @@ Implementação do contrato: `docs/import/SPRINT_10C3A_INTERMEDIATE_CONTRACT.md`
 validator puro e fixtures sintéticas de 10C.3A vivem em `packages/core`. A 10C.3B adicionou
 `CommercialDocumentMap/1`, planner server-owned e `CommercialExtractionUnitPlan/1`. A 10C.3C
 adicionou execução interna por unit, source reuse, concorrência/deadlines e canonicalização local;
-foundation determinística de merge/reconciliation foi adicionada na 10C.3D-A; reconciliation
-semântica 10C.3D-B e fases posteriores permanecem pendentes. Detalhes:
+foundation determinística e Semantic Reconciliation foram implementadas na 10C.3D; fases
+posteriores permanecem pendentes. Detalhes:
 `docs/import/SPRINT_10C3B_DOCUMENT_MAP.md` e
 `docs/import/SPRINT_10C3C_SEGMENTED_EXTRACTION.md`.
 Contrato da nova fronteira: `docs/import/SPRINT_10C3D_MERGE_RECONCILIATION.md`.
@@ -449,7 +449,10 @@ artifacts e resultado retryable em memória. O pipeline one-shot não foi conect
 
 ### 10C.3D — merge and reconciliation
 
-Merge determinístico, continuações, dedupe, coverage bidirecional e review de conflitos.
+**Implementada em 2026-08-20 sem runtime:** Foundation com merge/dedupe/provenance/coverage e
+Semantic Reconciliation com documentary rules, scope propagation, exclusions, aliases explícitos,
+coverage bidirecional, validity e precedência documental explícita. Julgamento de linguagem natural
+permanece fora do core determinístico.
 
 ### 10C.3E — domain mapping
 
