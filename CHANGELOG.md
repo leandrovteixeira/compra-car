@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-08-20 — Merge/Reconciliation Foundation da Sprint 10C.3D-A
+
+- Adicionados contrato TypeScript versionado e primitive pura para reconciliar DocumentMap,
+  UnitPlan e N `CommercialDocumentExtraction/1` sem integração runtime.
+- Implementados dedupe exato com provenance completa, conflitos explícitos de identity/fact/scope,
+  remapeamento estrutural de scopes/composition, issues seguros e coverage de units/partitions.
+- Garantidos IDs/ordem determinísticos, serialização byte-equivalente e imutabilidade; adicionadas
+  fixtures dirigidas de 1/4/20/100 identities, multi-channel, composition, partitions e falhas.
+- Documentada a separação entre 10C.3D-A determinística e 10C.3D-B semântica. Nenhuma migration,
+  chamada externa, Product/Policy/Offer, persistência ou ativação runtime foi adicionada.
+
 ## 2026-08-16 — Segmented Extraction da Sprint 10C.3C
 
 - Adicionados provider/source session genéricos para Structured Outputs, com upload único por

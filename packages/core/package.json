@@ -13,6 +13,7 @@
     "./commercial-document-extraction-canonicalizer": "./src/import/commercial-document-extraction-canonicalizer.ts",
     "./commercial-document-extraction-schema": "./src/import/commercial-document-extraction-schema.ts",
     "./commercial-document-extraction-validator": "./src/import/commercial-document-extraction-validator.ts",
+    "./commercial-document-reconciliation": "./src/import/commercial-document-reconciliation.ts",
     "./segmented-extraction-orchestrator": "./src/import/segmented-extraction-orchestrator.ts"
   },
   "types": "./src/index.ts",

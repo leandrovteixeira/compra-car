@@ -4,7 +4,8 @@
 > `CommercialDocumentMap/1`, `CommercialExtractionUnitPlan/1`, validators e planner determinístico;
 > 10C.3C implementou source session genérica, execução por unit, canonicalização, concorrência,
 > deadlines e resultados operacionais em memória. Nenhum runtime ativo, schema persistido ou
-> migration mudou. A próxima etapa é 10C.3D.
+> migration mudou. A foundation determinística 10C.3D-A foi concluída em 2026-08-20; a próxima
+> etapa é 10C.3D-B.
 > VW segue não executado. Nenhuma promoção comercial é automática.
 
 ### Sprint 10C.3 — Extração intermediária segmentada
@@ -13,11 +14,13 @@
 - **10C.3B — IMPLEMENTADA:** document map, inventário verificável e unit plan determinístico, sem runtime.
 - **10C.3C — IMPLEMENTADA:** extraction units segmentadas, source reuse, bounded concurrency,
   canonicalização e retryability em memória, sem runtime ativo.
-- **10C.3D:** merge, continuações, dedupe e reconciliation bidirecional.
+- **10C.3D-A — IMPLEMENTADA:** merge/dedupe determinístico, provenance, conflitos e coverage de
+  units/partitions, sem runtime.
+- **10C.3D-B:** reconciliation semântica, aliases e scope propagation.
 - **10C.3E:** domain mapping para `commercial-letter/mmv-payload/1`.
 - **10C.3F:** benchmark controlado de precision, recall, escala, integridade e custo.
 
-Status: 10C.3A–C concluídas sem integração runtime; 10C.3D–F permanecem pendentes.
+Status: 10C.3A–C e 10C.3D-A concluídas sem integração runtime; 10C.3D-B–F permanecem pendentes.
 
 ## Objetivo
 

@@ -1,5 +1,19 @@
 # Contexto para agentes de IA
 
+## Marco — Merge/Reconciliation Foundation da Sprint 10C.3D-A (2026-08-20)
+
+`reconcileCommercialDocumentExtractions` agora consome DocumentMap, UnitPlan e envelopes de artifacts
+unitários em uma primitive pura interna. O resultado versionado reconcilia identities, facts, scopes
+e composition com IDs server-owned e provenance completa; equivalência exata deduplica sem perder
+contributors e incompatibilidades viram conflitos explícitos, nunca last-write-wins. Coverage cruza
+units e partitions, preserva inherited headers e reporta missing/duplicate/unplanned/invalid,
+ordinais, dangling refs e mismatch.
+
+Ordenação canônica, testes byte-equivalentes e deep-freeze garantem determinismo/imutabilidade. Não
+há Product, Policy, Offer, domain mapping, Supabase, migration, provider, chamada externa ou ativação
+runtime. Próxima etapa: **10C.3D-B — semantic reconciliation / scope propagation**. Documento
+normativo: `docs/import/SPRINT_10C3D_MERGE_RECONCILIATION.md`.
+
 ## Marco — Segmented Extraction da Sprint 10C.3C (2026-08-16)
 
 A execução interna/testável recebe `CommercialDocumentMap/1`, plano validado e source privada,
