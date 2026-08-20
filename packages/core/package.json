@@ -15,6 +15,7 @@
     "./commercial-document-extraction-validator": "./src/import/commercial-document-extraction-validator.ts",
     "./commercial-document-reconciliation": "./src/import/commercial-document-reconciliation.ts",
     "./commercial-document-semantic-reconciliation": "./src/import/commercial-document-semantic-reconciliation.ts",
+    "./commercial-document-domain-mapping": "./src/import/commercial-document-domain-mapping.ts",
     "./segmented-extraction-orchestrator": "./src/import/segmented-extraction-orchestrator.ts"
   },
   "types": "./src/index.ts",

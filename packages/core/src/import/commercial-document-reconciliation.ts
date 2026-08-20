@@ -48,6 +48,9 @@ export interface CommercialDocumentReconciliationSourceRef {
   readonly unitOrdinal: number;
   readonly sourceId: string;
   readonly evidence?: CommercialDocumentEvidence;
+  readonly documentId?: string;
+  readonly documentPage?: number;
+  readonly blockKey?: string;
 }
 
 export interface ReconciledEntity<T> {
@@ -172,13 +175,21 @@ const sourceRef = (
   source: ValidSource,
   sourceId: string,
   evidence?: CommercialDocumentEvidence,
-): CommercialDocumentReconciliationSourceRef => ({
-  artifactId: source.artifactId,
-  unitId: source.unitId,
-  unitOrdinal: source.ordinal,
-  sourceId,
-  ...(evidence ? { evidence: structuredClone(evidence) } : {}),
-});
+): CommercialDocumentReconciliationSourceRef => {
+  const block = evidence?.blockIds
+    .map((blockId) => source.artifact.blocks.find((item) => item.blockId === blockId))
+    .find(Boolean);
+  return {
+    artifactId: source.artifactId,
+    unitId: source.unitId,
+    unitOrdinal: source.ordinal,
+    sourceId,
+    ...(evidence ? { evidence: structuredClone(evidence) } : {}),
+    ...(block
+      ? { documentId: block.documentId, documentPage: block.page, blockKey: block.blockId }
+      : {}),
+  };
+};
 
 const issueFactory = () => {
   const pending: Omit<CommercialDocumentReconciliationIssue, 'issueId'>[] = [];

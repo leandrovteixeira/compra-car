@@ -1,5 +1,24 @@
 # Contexto para agentes de IA
 
+## Marco — Domain Mapping da Sprint 10C.3E (2026-08-20)
+
+`mapCommercialDocumentToDomain` consome `SemanticallyReconciledCommercialDocument/1` mais source e
+período operacionais explícitos e produz `CommercialDocumentDomainMappingResult/1`. O wrapper mantém
+coverage/provenance/issues globais e suas rows usam o contrato existente
+`commercial-letter/mmv-payload/1`. `public_price` é o único fact que vira MSRP; Policies são criadas e
+deduplicadas antes das Offers; IDs locais e referências são determinísticos; composition
+cumulative/alternative, inclusive aninhada, é materializada sem reinterpretar a 10C.3D.
+
+O resultado semântico foi enriquecido com snapshots documentais já conhecidos e provenance passou
+a manter document/page/block, tornando a fronteira autossuficiente sem inferência ou retorno à
+foundation. Gaps, identity/conflict/scope unresolved e mappings sem campo canônico ficam em review
+ou bloqueiam a row. Fixtures 4/13/20/100 passam pelo JSON Schema canônico, com determinismo,
+imutabilidade e zero Offer→Policy orphan.
+
+Não há integração com runtime, Product matching, banco, provider, OpenAI, Storage, migration,
+promoção, Staging, Production ou Legacy. Documento normativo:
+`docs/import/SPRINT_10C3E_DOMAIN_MAPPING.md`. Próximo estágio: **10C.3F — benchmark controlado**.
+
 ## Marco — Semantic Reconciliation da Sprint 10C.3D (2026-08-20)
 
 `reconcileCommercialDocumentSemantics` consome `CommercialDocumentReconciliationResult/1` e produz

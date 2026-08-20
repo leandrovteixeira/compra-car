@@ -63,6 +63,16 @@ export interface SemanticDocumentaryRecipient {
   readonly recipientType: SemanticRecipientType;
   readonly label: string;
   readonly vehicleIdentityRef?: string;
+  readonly vehicleIdentity?: {
+    readonly brand: string;
+    readonly model: string;
+    readonly version?: string;
+    readonly productionYear?: number;
+    readonly modelYear?: number;
+    readonly rawYearText?: string;
+    readonly evidence: CommercialDocumentFact['evidence'];
+    readonly confidence: CommercialDocumentFact['confidence'];
+  };
   readonly sourceRef?: string;
   readonly channels: readonly string[];
   readonly provenance: readonly CommercialDocumentReconciliationSourceRef[];
@@ -73,7 +83,12 @@ export interface SemanticDocumentaryRule {
   readonly sourceFactRefs: readonly string[];
   readonly sourceScopeRefs: readonly string[];
   readonly factType: CommercialDocumentFact['factType'];
+  readonly rawLabel?: string;
   readonly value: CommercialDocumentFactValue;
+  readonly eligibility: readonly string[];
+  readonly restrictions: readonly string[];
+  readonly evidence: CommercialDocumentFact['evidence'];
+  readonly confidence: CommercialDocumentFact['confidence'];
   readonly applicability: readonly SemanticRecipientType[];
   readonly exclusions: CommercialDocumentScopeSelector;
   readonly channelConstraints: readonly string[];
@@ -127,6 +142,16 @@ export interface SemanticallyReconciledCommercialDocument {
   readonly recipients: readonly SemanticDocumentaryRecipient[];
   readonly ruleApplicability: readonly SemanticRuleApplicability[];
   readonly recipientApplicability: readonly SemanticRecipientApplicability[];
+  readonly composition: {
+    readonly groups: readonly {
+      readonly groupId: string;
+      readonly groupType: 'ALTERNATIVE' | 'CUMULATIVE';
+      readonly memberRuleIds: readonly string[];
+      readonly sharedRuleIds: readonly string[];
+      readonly parentGroupId?: string;
+      readonly provenance: readonly CommercialDocumentReconciliationSourceRef[];
+    }[];
+  };
   readonly resolvedConflicts: readonly SemanticRuleConflict[];
   readonly unresolvedConflicts: readonly SemanticRuleConflict[];
   readonly semanticIssues: readonly SemanticReconciliationIssue[];
@@ -190,6 +215,32 @@ export function validateSemanticallyReconciledCommercialDocument(
     throw new Error('SEMANTIC_RECONCILIATION_INVALID_VERSION');
   const recipientIds = new Set(value.recipients.map((item) => item.recipientId));
   const ruleIds = new Set(value.rules.map((item) => item.ruleId));
+  if (
+    value.recipients.some(
+      (recipient) => recipient.recipientType === 'VEHICLE' && !recipient.vehicleIdentity,
+    )
+  )
+    throw new Error('SEMANTIC_RECONCILIATION_MISSING_VEHICLE_IDENTITY');
+  if (!value.composition || !Array.isArray(value.composition.groups))
+    throw new Error('SEMANTIC_RECONCILIATION_MISSING_COMPOSITION');
+  const groupIds = new Set(value.composition.groups.map((group) => group.groupId));
+  if (groupIds.size !== value.composition.groups.length)
+    throw new Error('SEMANTIC_RECONCILIATION_DUPLICATE_GROUP');
+  for (const group of value.composition.groups) {
+    if (group.parentGroupId && !groupIds.has(group.parentGroupId))
+      throw new Error('SEMANTIC_RECONCILIATION_UNKNOWN_PARENT_GROUP');
+    for (const ruleId of [...group.memberRuleIds, ...group.sharedRuleIds])
+      if (!ruleIds.has(ruleId)) throw new Error('SEMANTIC_RECONCILIATION_UNKNOWN_GROUP_RULE');
+    const visited = new Set<string>([group.groupId]);
+    let parentId = group.parentGroupId;
+    while (parentId) {
+      if (visited.has(parentId)) throw new Error('SEMANTIC_RECONCILIATION_GROUP_CYCLE');
+      visited.add(parentId);
+      parentId = value.composition.groups.find(
+        (candidate) => candidate.groupId === parentId,
+      )?.parentGroupId;
+    }
+  }
   for (const applicability of value.ruleApplicability) {
     if (!ruleIds.has(applicability.ruleId)) throw new Error('SEMANTIC_RECONCILIATION_UNKNOWN_RULE');
     for (const recipientId of [
@@ -274,6 +325,16 @@ export function reconcileCommercialDocumentSemantics(
       recipientType: 'VEHICLE',
       label: [item.value.brand, item.value.model, item.value.version].filter(Boolean).join(' '),
       vehicleIdentityRef: item.reconciledId,
+      vehicleIdentity: {
+        brand: item.value.brand,
+        model: item.value.model,
+        ...(item.value.version ? { version: item.value.version } : {}),
+        ...(item.value.productionYear ? { productionYear: item.value.productionYear } : {}),
+        ...(item.value.modelYear ? { modelYear: item.value.modelYear } : {}),
+        ...(item.value.rawYearText ? { rawYearText: item.value.rawYearText } : {}),
+        evidence: structuredClone(item.value.evidence),
+        confidence: structuredClone(item.value.confidence),
+      },
       channels: [],
       provenance: provenance(item.provenance),
     }));
@@ -471,7 +532,12 @@ export function reconcileCommercialDocumentSemantics(
         sourceFactRefs: [fact.reconciledId],
         sourceScopeRefs: factScopes.map((scope) => scope.reconciledId).sort(compare),
         factType: fact.value.factType,
+        ...(fact.value.rawLabel ? { rawLabel: fact.value.rawLabel } : {}),
         value: structuredClone(fact.value.value),
+        eligibility: [...fact.value.eligibility].sort(compare),
+        restrictions: [...fact.value.restrictions].sort(compare),
+        evidence: structuredClone(fact.value.evidence),
+        confidence: structuredClone(fact.value.confidence),
         applicability: unique(
           factScopes.map((scope) => scope.value.scopeType),
         ) as SemanticRecipientType[],
@@ -786,6 +852,24 @@ export function reconcileCommercialDocumentSemantics(
     recipients: allRecipients,
     ruleApplicability,
     recipientApplicability,
+    composition: {
+      groups: foundation.composition.groups
+        .map((group) => ({
+          groupId: group.reconciledId,
+          groupType: group.groupType,
+          memberRuleIds: group.memberFactIds
+            .map((factId) => factToRule.get(factId))
+            .filter((ruleId): ruleId is string => Boolean(ruleId))
+            .sort(compare),
+          sharedRuleIds: group.sharedFactIds
+            .map((factId) => factToRule.get(factId))
+            .filter((ruleId): ruleId is string => Boolean(ruleId))
+            .sort(compare),
+          ...(group.parentGroupId ? { parentGroupId: group.parentGroupId } : {}),
+          provenance: provenance(group.provenance),
+        }))
+        .sort((left, right) => compare(left.groupId, right.groupId)),
+    },
     resolvedConflicts: orderedConflicts.filter((item) => item.status === 'resolved'),
     unresolvedConflicts,
     semanticIssues,

@@ -28,6 +28,11 @@ constraints, exclusions, composition groups, estado documental e provenance. Rec
 tipos `DOCUMENT`, `BRAND_LINE`, `MODEL`, `VERSION_SET`, `VEHICLE`, `CHANNEL` e `GROUP`. Aplicabilidade
 materializada termina em vehicle identities reconciliadas; não cria Product nem Policy.
 
+Para a fronteira 10C.3E permanecer autossuficiente, o mesmo contrato preserva snapshots imutáveis da
+identity e metadata documental do fact, composition já reconciliada e localizadores
+document/page/block na provenance. Esses campos apenas carregam conhecimento presente na foundation;
+não adicionam interpretação semântica.
+
 ### Scope propagation e exclusions
 
 Indexes determinísticos por brand, model, version, identity, channel e group resolvem selectors:
@@ -100,6 +105,6 @@ Não há Product matching, CommercialPolicy, CommercialOffer, `promotionPlan`, d
 persistência, migration, RPC, Supabase, Storage, provider, OpenAI ou UI. Nenhuma primitive foi
 conectada a segmented extraction, `processAdminImportBatch`, registry ou Server Actions.
 
-Próximo estágio: **10C.3E — Domain Mapping**.
+Próximo estágio implementado separadamente: **10C.3E — Domain Mapping**. O runtime permanece inativo.
 
 **RUNTIME SEMANTIC RECONCILIATION ACTIVE? NO.**

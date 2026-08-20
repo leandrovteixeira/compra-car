@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-08-20 — Domain Mapping da Sprint 10C.3E
+
+- Adicionado `CommercialDocumentDomainMappingResult/1` e mapper puro para materializar rows
+  `commercial-letter/mmv-payload/1` a partir da Semantic Reconciliation.
+- Implementados mapping Fact→MSRP/Policy/applicability, Policy dedupe/IDs locais, composition
+  cumulativa/alternativa aninhada, integrity Offer→Policy, issues e coverage bidirecional.
+- Enriquecidos o resultado semântico e provenance somente com snapshots/localizadores documentais já
+  existentes, sem nova interpretação; adicionadas fixtures 4/13/20/100 e validação canônica.
+- Mantidas zero integração runtime, migration, matching, persistência, provider/OpenAI, chamada
+  externa, promoção ou alteração de Legacy/lockfile.
+
 ## 2026-08-20 — Semantic Reconciliation da Sprint 10C.3D
 
 - Adicionado `SemanticallyReconciledCommercialDocument/1` com documentary rules, recipients,
