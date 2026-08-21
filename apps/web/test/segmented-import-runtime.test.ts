@@ -15,6 +15,8 @@ import { validateCommercialDocumentExtraction } from '../../../packages/core/src
 
 import {
   executeSegmentedImportRuntime,
+  openAITransportDocumentExtractionSchema,
+  openAITransportDocumentMapSchema,
   type SegmentedRuntimeArtifact,
   type SegmentedRuntimeArtifactStore,
 } from '../src/server/segmented-import-runtime';
@@ -24,7 +26,7 @@ const batch = {
   id: '10',
   title: 'Geely local fake',
   pluginKey: 'commercial_letters' as const,
-  competence: '2026-08',
+  competence: null,
   notes: null,
   status: 'extracting' as const,
   documentCount: 1,
@@ -223,6 +225,12 @@ describe('segmented import runtime', () => {
     expect(first.summary.unitCount).toBe(6);
     expect(calls).toBe(7);
     expect(requests[0]?.metadata.schemaVersion).toBe('CommercialDocumentMap/1');
+    expect(requests[0]?.schema).toBe(openAITransportDocumentMapSchema);
+    expect(
+      requests
+        .slice(1)
+        .every((request) => request.schema === openAITransportDocumentExtractionSchema),
+    ).toBe(true);
     expect(requests.slice(1).map((request) => request.metadata.unitOrdinal)).toEqual([
       1, 2, 3, 4, 5, 6,
     ]);
@@ -247,9 +255,13 @@ describe('segmented import runtime', () => {
     const units = artifacts.values.filter((item) => item.manifest.stage === 'unit_extraction');
     expect(new Set(units.map((item) => item.manifest.content.sha256)).size).toBe(6);
     const merge = artifacts.values.find((item) => item.manifest.stage === 'merge')!.manifest;
+    const mergeBody = artifacts.values.find((item) => item.manifest.stage === 'merge')!.body as any;
     const semantic = artifacts.values.find(
       (item) => item.manifest.stage === 'semantic_reconciliation',
     )!.manifest;
+    const semanticBody = artifacts.values.find(
+      (item) => item.manifest.stage === 'semantic_reconciliation',
+    )!.body as any;
     const domain = artifacts.values.find(
       (item) => item.manifest.stage === 'domain_mapping',
     )!.manifest;
@@ -260,10 +272,16 @@ describe('segmented import runtime', () => {
     expect(merge.sourceArtifactIds).toEqual(units.map((item) => item.manifest.artifactId));
     expect(semantic.sourceArtifactIds).toEqual([merge.artifactId]);
     expect(domain.sourceArtifactIds).toEqual([semantic.artifactId]);
+    expect(mergeBody.documents[0].competenceCandidates[0].value).toBe('2026-08');
+    expect(semanticBody.documents[0].validityCandidates[0]).toMatchObject({
+      startsOn: '2026-08-01',
+      endsOn: '2026-08-31',
+    });
     const rows = first.payloads as Record<string, any>[];
     expect(new Set(rows.map((row) => JSON.stringify(row.mmv))).size).toBe(4);
     expect(rows.every((row) => row.mmv.productionYear.value === '2025')).toBe(true);
     expect(rows.every((row) => row.mmv.modelYear.value === '2026')).toBe(true);
+    expect(rows.every((row) => row.commercialPeriod.competence === '2026-08')).toBe(true);
     for (const row of rows) {
       const policyIds = new Set(
         row.policies.map((policy: { clientPolicyId: string }) => policy.clientPolicyId),
@@ -309,5 +327,55 @@ describe('segmented import runtime', () => {
       expect.objectContaining({ rows: expect.arrayContaining([expect.any(Object)]) }),
     );
     expect(oneShotExtract).not.toHaveBeenCalled();
+  });
+
+  it('rejects missing structured provider configuration before authorization or job creation', async () => {
+    vi.stubEnv('IMPORT_EXTRACTION_PROVIDER', '');
+    const authorize = vi.fn(async () => ({ actorId: 'unused' }));
+    const enqueue = vi.fn();
+    try {
+      await expect(
+        processAdminImportBatch('10', {
+          extractionMode: 'segmented',
+          authorize,
+          processingRepository: { enqueue } as any,
+        }),
+      ).rejects.toThrow('SEGMENTED_STRUCTURED_PROVIDER_NOT_CONFIGURED');
+      expect(authorize).not.toHaveBeenCalled();
+      expect(enqueue).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it('closes the source session after Document Map response failure without publishing artifacts', async () => {
+    const close = vi.fn(async () => undefined);
+    const publish = vi.fn();
+    const failingProvider: StructuredExtractionProvider = {
+      openSource: vi.fn(async () => ({
+        extractStructured: vi.fn(async () => {
+          throw new Error('PROVIDER_REQUEST_INVALID');
+        }),
+        close,
+      })),
+    };
+    await expect(
+      executeSegmentedImportRuntime({
+        batch: batch as any,
+        jobId: 'diagnostic-job',
+        attempt: 3,
+        correlationId: '00000000-0000-4000-8000-000000000003',
+        source: {
+          documents: [{ documentId: 'document-main', ordinal: 1, bytes: new Uint8Array([1]) }],
+        },
+        provider: failingProvider,
+        artifacts: {
+          load: vi.fn(async () => undefined),
+          publish,
+        },
+      }),
+    ).rejects.toThrow('PROVIDER_REQUEST_INVALID');
+    expect(close).toHaveBeenCalledTimes(1);
+    expect(publish).not.toHaveBeenCalled();
   });
 });

@@ -1,5 +1,48 @@
 # Changelog
 
+## 2026-08-21 — Checkpoint da Sprint 10C.4D
+
+- registra os cinco attempts reais do batch 117, preservados como histórico sem recovery;
+- confirma que o attempt 5 passou por upload, `response_create`, Structured Output e reconstrução,
+  falhando na validação canônica do Document Map com 100 violações;
+- classifica o smoke como `SEGMENTED SMOKE TECHNICAL FAIL` em
+  `DOCUMENT_MAP_CANONICAL_VALIDATION`, antes do Unit Plan;
+- confirma zero rows, artifacts, dependencies, promotion, providerRunId e usage persistidos;
+- adia explicitamente a investigação para `DIAGNOSE DOCUMENT MAP CANONICAL VALIDATION FAILURE`.
+
+## 2026-08-21 — Projeção OpenAI dos schemas segmentados
+
+- passa Document Map e Unit Extraction pela primitive compartilhada de projeção Structured Outputs;
+- reconstrói opcionais nullable do wire antes dos validadores canônicos originais;
+- remove do transporte keywords incompatíveis, incluindo `uniqueItems`, sem alterar os schemas core;
+- cobre scan recursivo, strict objects, determinismo, imutabilidade e rejeição canônica de duplicatas.
+
+## 2026-08-21 — Observabilidade segura do structured provider
+
+- reutiliza no provider segmentado a classificação e sanitização de erros do provider one-shot;
+- distingue auth, rate limit, timeout, request inválido, upload, recusa, output inválido, cleanup e
+  falha desconhecida, com stages `file_upload`, `response_create`, `response_parse` e `cleanup`;
+- adiciona diagnostics opt-in com contexto seguro de `document_map`/`unit_extraction`, sem body,
+  headers, URLs, file IDs ou conteúdo comercial;
+- preserva request, schema, prompt e modelo; o Job 40/attempt 3 permanece falha histórica sem retry.
+
+## 2026-08-21 — Fail-safe do structured provider segmentado
+
+- remove a seleção implícita de fake no structured provider e exige configuração explícita no modo
+  segmentado;
+- resolve o provider antes de autorização, acesso a repositório ou criação de job;
+- restringe fake à injeção explícita fora de produção e exige `openai` no smoke segmentado real;
+- preserva o one-shot e o Job 39/attempt 2 como falha histórica, sem retry ou chamada OpenAI.
+
+## 2026-08-21 — Correção de resolução do período segmentado
+
+- remove a exigência antecipada de `batch.competence` da entrada do runtime segmentado;
+- preserva candidatos documentais de competência e validade por merge e semantic reconciliation;
+- resolve deterministicamente o período explícito imediatamente antes do Domain Mapping, recusando
+  ausência, ambiguidade e incompatibilidade batch/documento sem fabricar datas;
+- aceita estaticamente o lifecycle `failed/failed` do batch/documento para retry oficial do harness;
+- mantém o Job 38 como tentativa histórica falha, com zero chamadas OpenAI e sem novo smoke.
+
 ## 2026-08-21 — Sprint 10C.4C Runtime Orchestration
 
 - integrou o pipeline segmentado ao `processAdminImportBatch` por opt-in explícito, preservando

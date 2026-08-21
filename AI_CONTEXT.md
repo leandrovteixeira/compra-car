@@ -1,5 +1,63 @@
 # Contexto para agentes de IA
 
+## Checkpoint — Sprint 10C.4D segmented smoke (2026-08-21)
+
+Classificação atual: **SEGMENTED SMOKE TECHNICAL FAIL** no stage
+`DOCUMENT_MAP_CANONICAL_VALIDATION`. O pipeline real progrediu por source upload/open, OpenAI
+`response_create` bem-sucedido, retorno de Structured Output e reconstrução do transporte; o validator
+canônico rejeitou `CommercialDocumentMap/1` com 100 violações. Unit Plan, Unit Extraction, Merge,
+Semantic Reconciliation e Domain Mapping não iniciaram. Não investigar as violações neste checkpoint.
+
+Histórico read-only do batch 117/documento 48:
+
+- Job 38/attempt 1: `DOMAIN_MAPPING_PERIOD_UNAVAILABLE`, zero OpenAI;
+- Job 39/attempt 2: `SEGMENTED_FAKE_PROVIDER_NOT_INJECTED`, zero OpenAI;
+- Job 40/attempt 3: structured provider retornou genericamente `PROVIDER_FAILURE` em
+  `response_create`, persistido como `PROCESSING_FAILED`;
+- Job 41/attempt 4: HTTP 400 `invalid_json_schema` em `sourceBlockIds.uniqueItems`; Document Map não
+  executou semanticamente;
+- Job 42/attempt 5, correlation `5c9ff106-37ff-4654-9462-5b5a7c76894b`: transport schema aceito,
+  Structured Output retornado e validação canônica falhou com 100 violações.
+
+Estado final: batch/documento/job `failed`, zero jobs ativos, rows, artifacts e dependencies; sem
+providerRunId ou usage persistidos e sem promoção. **REAL SEGMENTED PIPELINE: PROGRESSED THROUGH OPENAI
+DOCUMENT MAP RESPONSE BUT NOT YET THROUGH CANONICAL DOCUMENT MAP VALIDATION.** Próxima tarefa isolada:
+**DIAGNOSE DOCUMENT MAP CANONICAL VALIDATION FAILURE**.
+
+## Correção — observabilidade do primeiro Document Map real (2026-08-21)
+
+O Job 40/attempt 3 do batch 117 falhou no primeiro `response_create` do Document Map após a source
+session concluir o upload. Não houve manifest, dependency, row ou Unit Plan. O erro original foi
+colapsado em `PROVIDER_FAILURE`; portanto sua causa HTTP/OpenAI não pode ser reconstruída
+retroativamente. O structured provider agora reutiliza o error mapping e a sanitização do one-shot,
+preserva diagnóstico seguro opt-in com pipeline stage/unit e distingue falhas acionáveis. Request,
+schema, prompt e modelo permanecem inalterados. O runtime tenta fechar a source session em `finally`;
+não havia persistência do resultado de cleanup no attempt 3. Nenhum retry foi executado.
+O retry diagnóstico seguinte confirmou HTTP 400 `invalid_json_schema` em
+`properties.sourceBlockIds.uniqueItems`. Document Map e Unit Extraction agora reutilizam a mesma
+projeção OpenAI transport-safe e reconstroem a resposta antes da validação canônica. Os schemas core,
+prompts e validators não mudaram; constraints removidas do wire continuam obrigatórias no servidor.
+
+## Correção — structured provider segmentado fail-safe (2026-08-21)
+
+O Job 39/attempt 2 do batch 117 é uma falha histórica
+`SEGMENTED_FAKE_PROVIDER_NOT_INJECTED`: batch/documento estão `failed`, sem job ativo, row, artifact
+ou dependency. A factory structured não escolhe mais fake quando `IMPORT_EXTRACTION_PROVIDER` está
+ausente. O modo segmentado resolve sua configuração antes de autorização ou enqueue; fake requer
+injeção explícita fora de produção, e o smoke real exige explicitamente `openai`. O one-shot permanece
+default e seu comportamento histórico não mudou. Nenhum recovery ou retry foi executado.
+
+## Correção — resolução tardia de período segmentado (2026-08-21)
+
+O Job 38 do batch 117 permanece como tentativa histórica `failed`, sem chamada OpenAI, source session,
+artifact, row ou efeito comercial. A causa foi a precondition antecipada que exigia
+`batch.competence` antes do Document Map. O runtime segmentado agora permite competence operacional
+nula, preserva `competenceCandidates` e `validityCandidates` de `CommercialDocumentExtraction/1`
+através de merge e semantic reconciliation e resolve o período explicitamente somente antes do
+Domain Mapping. Batch e documento incompatíveis, múltiplos períodos conflitantes e ausência real de
+período continuam falhando conservadoramente; nenhuma data é fabricada. Nenhum retry real foi
+executado e o próximo gate separado é repetir oficialmente o batch 117.
+
 ## Marco — Runtime Orchestration da Sprint 10C.4C (2026-08-21)
 
 Pipeline segmentado implementado no runtime atrás de `IMPORT_EXTRACTION_MODE=segmented`, com default

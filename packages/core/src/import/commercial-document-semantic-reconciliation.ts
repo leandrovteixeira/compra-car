@@ -4,6 +4,7 @@ import type {
   CommercialDocumentFactValue,
   CommercialDocumentScope,
   CommercialDocumentScopeSelector,
+  CommercialSourceDocument,
 } from './commercial-document-extraction';
 import type {
   CommercialDocumentReconciliationResult,
@@ -138,6 +139,7 @@ export interface SemanticReconciliationIssue {
 export interface SemanticallyReconciledCommercialDocument {
   readonly schemaVersion: typeof SEMANTIC_COMMERCIAL_DOCUMENT_VERSION;
   readonly status: 'complete' | 'partial' | 'conflicted';
+  readonly documents: readonly CommercialSourceDocument[];
   readonly rules: readonly SemanticDocumentaryRule[];
   readonly recipients: readonly SemanticDocumentaryRecipient[];
   readonly ruleApplicability: readonly SemanticRuleApplicability[];
@@ -213,6 +215,10 @@ export function validateSemanticallyReconciledCommercialDocument(
 ): void {
   if (value.schemaVersion !== SEMANTIC_COMMERCIAL_DOCUMENT_VERSION)
     throw new Error('SEMANTIC_RECONCILIATION_INVALID_VERSION');
+  if (
+    new Set(value.documents.map((document) => document.documentId)).size !== value.documents.length
+  )
+    throw new Error('SEMANTIC_RECONCILIATION_DUPLICATE_DOCUMENT');
   const recipientIds = new Set(value.recipients.map((item) => item.recipientId));
   const ruleIds = new Set(value.rules.map((item) => item.ruleId));
   if (
@@ -848,6 +854,7 @@ export function reconcileCommercialDocumentSemantics(
       : coverage.status === 'partial'
         ? 'partial'
         : 'complete',
+    documents: structuredClone(foundation.documents),
     rules: mutableRules,
     recipients: allRecipients,
     ruleApplicability,

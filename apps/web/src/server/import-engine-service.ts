@@ -95,9 +95,7 @@ async function runSegmentedExtraction(input: {
         bytes: document.bytes,
       })),
     },
-    provider:
-      input.structuredProvider ??
-      createConfiguredStructuredExtractionProvider({ fakeProvider: input.structuredProvider }),
+    provider: input.structuredProvider ?? createConfiguredStructuredExtractionProvider(),
     artifacts:
       input.artifactStore ??
       createPersistedSegmentedRuntimeArtifactStore({
@@ -126,11 +124,16 @@ export async function processAdminImportBatch(
     readonly segmentedArtifactStore?: SegmentedRuntimeArtifactStore;
   } = {},
 ): Promise<{ readonly rowCount: number; readonly idempotentReplay: boolean }> {
+  const extractionMode = dependencies.extractionMode ?? getImportExtractionMode();
+  const structuredProvider =
+    extractionMode === 'segmented'
+      ? (dependencies.structuredExtractionProvider ??
+        createConfiguredStructuredExtractionProvider())
+      : undefined;
   const identity = dependencies.authorize
     ? await dependencies.authorize()
     : await requireRole('admin').then(({ profile }) => ({ actorId: profile.id }));
   const correlationId = dependencies.createCorrelationId?.() ?? randomUUID();
-  const extractionMode = dependencies.extractionMode ?? getImportExtractionMode();
   const repository = dependencies.repository ?? createRepository();
   const processing = dependencies.processingRepository ?? new ImportProcessingSupabaseAdapter();
   const batch = await repository.getBatch(batchId);
@@ -195,7 +198,7 @@ export async function processAdminImportBatch(
             jobLockVersion: claimed.lockVersion,
             actorId: identity.actorId,
             correlationId,
-            structuredProvider: dependencies.structuredExtractionProvider,
+            structuredProvider,
             artifactStore: dependencies.segmentedArtifactStore,
           });
     const preparedRows = prepareCommercialLetterRows(extracted.payloads, validatePayload);

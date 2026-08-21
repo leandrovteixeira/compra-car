@@ -25,6 +25,7 @@ import {
   COMMERCIAL_DOCUMENT_DOMAIN_MAPPING_VERSION,
   mapCommercialDocumentToDomain,
 } from '@compra-car/core/commercial-document-domain-mapping';
+import { resolveCommercialDocumentPeriod } from '@compra-car/core/commercial-document-period-resolution';
 import { executeSegmentedExtraction } from '@compra-car/core/segmented-extraction-orchestrator';
 import {
   publishPersistedSegmentedArtifact,
@@ -32,8 +33,18 @@ import {
   SegmentedArtifactSupabaseStorageAdapter,
   type SegmentedArtifactPersistenceContext,
 } from '@compra-car/adapter-supabase';
+import {
+  createOpenAIStructuredOutputProjection,
+  reconstructCanonicalValueFromOpenAITransport,
+} from './openai-structured-output-schema';
 
 export const DOCUMENT_MAP_PROMPT_VERSION = '1' as const;
+export const openAITransportDocumentMapSchema = createOpenAIStructuredOutputProjection(
+  commercialDocumentMapSchemaV1,
+);
+export const openAITransportDocumentExtractionSchema = createOpenAIStructuredOutputProjection(
+  commercialDocumentExtractionSchemaV1,
+);
 
 export interface SegmentedRuntimeArtifact {
   readonly manifest: SegmentedArtifactManifest;
@@ -129,19 +140,6 @@ const addUsage = (left: StructuredExtractionUsage, right: StructuredExtractionUs
   totalUnits: left.totalUnits + right.totalUnits,
 });
 
-const monthlyPeriod = (competence: string) => {
-  if (!/^\d{4}-(?:0[1-9]|1[0-2])$/u.test(competence))
-    throw new Error('DOMAIN_MAPPING_PERIOD_UNAVAILABLE');
-  const [year, month] = competence.split('-').map(Number) as [number, number];
-  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
-  return {
-    competence,
-    kind: 'monthly' as const,
-    startsOn: `${competence}-01`,
-    endsOn: `${competence}-${String(lastDay).padStart(2, '0')}`,
-  };
-};
-
 const assertBody = <T>(
   artifact: SegmentedRuntimeArtifact,
   validate?: (body: unknown) => void,
@@ -160,7 +158,6 @@ export async function executeSegmentedImportRuntime(input: {
   readonly artifacts: SegmentedRuntimeArtifactStore;
 }): Promise<SegmentedImportRuntimeResult> {
   if (input.source.documents.length !== 1) throw new Error('SEGMENTED_PRIMARY_DOCUMENT_REQUIRED');
-  if (!input.batch.competence) throw new Error('DOMAIN_MAPPING_PERIOD_UNAVAILABLE');
   const documentId = input.source.documents[0]!.documentId;
   const manifests: SegmentedArtifactManifest[] = [];
   const providerRunIds: string[] = [];
@@ -229,7 +226,7 @@ export async function executeSegmentedImportRuntime(input: {
         const response = await session!.extractStructured({
           instructions: mapInstructions,
           schemaName: 'commercial_document_map_v1',
-          schema: commercialDocumentMapSchemaV1,
+          schema: openAITransportDocumentMapSchema,
           signal: new AbortController().signal,
           metadata: {
             correlationId: input.correlationId,
@@ -240,7 +237,9 @@ export async function executeSegmentedImportRuntime(input: {
         usage = addUsage(usage, response.usage);
         providerRunIds.push(response.providerRunId);
         return {
-          body: response.output as CommercialDocumentMapV1,
+          body: reconstructCanonicalValueFromOpenAITransport(
+            response.output,
+          ) as CommercialDocumentMapV1,
           provider: {
             providerKey: 'structured',
             providerVersion: '1',
@@ -293,7 +292,8 @@ export async function executeSegmentedImportRuntime(input: {
           provider: input.provider,
           sourceSession: session,
           unitIds: missingUnits.map((unit) => unit.unitId),
-          schema: commercialDocumentExtractionSchemaV1,
+          schema: openAITransportDocumentExtractionSchema,
+          decodeTransport: reconstructCanonicalValueFromOpenAITransport,
         },
       );
       const failed = extraction.unitResults.find((item) => item.status === 'failed');
@@ -348,6 +348,12 @@ export async function executeSegmentedImportRuntime(input: {
       }),
       [mergeArtifact],
     );
+    const commercialPeriod = resolveCommercialDocumentPeriod({
+      batchCompetence: input.batch.competence,
+      semanticDocument: semanticArtifact.body as never,
+    });
+    if (commercialPeriod.status !== 'resolved')
+      throw new Error('DOMAIN_MAPPING_PERIOD_UNAVAILABLE');
     const domainArtifact = await get(
       'domain_mapping',
       COMMERCIAL_DOCUMENT_DOMAIN_MAPPING_VERSION,
@@ -381,7 +387,7 @@ export async function executeSegmentedImportRuntime(input: {
               ),
             ).values(),
           ],
-          commercialPeriod: monthlyPeriod(input.batch.competence!),
+          commercialPeriod: commercialPeriod.period,
         }),
       }),
       [semanticArtifact],

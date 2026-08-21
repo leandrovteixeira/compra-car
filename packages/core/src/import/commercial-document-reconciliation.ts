@@ -5,6 +5,7 @@ import type {
   CommercialDocumentExtractionV1,
   CommercialDocumentFact,
   CommercialDocumentScope,
+  CommercialSourceDocument,
   CommercialDocumentVehicleIdentity,
 } from './commercial-document-extraction';
 import { validateCommercialDocumentExtraction } from './commercial-document-extraction-validator';
@@ -112,6 +113,7 @@ export interface CommercialDocumentReconciliationResult {
     ordinal: number;
     valid: boolean;
   }[];
+  readonly documents: readonly CommercialSourceDocument[];
   readonly vehicleIdentities: readonly ReconciledEntity<CommercialDocumentVehicleIdentity>[];
   readonly facts: readonly ReconciledEntity<CommercialDocumentFact>[];
   readonly scopes: readonly ReconciledEntity<CommercialDocumentScope>[];
@@ -258,6 +260,10 @@ export function validateCommercialDocumentReconciliationResult(
   ];
   if (new Set(ids).size !== ids.length)
     throw new Error('COMMERCIAL_DOCUMENT_RECONCILIATION_DUPLICATE_ID');
+  if (
+    new Set(value.documents.map((document) => document.documentId)).size !== value.documents.length
+  )
+    throw new Error('COMMERCIAL_DOCUMENT_RECONCILIATION_DUPLICATE_DOCUMENT');
 }
 
 export function reconcileCommercialDocumentExtractions(
@@ -774,6 +780,33 @@ export function reconcileCommercialDocumentExtractions(
       `${right.duplicateType}\u0000${right.reconciledId}`,
     ),
   );
+  const documentBuckets = new Map<string, CommercialSourceDocument[]>();
+  for (const source of validSources)
+    for (const document of source.artifact.documents) {
+      const bucket = documentBuckets.get(document.documentId);
+      if (bucket) bucket.push(document);
+      else documentBuckets.set(document.documentId, [document]);
+    }
+  const mergeCandidates = <T>(values: readonly T[]): T[] =>
+    [...new Map(values.map((value) => [canonical(value), structuredClone(value)])).entries()]
+      .sort(([left], [right]) => compare(left, right))
+      .map(([, value]) => value);
+  const documents = [...documentBuckets.entries()]
+    .sort(([left], [right]) => compare(left, right))
+    .map(([, candidates]) => {
+      const first = candidates[0]!;
+      return {
+        documentId: first.documentId,
+        ordinal: first.ordinal,
+        pageCount: first.pageCount,
+        documentKind: first.documentKind,
+        competenceCandidates: mergeCandidates(
+          candidates.flatMap((item) => item.competenceCandidates),
+        ),
+        validityCandidates: mergeCandidates(candidates.flatMap((item) => item.validityCandidates)),
+        notes: mergeCandidates(candidates.flatMap((item) => item.notes)),
+      } satisfies CommercialSourceDocument;
+    });
   const result: CommercialDocumentReconciliationResult = {
     schemaVersion: COMMERCIAL_DOCUMENT_RECONCILIATION_VERSION,
     status: conflicts.length
@@ -782,6 +815,7 @@ export function reconcileCommercialDocumentExtractions(
         ? 'partial'
         : 'complete',
     sourceArtifacts,
+    documents,
     vehicleIdentities: identities.items,
     facts: facts.items,
     scopes: scopes.items,

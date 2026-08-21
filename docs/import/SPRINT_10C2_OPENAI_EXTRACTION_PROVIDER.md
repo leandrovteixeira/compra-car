@@ -12,9 +12,12 @@ O fluxo preservado é Storage privado → bytes no servidor → Files/Responses 
 `commercial-letter/mmv-payload/1` → matching → rows `needs_review|unmatched`. O provider não acessa
 Supabase, não escolhe Product e não cria ou promove Price, Policy ou Offer.
 
-`IMPORT_EXTRACTION_PROVIDER` aceita somente `fake` (default) ou `openai` na composição do servidor;
-nenhum valor do browser seleciona provider. `OPENAI_API_KEY` e `OPENAI_IMPORT_MODEL` são obrigatórios
-quando `openai` é selecionado e nunca usam prefixo `NEXT_PUBLIC_`.
+`IMPORT_EXTRACTION_PROVIDER` aceita somente `fake` ou `openai` na composição do servidor; nenhum
+valor do browser seleciona provider. O one-shot administrativo sem configuração preserva o fake
+histórico. O runtime segmentado, quando explicitamente habilitado, exige provider configurado: o
+smoke real exige `openai`, enquanto `fake` existe somente por injeção explícita em testes e é
+proibido em produção. `OPENAI_API_KEY` e `OPENAI_IMPORT_MODEL` são obrigatórios quando `openai` é
+selecionado e nunca usam prefixo `NEXT_PUBLIC_`.
 
 ## Transporte e lifecycle
 
@@ -26,6 +29,12 @@ falha. Falha de cleanup é observada por código e contagem, sem mascarar o resu
 persistir file IDs. A Responses API usa `store: false` e nenhuma tool.
 
 ## Structured extraction e prompts v1/v2/v3/v4
+
+O structured provider segmentado reutiliza o mesmo mapeamento seguro de erros e sanitização do
+one-shot. Diagnostics são opt-in fora de produção e limitados a provider/pipeline stage, unit segura,
+classe, status HTTP, code/type/param OpenAI, request ID e mensagem sanitizada de até 500 caracteres.
+Bodies, headers, chaves, URLs, file IDs, schemas e conteúdo comercial não são observados. A source
+session é fechada em `finally` pelo runtime inclusive quando o primeiro Document Map falha.
 
 O schema strict `CommercialLetterExtraction/1` contém somente `rows`. Cada row reutiliza as formas
 de source, MMV, período, preço, Policies, Offers, issues e confidence do contrato v1, removendo:

@@ -131,7 +131,10 @@ function errorStatus(error: unknown): number | undefined {
   return Number.isInteger(status) && status >= 100 && status <= 599 ? status : undefined;
 }
 
-function mapError(error: unknown, stage?: ProviderStage): OpenAIExtractionProviderError {
+export function mapOpenAIError(
+  error: unknown,
+  stage?: ProviderStage,
+): OpenAIExtractionProviderError {
   if (error instanceof OpenAIExtractionProviderError) return error;
   const status = errorStatus(error);
   const name = error instanceof Error ? error.name : '';
@@ -176,7 +179,7 @@ const safeInvalidSchemaMessage = (value: unknown): string | undefined => {
   return sanitized ? sanitized.slice(0, 500) : undefined;
 };
 
-function diagnosticObservation(
+export function openAIDiagnosticObservation(
   error: unknown,
   stage: ProviderStage,
 ): Omit<ProviderObservation, 'code'> {
@@ -240,17 +243,17 @@ export class OpenAIExtractionProvider implements ExtractionProvider {
       this.client = client ?? new OfficialOpenAIClient(config.apiKey, timeoutMs);
     } catch (error) {
       this.observeDiagnostic(error, 'client_create');
-      throw mapError(error, 'client_create');
+      throw mapOpenAIError(error, 'client_create');
     }
   }
 
   private observeDiagnostic(
     error: unknown,
     stage: ProviderStage,
-    code: ProviderErrorCode = mapError(error, stage).code,
+    code: ProviderErrorCode = mapOpenAIError(error, stage).code,
   ): void {
     if (!this.config.diagnostics) return;
-    this.observe({ code, ...diagnosticObservation(error, stage) });
+    this.observe({ code, ...openAIDiagnosticObservation(error, stage) });
   }
 
   async extract(request: ExtractionRequest): Promise<ExtractionResult> {
@@ -292,7 +295,7 @@ export class OpenAIExtractionProvider implements ExtractionProvider {
           fileIds.push(file.id);
         } catch (error) {
           this.observeDiagnostic(error, 'file_upload');
-          throw mapError(error, 'file_upload');
+          throw mapOpenAIError(error, 'file_upload');
         }
       }
       const dossier = orderedDocuments
@@ -332,7 +335,7 @@ export class OpenAIExtractionProvider implements ExtractionProvider {
         );
       } catch (error) {
         this.observeDiagnostic(error, 'response_create');
-        throw mapError(error, 'response_create');
+        throw mapOpenAIError(error, 'response_create');
       }
       if (hasRefusal(response.output)) {
         const refusal = new OpenAIExtractionProviderError('PROVIDER_REFUSAL');
@@ -370,7 +373,7 @@ export class OpenAIExtractionProvider implements ExtractionProvider {
       };
     } catch (error) {
       primaryError = error;
-      throw mapError(error);
+      throw mapOpenAIError(error);
     } finally {
       const cleanupFailures = (
         await Promise.all(

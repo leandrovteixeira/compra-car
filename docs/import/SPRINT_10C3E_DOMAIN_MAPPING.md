@@ -1,5 +1,12 @@
 # Sprint 10C.3E — Domain Mapping
 
+> Integração runtime 10C.4D: o Domain Mapping continua exigindo um
+> `CommercialDocumentDomainMappingPeriod` explícito e válido. A resolução ocorre fora do mapper,
+> imediatamente antes de sua chamada: competência operacional server-owned é aceita apenas quando
+> compatível com os candidatos documentais; sem ela, somente competência ou validade documental
+> explícita preservada por extraction → merge → semantic reconciliation pode formar o período.
+> Ambiguidade, conflito ou ausência não são preenchidos por fallback nem por datas fabricadas.
+
 Status: **primitive pura implementada; runtime segmentado permanece inativo**
 
 Data: 2026-08-20

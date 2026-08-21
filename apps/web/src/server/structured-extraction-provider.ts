@@ -12,7 +12,8 @@ export function createConfiguredStructuredExtractionProvider(
   } = {},
 ): StructuredExtractionProvider {
   const env = input.env ?? process.env;
-  const key = env.IMPORT_EXTRACTION_PROVIDER?.trim() || 'fake';
+  const key = env.IMPORT_EXTRACTION_PROVIDER?.trim();
+  if (!key) throw new Error('SEGMENTED_STRUCTURED_PROVIDER_NOT_CONFIGURED');
   if (key === 'fake') {
     if (env.NODE_ENV === 'production') throw new Error('SEGMENTED_FAKE_PROVIDER_FORBIDDEN');
     if (!input.fakeProvider) throw new Error('SEGMENTED_FAKE_PROVIDER_NOT_INJECTED');
@@ -25,5 +26,6 @@ export function createConfiguredStructuredExtractionProvider(
   return new OpenAIStructuredExtractionProvider(
     new OfficialOpenAIClient(apiKey, parseOpenAIImportTimeoutMs(env.OPENAI_IMPORT_TIMEOUT_MS)),
     model,
+    env.NODE_ENV !== 'production' && env.OPENAI_IMPORT_DIAGNOSTICS === '1',
   );
 }

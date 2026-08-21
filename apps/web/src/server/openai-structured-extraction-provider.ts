@@ -7,16 +7,23 @@ import type {
   StructuredExtractionSourceSession,
 } from '@compra-car/core';
 
-import type { OpenAIClientBoundary } from './openai-extraction-provider';
+import {
+  mapOpenAIError,
+  openAIDiagnosticObservation,
+  type OpenAIClientBoundary,
+  type ProviderErrorCode,
+  type ProviderObservation,
+  type ProviderStage,
+} from './openai-extraction-provider';
+
+export interface StructuredProviderObservation extends ProviderObservation {
+  readonly pipelineStage?: 'document_map' | 'unit_extraction';
+  readonly unitId?: string;
+  readonly unitOrdinal?: number;
+}
 
 export class OpenAIStructuredExtractionError extends Error {
-  constructor(
-    readonly code:
-      | 'PROVIDER_TIMEOUT'
-      | 'PROVIDER_FAILURE'
-      | 'PROVIDER_INVALID_OUTPUT'
-      | 'PROVIDER_FILE_CLEANUP_FAILED',
-  ) {
+  constructor(readonly code: ProviderErrorCode) {
     super(code);
     this.name = 'OpenAIStructuredExtractionError';
   }
@@ -26,13 +33,30 @@ const safeInteger = (value: unknown): number =>
   Number.isSafeInteger(value) && Number(value) >= 0 ? Number(value) : 0;
 const hasRefusal = (output: readonly unknown[] | undefined): boolean =>
   (output ?? []).some((item) => JSON.stringify(item).includes('"type":"refusal"'));
+const safeMetadataId = (value: unknown): string | undefined =>
+  typeof value === 'string' && /^[A-Za-z0-9_.:-]{1,160}$/u.test(value) ? value : undefined;
+const requestContext = (
+  metadata: StructuredExtractionRequest['metadata'] | undefined,
+): Pick<StructuredProviderObservation, 'pipelineStage' | 'unitId' | 'unitOrdinal'> => {
+  if (!metadata) return {};
+  const unitId = safeMetadataId(metadata.unitId);
+  const unitOrdinal = safeInteger(metadata.unitOrdinal);
+  return {
+    pipelineStage: unitId ? 'unit_extraction' : 'document_map',
+    ...(unitId ? { unitId } : {}),
+    ...(unitId && unitOrdinal > 0 ? { unitOrdinal } : {}),
+  };
+};
 
 export class OpenAIStructuredExtractionProvider implements StructuredExtractionProvider {
   constructor(
     private readonly client: OpenAIClientBoundary,
     private readonly model: string,
+    private readonly diagnostics = false,
+    private readonly observe: (event: StructuredProviderObservation) => void = (event) =>
+      console.warn('OPENAI_STRUCTURED_PROVIDER', event),
   ) {
-    if (!model.trim()) throw new OpenAIStructuredExtractionError('PROVIDER_FAILURE');
+    if (!model.trim()) throw new OpenAIStructuredExtractionError('PROVIDER_INVALID_OUTPUT');
   }
 
   async openSource(
@@ -40,6 +64,42 @@ export class OpenAIStructuredExtractionProvider implements StructuredExtractionP
     options: { readonly signal: AbortSignal; readonly correlationId: string },
   ): Promise<StructuredExtractionSourceSession> {
     const fileIds: string[] = [];
+    let lastMetadata: StructuredExtractionRequest['metadata'] | undefined;
+    const observeDiagnostic = (
+      error: unknown,
+      stage: ProviderStage,
+      code: ProviderErrorCode = mapOpenAIError(error, stage).code,
+      metadata: StructuredExtractionRequest['metadata'] | undefined = lastMetadata,
+    ): void => {
+      if (!this.diagnostics) return;
+      this.observe({
+        code,
+        ...openAIDiagnosticObservation(error, stage),
+        ...requestContext(metadata),
+      });
+    };
+    const deleteSources = async (
+      metadata?: StructuredExtractionRequest['metadata'],
+    ): Promise<number> => {
+      let failures = 0;
+      for (const id of fileIds) {
+        try {
+          await this.client.deleteFile(id);
+        } catch (error) {
+          failures += 1;
+          observeDiagnostic(error, 'cleanup', 'PROVIDER_FILE_CLEANUP_FAILED', metadata);
+        }
+      }
+      if (failures && this.diagnostics)
+        this.observe({
+          code: 'PROVIDER_FILE_CLEANUP_FAILED',
+          count: failures,
+          stage: 'cleanup',
+          ...requestContext(metadata),
+        });
+      return failures;
+    };
+
     try {
       for (const document of [...source.documents].sort(
         (left, right) => left.ordinal - right.ordinal,
@@ -50,16 +110,20 @@ export class OpenAIStructuredExtractionProvider implements StructuredExtractionP
         );
         fileIds.push(file.id);
       }
-    } catch {
-      await Promise.allSettled(fileIds.map((id) => this.client.deleteFile(id)));
-      if (options.signal.aborted) throw new OpenAIStructuredExtractionError('PROVIDER_TIMEOUT');
-      throw new OpenAIStructuredExtractionError('PROVIDER_FAILURE');
+    } catch (error) {
+      observeDiagnostic(error, 'file_upload');
+      await deleteSources();
+      const code = options.signal.aborted
+        ? 'PROVIDER_TIMEOUT'
+        : mapOpenAIError(error, 'file_upload').code;
+      throw new OpenAIStructuredExtractionError(code);
     }
 
     let closed = false;
     return {
       extractStructured: async (request: StructuredExtractionRequest) => {
-        if (closed) throw new OpenAIStructuredExtractionError('PROVIDER_FAILURE');
+        lastMetadata = request.metadata;
+        if (closed) throw new OpenAIStructuredExtractionError('PROVIDER_UNKNOWN_ERROR');
         let response: Awaited<ReturnType<OpenAIClientBoundary['respond']>>;
         try {
           response = await this.client.respond(
@@ -90,12 +154,18 @@ export class OpenAIStructuredExtractionProvider implements StructuredExtractionP
             },
             { signal: request.signal },
           );
-        } catch {
-          if (request.signal.aborted) throw new OpenAIStructuredExtractionError('PROVIDER_TIMEOUT');
-          throw new OpenAIStructuredExtractionError('PROVIDER_FAILURE');
+        } catch (error) {
+          const code = request.signal.aborted
+            ? 'PROVIDER_TIMEOUT'
+            : mapOpenAIError(error, 'response_create').code;
+          observeDiagnostic(error, 'response_create', code, request.metadata);
+          throw new OpenAIStructuredExtractionError(code);
         }
-        if (hasRefusal(response.output))
-          throw new OpenAIStructuredExtractionError('PROVIDER_FAILURE');
+        if (hasRefusal(response.output)) {
+          const refusal = new OpenAIStructuredExtractionError('PROVIDER_REFUSAL');
+          observeDiagnostic(refusal, 'response_parse', refusal.code, request.metadata);
+          throw refusal;
+        }
         try {
           return {
             output: JSON.parse(response.output_text),
@@ -106,15 +176,15 @@ export class OpenAIStructuredExtractionProvider implements StructuredExtractionP
               totalUnits: safeInteger(response.usage?.total_tokens),
             },
           };
-        } catch {
+        } catch (error) {
+          observeDiagnostic(error, 'response_parse', 'PROVIDER_INVALID_OUTPUT', request.metadata);
           throw new OpenAIStructuredExtractionError('PROVIDER_INVALID_OUTPUT');
         }
       },
       close: async () => {
         if (closed) return;
         closed = true;
-        const results = await Promise.allSettled(fileIds.map((id) => this.client.deleteFile(id)));
-        if (results.some((result) => result.status === 'rejected'))
+        if ((await deleteSources(lastMetadata)) > 0)
           throw new OpenAIStructuredExtractionError('PROVIDER_FILE_CLEANUP_FAILED');
       },
     };
