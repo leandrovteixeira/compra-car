@@ -1,16 +1,18 @@
 # Compra Car — Cronograma Mestre do Projeto
 
 > Atualização 2026-08-20: 10C.3A–E estão concluídas internamente, ainda sem runtime. A 10C.4A
-> implementou contratos/lifecycle/hash/idempotência/DAG e ports de artifacts sem migration ou
-> integração. Sequência aprovada: 10C.4B Runtime Orchestration → 10C.4C End-to-End Dry Run → 10C.4D
+> implementou contratos/lifecycle/hash/idempotência/DAG; a 10C.4B materializou localmente manifest,
+> Storage privado, RPCs e adapters, ainda sem integração runtime. Sequência: 10C.4C Runtime
+> Orchestration / End-to-End Dry Run → 10C.4D
 > Real Benchmark.
 
 ### Sprint 10C.4 — Operacionalização segmentada
 
 - **10C.4A — IMPLEMENTADA:** Lifecycle & Artifacts puros; Storage privado + manifest DB aprovado
   como alvo; persistência e runtime ainda inativos.
-- **10C.4B:** Runtime Orchestration, migration/adapter, security e integração controlada.
-- **10C.4C:** End-to-End Dry Run sem efeito comercial.
+- **10C.4B — IMPLEMENTADA LOCALMENTE:** persistence, Storage adapter, RPCs, RLS/grants e testes;
+  runtime continua inativo e nenhum push remoto foi feito.
+- **10C.4C — PLANEJADA:** Runtime Orchestration / End-to-End Dry Run sem efeito comercial.
 - **10C.4D:** Real Benchmark de qualidade, escala, latência e custo.
 
 > Histórico 2026-08-16: 10C.3A implementou `CommercialDocumentExtraction/1`; 10C.3B implementou

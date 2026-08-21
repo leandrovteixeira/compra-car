@@ -87,7 +87,7 @@ versão/attempt bem-sucedida mais recente sem promover uma tentativa failed/queu
 
 ## Storage e protocolo de atomicidade
 
-Bucket-alvo privado: `import-artifacts`. O locator server-owned é
+Bucket materializado pela 10C.4B: `import-processing-artifacts`. O locator server-owned é
 `<batch>/<job>/<stage>/<artifact-id>.json`; o nome original nunca participa do path e nenhum texto
 comercial/PII é embutido nele. O prefixo do bucket não é duplicado no object path do SDK.
 
@@ -106,7 +106,8 @@ persistida e expõe um locator de orphan para cleanup eventual. Se o DB estiver 
 durável pode continuar `processing` até reconciliação; o contrato não mascara isso. Falha isolada do
 audit sink após finalização não reabre nem rebaixa um artifact succeeded e fica observável em
 `auditRecorded=false`. O core não apaga automaticamente evidência. A implementação DB futura precisa de unique
-constraint para idempotency e RPCs service-role que serializem reserva/transições; Storage e DB não
+constraint para idempotency e RPCs service-role que serializem reserva/transições; a 10C.4B
+materializou esses guards localmente. Storage e DB não
 formam transação distribuída, portanto verificação + compensação observável é a garantia possível.
 
 ## Retention e cleanup
@@ -129,7 +130,7 @@ Allow-list: provider key/version, prompt version, provider run ID sanitizado, mo
 numérico. Run ID não participa da idempotência. Campos extras e métricas negativas/não inteiras são
 recusados. Mensagens de falha persistíveis são fixas/bounded; erro bruto de adapter não é copiado.
 
-Quando a persistência for criada: bucket privado; acesso exclusivamente server-side; tabela/RPC com
+Persistência criada localmente na 10C.4B: bucket privado; acesso exclusivamente server-side; tabela/RPC com
 RLS deny-by-default, grants somente a `service_role`, `SECURITY DEFINER`, `search_path = ''`, revokes
 de PUBLIC/anon/authenticated e nenhuma signed URL no pipeline. O core não importa Supabase, OpenAI,
 adapter ou provider e expõe ports de manifest, body Storage e audit sink.
@@ -141,9 +142,12 @@ matching, persistência comercial, promotion e pipeline one-shot não foram alte
 continua produzindo somente payload canônico intermediário; não cria Product, CommercialPolicy ou
 CommercialOffer persistido.
 
-Quarenta testes locais cobrem canonicalização/hash, limites, identidade/idempotência, manifest e
+Quarenta e um testes locais da 10C.4A cobrem canonicalização/hash, limites, identidade/idempotência, manifest e
 metadata hostis, lifecycle/imutabilidade, retry/lineage/supersession, paths, retenção, DAG completo,
 fan-in, dangling/cycle/self/wrong-stage/cross-job/cross-batch, latest succeeded, replay sem duplicata,
 Storage failure, verificação de hash, DB finalization, orphan observável e eventos seguros.
 
 **SEGMENTED PIPELINE ACTIVE? NO.**
+
+Detalhes do schema, RPCs, grants, adapter e protocolo de convergência estão em
+`SPRINT_10C4B_ARTIFACT_PERSISTENCE.md`. A persistência existe sem consumidor runtime.

@@ -141,3 +141,14 @@ Merge/reconciliation e qualquer ativação pertencem a checkpoints posteriores.
 ## Gate de Staging
 
 Único alvo remoto autorizado: Compra Car Staging, ref `shfsjyjxmgwnlexmdkcs`. Antes de qualquer `db push`, revisar o diff local, confirmar o alvo novamente e executar o smoke test com PDF real. Produção permanece proibida.
+
+## Persistência segmentada local da 10C.4B
+
+Manifest e DAG foram materializados localmente em Postgres, e bodies canônicos usam o bucket privado
+`import-processing-artifacts`. RPCs service-role protegem reserve/start/succeed/fail, replay, locks,
+claim e lineage; o adapter verifica read-back, SHA-256 e tamanho. Não há transaction distribuída:
+falha pós-write gera orphan observável e nunca deletion automática. Essa infraestrutura não foi
+registrada no fluxo descrito acima: one-shot, matching, finalização de rows e runtime principal
+continuam inalterados. Ver `SPRINT_10C4B_ARTIFACT_PERSISTENCE.md`.
+
+**SEGMENTED PIPELINE ACTIVE = NO.**

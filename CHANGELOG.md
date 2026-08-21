@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-08-20 — Artifact Persistence & Security da Sprint 10C.4B
+
+- Adicionada migration incremental local com manifest Postgres, junction DAG, bucket JSON privado,
+  lifecycle imutável, retry/supersession, idempotência e audit snapshots sem body.
+- Adicionados RPCs reserve/start/succeed/fail e attach-dependencies hardened por claim, lock,
+  `SECURITY DEFINER`, `search_path = ''`, RLS sem policies e grants exclusivos de `service_role`.
+- Adicionados adapters server-only de manifest/Storage com canonical bytes, read-back, SHA-256/tamanho
+  e resultado de orphan observável; não há cleanup ou deletion automática.
+- Runtime segmentado, one-shot, matching, Policies/Offers, promotion, remotos, Legacy e lockfile
+  permanecem inalterados. Próximo marco planejado: 10C.4C, ainda não ativo.
+- Gates locais concluídos com reset integral, pgTAP 023 em 43/43 e catálogo/RLS/grants/bucket
+  auditados. A suíte completa passou 691/693; as duas falhas restantes são baseline comprovado do
+  teste histórico 016 por SHA-256 de fixture duplicado antes da 10C.4B.
+
 ## 2026-08-20 — Lifecycle & Artifacts da Sprint 10C.4A
 
 - Adicionado `SegmentedImportArtifactManifest/1` com stages/status centralizados, versões separadas,

@@ -1,5 +1,25 @@
 # Contexto para agentes de IA
 
+## Marco — Artifact Persistence & Security da Sprint 10C.4B (2026-08-20)
+
+A migration local `20260820203801_sprint_10c4b_artifact_persistence.sql` materializa manifest e DAG
+relacional, bucket privado `import-processing-artifacts`, lifecycle RPCs hardened, idempotência,
+retry/supersession e audit snapshots sem body. O adapter Supabase server-only implementa os ports da
+10C.4A e verifica read-back/SHA-256/tamanho antes de succeed; falha de finalização preserva orphan
+observável sem cleanup automático. RLS deny-by-default, zero policies e grants mínimos excluem
+PUBLIC/anon/authenticated e DELETE.
+
+O segmented pipeline continua sem consumidor: não há ligação a `processAdminImportBatch`, registry,
+UI, Server Actions, matching, Policies/Offers, promotion ou one-shot. Não houve acesso remoto nem
+`db push`. Retenção continua apenas documentada (365d/180d/review 30d). Documento normativo:
+`docs/import/SPRINT_10C4B_ARTIFACT_PERSISTENCE.md`. Próxima etapa: **10C.4C — Runtime Orchestration /
+End-to-End Dry Run**, ainda não ativa.
+
+Gates Supabase locais concluídos com CLI `2.109.1`: reset completo verde, migration 10C.4B aplicada
+do zero, pgTAP 023 em 43/43, migration list coerente e dry-run local sem pendências. A suíte SQL
+completa ficou em 691/693; as duas falhas do teste histórico 016 foram reproduzidas no schema anterior
+à 10C.4B e decorrem de duas fixtures com SHA-256 `cccc…` duplicado, não desta sprint.
+
 ## Marco — Lifecycle & Artifacts da Sprint 10C.4A (2026-08-20)
 
 `SegmentedImportArtifactManifest/1` define lifecycle provider-agnostic para Document Map, Unit Plan,
@@ -7,16 +27,15 @@ Unit Extraction, Merge, Semantic Reconciliation e Domain Mapping. O core agora o
 canonicalização JSON/SHA-256, idempotency key, paths server-owned, DAG/lineage validators,
 transições imutáveis, resolução do latest succeeded e ports para manifest, Storage e auditoria.
 
-Decisão de persistência: JSON imutável em Storage privado + manifest mínimo no Postgres. Migration
-foi deliberadamente adiada para 10C.4B, quando o adapter e a orquestração tiverem consumidor real.
+Decisão de persistência: JSON imutável em Storage privado + manifest mínimo no Postgres. A 10C.4B
+materializou migration e adapters localmente, ainda sem consumidor runtime.
 O protocolo reserva queued, marca processing, grava/relê/verifica hash e só então finaliza succeeded;
 falha pós-write produz orphan observável, sem deletion automática. Retenção inicial: succeeded 365
 dias, failed manifest 180 dias, revisão de orphan após 30 dias, sujeita à decisão jurídica.
 
 10C.3 está concluída internamente. Pipeline segmentado, `processAdminImportBatch`, registry,
 one-shot, Prompt v4, matching, persistência comercial e promotion continuam inalterados/inativos.
-Documento normativo: `docs/import/SPRINT_10C4A_LIFECYCLE_ARTIFACTS.md`. Próxima etapa: **10C.4B —
-Runtime Orchestration**, ainda dependente de migration/adapter/security review.
+Documento normativo: `docs/import/SPRINT_10C4A_LIFECYCLE_ARTIFACTS.md`.
 
 ## Marco — Domain Mapping da Sprint 10C.3E (2026-08-20)
 

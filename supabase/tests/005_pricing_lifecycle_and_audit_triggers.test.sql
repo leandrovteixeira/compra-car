@@ -72,8 +72,8 @@ select is(
          'set_pricing_updated_at'
        )
   ),
-  25::bigint,
-  'the shared functions include the Import Engine document automation trigger'
+  26::bigint,
+  'the shared functions include Import Engine document and artifact automation triggers'
 );
 
 select is(
@@ -84,8 +84,8 @@ select is(
      where not trigger_record.tgisinternal
        and procedure.proname = 'set_pricing_updated_at'
   ),
-  10::bigint,
-  'updated_at and lock_version automation includes Import Engine documents'
+  11::bigint,
+  'updated_at and lock_version automation includes Import Engine documents and artifacts'
 );
 
 insert into auth.users (id, email, raw_user_meta_data)

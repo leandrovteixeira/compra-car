@@ -1,6 +1,6 @@
 export const SEGMENTED_ARTIFACT_MANIFEST_VERSION = 'SegmentedImportArtifactManifest/1' as const;
 export const SEGMENTED_ARTIFACT_PIPELINE_VERSION = 'segmented-import/1' as const;
-export const SEGMENTED_ARTIFACT_BUCKET = 'import-artifacts' as const;
+export const SEGMENTED_ARTIFACT_BUCKET = 'import-processing-artifacts' as const;
 
 export const SEGMENTED_ARTIFACT_STAGES = [
   'document_map',
