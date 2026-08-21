@@ -7,7 +7,10 @@ canônico UTF-8 imutável no bucket privado `import-processing-artifacts`; o Pos
 manifest, lifecycle, locator, hash, lineage, dependencies e metadata allow-listed. Nenhum consumidor
 foi conectado a `processAdminImportBatch`, UI, Server Actions, provider registry ou fluxo one-shot.
 
-**SEGMENTED PIPELINE ACTIVE = NO.**
+**SEGMENTED PIPELINE IMPLEMENTED IN RUNTIME = YES (10C.4C, opt-in; default one-shot).**
+
+O E2E local fake da 10C.4C comprova os seis stages, DAG, hash/read-back e replay. Nenhum ambiente
+remoto foi acessado e o smoke OpenAI segmentado ainda não foi executado.
 
 ## Modelo persistido
 
@@ -62,8 +65,7 @@ têm grants mínimos para `service_role`, sem DELETE.
 
 O core continua sem imports Supabase/OpenAI. Product IDs, matching, Policies/Offers persistidos,
 promotion e `promotionPlan` permanecem fora desta camada. A migration é somente local até autorização
-separada; não houve `db push`. Próximo passo planejado: **10C.4C — Runtime Orchestration / End-to-End
-Dry Run**, ainda não ativo.
+separada; não houve `db push`. A 10C.4C conectou esta persistência ao runtime segmentado opt-in.
 
 ## Validação local
 

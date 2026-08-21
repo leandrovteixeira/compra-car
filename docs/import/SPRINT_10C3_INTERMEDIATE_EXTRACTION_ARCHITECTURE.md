@@ -15,6 +15,9 @@ Detalhes:
 `docs/import/SPRINT_10C3C_SEGMENTED_EXTRACTION.md`.
 Contrato da nova fronteira: `docs/import/SPRINT_10C3D_MERGE_RECONCILIATION.md`.
 
+> Atualização 10C.4C: contratos integrados ao runtime segmentado opt-in com source reuse, artifacts,
+> replay e handoff canônico. Default `one_shot`; smoke OpenAI não executado.
+
 ## Resumo executivo
 
 O pipeline atual preserva segurança e autoridade do domínio, mas pede a uma única resposta de modelo

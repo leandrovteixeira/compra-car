@@ -1,5 +1,12 @@
 # Contexto para agentes de IA
 
+## Marco — Runtime Orchestration da Sprint 10C.4C (2026-08-21)
+
+Pipeline segmentado implementado no runtime atrás de `IMPORT_EXTRACTION_MODE=segmented`, com default
+obrigatório `one_shot`. O E2E fake unit-aware prova artifacts, replay, domain mapping, handoff
+canônico, matching e `needs_review`. Nenhum smoke OpenAI segmentado foi executado; 10C.4D permanece
+a próxima etapa separada.
+
 ## Marco — Artifact Persistence & Security da Sprint 10C.4B (2026-08-20)
 
 A migration local `20260820203801_sprint_10c4b_artifact_persistence.sql` materializa manifest e DAG

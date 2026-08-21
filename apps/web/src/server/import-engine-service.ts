@@ -27,6 +27,7 @@ import {
   sanitizeProcessingError,
   type ImportProcessingRepository,
   type ExtractionProvider,
+  type StructuredExtractionProvider,
 } from '@compra-car/core';
 import { createCommercialLetterPayloadValidator } from '@compra-car/core/commercial-letter-payload-validator';
 import type {
@@ -47,6 +48,13 @@ import {
 import schema from '../../../../docs/import/schemas/commercial-letter-mmv-payload-v1.schema.json';
 import { FakeExtractionProvider } from './fake-extraction-provider';
 import { createConfiguredExtractionProvider } from './openai-extraction-provider';
+import { getImportExtractionMode, type ImportExtractionMode } from './import-extraction-mode';
+import {
+  createPersistedSegmentedRuntimeArtifactStore,
+  executeSegmentedImportRuntime,
+  type SegmentedRuntimeArtifactStore,
+} from './segmented-import-runtime';
+import { createConfiguredStructuredExtractionProvider } from './structured-extraction-provider';
 
 import { requireRole } from '@/auth/authorization';
 import {
@@ -57,6 +65,54 @@ import { parseImportDocumentSubmissions } from '@/application/admin/import-docum
 
 const createRepository = (): ImportEngineRepository => new ImportEngineSupabaseAdapter();
 
+async function runSegmentedExtraction(input: {
+  readonly batch: Awaited<ReturnType<ImportEngineRepository['getBatch']>> & {};
+  readonly documents: readonly {
+    readonly id: string;
+    readonly ordinal: number;
+    readonly bytes: Uint8Array;
+  }[];
+  readonly jobId: string;
+  readonly attempt: number;
+  readonly claimToken: string;
+  readonly jobLockVersion?: number;
+  readonly actorId: string;
+  readonly correlationId: string;
+  readonly structuredProvider?: StructuredExtractionProvider;
+  readonly artifactStore?: SegmentedRuntimeArtifactStore;
+}) {
+  if (!input.batch) throw new Error('SEGMENTED_BATCH_UNAVAILABLE');
+  if (input.jobLockVersion === undefined) throw new Error('SEGMENTED_JOB_LOCK_VERSION_UNAVAILABLE');
+  const result = await executeSegmentedImportRuntime({
+    batch: input.batch,
+    jobId: input.jobId,
+    attempt: input.attempt,
+    correlationId: input.correlationId,
+    source: {
+      documents: input.documents.map((document) => ({
+        documentId: document.id,
+        ordinal: document.ordinal,
+        bytes: document.bytes,
+      })),
+    },
+    provider:
+      input.structuredProvider ??
+      createConfiguredStructuredExtractionProvider({ fakeProvider: input.structuredProvider }),
+    artifacts:
+      input.artifactStore ??
+      createPersistedSegmentedRuntimeArtifactStore({
+        claimToken: input.claimToken,
+        actorId: input.actorId,
+        processingJobLockVersion: input.jobLockVersion,
+      }),
+  });
+  return {
+    payloads: result.payloads,
+    providerRunId: result.summary.providerRunIds.join(',').slice(0, 200),
+    usage: result.summary.usage,
+  };
+}
+
 export async function processAdminImportBatch(
   batchId: string,
   dependencies: {
@@ -65,12 +121,16 @@ export async function processAdminImportBatch(
     readonly authorize?: () => Promise<{ readonly actorId: string }>;
     readonly createCorrelationId?: () => string;
     readonly extractionProvider?: ExtractionProvider;
+    readonly extractionMode?: ImportExtractionMode;
+    readonly structuredExtractionProvider?: StructuredExtractionProvider;
+    readonly segmentedArtifactStore?: SegmentedRuntimeArtifactStore;
   } = {},
 ): Promise<{ readonly rowCount: number; readonly idempotentReplay: boolean }> {
   const identity = dependencies.authorize
     ? await dependencies.authorize()
     : await requireRole('admin').then(({ profile }) => ({ actorId: profile.id }));
   const correlationId = dependencies.createCorrelationId?.() ?? randomUUID();
+  const extractionMode = dependencies.extractionMode ?? getImportExtractionMode();
   const repository = dependencies.repository ?? createRepository();
   const processing = dependencies.processingRepository ?? new ImportProcessingSupabaseAdapter();
   const batch = await repository.getBatch(batchId);
@@ -93,7 +153,7 @@ export async function processAdminImportBatch(
     correlationId,
   });
   const claimToken = randomUUID();
-  await processing.claim({
+  const claimed = await processing.claim({
     jobId: queued.jobId,
     claimToken,
     leaseSeconds: IMPORT_PROCESSING_LEASE_SECONDS,
@@ -117,13 +177,27 @@ export async function processAdminImportBatch(
           ),
         })),
     );
-    const extracted = await provider.extract({
-      documents,
-      schemaVersion: COMMERCIAL_LETTER_PAYLOAD_SCHEMA_VERSION,
-      schema: schema as Record<string, unknown>,
-      instructions:
-        'Extraia somente fatos explícitos no bloco completo aplicável ao MMV; dúvidas materiais permanecem REVIEW.',
-    });
+    const extracted =
+      extractionMode === 'one_shot'
+        ? await provider.extract({
+            documents,
+            schemaVersion: COMMERCIAL_LETTER_PAYLOAD_SCHEMA_VERSION,
+            schema: schema as Record<string, unknown>,
+            instructions:
+              'Extraia somente fatos explícitos no bloco completo aplicável ao MMV; dúvidas materiais permanecem REVIEW.',
+          })
+        : await runSegmentedExtraction({
+            batch,
+            documents,
+            jobId: queued.jobId,
+            attempt: queued.attempt ?? 1,
+            claimToken,
+            jobLockVersion: claimed.lockVersion,
+            actorId: identity.actorId,
+            correlationId,
+            structuredProvider: dependencies.structuredExtractionProvider,
+            artifactStore: dependencies.segmentedArtifactStore,
+          });
     const preparedRows = prepareCommercialLetterRows(extracted.payloads, validatePayload);
     const catalogs = await processing.findMatchCandidatesBatch(
       preparedRows.map((row) => row.matchInput),

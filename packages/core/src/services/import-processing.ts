@@ -317,6 +317,7 @@ export interface ImportProcessingJobResult {
   readonly attempt?: number;
   readonly rowCount?: number;
   readonly idempotentReplay: boolean;
+  readonly lockVersion?: number;
 }
 export interface ImportProcessingRepository {
   enqueue(input: {
@@ -583,6 +584,17 @@ export function sanitizeProcessingError(error: unknown): {
     if (providerCodes.has(code))
       return { code, message: 'O provider de extração falhou. Consulte o correlation ID.' };
   }
+  const segmentedCode =
+    error instanceof Error
+      ? error.message.match(
+          /^(DOCUMENT_MAP_FAILED|DOCUMENT_MAP_INVALID|UNIT_PLAN_INVALID|UNIT_EXTRACTION_(?:FAILED|TIMEOUT|PROVIDER_TIMEOUT|PROVIDER_FAILURE|INVALID_STRUCTURED_OUTPUT|CANONICAL_VALIDATION_FAILED|ORCHESTRATION_TIMEOUT|ABORTED_SIBLING)|MERGE_FAILED|SEMANTIC_RECONCILIATION_FAILED|DOMAIN_MAPPING_(?:FAILED|BLOCKED|PERIOD_UNAVAILABLE)|ARTIFACT_PERSISTENCE_FAILED|SEGMENTED_[A-Z_]+)$/u,
+        )?.[1]
+      : undefined;
+  if (segmentedCode)
+    return {
+      code: segmentedCode.slice(0, 64),
+      message: 'O pipeline segmentado falhou. Consulte o correlation ID.',
+    };
   return {
     code: 'PROCESSING_FAILED',
     message: 'O processamento falhou sem persistir rows. Consulte o correlation ID.',

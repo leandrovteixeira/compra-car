@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-08-21 — Sprint 10C.4C Runtime Orchestration
+
+- integrou o pipeline segmentado ao `processAdminImportBatch` por opt-in explícito, preservando
+  `one_shot` como default;
+- conectou Document Map, Unit Plan, unit extraction, artifacts, merge, semantic reconciliation e
+  domain mapping ao boundary canônico e ao matching/finalização existentes;
+- adicionou source-session reuse, replay por artifact, usage agregado e factory server-only de
+  structured provider com fake proibido em produção;
+- validou localmente um E2E fake unit-aware com quatro MMVs e zero promotion;
+- nenhuma chamada OpenAI, migration ou acesso remoto foi realizado.
+
 ## 2026-08-20 — Artifact Persistence & Security da Sprint 10C.4B
 
 - Adicionada migration incremental local com manifest Postgres, junction DAG, bucket JSON privado,

@@ -54,6 +54,7 @@ const result = (value: unknown) => {
     ...(row.batchId == null ? {} : { batchId: id(row.batchId) }),
     ...(row.attempt == null ? {} : { attempt: Number(row.attempt) }),
     ...(row.rowCount == null ? {} : { rowCount: Number(row.rowCount) }),
+    ...(row.lockVersion == null ? {} : { lockVersion: Number(row.lockVersion) }),
     idempotentReplay: row.idempotentReplay === true,
   };
 };
@@ -78,14 +79,24 @@ export class ImportProcessingSupabaseAdapter implements ImportProcessingReposito
       p_correlation_id: input.correlationId,
     });
   }
-  claim(input: Parameters<ImportProcessingRepository['claim']>[0]) {
-    return this.rpc('claim_import_processing_job', {
+  async claim(input: Parameters<ImportProcessingRepository['claim']>[0]) {
+    const claimed = await this.rpc('claim_import_processing_job', {
       p_job_id: input.jobId,
       p_claim_token: input.claimToken,
       p_actor_id: input.actorId,
       p_correlation_id: input.correlationId,
       p_lease_seconds: input.leaseSeconds,
     });
+    const { data, error } = await this.client
+      .from('pricing_import_processing_jobs')
+      .select('lock_version')
+      .eq('id', input.jobId)
+      .single();
+    if (error || !data)
+      throw new PricingAdapterQueryError('Falha ao carregar versão do job claimed.', {
+        cause: error,
+      });
+    return { ...claimed, lockVersion: Number(data.lock_version) };
   }
   async downloadDocument(bucket: string, path: string) {
     const { data, error } = await this.client.storage.from(bucket).download(path);

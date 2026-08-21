@@ -14,6 +14,9 @@ Detalhes: `SPRINT_10C4A_LIFECYCLE_ARTIFACTS.md`.
 
 Status: implementada e validada funcionalmente no Staging `shfsjyjxmgwnlexmdkcs` em 2026-08-12.
 
+> Atualização 10C.4C: pipeline segmentado implementado localmente no runtime por opt-in explícito.
+> `one_shot` permanece o default; o smoke OpenAI segmentado ainda não foi executado.
+
 ## Escopo entregue
 
 - job auditável por tentativa (`queued`, `processing`, `succeeded`, `failed`), claim token e índices de concorrência;
@@ -151,4 +154,4 @@ falha pós-write gera orphan observável e nunca deletion automática. Essa infr
 registrada no fluxo descrito acima: one-shot, matching, finalização de rows e runtime principal
 continuam inalterados. Ver `SPRINT_10C4B_ARTIFACT_PERSISTENCE.md`.
 
-**SEGMENTED PIPELINE ACTIVE = NO.**
+**SEGMENTED PIPELINE IMPLEMENTED IN RUNTIME = YES; DEFAULT PIPELINE = ONE_SHOT.**

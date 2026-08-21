@@ -20,6 +20,9 @@ import {
 
 export interface SegmentedExtractionOrchestratorOptions {
   readonly provider: StructuredExtractionProvider;
+  readonly sourceSession?: Awaited<ReturnType<StructuredExtractionProvider['openSource']>>;
+  readonly closeSourceSession?: boolean;
+  readonly unitIds?: readonly string[];
   readonly schema: Readonly<Record<string, unknown>>;
   readonly schemaName?: string;
   readonly concurrency?: number;
@@ -161,7 +164,12 @@ export async function executeSegmentedExtraction(
     totalExpired = true;
     totalController.abort();
   }, totalTimeoutMs);
-  const units = [...input.unitPlan.units].sort((left, right) => left.ordinal - right.ordinal);
+  const selectedUnitIds = options.unitIds ? new Set(options.unitIds) : undefined;
+  const units = [...input.unitPlan.units]
+    .filter((unit) => selectedUnitIds?.has(unit.unitId) ?? true)
+    .sort((left, right) => left.ordinal - right.ordinal);
+  if (selectedUnitIds && units.length !== selectedUnitIds.size)
+    throw new Error('SEGMENTED_EXTRACTION_UNKNOWN_SELECTED_UNIT');
   const results: Array<SegmentedExtractionUnitResult | undefined> = new Array(units.length);
   let nextIndex = 0;
   let fatal = false;
@@ -169,10 +177,12 @@ export async function executeSegmentedExtraction(
   let cleanup: SegmentedExtractionOperationalResult['cleanup'] = 'succeeded';
 
   try {
-    session = await options.provider.openSource(input.source, {
-      signal: totalController.signal,
-      correlationId: input.correlationId,
-    });
+    session =
+      options.sourceSession ??
+      (await options.provider.openSource(input.source, {
+        signal: totalController.signal,
+        correlationId: input.correlationId,
+      }));
     const runUnit = async (index: number): Promise<void> => {
       const unit = units[index]!;
       const startedAt = now();
@@ -263,7 +273,7 @@ export async function executeSegmentedExtraction(
     fatal = true;
   } finally {
     clearTimeout(totalTimer);
-    if (session) {
+    if (session && (options.sourceSession === undefined || options.closeSourceSession === true)) {
       try {
         await session.close();
       } catch {

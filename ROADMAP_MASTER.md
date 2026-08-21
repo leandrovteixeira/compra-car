@@ -1,18 +1,16 @@
 # Compra Car — Cronograma Mestre do Projeto
 
-> Atualização 2026-08-20: 10C.3A–E estão concluídas internamente, ainda sem runtime. A 10C.4A
-> implementou contratos/lifecycle/hash/idempotência/DAG; a 10C.4B materializou localmente manifest,
-> Storage privado, RPCs e adapters, ainda sem integração runtime. Sequência: 10C.4C Runtime
-> Orchestration / End-to-End Dry Run → 10C.4D
-> Real Benchmark.
+> Atualização 2026-08-21: a 10C.4C integrou localmente o runtime segmentado por opt-in, com E2E fake,
+> artifacts, replay e handoff canônico. Default one-shot; smoke OpenAI não executado. Próxima etapa:
+> 10C.4D Real Benchmark.
 
 ### Sprint 10C.4 — Operacionalização segmentada
 
-- **10C.4A — IMPLEMENTADA:** Lifecycle & Artifacts puros; Storage privado + manifest DB aprovado
-  como alvo; persistência e runtime ainda inativos.
+- **10C.4A — IMPLEMENTADA:** Lifecycle & Artifacts puros; consumidos pelo runtime opt-in desde 10C.4C.
 - **10C.4B — IMPLEMENTADA LOCALMENTE:** persistence, Storage adapter, RPCs, RLS/grants e testes;
-  runtime continua inativo e nenhum push remoto foi feito.
-- **10C.4C — PLANEJADA:** Runtime Orchestration / End-to-End Dry Run sem efeito comercial.
+  nenhum push remoto foi feito.
+- **10C.4C — IMPLEMENTADA LOCALMENTE:** Runtime Orchestration / End-to-End Dry Run fake, opt-in e sem
+  efeito comercial.
 - **10C.4D:** Real Benchmark de qualidade, escala, latência e custo.
 
 > Histórico 2026-08-16: 10C.3A implementou `CommercialDocumentExtraction/1`; 10C.3B implementou
@@ -35,6 +33,9 @@
 - **10C.3E — IMPLEMENTADA:** domain mapping determinístico para
   `commercial-letter/mmv-payload/1`, sem runtime.
 Status: 10C.3 concluída internamente sem integração runtime.
+
+> Atualização 10C.4C (2026-08-21): pipeline segmentado implementado localmente no runtime por opt-in,
+> com E2E fake, artifacts, replay e handoff canônico. Default `one_shot`; smoke OpenAI não executado.
 
 ## Objetivo
 
