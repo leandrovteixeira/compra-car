@@ -7,17 +7,118 @@ import {
 } from './commercial-document-extraction';
 import { commercialDocumentExtractionSchemaV1 } from './commercial-document-extraction-schema';
 
+export type CommercialDocumentExtractionViolationCategory =
+  'schema' | 'referential' | 'semantic' | 'invariant';
+
+export interface CommercialDocumentExtractionViolationDiagnostic {
+  readonly path: string;
+  readonly keyword: string;
+  readonly category: CommercialDocumentExtractionViolationCategory;
+}
+
+export interface CommercialDocumentExtractionValidationDiagnostic {
+  readonly totalViolations: number;
+  readonly sampledViolations: readonly CommercialDocumentExtractionViolationDiagnostic[];
+  readonly truncated: boolean;
+  readonly keywordCounts: Readonly<Record<string, number>>;
+  readonly categoryCounts: Readonly<Record<CommercialDocumentExtractionViolationCategory, number>>;
+}
+
+const DIAGNOSTIC_SAMPLE_LIMIT = 30;
+
+const summarizeDiagnostics = (
+  violations: readonly CommercialDocumentExtractionViolationDiagnostic[],
+  sampleLimit = DIAGNOSTIC_SAMPLE_LIMIT,
+): CommercialDocumentExtractionValidationDiagnostic => {
+  const keywordCounts: Record<string, number> = {};
+  const categoryCounts: Record<CommercialDocumentExtractionViolationCategory, number> = {
+    schema: 0,
+    referential: 0,
+    semantic: 0,
+    invariant: 0,
+  };
+  for (const violation of violations) {
+    keywordCounts[violation.keyword] = (keywordCounts[violation.keyword] ?? 0) + 1;
+    categoryCounts[violation.category] += 1;
+  }
+  return {
+    totalViolations: violations.length,
+    sampledViolations: violations.slice(0, Math.max(0, sampleLimit)),
+    truncated: violations.length > Math.max(0, sampleLimit),
+    keywordCounts,
+    categoryCounts,
+  };
+};
+
 export class CommercialDocumentExtractionValidationError extends Error {
-  constructor(readonly issues: readonly string[]) {
-    super(`CommercialDocumentExtraction/1 inválido (${issues.length} violação(ões)).`);
+  readonly code = 'COMMERCIAL_DOCUMENT_EXTRACTION_INVALID' as const;
+  readonly totalViolations: number;
+  readonly diagnostics: readonly CommercialDocumentExtractionViolationDiagnostic[];
+  readonly truncated: boolean;
+  readonly keywordCounts: Readonly<Record<string, number>>;
+  readonly categoryCounts: Readonly<Record<CommercialDocumentExtractionViolationCategory, number>>;
+  readonly issues: readonly string[];
+
+  constructor(diagnostic: CommercialDocumentExtractionValidationDiagnostic) {
+    super(`CommercialDocumentExtraction/1 inválido (${diagnostic.totalViolations} violação(ões)).`);
     this.name = 'CommercialDocumentExtractionValidationError';
+    this.totalViolations = diagnostic.totalViolations;
+    this.diagnostics = diagnostic.sampledViolations;
+    this.truncated = diagnostic.truncated;
+    this.keywordCounts = diagnostic.keywordCounts;
+    this.categoryCounts = diagnostic.categoryCounts;
+    this.issues = diagnostic.sampledViolations.map(
+      (violation) => `${violation.path}: ${violation.keyword}`,
+    );
   }
 }
 
 const serializedByteLength = (value: unknown): number =>
   new TextEncoder().encode(JSON.stringify(value)).byteLength;
-const safeSchemaErrors = (errors: readonly ErrorObject[] | null | undefined): readonly string[] =>
-  (errors ?? []).slice(0, 50).map((error) => `${error.instancePath || '/'}: ${error.keyword}`);
+export const sanitizeCommercialDocumentExtractionAjvErrors = (
+  errors: readonly ErrorObject[] | null | undefined,
+  sampleLimit = DIAGNOSTIC_SAMPLE_LIMIT,
+): CommercialDocumentExtractionValidationDiagnostic =>
+  summarizeDiagnostics(
+    (errors ?? []).map((error) => ({
+      path: error.instancePath || '/',
+      keyword: error.keyword,
+      category: 'schema' as const,
+    })),
+    sampleLimit,
+  );
+
+const referentialKeywords = new Set(['tableIdRequired', 'unknownRef']);
+const semanticKeywords = new Set([
+  'above100',
+  'completedCountMismatch',
+  'incompleteDataMarkedComplete',
+  'incompleteYearPair',
+  'invalidDateRange',
+  'partialWithoutGap',
+  'relationNeedsTwoSubjects',
+  'requiredWhenAmbiguous',
+]);
+const sanitizeInvariantIssues = (
+  issues: readonly string[],
+): CommercialDocumentExtractionValidationDiagnostic =>
+  summarizeDiagnostics(
+    issues.map((issue) => {
+      const separator = issue.indexOf(': ');
+      const path = separator >= 0 ? issue.slice(0, separator) : '/';
+      const detail = separator >= 0 ? issue.slice(separator + 2) : 'customInvariant';
+      const candidate = detail.split(':', 1)[0] ?? 'customInvariant';
+      const keyword = /^[A-Za-z][A-Za-z0-9]*$/u.test(candidate) ? candidate : 'customInvariant';
+      const category: CommercialDocumentExtractionViolationCategory = referentialKeywords.has(
+        keyword,
+      )
+        ? 'referential'
+        : semanticKeywords.has(keyword) || keyword.startsWith('missingTargetFor')
+          ? 'semantic'
+          : 'invariant';
+      return { path, keyword, category };
+    }),
+  );
 const isIsoCalendarDate = (value: string): boolean => {
   if (!/^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/.test(value)) return false;
   const parsed = new Date(`${value}T00:00:00.000Z`);
@@ -32,9 +133,13 @@ export function validateCommercialDocumentExtractionTransport(
   payload: unknown,
 ): asserts payload is CommercialDocumentExtractionV1 {
   if (serializedByteLength(payload) > COMMERCIAL_DOCUMENT_EXTRACTION_LIMITS.maxPayloadBytes)
-    throw new CommercialDocumentExtractionValidationError(['/: maxPayloadBytes']);
+    throw new CommercialDocumentExtractionValidationError(
+      summarizeDiagnostics([{ path: '/', keyword: 'maxPayloadBytes', category: 'schema' }]),
+    );
   if (!validateSchema(payload))
-    throw new CommercialDocumentExtractionValidationError(safeSchemaErrors(validateSchema.errors));
+    throw new CommercialDocumentExtractionValidationError(
+      sanitizeCommercialDocumentExtractionAjvErrors(validateSchema.errors),
+    );
 }
 
 const addDuplicates = (issues: string[], path: string, values: readonly string[]): void => {
@@ -359,7 +464,8 @@ export function validateCommercialDocumentExtractionInvariants(
   )
     issues.push('/coverage/status: ambiguousWithoutEvidence');
 
-  if (issues.length) throw new CommercialDocumentExtractionValidationError(issues);
+  if (issues.length)
+    throw new CommercialDocumentExtractionValidationError(sanitizeInvariantIssues(issues));
 }
 
 export function validateCommercialDocumentExtraction(

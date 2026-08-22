@@ -1,5 +1,7 @@
 import 'server-only';
 
+import Ajv2020 from 'ajv/dist/2020.js';
+
 import type {
   CommercialDocumentMapV1,
   ImportBatchDetails,
@@ -10,9 +12,19 @@ import type {
   StructuredExtractionUsage,
 } from '@compra-car/core';
 import { createCommercialExtractionUnitPlan } from '@compra-car/core/commercial-document-map-planner';
+import { canonicalizeCommercialDocumentMapIds } from '@compra-car/core/commercial-document-map-canonicalizer';
 import { commercialDocumentMapSchemaV1 } from '@compra-car/core/commercial-document-map-schema';
-import { validateCommercialDocumentMap } from '@compra-car/core/commercial-document-map-validator';
+import {
+  CommercialDocumentMapValidationError,
+  validateCommercialDocumentMap,
+  type CommercialDocumentMapViolationCategory,
+  type CommercialDocumentMapViolationDiagnostic,
+} from '@compra-car/core/commercial-document-map-validator';
 import { commercialDocumentExtractionSchemaV1 } from '@compra-car/core/commercial-document-extraction-schema';
+import {
+  CommercialDocumentExtractionValidationError,
+  sanitizeCommercialDocumentExtractionAjvErrors,
+} from '@compra-car/core/commercial-document-extraction-validator';
 import {
   COMMERCIAL_DOCUMENT_RECONCILIATION_VERSION,
   reconcileCommercialDocumentExtractions,
@@ -26,7 +38,10 @@ import {
   mapCommercialDocumentToDomain,
 } from '@compra-car/core/commercial-document-domain-mapping';
 import { resolveCommercialDocumentPeriod } from '@compra-car/core/commercial-document-period-resolution';
-import { executeSegmentedExtraction } from '@compra-car/core/segmented-extraction-orchestrator';
+import {
+  executeSegmentedExtraction,
+  type SegmentedExtractionUnitValidationObservation,
+} from '@compra-car/core/segmented-extraction-orchestrator';
 import {
   publishPersistedSegmentedArtifact,
   SegmentedArtifactSupabaseManifestAdapter,
@@ -35,6 +50,7 @@ import {
 } from '@compra-car/adapter-supabase';
 import {
   createOpenAIStructuredOutputProjection,
+  projectCanonicalValueForOpenAITransport,
   reconstructCanonicalValueFromOpenAITransport,
 } from './openai-structured-output-schema';
 
@@ -45,6 +61,24 @@ export const openAITransportDocumentMapSchema = createOpenAIStructuredOutputProj
 export const openAITransportDocumentExtractionSchema = createOpenAIStructuredOutputProjection(
   commercialDocumentExtractionSchemaV1,
 );
+const extractionTransportAjv = new Ajv2020({
+  allErrors: true,
+  strict: true,
+  validateFormats: false,
+});
+const validateExtractionTransportSchema = extractionTransportAjv.compile(
+  openAITransportDocumentExtractionSchema,
+);
+const validateExtractionTransport = (value: unknown): void => {
+  const transport = projectCanonicalValueForOpenAITransport(
+    value,
+    commercialDocumentExtractionSchemaV1,
+  );
+  if (!validateExtractionTransportSchema(transport))
+    throw new CommercialDocumentExtractionValidationError(
+      sanitizeCommercialDocumentExtractionAjvErrors(validateExtractionTransportSchema.errors),
+    );
+};
 
 export interface SegmentedRuntimeArtifact {
   readonly manifest: SegmentedArtifactManifest;
@@ -88,6 +122,16 @@ export interface SegmentedImportRuntimeResult {
   readonly payloads: readonly unknown[];
   readonly summary: SegmentedImportRuntimeSummary;
 }
+
+export interface SegmentedDocumentMapValidationObservation {
+  readonly totalViolations: number;
+  readonly sampledViolations: readonly CommercialDocumentMapViolationDiagnostic[];
+  readonly truncated: boolean;
+  readonly categories: Readonly<Record<string, number>>;
+  readonly broadCategories: Readonly<Record<CommercialDocumentMapViolationCategory, number>>;
+}
+
+export type { SegmentedExtractionUnitValidationObservation };
 
 export function createPersistedSegmentedRuntimeArtifactStore(
   context: SegmentedArtifactPersistenceContext,
@@ -156,6 +200,13 @@ export async function executeSegmentedImportRuntime(input: {
   readonly source: SegmentedExtractionSource;
   readonly provider: StructuredExtractionProvider;
   readonly artifacts: SegmentedRuntimeArtifactStore;
+  readonly diagnostics?: boolean;
+  readonly observeDocumentMapValidation?: (
+    observation: SegmentedDocumentMapValidationObservation,
+  ) => void;
+  readonly observeUnitExtractionValidation?: (
+    observation: SegmentedExtractionUnitValidationObservation,
+  ) => void;
 }): Promise<SegmentedImportRuntimeResult> {
   if (input.source.documents.length !== 1) throw new Error('SEGMENTED_PRIMARY_DOCUMENT_REQUIRED');
   const documentId = input.source.documents[0]!.documentId;
@@ -165,6 +216,24 @@ export async function executeSegmentedImportRuntime(input: {
   let reusedArtifactCount = 0;
   let session: StructuredExtractionSourceSession | undefined;
   let cleanup: 'succeeded' | 'failed' = 'succeeded';
+  const validateDocumentMap = (body: unknown): void => {
+    try {
+      validateCommercialDocumentMap(body);
+    } catch (error) {
+      if (input.diagnostics && error instanceof CommercialDocumentMapValidationError) {
+        const observation = {
+          totalViolations: error.totalViolations,
+          sampledViolations: error.diagnostics,
+          truncated: error.truncated,
+          categories: error.keywordCounts,
+          broadCategories: error.categoryCounts,
+        } satisfies SegmentedDocumentMapValidationObservation;
+        if (input.observeDocumentMapValidation) input.observeDocumentMapValidation(observation);
+        else console.warn('SEGMENTED_DOCUMENT_MAP_VALIDATION', observation);
+      }
+      throw error;
+    }
+  };
 
   const get = async <T>(
     stage: SegmentedArtifactManifest['stage'],
@@ -236,10 +305,14 @@ export async function executeSegmentedImportRuntime(input: {
         });
         usage = addUsage(usage, response.usage);
         providerRunIds.push(response.providerRunId);
+        const reconstructed = reconstructCanonicalValueFromOpenAITransport(
+          response.output,
+          commercialDocumentMapSchemaV1,
+        ) as CommercialDocumentMapV1;
         return {
-          body: reconstructCanonicalValueFromOpenAITransport(
-            response.output,
-          ) as CommercialDocumentMapV1,
+          body: canonicalizeCommercialDocumentMapIds(reconstructed, {
+            sourceDocumentOrdinals: input.source.documents.map((document) => document.ordinal),
+          }),
           provider: {
             providerKey: 'structured',
             providerVersion: '1',
@@ -251,12 +324,9 @@ export async function executeSegmentedImportRuntime(input: {
       },
       [],
       undefined,
-      validateCommercialDocumentMap,
+      validateDocumentMap,
     );
-    const documentMap = assertBody<CommercialDocumentMapV1>(
-      mapArtifact,
-      validateCommercialDocumentMap,
-    );
+    const documentMap = assertBody<CommercialDocumentMapV1>(mapArtifact, validateDocumentMap);
     const planArtifact = await get(
       'unit_plan',
       'CommercialExtractionUnitPlan/1',
@@ -293,7 +363,18 @@ export async function executeSegmentedImportRuntime(input: {
           sourceSession: session,
           unitIds: missingUnits.map((unit) => unit.unitId),
           schema: openAITransportDocumentExtractionSchema,
-          decodeTransport: reconstructCanonicalValueFromOpenAITransport,
+          decodeTransport: (value) =>
+            reconstructCanonicalValueFromOpenAITransport(
+              value,
+              commercialDocumentExtractionSchemaV1,
+            ),
+          validateTransport: validateExtractionTransport,
+          diagnostics: input.diagnostics,
+          observeUnitValidation: (observation) => {
+            if (input.observeUnitExtractionValidation)
+              input.observeUnitExtractionValidation(observation);
+            else console.warn('SEGMENTED_UNIT_EXTRACTION_VALIDATION', observation);
+          },
         },
       );
       const failed = extraction.unitResults.find((item) => item.status === 'failed');

@@ -11,10 +11,45 @@ import {
   commercialExtractionUnitPlanSchemaV1,
 } from './commercial-document-map-schema';
 
+export type CommercialDocumentMapViolationCategory =
+  'schema' | 'referential' | 'semantic' | 'invariant';
+
+export interface CommercialDocumentMapViolationDiagnostic {
+  readonly path: string;
+  readonly keyword: string;
+  readonly category: CommercialDocumentMapViolationCategory;
+}
+
+export interface CommercialDocumentMapValidationDiagnostic {
+  readonly totalViolations: number;
+  readonly sampledViolations: readonly CommercialDocumentMapViolationDiagnostic[];
+  readonly truncated: boolean;
+  readonly keywordCounts: Readonly<Record<string, number>>;
+  readonly categoryCounts: Readonly<Record<CommercialDocumentMapViolationCategory, number>>;
+}
+
+const COMMERCIAL_DOCUMENT_MAP_DIAGNOSTIC_SAMPLE_LIMIT = 30;
+
 export class CommercialDocumentMapValidationError extends Error {
-  constructor(readonly issues: readonly string[]) {
-    super(`CommercialDocumentMap/1 inválido (${issues.length} violação(ões)).`);
+  readonly code = 'COMMERCIAL_DOCUMENT_MAP_INVALID' as const;
+  readonly totalViolations: number;
+  readonly diagnostics: readonly CommercialDocumentMapViolationDiagnostic[];
+  readonly truncated: boolean;
+  readonly keywordCounts: Readonly<Record<string, number>>;
+  readonly categoryCounts: Readonly<Record<CommercialDocumentMapViolationCategory, number>>;
+  readonly issues: readonly string[];
+
+  constructor(diagnostic: CommercialDocumentMapValidationDiagnostic) {
+    super(`CommercialDocumentMap/1 inválido (${diagnostic.totalViolations} violação(ões)).`);
     this.name = 'CommercialDocumentMapValidationError';
+    this.totalViolations = diagnostic.totalViolations;
+    this.diagnostics = diagnostic.sampledViolations;
+    this.truncated = diagnostic.truncated;
+    this.keywordCounts = diagnostic.keywordCounts;
+    this.categoryCounts = diagnostic.categoryCounts;
+    this.issues = diagnostic.sampledViolations.map(
+      (violation) => `${violation.path}: ${violation.keyword}`,
+    );
   }
 }
 
@@ -30,8 +65,85 @@ const validateMapSchema: ValidateFunction = ajv.compile(commercialDocumentMapSch
 const validatePlanSchema: ValidateFunction = ajv.compile(commercialExtractionUnitPlanSchemaV1);
 const bytes = (value: unknown): number =>
   new TextEncoder().encode(JSON.stringify(value)).byteLength;
-const schemaIssues = (errors: readonly ErrorObject[] | null | undefined): readonly string[] =>
+const planSchemaIssues = (errors: readonly ErrorObject[] | null | undefined): readonly string[] =>
   (errors ?? []).slice(0, 100).map((error) => `${error.instancePath || '/'}: ${error.keyword}`);
+const summarizeDiagnostics = (
+  violations: readonly CommercialDocumentMapViolationDiagnostic[],
+  sampleLimit = COMMERCIAL_DOCUMENT_MAP_DIAGNOSTIC_SAMPLE_LIMIT,
+): CommercialDocumentMapValidationDiagnostic => {
+  const keywordCounts: Record<string, number> = {};
+  const categoryCounts: Record<CommercialDocumentMapViolationCategory, number> = {
+    schema: 0,
+    referential: 0,
+    semantic: 0,
+    invariant: 0,
+  };
+  for (const violation of violations) {
+    keywordCounts[violation.keyword] = (keywordCounts[violation.keyword] ?? 0) + 1;
+    categoryCounts[violation.category] += 1;
+  }
+  return {
+    totalViolations: violations.length,
+    sampledViolations: violations.slice(0, Math.max(0, sampleLimit)),
+    truncated: violations.length > Math.max(0, sampleLimit),
+    keywordCounts,
+    categoryCounts,
+  };
+};
+
+export function sanitizeCommercialDocumentMapAjvErrors(
+  errors: readonly ErrorObject[] | null | undefined,
+  sampleLimit = COMMERCIAL_DOCUMENT_MAP_DIAGNOSTIC_SAMPLE_LIMIT,
+): CommercialDocumentMapValidationDiagnostic {
+  return summarizeDiagnostics(
+    (errors ?? []).map((error) => ({
+      path: error.instancePath || '/',
+      keyword: error.keyword,
+      category: 'schema' as const,
+    })),
+    sampleLimit,
+  );
+}
+
+const referentialInvariantKeywords = new Set([
+  'crossDocumentRef',
+  'inconsistentOwner',
+  'missingPageBackReference',
+  'unknownRef',
+]);
+const semanticInvariantKeywords = new Set([
+  'continuationWithoutInheritedHeader',
+  'expectedEnd',
+  'expectedStart',
+  'expectedWhole',
+  'invalidContinuationPosition',
+  'invalidContinuationRefs',
+  'invalidHeaderRefs',
+  'mustBeAscending',
+  'nonContiguousPages',
+  'outOfRange',
+  'pagesMismatch',
+]);
+const sanitizeInvariantIssues = (
+  issues: readonly string[],
+): CommercialDocumentMapValidationDiagnostic =>
+  summarizeDiagnostics(
+    issues.map((issue) => {
+      const separator = issue.indexOf(': ');
+      const path = separator >= 0 ? issue.slice(0, separator) : '/';
+      const detail = separator >= 0 ? issue.slice(separator + 2) : 'custom_invariant';
+      const candidate = detail.split(':', 1)[0] ?? 'custom_invariant';
+      const keyword = /^[A-Za-z][A-Za-z0-9]*$/u.test(candidate) ? candidate : 'custom_invariant';
+      const category: CommercialDocumentMapViolationCategory = referentialInvariantKeywords.has(
+        keyword,
+      )
+        ? 'referential'
+        : semanticInvariantKeywords.has(keyword)
+          ? 'semantic'
+          : 'invariant';
+      return { path, keyword, category };
+    }),
+  );
 const duplicates = (path: string, values: readonly string[]): string[] => {
   const seen = new Set<string>();
   const issues: string[] = [];
@@ -305,16 +417,21 @@ export function validateCommercialDocumentMapInvariants(map: CommercialDocumentM
       issues.push(`${path}: invalidHeaderRefs`);
   });
 
-  if (issues.length) throw new CommercialDocumentMapValidationError(issues);
+  if (issues.length)
+    throw new CommercialDocumentMapValidationError(sanitizeInvariantIssues(issues));
 }
 
 export function validateCommercialDocumentMap(
   payload: unknown,
 ): asserts payload is CommercialDocumentMapV1 {
   if (bytes(payload) > COMMERCIAL_DOCUMENT_MAP_LIMITS.maxPayloadBytes)
-    throw new CommercialDocumentMapValidationError(['/: maxPayloadBytes']);
+    throw new CommercialDocumentMapValidationError(
+      summarizeDiagnostics([{ path: '/', keyword: 'maxPayloadBytes', category: 'schema' }]),
+    );
   if (!validateMapSchema(payload))
-    throw new CommercialDocumentMapValidationError(schemaIssues(validateMapSchema.errors));
+    throw new CommercialDocumentMapValidationError(
+      sanitizeCommercialDocumentMapAjvErrors(validateMapSchema.errors),
+    );
   validateCommercialDocumentMapInvariants(payload as CommercialDocumentMapV1);
 }
 
@@ -323,7 +440,9 @@ export function validateCommercialExtractionUnitPlan(
   map: CommercialDocumentMapV1,
 ): asserts plan is CommercialExtractionUnitPlanV1 {
   if (!validatePlanSchema(plan))
-    throw new CommercialExtractionUnitPlanValidationError(schemaIssues(validatePlanSchema.errors));
+    throw new CommercialExtractionUnitPlanValidationError(
+      planSchemaIssues(validatePlanSchema.errors),
+    );
   const typed = plan as CommercialExtractionUnitPlanV1;
   const issues: string[] = [];
   const documentIds = new Set(map.documents.map((item) => item.documentId));

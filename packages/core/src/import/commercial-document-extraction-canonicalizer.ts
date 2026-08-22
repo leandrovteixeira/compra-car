@@ -3,7 +3,6 @@ import type {
   CommercialDocumentExtractionV1,
   CommercialDocumentScopeSelector,
 } from './commercial-document-extraction';
-import { validateCommercialDocumentExtraction } from './commercial-document-extraction-validator';
 
 type IdMap = ReadonlyMap<string, string>;
 const mapped = (map: IdMap, value: string | undefined): string | undefined =>
@@ -209,6 +208,5 @@ export function canonicalizeCommercialDocumentExtractionUnit(
       unresolvedScopeIds: mappedList(scopes, value.coverage.unresolvedScopeIds),
     },
   };
-  validateCommercialDocumentExtraction(artifact);
   return artifact;
 }

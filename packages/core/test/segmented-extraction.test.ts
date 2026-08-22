@@ -374,6 +374,61 @@ describe('Sprint 10C.3C segmented extraction', () => {
     expect(result.unitResults.slice(2).every((item) => item.status === 'failed')).toBe(true);
   });
 
+  it('classifies a provider timeout-shaped sibling abort as ABORTED_SIBLING', async () => {
+    const fake = providerFrom(async (request, call) => {
+      if (call === 1)
+        return { output: { schemaVersion: 'wrong' }, providerRunId: 'run-invalid', usage };
+      return new Promise((_resolve, reject) =>
+        request.signal.addEventListener(
+          'abort',
+          () =>
+            reject(Object.assign(new Error('provider maps abort'), { code: 'PROVIDER_TIMEOUT' })),
+          { once: true },
+        ),
+      );
+    });
+    const result = await executeSegmentedExtraction(
+      inputFor(geelyLikeCommercialDocumentMapFixture),
+      { provider: fake.provider, schema: commercialDocumentExtractionSchemaV1, concurrency: 2 },
+    );
+    expect(result.unitResults[0]).toMatchObject({ code: 'INVALID_STRUCTURED_OUTPUT' });
+    expect(result.unitResults[1]).toMatchObject({ code: 'ABORTED_SIBLING' });
+  });
+
+  it('emits opt-in structural unit diagnostics by phase without exposing output', async () => {
+    const secret = 'commercial-secret-output';
+    const observations: unknown[] = [];
+    const fake = providerFrom(async () => ({
+      output: { schemaVersion: secret },
+      providerRunId: 'run-diagnostic',
+      usage,
+    }));
+    const result = await executeSegmentedExtraction(
+      inputFor(geelyLikeCommercialDocumentMapFixture),
+      {
+        provider: fake.provider,
+        schema: commercialDocumentExtractionSchemaV1,
+        diagnostics: true,
+        validateTransport: (value) => {
+          const candidate = value as { schemaVersion?: string };
+          if (candidate.schemaVersion !== 'CommercialDocumentExtraction/1')
+            throw new Error('opaque transport error');
+        },
+        observeUnitValidation: (observation) => observations.push(observation),
+      },
+    );
+    expect(result.unitResults[0]).toMatchObject({ code: 'INVALID_STRUCTURED_OUTPUT' });
+    expect(observations[0]).toMatchObject({
+      unitId: expect.any(String),
+      unitOrdinal: 1,
+      phase: 'transport_validation',
+      totalViolations: 1,
+      categories: { validation: 1 },
+      truncated: false,
+    });
+    expect(JSON.stringify(observations)).not.toContain(secret);
+  });
+
   it('distinguishes provider/unit timeout from total orchestration timeout', async () => {
     const waitingProvider = providerFrom(
       async (request) =>

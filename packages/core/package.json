@@ -8,6 +8,7 @@
     ".": "./src/index.ts",
     "./commercial-letter-payload-validator": "./src/services/commercial-letter-payload-validator.ts",
     "./commercial-document-map-planner": "./src/import/commercial-document-map-planner.ts",
+    "./commercial-document-map-canonicalizer": "./src/import/commercial-document-map-canonicalizer.ts",
     "./commercial-document-map-schema": "./src/import/commercial-document-map-schema.ts",
     "./commercial-document-map-validator": "./src/import/commercial-document-map-validator.ts",
     "./commercial-document-extraction-canonicalizer": "./src/import/commercial-document-extraction-canonicalizer.ts",

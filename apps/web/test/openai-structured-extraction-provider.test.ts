@@ -313,7 +313,10 @@ describe('generic OpenAI structured extraction source session', () => {
       geelyLikeCommercialDocumentExtractionFixture,
       commercialDocumentExtractionSchemaV1,
     );
-    const reconstructed = reconstructCanonicalValueFromOpenAITransport(transport);
+    const reconstructed = reconstructCanonicalValueFromOpenAITransport(
+      transport,
+      commercialDocumentExtractionSchemaV1,
+    );
     expect(reconstructed).toEqual(geelyLikeCommercialDocumentExtractionFixture);
     expect(() => validateCommercialDocumentExtraction(reconstructed)).not.toThrow();
     expect(JSON.stringify(projectedSchema)).not.toMatch(

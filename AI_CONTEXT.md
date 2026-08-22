@@ -1,5 +1,48 @@
 # Contexto para agentes de IA
 
+## Correção local — autoridade server-owned dos IDs do Document Map (2026-08-22)
+
+Classificação: **READY FOR SEGMENTED RETRY AFTER DOCUMENT MAP ID CANONICALIZATION**. O último retry
+diagnóstico real retornou 358 violações, todas AJV `pattern`; não houve `required`, `type`, `enum`,
+`uniqueItems`, referential, semantic ou invariant. A causa confirmada foi autoridade indevida do
+modelo sobre IDs locais: a estrutura e as relações estavam coerentes, mas os valores não obedeciam aos
+prefixos/patterns canônicos.
+
+O boundary agora executa OpenAI transport output → reconstruction → ID canonicalization server-owned
+→ canonical validation → Unit Plan. Os namespaces finais são `document-`, `page-`, `block-`,
+`section-`, `table-`, `note-`, `hint-` e `edge-`, usando ordinais determinísticos; document identity é
+ligada ao ordinal da source entregue pelo runtime. Todos os definition IDs e refs são remapeados por
+kind. Raw ID duplicado no mesmo kind, definição ausente, referência desconhecida ou divergência da
+source falham com `DOCUMENT_MAP_CANONICALIZATION_FAILED` e diagnostics contendo somente kind,
+category e path. O mesmo raw ID em kinds diferentes é aceito porque os namespaces são separados.
+
+O canonicalizer é puro, não usa conteúdo comercial, UUID, timestamp, random ou locale sorting e é
+idempotente para a ordem contratual existente. O schema/pattern canônico e o prompt não foram
+alterados. Unit Extraction canonicalizer, Merge, Semantic Reconciliation, Period Resolution, Domain
+Mapping e Matching permanecem intactos. Nenhum retry, chamada OpenAI, escrita em Staging, acesso a
+Production, migration ou alteração de Legacy foi executado nesta correção.
+
+## Diagnóstico local — Document Map canonical validation (2026-08-22)
+
+Classificação: **READY FOR DOCUMENT MAP DIAGNOSTIC RETRY**. O transport schema continua aceito pela
+OpenAI e o blocker real continua sendo a validação canônica anterior ao Unit Plan. O validator agora
+expõe somente diagnóstico estrutural seguro: `code`, total real, amostra limitada a 30 com
+`path`/`keyword`/`category`, truncation e contagens completas. AJV `params`, actual/expected values,
+body, output bruto, evidence, URLs e IDs do provider não entram no erro, log ou banco.
+
+A investigação local provou dois fatos. Primeiro, o total “100” do Job 42/attempt 5 era produzido por
+`slice(0, 100)` antes da criação do erro; portanto significa “ao menos 100 na lista AJV daquele run”,
+não exatamente 100. Segundo, a reconstrução genérica removia qualquer `null` sem consultar o schema,
+inclusive `null` canônico required/nullable. Ela agora é schema-aware e remove apenas a sentinela de
+campo optional/non-nullable introduzida pelo wire. Round-trips Geely-like, GWM multipage, Fiat-like e
+VW partitioned, além de nested arrays/objects e union oneOf→anyOf, passam localmente.
+
+Com `OPENAI_IMPORT_DIAGNOSTICS=1` fora de produção, uma futura falha em Document Map emite
+`SEGMENTED_DOCUMENT_MAP_VALIDATION` antes do generic processing failure. O evento é efêmero e contém
+somente total, contagens, amostra estrutural e truncation; o artifact não é publicado quando a
+validação falha. Nenhum retry, chamada OpenAI, acesso ao Staging, migration ou alteração de Legacy foi
+executado nesta tarefa.
+
 ## Checkpoint — Sprint 10C.4D segmented smoke (2026-08-21)
 
 Classificação atual: **SEGMENTED SMOKE TECHNICAL FAIL** no stage
@@ -938,6 +981,20 @@ O escopo da Sprint 1 fica limitado a `products` e `product_specs`, usando `specs
 - **PENDENTE:** para `getVehiclesByIds`, a rodada Auth mantém elegibilidade restrita a `is_active = true` e `is_public = true`; decidir em `/admin/products` e no catálogo se a consulta por IDs também exigirá specs ativas.
 - **CONCLUÍDO:** migration de profiles aplicada e validada no projeto remoto auditado, incluindo pgTAP e rollback das fixtures de teste.
 - **PENDENTE:** auditar grants/RLS do catálogo legado e formalizar o runbook operacional de usuários administrativos.
+
+## Marco 2026-08-22 — primeiro Unit Extraction real da Sprint 10C.4D
+
+O Job 44/attempt 7 do batch 117 avançou por Document Map e Unit Plan succeeded e criou plano de 18
+units, mas terminou em `UNIT_EXTRACTION_INVALID_STRUCTURED_OUTPUT` sem Unit Extraction artifact ou
+row. A unit 2 observada como `PROVIDER_TIMEOUT/APIUserAbortError` era compatível com aborto sibling; a
+ordem do error mapping foi corrigida e coberta por regressão concorrente. O timeout de 120 s permanece.
+
+Unit Extraction agora aceita IDs locais model-owned no transport, canonicaliza todos os namespaces e
+referências no servidor e só então aplica o schema/invariantes canônicos inalterados. Diagnóstico local
+opt-in informa unit, ordinal, fase, paths, keywords, categorias, total e truncation sem conteúdo bruto.
+Persistência de sibling succeeded e contabilização de usage/providerRunId antes de uma falha continuam
+**PENDENTE** para retry granular. Gate local: **READY FOR UNIT EXTRACTION DIAGNOSTIC RETRY**; não houve
+retry, OpenAI, escrita no Staging, migration, acesso a Production ou alteração em `Legacy`.
 # Marco 2026-07-30 — Sprint 9E
 
 - Homologação de Pricing estabilizada no código: DTOs RSC são plain objects, numeric do PostgREST é

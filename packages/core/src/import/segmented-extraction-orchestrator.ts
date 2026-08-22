@@ -1,6 +1,10 @@
 import type { CommercialDocumentExtractionV1 } from './commercial-document-extraction';
 import { canonicalizeCommercialDocumentExtractionUnit } from './commercial-document-extraction-canonicalizer';
-import { validateCommercialDocumentExtractionTransport } from './commercial-document-extraction-validator';
+import {
+  CommercialDocumentExtractionValidationError,
+  validateCommercialDocumentExtraction,
+  type CommercialDocumentExtractionViolationDiagnostic,
+} from './commercial-document-extraction-validator';
 import type { CommercialDocumentMapV1, CommercialExtractionUnit } from './commercial-document-map';
 import {
   validateCommercialDocumentMap,
@@ -30,6 +34,24 @@ export interface SegmentedExtractionOrchestratorOptions {
   readonly totalTimeoutMs?: number;
   readonly now?: () => number;
   readonly decodeTransport?: (value: unknown) => unknown;
+  readonly validateTransport?: (value: unknown) => void;
+  readonly diagnostics?: boolean;
+  readonly observeUnitValidation?: (
+    observation: SegmentedExtractionUnitValidationObservation,
+  ) => void;
+}
+
+export type SegmentedExtractionUnitValidationPhase =
+  'transport_decode' | 'transport_validation' | 'canonicalization' | 'canonical_validation';
+
+export interface SegmentedExtractionUnitValidationObservation {
+  readonly unitId: string;
+  readonly unitOrdinal: number;
+  readonly phase: SegmentedExtractionUnitValidationPhase;
+  readonly totalViolations: number;
+  readonly categories: Readonly<Record<string, number>>;
+  readonly sampledViolations: readonly CommercialDocumentExtractionViolationDiagnostic[];
+  readonly truncated: boolean;
 }
 
 const assertIntegerRange = (
@@ -119,6 +141,40 @@ const providerCode = (error: unknown): string | undefined =>
     ? error.code
     : undefined;
 
+const structuralDiagnostic = (
+  unit: CommercialExtractionUnit,
+  phase: SegmentedExtractionUnitValidationPhase,
+  error: unknown,
+): SegmentedExtractionUnitValidationObservation => {
+  if (error instanceof CommercialDocumentExtractionValidationError)
+    return {
+      unitId: unit.unitId,
+      unitOrdinal: unit.ordinal,
+      phase,
+      totalViolations: error.totalViolations,
+      categories: error.keywordCounts,
+      sampledViolations: error.diagnostics,
+      truncated: error.truncated,
+    };
+  const keyword =
+    phase === 'transport_decode'
+      ? 'decode'
+      : phase === 'transport_validation'
+        ? 'validation'
+        : phase === 'canonical_validation'
+          ? 'validation'
+          : 'canonicalization';
+  return {
+    unitId: unit.unitId,
+    unitOrdinal: unit.ordinal,
+    phase,
+    totalViolations: 1,
+    categories: { [keyword]: 1 },
+    sampledViolations: [{ path: '/', keyword, category: 'schema' }],
+    truncated: false,
+  };
+};
+
 const awaitWithAbort = async <T>(operation: Promise<T>, signal: AbortSignal): Promise<T> => {
   if (signal.aborted) throw new Error('SEGMENTED_EXTRACTION_ABORTED');
   return new Promise<T>((resolve, reject) => {
@@ -194,6 +250,10 @@ export async function executeSegmentedExtraction(
         unitExpired = true;
         controller.abort();
       }, unitTimeoutMs);
+      const observe = (phase: SegmentedExtractionUnitValidationPhase, error: unknown): void => {
+        if (!options.diagnostics) return;
+        options.observeUnitValidation?.(structuralDiagnostic(unit, phase, error));
+      };
       try {
         const context = buildSegmentedExtractionUnitContext(input.documentMap, unit);
         const response = await awaitWithAbort(
@@ -216,18 +276,39 @@ export async function executeSegmentedExtraction(
         let decoded: unknown;
         try {
           decoded = (options.decodeTransport ?? ((value: unknown) => value))(response.output);
-          validateCommercialDocumentExtractionTransport(decoded);
-        } catch {
+        } catch (error) {
+          observe('transport_decode', error);
+          results[index] = failure(unit, 'INVALID_STRUCTURED_OUTPUT', now() - startedAt);
+          fatal = true;
+          totalController.abort();
+          return;
+        }
+        if (options.validateTransport) {
+          try {
+            options.validateTransport(decoded);
+          } catch (error) {
+            observe('transport_validation', error);
+            results[index] = failure(unit, 'INVALID_STRUCTURED_OUTPUT', now() - startedAt);
+            fatal = true;
+            totalController.abort();
+            return;
+          }
+        }
+        let artifact: CommercialDocumentExtractionV1;
+        try {
+          artifact = canonicalizeCommercialDocumentExtractionUnit(
+            decoded as CommercialDocumentExtractionV1,
+            unit.ordinal,
+          );
+        } catch (error) {
+          observe('canonicalization', error);
           results[index] = failure(unit, 'INVALID_STRUCTURED_OUTPUT', now() - startedAt);
           fatal = true;
           totalController.abort();
           return;
         }
         try {
-          const artifact = canonicalizeCommercialDocumentExtractionUnit(
-            decoded as CommercialDocumentExtractionV1,
-            unit.ordinal,
-          );
+          validateCommercialDocumentExtraction(artifact);
           results[index] = {
             status: 'succeeded',
             unitId: unit.unitId,
@@ -237,7 +318,8 @@ export async function executeSegmentedExtraction(
             usage: response.usage,
             durationMs: now() - startedAt,
           };
-        } catch {
+        } catch (error) {
+          observe('canonical_validation', error);
           results[index] = failure(unit, 'CANONICAL_VALIDATION_FAILED', now() - startedAt);
           fatal = true;
           totalController.abort();
@@ -245,12 +327,12 @@ export async function executeSegmentedExtraction(
       } catch (error) {
         const code = totalExpired
           ? 'ORCHESTRATION_TIMEOUT'
-          : unitExpired || providerCode(error) === 'PROVIDER_TIMEOUT'
-            ? 'PROVIDER_TIMEOUT'
-            : providerCode(error) === 'PROVIDER_INVALID_OUTPUT'
-              ? 'INVALID_STRUCTURED_OUTPUT'
-              : controller.signal.aborted && fatal
-                ? 'ABORTED_SIBLING'
+          : controller.signal.aborted && fatal && !unitExpired
+            ? 'ABORTED_SIBLING'
+            : unitExpired || providerCode(error) === 'PROVIDER_TIMEOUT'
+              ? 'PROVIDER_TIMEOUT'
+              : providerCode(error) === 'PROVIDER_INVALID_OUTPUT'
+                ? 'INVALID_STRUCTURED_OUTPUT'
                 : 'PROVIDER_FAILURE';
         results[index] = failure(unit, code, now() - startedAt);
         if (code !== 'ABORTED_SIBLING') {

@@ -59,8 +59,37 @@ describe('CommercialDocumentExtraction/1', () => {
           geelyLikeCommercialDocumentExtractionFixture.blocks[0],
         ],
       },
-      'duplicateId:block-heading',
+      'duplicateId',
     );
+  });
+
+  it('exposes bounded structural diagnostics without raw IDs or values', () => {
+    const secretId = geelyLikeCommercialDocumentExtractionFixture.blocks[0]!.blockId;
+    try {
+      validateCommercialDocumentExtraction({
+        ...geelyLikeCommercialDocumentExtractionFixture,
+        blocks: [
+          ...geelyLikeCommercialDocumentExtractionFixture.blocks,
+          geelyLikeCommercialDocumentExtractionFixture.blocks[0],
+        ],
+      });
+      throw new Error('Expected validation to fail.');
+    } catch (error) {
+      expect(error).toBeInstanceOf(CommercialDocumentExtractionValidationError);
+      const validation = error as CommercialDocumentExtractionValidationError;
+      expect(validation).toMatchObject({
+        totalViolations: 1,
+        truncated: false,
+        keywordCounts: { duplicateId: 1 },
+        categoryCounts: { schema: 0, referential: 0, semantic: 0, invariant: 1 },
+      });
+      expect(validation.diagnostics[0]).toMatchObject({
+        path: '/blocks',
+        keyword: 'duplicateId',
+        category: 'invariant',
+      });
+      expect(JSON.stringify(validation)).not.toContain(secretId);
+    }
   });
 
   it('rejects dangling evidence, fact scope and composition references', () => {

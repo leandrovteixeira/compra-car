@@ -1,5 +1,46 @@
 # Changelog
 
+## 2026-08-22 — Diagnóstico e boundary de IDs da primeira Unit Extraction real
+
+- reconcilia read-only o Job 44/attempt 7 do batch 117: Document Map e Unit Plan succeeded, plano de
+  18 units, zero Unit Extraction artifact/row e zero job ativo, sem recovery ou escrita remota;
+- corrige a classificação de abortos concorrentes para que uma chamada interrompida após fatal de
+  sibling seja `ABORTED_SIBLING`, mesmo quando o provider converte `AbortSignal` em
+  `PROVIDER_TIMEOUT`; unit timer, total deadline e timeout espontâneo continuam distintos;
+- mantém todos os patterns canônicos e transfere IDs locais model-owned para o canonicalizer antes da
+  validação canônica final; somente a projeção transport deixa de exigir IDs server-owned;
+- adiciona diagnóstico opt-in por unit e fase, limitado a `{ path, keyword, category }`, contagens e
+  truncation, sem output, valores comerciais, evidence, raw IDs, PDF ou provider body;
+- registra que artifacts bem-sucedidos e usage/providerRunId ainda são publicados/agregados somente
+  após o orchestrator inteiro retornar sem falha; retry granular dessa perda permanece futuro;
+- não altera o timeout de 120 s, não executa OpenAI/retry, não cria migration e não toca `Legacy`.
+
+## 2026-08-22 — Canonicalização server-owned de IDs do Document Map
+
+- registra que o retry diagnóstico revelou 358/358 violações AJV `pattern`, sem falhas estruturais,
+  referenciais, semânticas, de invariantes ou de unicidade;
+- adiciona canonicalizer puro que substitui IDs locais do modelo por IDs ordinais server-owned nos
+  namespaces document/page/block/section/table/note/hint/edge e remapeia todas as referências;
+- deriva document identity do ordinal da source fornecido pelo runtime, rejeita duplicidade same-kind,
+  definição ausente, referência desconhecida e source mismatch com erro seguro sem raw IDs;
+- integra exclusivamente entre reconstruction e validação canônica do Document Map; schemas,
+  patterns, prompt, Unit Extraction, Merge e stages posteriores permanecem inalterados;
+- cobre failure shape com IDs fora do pattern, integridade referencial, cross-kind, deep freeze,
+  determinismo, idempotência e fixtures Geely/GWM/Fiat/VW, sem retry ou chamada externa.
+
+## 2026-08-22 — Diagnóstico seguro da validação canônica do Document Map
+
+- adiciona erro estruturado `COMMERCIAL_DOCUMENT_MAP_INVALID` com total real, amostra limitada a 30,
+  paths, keywords e categorias, sem values, params AJV, body ou output bruto;
+- corrige a reconstrução transport→canonical para usar o schema e preservar `null` canônico em campo
+  required/nullable, removendo somente sentinelas `null` de opcionais não-nullable;
+- adiciona observabilidade local opt-in `SEGMENTED_DOCUMENT_MAP_VALIDATION`, sem persistência, com
+  contagens completas por keyword/categoria e amostra estrutural sanitizada;
+- prova round-trip local Geely/GWM/Fiat/VW, arrays/objetos aninhados, oneOf→anyOf, duplicidade wire,
+  IDs, referências, page range e additional properties, sem OpenAI, Staging ou migration;
+- esclarece que as “100 violações” do attempt 5 eram o teto de amostragem do validator anterior e não
+  evidência de exatamente 100 falhas.
+
 ## 2026-08-21 — Checkpoint da Sprint 10C.4D
 
 - registra os cinco attempts reais do batch 117, preservados como histórico sem recovery;

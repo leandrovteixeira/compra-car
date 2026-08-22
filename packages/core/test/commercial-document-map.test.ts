@@ -12,6 +12,7 @@ import {
 import {
   CommercialDocumentMapValidationError,
   CommercialExtractionUnitPlanValidationError,
+  sanitizeCommercialDocumentMapAjvErrors,
   validateCommercialDocumentMap,
   validateCommercialExtractionUnitPlan,
 } from '../src/import/commercial-document-map-validator';
@@ -73,7 +74,7 @@ describe('CommercialDocumentMap/1 and deterministic unit planning', () => {
   it('rejects inconsistent totals, duplicate IDs and non-contiguous document pages', () => {
     const map = geelyLikeCommercialDocumentMapFixture;
     expectInvalidMap({ ...map, pageCount: 5 }, '/pageCount: inconsistent');
-    expectInvalidMap({ ...map, pages: [...map.pages, map.pages[0]] }, 'duplicateId:page-001');
+    expectInvalidMap({ ...map, pages: [...map.pages, map.pages[0]] }, 'duplicateId');
     expectInvalidMap(
       { ...map, documents: [{ ...map.documents[0], pageCount: 7 }] },
       'nonContiguousPages',
@@ -101,6 +102,98 @@ describe('CommercialDocumentMap/1 and deterministic unit planning', () => {
       },
       'unknownRef',
     );
+  });
+
+  it('reports schema and invariant failures without exposing document values', () => {
+    const secret = 'commercial-secret-value';
+    const sanitized = sanitizeCommercialDocumentMapAjvErrors([
+      {
+        instancePath: '/documents/0',
+        schemaPath: '#/$defs/document/required',
+        keyword: 'required',
+        params: { missingProperty: secret },
+        message: `must have required property '${secret}'`,
+      },
+    ]);
+    expect(sanitized).toMatchObject({
+      totalViolations: 1,
+      sampledViolations: [{ path: '/documents/0', keyword: 'required', category: 'schema' }],
+      truncated: false,
+      keywordCounts: { required: 1 },
+    });
+    expect(JSON.stringify(sanitized)).not.toContain(secret);
+
+    const invalid = {
+      ...geelyLikeCommercialDocumentMapFixture,
+      pages: geelyLikeCommercialDocumentMapFixture.pages.map((page, index) =>
+        index === 0 ? { ...page, pageNumber: page.pageNumber + 100 } : page,
+      ),
+    };
+    try {
+      validateCommercialDocumentMap(invalid);
+      throw new Error('Expected invariant validation to fail.');
+    } catch (error) {
+      expect(error).toBeInstanceOf(CommercialDocumentMapValidationError);
+      expect(error).toMatchObject({
+        code: 'COMMERCIAL_DOCUMENT_MAP_INVALID',
+        diagnostics: expect.arrayContaining([
+          expect.objectContaining({
+            path: '/pages/0/pageNumber',
+            keyword: 'outOfRange',
+            category: 'semantic',
+          }),
+        ]),
+      });
+    }
+  });
+
+  it('keeps the true AJV violation count while bounding the safe sample', () => {
+    const invalid = {
+      ...geelyLikeCommercialDocumentMapFixture,
+      pages: Array.from({ length: 101 }, (_, index) => ({
+        ...geelyLikeCommercialDocumentMapFixture.pages[0],
+        pageId: `page-${String(index + 1).padStart(3, '0')}`,
+        role: 'not-a-role',
+      })),
+    };
+    try {
+      validateCommercialDocumentMap(invalid);
+      throw new Error('Expected schema validation to fail.');
+    } catch (error) {
+      expect(error).toBeInstanceOf(CommercialDocumentMapValidationError);
+      const validation = error as CommercialDocumentMapValidationError;
+      expect(validation.totalViolations).toBe(101);
+      expect(validation.diagnostics).toHaveLength(30);
+      expect(validation.truncated).toBe(true);
+      expect(validation.keywordCounts).toEqual({ enum: 101 });
+      expect(validation.message).toContain('101');
+    }
+  });
+
+  it('distinguishes malformed IDs, extra properties and dangling source references', () => {
+    const malformedId = structuredClone(geelyLikeCommercialDocumentMapFixture);
+    (malformedId.pages[0] as { pageId: string }).pageId = 'invalid id';
+    expectInvalidMap(malformedId, 'pattern');
+
+    expectInvalidMap(
+      { ...geelyLikeCommercialDocumentMapFixture, unexpectedCommercialField: 'redacted' },
+      'additionalProperties',
+    );
+
+    const dangling = structuredClone(geelyLikeCommercialDocumentMapFixture);
+    (dangling.sections[0] as unknown as { sourceBlockIds: string[] }).sourceBlockIds = [
+      'block-missing',
+    ];
+    try {
+      validateCommercialDocumentMap(dangling);
+      throw new Error('Expected referential validation to fail.');
+    } catch (error) {
+      expect(error).toBeInstanceOf(CommercialDocumentMapValidationError);
+      expect(error).toMatchObject({
+        diagnostics: [expect.objectContaining({ keyword: 'unknownRef', category: 'referential' })],
+      });
+      expect(JSON.stringify(error)).not.toContain('block-missing');
+    }
   });
 
   it('rejects invalid table continuation and inherited header references', () => {

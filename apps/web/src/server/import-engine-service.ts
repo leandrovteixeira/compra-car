@@ -103,6 +103,8 @@ async function runSegmentedExtraction(input: {
         actorId: input.actorId,
         processingJobLockVersion: input.jobLockVersion,
       }),
+    diagnostics:
+      process.env.NODE_ENV !== 'production' && process.env.OPENAI_IMPORT_DIAGNOSTICS === '1',
   });
   return {
     payloads: result.payloads,

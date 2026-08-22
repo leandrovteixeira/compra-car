@@ -12,6 +12,8 @@ const removedKeywords = new Set([
   'uniqueItems',
   'minProperties',
 ]);
+const canonicalLocalIdPattern =
+  /^\^(?:document|block|table|column|row|vehicle|fact|scope|group|relation|unit|gap)-/u;
 
 const permitsNull = (schema: JsonObject): boolean =>
   schema.type === 'null' ||
@@ -26,6 +28,8 @@ function adapt(schema: unknown): void {
     delete object.oneOf;
   }
   for (const keyword of removedKeywords) delete object[keyword];
+  if (typeof object.pattern === 'string' && canonicalLocalIdPattern.test(object.pattern))
+    delete object.pattern;
   if (!object.type && Array.isArray(object.enum)) {
     if (!object.enum.every((value) => typeof value === 'string'))
       throw new Error('OPENAI_SCHEMA_ENUM_TYPE_UNSUPPORTED');
@@ -107,12 +111,31 @@ export function projectCanonicalValueForOpenAITransport(
   return toTransport(value, asObject(canonicalSchema), asObject(canonicalSchema));
 }
 
-export function reconstructCanonicalValueFromOpenAITransport(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(reconstructCanonicalValueFromOpenAITransport);
-  if (!value || typeof value !== 'object') return value;
-  return Object.fromEntries(
-    Object.entries(asObject(value))
-      .filter(([, item]) => item !== null)
-      .map(([key, item]) => [key, reconstructCanonicalValueFromOpenAITransport(item)]),
-  );
+function fromTransport(value: unknown, schema: JsonObject, root: JsonObject): unknown {
+  const selected = selectBranch(schema, value, root);
+  if (selected !== schema) return fromTransport(value, selected, root);
+  if (selected.type === 'array' && Array.isArray(value))
+    return value.map((item) => fromTransport(item, asObject(selected.items), root));
+  if (selected.type === 'object' && selected.properties && value && typeof value === 'object') {
+    const properties = asObject(selected.properties);
+    const required = new Set(
+      Array.isArray(selected.required) ? (selected.required as string[]) : [],
+    );
+    return Object.fromEntries(
+      Object.entries(asObject(value)).flatMap(([key, item]) => {
+        const property = properties[key];
+        if (!property) return [[key, item]];
+        if (item === null && !required.has(key) && !permitsNull(asObject(property))) return [];
+        return [[key, fromTransport(item, asObject(property), root)]];
+      }),
+    );
+  }
+  return value;
+}
+
+export function reconstructCanonicalValueFromOpenAITransport(
+  value: unknown,
+  canonicalSchema: Readonly<JsonObject>,
+): unknown {
+  return fromTransport(value, asObject(canonicalSchema), asObject(canonicalSchema));
 }

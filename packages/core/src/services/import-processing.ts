@@ -583,6 +583,11 @@ export function sanitizeProcessingError(error: unknown): {
     ]);
     if (providerCodes.has(code))
       return { code, message: 'O provider de extração falhou. Consulte o correlation ID.' };
+    if (code === 'DOCUMENT_MAP_CANONICALIZATION_FAILED')
+      return {
+        code,
+        message: 'O pipeline segmentado falhou. Consulte o correlation ID.',
+      };
   }
   const segmentedCode =
     error instanceof Error

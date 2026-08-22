@@ -22,6 +22,14 @@ import {
 } from '../src/server/segmented-import-runtime';
 import { processAdminImportBatch } from '../src/server/import-engine-service';
 
+const modelOwnedDocumentMapIds = (): typeof geelyLikeCommercialDocumentMapFixture =>
+  JSON.parse(
+    JSON.stringify(geelyLikeCommercialDocumentMapFixture).replace(
+      /"(document|page|block|section|table|note|hint|edge)-/gu,
+      '"$1 raw ',
+    ),
+  ) as typeof geelyLikeCommercialDocumentMapFixture;
+
 const batch = {
   id: '10',
   title: 'Geely local fake',
@@ -196,7 +204,7 @@ describe('segmented import runtime', () => {
             };
             if (calls > 1) validateCommercialDocumentExtraction(unitArtifact);
             return {
-              output: calls === 1 ? geelyLikeCommercialDocumentMapFixture : unitArtifact,
+              output: calls === 1 ? modelOwnedDocumentMapIds() : unitArtifact,
               providerRunId: `fake-${calls}`,
               usage: { inputUnits: 1, outputUnits: 1, totalUnits: 2 },
             };
@@ -249,6 +257,11 @@ describe('segmented import runtime', () => {
     const mapManifest = artifacts.values.find(
       (item) => item.manifest.stage === 'document_map',
     )!.manifest;
+    const mapBody = artifacts.values.find((item) => item.manifest.stage === 'document_map')!
+      .body as typeof geelyLikeCommercialDocumentMapFixture;
+    expect(mapBody.documents[0]?.documentId).toBe('document-0001');
+    expect(mapBody.pages[0]?.pageId).toBe('page-0001');
+    expect(mapBody.contentBlocks[0]?.contentBlockId).toBe('block-0001');
     const planManifest = artifacts.values.find(
       (item) => item.manifest.stage === 'unit_plan',
     )!.manifest;
@@ -377,5 +390,112 @@ describe('segmented import runtime', () => {
     ).rejects.toThrow('PROVIDER_REQUEST_INVALID');
     expect(close).toHaveBeenCalledTimes(1);
     expect(publish).not.toHaveBeenCalled();
+  });
+
+  it('emits opt-in structural Document Map diagnostics without persisting or exposing output', async () => {
+    const secret = 'commercial-value-must-not-escape';
+    const observeDocumentMapValidation = vi.fn();
+    const publish = vi.fn();
+    const close = vi.fn(async () => undefined);
+    const invalidProvider: StructuredExtractionProvider = {
+      openSource: vi.fn(async () => ({
+        extractStructured: vi.fn(async () => ({
+          output: { ...geelyLikeCommercialDocumentMapFixture, [secret]: secret },
+          providerRunId: 'provider-run-safe',
+          usage: { inputUnits: 1, outputUnits: 1, totalUnits: 2 },
+        })),
+        close,
+      })),
+    };
+    await expect(
+      executeSegmentedImportRuntime({
+        batch: batch as any,
+        jobId: 'diagnostic-job',
+        attempt: 5,
+        correlationId: '00000000-0000-4000-8000-000000000005',
+        source: {
+          documents: [{ documentId: 'document-main', ordinal: 1, bytes: new Uint8Array([1]) }],
+        },
+        provider: invalidProvider,
+        artifacts: { load: vi.fn(async () => undefined), publish },
+        diagnostics: true,
+        observeDocumentMapValidation,
+      }),
+    ).rejects.toMatchObject({ code: 'COMMERCIAL_DOCUMENT_MAP_INVALID' });
+    expect(observeDocumentMapValidation).toHaveBeenCalledWith({
+      totalViolations: 1,
+      sampledViolations: [{ path: '/', keyword: 'additionalProperties', category: 'schema' }],
+      truncated: false,
+      categories: { additionalProperties: 1 },
+      broadCategories: { schema: 1, referential: 0, semantic: 0, invariant: 0 },
+    });
+    expect(JSON.stringify(observeDocumentMapValidation.mock.calls)).not.toContain(secret);
+    expect(publish).not.toHaveBeenCalled();
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+
+  it('routes safe Unit Extraction diagnostics without persisting unit output', async () => {
+    const secret = 'unit-commercial-value-must-not-escape';
+    const observeUnitExtractionValidation = vi.fn();
+    let calls = 0;
+    const provider: StructuredExtractionProvider = {
+      async openSource() {
+        return {
+          async extractStructured(request) {
+            calls += 1;
+            if (calls === 1)
+              return {
+                output: modelOwnedDocumentMapIds(),
+                providerRunId: 'map-run',
+                usage: { inputUnits: 1, outputUnits: 1, totalUnits: 2 },
+              };
+            if (calls === 2)
+              return {
+                output: { schemaVersion: secret },
+                providerRunId: 'unit-invalid-run',
+                usage: { inputUnits: 3, outputUnits: 4, totalUnits: 7 },
+              };
+            return new Promise((_resolve, reject) =>
+              request.signal.addEventListener(
+                'abort',
+                () =>
+                  reject(Object.assign(new Error('provider abort'), { code: 'PROVIDER_TIMEOUT' })),
+                { once: true },
+              ),
+            );
+          },
+          async close() {},
+        };
+      },
+    };
+    const artifacts = store();
+    await expect(
+      executeSegmentedImportRuntime({
+        batch,
+        jobId: 'unit-diagnostic-job',
+        attempt: 7,
+        correlationId: '00000000-0000-4000-8000-000000000007',
+        source: {
+          documents: [{ documentId: 'document-main', ordinal: 1, bytes: new Uint8Array([1]) }],
+        },
+        provider,
+        artifacts,
+        diagnostics: true,
+        observeUnitExtractionValidation,
+      }),
+    ).rejects.toThrow('UNIT_EXTRACTION_INVALID_STRUCTURED_OUTPUT');
+    expect(observeUnitExtractionValidation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        unitOrdinal: 1,
+        phase: 'transport_validation',
+        totalViolations: expect.any(Number),
+        truncated: expect.any(Boolean),
+      }),
+    );
+    expect(JSON.stringify(observeUnitExtractionValidation.mock.calls)).not.toContain(secret);
+    expect(artifacts.values.map((item) => item.manifest.stage)).toEqual([
+      'document_map',
+      'unit_plan',
+    ]);
   });
 });
