@@ -12,8 +12,7 @@ const removedKeywords = new Set([
   'uniqueItems',
   'minProperties',
 ]);
-const canonicalLocalIdPattern =
-  /^\^(?:document|block|table|column|row|vehicle|fact|scope|group|relation|unit|gap)-/u;
+const canonicalLocalIdPattern = /^\^[a-z][a-z0-9-]*-\[a-z0-9\]\[a-z0-9\._-\]\{0,\d+\}\$$/u;
 
 const permitsNull = (schema: JsonObject): boolean =>
   schema.type === 'null' ||

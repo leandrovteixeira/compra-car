@@ -93,6 +93,16 @@ export function buildSegmentedExtractionUnitContext(
     sourceDocument,
     primaryPages: byIds(map.pages, unit.primaryPageIds, (item) => item.pageId),
     contextOnlyPages: byIds(map.pages, unit.contextPageIds, (item) => item.pageId),
+    primaryContentBlocks: byIds(
+      map.contentBlocks,
+      unit.primaryContentBlockIds,
+      (item) => item.contentBlockId,
+    ),
+    contextOnlyContentBlocks: byIds(
+      map.contentBlocks,
+      unit.contextContentBlockIds,
+      (item) => item.contentBlockId,
+    ),
     tables,
     notes,
     contextEdges,
@@ -114,14 +124,43 @@ Extract only facts, vehicle identities, scopes, evidence, ambiguity, exclusions,
 Unit: id=${unit.unitId}; ordinal=${unit.ordinal}; kind=${unit.unitType}; document=${unit.documentId}.
 Primary pages: ${compact(unit.primaryPageIds)}. They are the only primary source of new facts.
 Context-only pages: ${compact(unit.contextPageIds)}. Use them only to interpret primary content; do not duplicate facts originating exclusively in another unit.
-Primary blocks: ${compact(unit.primaryContentBlockIds)}. Context-only blocks: ${compact(unit.contextContentBlockIds)}.
+Primary source blocks from the canonical Document Map: ${compact(context.primaryContentBlocks.map((block) => `${block.contentBlockId}[${block.blockKind}@${block.pageId}]`))}.
+Context-only source blocks from the canonical Document Map: ${compact(context.contextOnlyContentBlocks.map((block) => `${block.contentBlockId}[${block.blockKind}@${block.pageId}]`))}.
+Source provenance contract: evidence.blockIds always references blocks defined in this same extraction artifact. When content from a listed Document Map source block is used, materialize a genuine extraction blocks entry from the source PDF and reuse that exact canonical source block ID as its temporary blockId. Reference that same temporary blockId from evidence and other block references; the server canonicalizer remaps the definition and every reference together. Never cite a source block ID without materializing its real extraction block, and never invent a placeholder block. Context-only source blocks may support interpretation and evidence, but must not originate new facts exclusively from context.
+Source block excerpt contract: blocks[].excerpt is a short verbatim evidence snippet, never a full paragraph, table, or document dump. Keep it within 1000 Unicode characters and select the shortest literal source fragment sufficient to support the block. Never summarize, rewrite, append an ellipsis, emit a placeholder, or invent excerpt text.
 Tables: ${compact(unit.tableIds)}; logicalTableId=${unit.logicalTableId ?? 'none'}; partition=${unit.partition ? `${unit.partition.index}/${unit.partition.count}` : 'none'}.
 Sections: ${compact(unit.sectionIds)}. Notes/footnotes: ${compact(unit.noteIds)}. Entity hints: ${compact(unit.entityHintIds)}.
 Inherited header blocks: ${compact(context.inheritedHeaderBlockIds)}. Preserve inherited headers and applicable notes/footnotes in interpretation and evidence.
+Table cell contract: A row cell is keyed by columnId, not by its array position, and rows do not need a cell for every column. Emit a cell only when that column has actual visible non-empty text. For a visually blank cell, omit that cell while keeping every other cell's own columnId. Never replace a blank with whitespace, "-", "N/A", "unknown" or another fabricated placeholder; literal visible text or symbols may be emitted only when the source displays them. The contract has no rowSpan, colSpan or implicit "same as above" state: never copy a merged, repeated or inherited value from a previous row unless the source explicitly displays it in the current cell. If missing cell content makes a row materially unresolved, report a genuine coverage gap/unresolved row instead of inventing content.
 Keep productionYear distinct from modelYear. Do not classify a promotional price as public/MSRP without explicit evidence. Preserve uncertainty; never guess.
-Coverage must explicitly represent complete, partial, or ambiguous unit extraction. Local IDs are temporary and must have their contract prefixes.
+Composition contract: Create a composition group only when it has at least two actual member facts and at least one actual scope. Create a composition relationship only when it references at least one actual fact and has actual evidence; APPLIES_TOGETHER and MUTUALLY_EXCLUSIVE relationships need at least two actual fact/group subjects in total. Never emit placeholder composition objects. If no composition applies to this unit, return empty groups and relationships arrays at the collection level.
+Relationship fact requirement: Never emit a composition relationship with an empty factIds array. A relationship must reference at least one concrete extracted fact; groupIds never substitute for the required fact. If you identified only a group but no concrete fact relationship, do not emit a relationship. If no valid relationships exist, return relationships: []. Never emit placeholder relationship objects to satisfy required fields. Cardinality examples only (all other required fields still apply): VALID relationships: []; VALID factIds: ["fact-temp-1"]; INVALID factIds: [].
+Coverage status contract: Use complete only when every coverage unit is complete, gaps, incompleteBlockIds, unresolvedTableRows and unresolvedScopeIds are all empty, expectedVehicleCount is absent or equals the extracted vehicles, and expectedFamilies equals extractedFamilies as a set. If any of those conditions is false, never use optimistic complete. Use partial for known missing or incomplete required extraction and include the corresponding incomplete unit, gap or unresolved reference. Use ambiguous when unresolved interpretation or competing readings prevent a confident result, represented by an AMBIGUITY gap, an ambiguous unit or an unresolved scope. Never hide gaps, unresolved items or ambiguity merely to make a status pass validation.
+coverage.units must describe only the current unit. The required expectedUnitCount, completedUnitCount, and extractedVehicleCount wire fields are transport-only counters: emit 0 as a safe sentinel because the server deterministically reconstructs them from coverage.units and vehicleIdentities before canonical validation. Never use those counters to declare semantic completeness or hide partial, ambiguous, gap, or unresolved evidence. Local IDs are temporary and must have their contract prefixes.
 Never return Product IDs, matching, final Policies/Offers, promotion, persistence IDs, private URLs, file IDs, or credentials.
 `.trim();
+}
+
+const PRIMARY_FAILURE_PRIORITY: Readonly<Record<SegmentedExtractionUnitFailure['code'], number>> = {
+  INVALID_STRUCTURED_OUTPUT: 0,
+  CANONICAL_VALIDATION_FAILED: 1,
+  PROVIDER_FAILURE: 2,
+  PROVIDER_TIMEOUT: 3,
+  ORCHESTRATION_TIMEOUT: 4,
+  ABORTED_SIBLING: 5,
+};
+
+export function selectPrimarySegmentedExtractionFailure(
+  results: readonly SegmentedExtractionUnitResult[],
+): SegmentedExtractionUnitFailure | undefined {
+  return results
+    .filter((result): result is SegmentedExtractionUnitFailure => result.status === 'failed')
+    .sort(
+      (left, right) =>
+        PRIMARY_FAILURE_PRIORITY[left.code] - PRIMARY_FAILURE_PRIORITY[right.code] ||
+        left.ordinal - right.ordinal ||
+        left.unitId.localeCompare(right.unitId),
+    )[0];
 }
 
 const failure = (
@@ -273,6 +312,17 @@ export async function executeSegmentedExtraction(
           }),
           controller.signal,
         );
+        if (options.validateTransport) {
+          try {
+            options.validateTransport(response.output);
+          } catch (error) {
+            observe('transport_validation', error);
+            results[index] = failure(unit, 'INVALID_STRUCTURED_OUTPUT', now() - startedAt);
+            fatal = true;
+            totalController.abort();
+            return;
+          }
+        }
         let decoded: unknown;
         try {
           decoded = (options.decodeTransport ?? ((value: unknown) => value))(response.output);
@@ -282,17 +332,6 @@ export async function executeSegmentedExtraction(
           fatal = true;
           totalController.abort();
           return;
-        }
-        if (options.validateTransport) {
-          try {
-            options.validateTransport(decoded);
-          } catch (error) {
-            observe('transport_validation', error);
-            results[index] = failure(unit, 'INVALID_STRUCTURED_OUTPUT', now() - startedAt);
-            fatal = true;
-            totalController.abort();
-            return;
-          }
         }
         let artifact: CommercialDocumentExtractionV1;
         try {

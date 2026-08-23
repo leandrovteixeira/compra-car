@@ -12,10 +12,16 @@ import type {
   StructuredExtractionUsage,
 } from '@compra-car/core';
 import { createCommercialExtractionUnitPlan } from '@compra-car/core/commercial-document-map-planner';
-import { canonicalizeCommercialDocumentMapIds } from '@compra-car/core/commercial-document-map-canonicalizer';
+import {
+  canonicalizeCommercialDocumentMapIds,
+  CommercialDocumentMapCanonicalizationError,
+  type CommercialDocumentMapCanonicalizationDiagnostic,
+  type CommercialDocumentMapCanonicalizationFailureCategory,
+} from '@compra-car/core/commercial-document-map-canonicalizer';
 import { commercialDocumentMapSchemaV1 } from '@compra-car/core/commercial-document-map-schema';
 import {
   CommercialDocumentMapValidationError,
+  sanitizeCommercialDocumentMapAjvErrors,
   validateCommercialDocumentMap,
   type CommercialDocumentMapViolationCategory,
   type CommercialDocumentMapViolationDiagnostic,
@@ -40,6 +46,7 @@ import {
 import { resolveCommercialDocumentPeriod } from '@compra-car/core/commercial-document-period-resolution';
 import {
   executeSegmentedExtraction,
+  selectPrimarySegmentedExtractionFailure,
   type SegmentedExtractionUnitValidationObservation,
 } from '@compra-car/core/segmented-extraction-orchestrator';
 import {
@@ -50,11 +57,10 @@ import {
 } from '@compra-car/adapter-supabase';
 import {
   createOpenAIStructuredOutputProjection,
-  projectCanonicalValueForOpenAITransport,
   reconstructCanonicalValueFromOpenAITransport,
 } from './openai-structured-output-schema';
 
-export const DOCUMENT_MAP_PROMPT_VERSION = '1' as const;
+export const DOCUMENT_MAP_PROMPT_VERSION = '4' as const;
 export const openAITransportDocumentMapSchema = createOpenAIStructuredOutputProjection(
   commercialDocumentMapSchemaV1,
 );
@@ -66,15 +72,21 @@ const extractionTransportAjv = new Ajv2020({
   strict: true,
   validateFormats: false,
 });
-const validateExtractionTransportSchema = extractionTransportAjv.compile(
+const documentMapTransportAjv = new Ajv2020({ allErrors: true, strict: true });
+export const validateDocumentMapTransportSchema = documentMapTransportAjv.compile(
+  openAITransportDocumentMapSchema,
+);
+const validateDocumentMapTransport = (value: unknown): void => {
+  if (!validateDocumentMapTransportSchema(value))
+    throw new CommercialDocumentMapValidationError(
+      sanitizeCommercialDocumentMapAjvErrors(validateDocumentMapTransportSchema.errors),
+    );
+};
+export const validateExtractionTransportSchema = extractionTransportAjv.compile(
   openAITransportDocumentExtractionSchema,
 );
 const validateExtractionTransport = (value: unknown): void => {
-  const transport = projectCanonicalValueForOpenAITransport(
-    value,
-    commercialDocumentExtractionSchemaV1,
-  );
-  if (!validateExtractionTransportSchema(transport))
+  if (!validateExtractionTransportSchema(value))
     throw new CommercialDocumentExtractionValidationError(
       sanitizeCommercialDocumentExtractionAjvErrors(validateExtractionTransportSchema.errors),
     );
@@ -131,6 +143,15 @@ export interface SegmentedDocumentMapValidationObservation {
   readonly broadCategories: Readonly<Record<CommercialDocumentMapViolationCategory, number>>;
 }
 
+export interface SegmentedDocumentMapCanonicalizationObservation {
+  readonly totalViolations: number;
+  readonly categories: Readonly<
+    Partial<Record<CommercialDocumentMapCanonicalizationFailureCategory, number>>
+  >;
+  readonly sampledViolations: readonly CommercialDocumentMapCanonicalizationDiagnostic[];
+  readonly truncated: boolean;
+}
+
 export type { SegmentedExtractionUnitValidationObservation };
 
 export function createPersistedSegmentedRuntimeArtifactStore(
@@ -171,6 +192,9 @@ export function createPersistedSegmentedRuntimeArtifactStore(
 const mapInstructions = `Create only a brand-agnostic CommercialDocumentMap/1 inventory of the supplied PDF.
 Describe documents, pages, content blocks, sections, tables, notes, entity hints and explicit context edges.
 Use stable local IDs with the schema prefixes. Preserve ambiguity and evidence locations.
+Always emit every required collection from the schema. Use [] when a required collection has no supported entries; never omit a required collection or invent an entry merely to avoid an empty collection. For every document, always emit titleHints, issuerHints, competenceHints and validityHints. Return [] for a hint collection when no supported candidate exists.
+Every local reference must resolve to a real object emitted in the same map. Never reference a block, page, section, table, note, entity hint or context edge that you did not emit. A document metadata hint requires at least one real sourceBlockIds entry resolving to an emitted content block; if no source block is identifiable, omit the hint instead of inventing an ID. Never create placeholder definitions solely to satisfy references.
+Create a table only when at least one real header block is identifiable. Every table.headerBlockIds must contain at least one real TABLE_REGION or HEADING content block from that table. If no header is identifiable, represent the region with the appropriate content blocks and sections instead of creating an invalid table. A continued table remains one logical table: keep its original headerBlockIds and use inheritedHeaderBlockIds on CONTINUE segments.
 Do not perform product matching or domain mapping. Do not return Product IDs, Policies, Offers, promotion data, URLs, file IDs, credentials or chain-of-thought.`;
 
 const zeroUsage = (): StructuredExtractionUsage => ({
@@ -204,6 +228,9 @@ export async function executeSegmentedImportRuntime(input: {
   readonly observeDocumentMapValidation?: (
     observation: SegmentedDocumentMapValidationObservation,
   ) => void;
+  readonly observeDocumentMapCanonicalization?: (
+    observation: SegmentedDocumentMapCanonicalizationObservation,
+  ) => void;
   readonly observeUnitExtractionValidation?: (
     observation: SegmentedExtractionUnitValidationObservation,
   ) => void;
@@ -216,9 +243,9 @@ export async function executeSegmentedImportRuntime(input: {
   let reusedArtifactCount = 0;
   let session: StructuredExtractionSourceSession | undefined;
   let cleanup: 'succeeded' | 'failed' = 'succeeded';
-  const validateDocumentMap = (body: unknown): void => {
+  const observeDocumentMapValidation = (validation: () => void): void => {
     try {
-      validateCommercialDocumentMap(body);
+      validation();
     } catch (error) {
       if (input.diagnostics && error instanceof CommercialDocumentMapValidationError) {
         const observation = {
@@ -230,6 +257,39 @@ export async function executeSegmentedImportRuntime(input: {
         } satisfies SegmentedDocumentMapValidationObservation;
         if (input.observeDocumentMapValidation) input.observeDocumentMapValidation(observation);
         else console.warn('SEGMENTED_DOCUMENT_MAP_VALIDATION', observation);
+      }
+      throw error;
+    }
+  };
+  const validateDocumentMap = (body: unknown): void =>
+    observeDocumentMapValidation(() => validateCommercialDocumentMap(body));
+  const validateDocumentMapWire = (body: unknown): void =>
+    observeDocumentMapValidation(() => validateDocumentMapTransport(body));
+  const canonicalizeDocumentMap = (body: CommercialDocumentMapV1): CommercialDocumentMapV1 => {
+    try {
+      return canonicalizeCommercialDocumentMapIds(body, {
+        sourceDocumentOrdinals: input.source.documents.map((document) => document.ordinal),
+      });
+    } catch (error) {
+      if (input.diagnostics && error instanceof CommercialDocumentMapCanonicalizationError) {
+        const sampleLimit = 30;
+        const categories = Object.fromEntries(
+          [...new Set(error.diagnostics.map((diagnostic) => diagnostic.category))].map(
+            (category) => [
+              category,
+              error.diagnostics.filter((diagnostic) => diagnostic.category === category).length,
+            ],
+          ),
+        ) as Partial<Record<CommercialDocumentMapCanonicalizationFailureCategory, number>>;
+        const observation = {
+          totalViolations: error.diagnostics.length,
+          categories,
+          sampledViolations: error.diagnostics.slice(0, sampleLimit),
+          truncated: error.diagnostics.length > sampleLimit,
+        } satisfies SegmentedDocumentMapCanonicalizationObservation;
+        if (input.observeDocumentMapCanonicalization)
+          input.observeDocumentMapCanonicalization(observation);
+        else console.warn('SEGMENTED_DOCUMENT_MAP_CANONICALIZATION', observation);
       }
       throw error;
     }
@@ -305,14 +365,13 @@ export async function executeSegmentedImportRuntime(input: {
         });
         usage = addUsage(usage, response.usage);
         providerRunIds.push(response.providerRunId);
+        validateDocumentMapWire(response.output);
         const reconstructed = reconstructCanonicalValueFromOpenAITransport(
           response.output,
           commercialDocumentMapSchemaV1,
         ) as CommercialDocumentMapV1;
         return {
-          body: canonicalizeCommercialDocumentMapIds(reconstructed, {
-            sourceDocumentOrdinals: input.source.documents.map((document) => document.ordinal),
-          }),
+          body: canonicalizeDocumentMap(reconstructed),
           provider: {
             providerKey: 'structured',
             providerVersion: '1',
@@ -377,7 +436,7 @@ export async function executeSegmentedImportRuntime(input: {
           },
         },
       );
-      const failed = extraction.unitResults.find((item) => item.status === 'failed');
+      const failed = selectPrimarySegmentedExtractionFailure(extraction.unitResults);
       if (failed) throw new Error(`UNIT_EXTRACTION_${failed.code}`);
       for (const result of extraction.unitResults) {
         if (result.status !== 'succeeded') continue;

@@ -46,10 +46,12 @@ primary/context-only pages e blocks, sections, tables, `logicalTableId`, partiti
 entity hints, context edges e inherited headers. O arquivo completo pode ser referenciado, mas as
 instructions limitam fatos novos às primary pages e tornam context-only somente interpretativo.
 
-O prompt v1 de unit é brand-agnostic e exige extração documental, evidence, scope, exclusões,
+O prompt de unit é brand-agnostic e exige extração documental, evidence, scope, exclusões,
 eligibility/channel, relações cumulativas/alternativas, PY/MY separados, cautela com MSRP,
 ambiguidade e coverage explícitos. Proíbe chain-of-thought, Product, matching, domínio final,
-persistência e promoção.
+persistência e promoção. Na v8, também define `blocks[].excerpt` como snippet literal curto de até
+1.000 Unicode code points e proíbe reproduzir parágrafo/tabela/documento longo, resumir, reescrever,
+adicionar reticências, placeholders ou texto inventado.
 
 ## Transport e contrato canônico
 
@@ -67,6 +69,12 @@ O round-trip é testado, inclusive para unions discriminadas. Depois da reconstr
 as invariantes canônicas voltam a ser autoridade; a projeção não relaxa o contrato do core.
 
 ## Canonicalização server-owned
+
+Além de remapear IDs locais e suas referências, a fronteira canônica limita somente um
+`blocks[].excerpt` excedente ao prefixo literal de 1.000 Unicode code points. Essa defesa é necessária
+porque a projection Structured Outputs remove `maxLength`; ela não altera facts, evidence refs,
+tables/cells nem qualquer outro campo textual. Excerpt vazio permanece inválido e nenhum conteúdo é
+sintetizado.
 
 IDs locais do output não têm autoridade fora da unit. O servidor enumera cada kind na ordem do
 artifact e reescreve deterministicamente todos os IDs e referências como

@@ -122,6 +122,7 @@ describe('CommercialDocumentMap ID canonicalization', () => {
     const canonical = canonicalizeCommercialDocumentMapIds(raw);
     expect(canonical.pages[0]?.pageId).toBe('page-0001');
     expect(canonical.contentBlocks[0]?.contentBlockId).toBe('block-0001');
+    expect(canonical.documents[0]?.titleHints[0]?.sourceBlockIds).toEqual(['block-0001']);
     expect(() => validateCommercialDocumentMap(canonical)).not.toThrow();
   });
 
@@ -145,6 +146,164 @@ describe('CommercialDocumentMap ID canonicalization', () => {
             kind: 'section',
             category: 'unknown_reference',
             path: '/pages/0/sectionIds/0',
+          },
+        ],
+      }),
+    );
+  });
+
+  it.each(['titleHints', 'issuerHints', 'competenceHints', 'validityHints'] as const)(
+    'rejects a dangling block ref from document.%s with an exact safe path',
+    (hintKind) => {
+      const input = structuredClone(transportLikeMap());
+      (input.documents[0] as unknown as Record<typeof hintKind, unknown>)[hintKind] = [
+        { value: 'not returned by diagnostics', sourceBlockIds: ['block missing'] },
+      ];
+
+      expect(() => canonicalizeCommercialDocumentMapIds(input)).toThrowError(
+        expect.objectContaining({
+          code: 'DOCUMENT_MAP_CANONICALIZATION_FAILED',
+          diagnostics: [
+            {
+              kind: 'block',
+              category: 'unknown_reference',
+              path: `/documents/0/${hintKind}/0/sourceBlockIds/0`,
+            },
+          ],
+        }),
+      );
+    },
+  );
+
+  it('allows metadata hints to be absent as empty collections', () => {
+    const input = structuredClone(transportLikeMap());
+    const document = input.documents[0] as unknown as {
+      titleHints: unknown[];
+      issuerHints: unknown[];
+      competenceHints: unknown[];
+      validityHints: unknown[];
+    };
+    document.titleHints = [];
+    document.issuerHints = [];
+    document.competenceHints = [];
+    document.validityHints = [];
+
+    const canonical = canonicalizeCommercialDocumentMapIds(input);
+
+    expect(canonical.documents[0]).toMatchObject({
+      titleHints: [],
+      issuerHints: [],
+      competenceHints: [],
+      validityHints: [],
+    });
+    expect(() => validateCommercialDocumentMap(canonical)).not.toThrow();
+  });
+
+  it('resolves a metadata block definition indexed after the document hint', () => {
+    const input = structuredClone(transportLikeMap());
+    const document = input.documents[0]!;
+    const page = input.pages[0]!;
+    const rawBlockId = 'late block definition';
+    (document.titleHints[0] as unknown as { sourceBlockIds: string[] }).sourceBlockIds = [
+      rawBlockId,
+    ];
+    (page as unknown as { contentBlockIds: string[] }).contentBlockIds.push(rawBlockId);
+    (input.contentBlocks as unknown as Array<(typeof input.contentBlocks)[number]>).push({
+      contentBlockId: rawBlockId,
+      documentId: document.documentId,
+      pageId: page.pageId,
+      blockKind: 'HEADING',
+    });
+
+    const canonical = canonicalizeCommercialDocumentMapIds(input);
+
+    expect(canonical.documents[0]?.titleHints[0]?.sourceBlockIds).toEqual([
+      canonical.contentBlocks.at(-1)?.contentBlockId,
+    ]);
+    expect(() => validateCommercialDocumentMap(canonical)).not.toThrow();
+  });
+
+  it('closes a section-to-page back-reference omitted from the page projection', () => {
+    const input = structuredClone(geelyLikeCommercialDocumentMapFixture);
+    const section = input.sections[0]!;
+    const pageId = section.pageIds[0]!;
+    const page = input.pages.find((item) => item.pageId === pageId)!;
+    (page as unknown as { sectionIds: string[] }).sectionIds = page.sectionIds.filter(
+      (sectionId) => sectionId !== section.sectionId,
+    );
+
+    expect(() => validateCommercialDocumentMap(input)).toThrowError(
+      expect.objectContaining({
+        diagnostics: expect.arrayContaining([
+          expect.objectContaining({
+            path: '/sections/0/pageIds',
+            keyword: 'missingPageBackReference',
+            category: 'referential',
+          }),
+        ]),
+      }),
+    );
+
+    const canonical = canonicalizeCommercialDocumentMapIds(input);
+
+    expect(canonical.pages.find((item) => item.pageId === 'page-0001')?.sectionIds).toContain(
+      'section-0001',
+    );
+    expect(() => validateCommercialDocumentMap(canonical)).not.toThrow();
+  });
+
+  it('unifies a page-to-section membership omitted from the section projection', () => {
+    const input = structuredClone(geelyLikeCommercialDocumentMapFixture);
+    const section = input.sections[0]!;
+    const pageId = section.pageIds[0]!;
+    (section as unknown as { pageIds: string[] }).pageIds = section.pageIds.filter(
+      (id) => id !== pageId,
+    );
+
+    const canonical = canonicalizeCommercialDocumentMapIds(input);
+
+    expect(canonical.sections[0]?.pageIds).toContain('page-0001');
+    expect(() => validateCommercialDocumentMap(canonical)).not.toThrow();
+  });
+
+  it('deduplicates page-section membership without mutating frozen input and is idempotent', () => {
+    const input = structuredClone(geelyLikeCommercialDocumentMapFixture);
+    const section = input.sections[0]!;
+    const pageId = section.pageIds[0]!;
+    const page = input.pages.find((item) => item.pageId === pageId)!;
+    (section as unknown as { pageIds: string[] }).pageIds = [pageId, pageId];
+    (page as unknown as { sectionIds: string[] }).sectionIds = [
+      section.sectionId,
+      section.sectionId,
+    ];
+    const frozen = deepFreeze(input);
+    const before = JSON.stringify(frozen);
+
+    const first = canonicalizeCommercialDocumentMapIds(frozen);
+    const repeated = canonicalizeCommercialDocumentMapIds(frozen);
+    const idempotent = canonicalizeCommercialDocumentMapIds(first);
+
+    expect(first.sections[0]?.pageIds).toEqual(['page-0001', 'page-0002', 'page-0003']);
+    expect(new Set(first.sections[0]!.pageIds).size).toBe(first.sections[0]!.pageIds.length);
+    expect(first.pages[0]?.sectionIds).toEqual(['section-0001']);
+    expect(JSON.stringify(frozen)).toBe(before);
+    expect(JSON.stringify(repeated)).toBe(JSON.stringify(first));
+    expect(idempotent).toEqual(first);
+    expect(() => validateCommercialDocumentMap(first)).not.toThrow();
+  });
+
+  it('keeps dangling page references invalid instead of closing a fabricated membership', () => {
+    const input = structuredClone(transportLikeMap());
+    (input.sections[0] as unknown as { pageIds: string[] }).pageIds = ['page missing'];
+
+    expect(() => canonicalizeCommercialDocumentMapIds(input)).toThrowError(
+      expect.objectContaining({
+        code: 'DOCUMENT_MAP_CANONICALIZATION_FAILED',
+        diagnostics: [
+          {
+            kind: 'page',
+            category: 'unknown_reference',
+            path: '/sections/0/pageIds/0',
           },
         ],
       }),

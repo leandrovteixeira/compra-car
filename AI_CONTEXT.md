@@ -1,5 +1,255 @@
 # Contexto para agentes de IA
 
+## Correção local — source block excerpt da Unit Extraction (2026-08-23)
+
+Classificação: **READY FOR UNIT EXTRACTION RETRY AFTER EXCERPT BOUNDING FIX**. O retry real mais
+recente alcançou `unit-0003-table`, cuja única violação foi `/blocks/2/excerpt: maxLength` na
+canonical validation; `unit-0005-section` foi sibling abort. Document Map e Unit Plan passaram.
+
+O contrato canônico mantém `excerpt` required/non-nullable, `minLength: 1` e `maxLength: 1000`. A
+projection de Structured Outputs remove limites de string, então um valor longo é aceito no wire e
+reconstruído sem redução. Como `blocks[].excerpt` é snippet auxiliar de evidence e o artifact retém
+document/page/region e referências separadas, o canonicalizer agora limita somente esse campo ao
+prefixo literal de 1.000 Unicode code points antes da validação. Vazio continua inválido;
+`evidence.excerpt`, facts, tables, cells e demais valores comerciais não são alterados. O prompt v8
+também exige snippet literal curto e proíbe resumo, reticências, placeholder ou dump.
+
+Nenhuma chamada OpenAI, retry, consulta/escrita em Staging, migration ou alteração de `Legacy` foi
+executada.
+
+## Correção local — coverage status da Unit Extraction (2026-08-23)
+
+Classificação: **READY FOR UNIT EXTRACTION RETRY AFTER COVERAGE STATUS FIX**. O retry real mais
+recente alcançou `unit-0005-table`, que falhou somente em
+`/coverage/status: incompleteDataMarkedComplete`; `unit-0006-table` foi sibling abort. Document Map e
+Unit Plan passaram. Sem raw output, permanece pendente qual predicado específico tornou COMPLETE
+inválido.
+
+A invariant bloqueia complete diante de unit não completa, gap, block incompleto, row/scope não
+resolvido, mismatch opcional de vehicles ou mismatch de famílias. Counters são server-owned; status
+das units, gaps, unresolved, expectativas e a distinção semântica partial/ambiguous continuam
+provider-owned. Como alguns sinais validam ambos os estados, não há downgrade determinístico geral.
+O canonicalizer não mudou e nunca promove status. O prompt v7 agora formaliza os três estados e
+proíbe COMPLETE otimista ou ocultação de evidence.
+
+Nenhuma chamada OpenAI, retry, consulta/escrita em Staging, migration ou alteração de `Legacy` foi
+executada.
+
+## Correção local — blank cells da Unit Extraction (2026-08-23)
+
+Classificação: **READY FOR UNIT EXTRACTION RETRY AFTER BLANK CELL FIX**. O último retry real passou
+por Document Map e Unit Plan; a unit 2 falhou na canonical validation com dois `minLength` em
+`tables[0].rows[8].cells[*].text`, enquanto a unit 1 recebeu sibling abort.
+
+`tableCell` possui somente `columnId` e `text`; ambos são required/non-nullable e `text` mantém
+`minLength: 1`. Rows são sparse: o validator aceita subconjunto das columns e cada cell carrega seu
+próprio `columnId`, portanto omitir blank não desloca outras cells. Não existem rowSpan, colSpan ou
+estado merged/inherited/unknown. O prompt v6 agora manda omitir cells visualmente blank, preservar
+column IDs, não inventar placeholder nem copiar “same as above” e usar coverage gap quando a ausência
+for material. Schema, projection, canonicalizer e consumers downstream não mudaram.
+
+Nenhuma chamada OpenAI, retry, consulta/escrita em Staging, migration ou alteração de `Legacy` foi
+executada.
+
+## Correção local — required collections do Document Map (2026-08-23)
+
+Classificação: **READY FOR DOCUMENT MAP RETRY AFTER REQUIRED COLLECTION FIX**. O último retry real
+retornou Structured Output, mas falhou na transport validation porque `documents[0].issuerHints` foi
+omitido. `issuerHints` é required/non-nullable e pode legitimamente ser `[]`; a defesa local funcionou
+e não houve reconstruction, canonicalization ou Unit Plan nessa tentativa.
+
+O prompt v3 não mandava explicitamente emitir as quatro hint collections quando vazias. O prompt v4
+agora exige todas as collections required, explicita `titleHints`, `issuerHints`, `competenceHints` e
+`validityHints`, usa `[]` quando não há entrada suportada e proíbe omissão ou item inventado.
+Provenance real continua obrigatória para todo hint presente. Não há preenchimento automático no
+servidor; schema, projection, provider, validator e canonicalizer permanecem inalterados. Nenhuma
+chamada OpenAI, retry, consulta/escrita em Staging, migration ou alteração de `Legacy` foi executada.
+
+## Correção local — diagnóstico required do Document Map (2026-08-23)
+
+Classificação: **READY FOR DOCUMENT MAP REQUIRED-FIELD DIAGNOSTIC RETRY**. O último retry recebeu o
+Structured Output, mas o transport validator encontrou duas properties obrigatórias ausentes em
+`documents[0]`; o diagnóstico anterior expunha somente dois eventos `required` indistinguíveis.
+
+`CommercialDocumentMapViolationDiagnostic` agora admite `missingProperty`, preenchido apenas para
+erros AJV `required` cujo nome pertença à allow-list derivada das propriedades estáticas do schema.
+Params completos, nomes de additional properties, valores e mensagens continuam descartados. O
+schema do provider e o compilado pelo validator permanecem o mesmo objeto; schema canônico,
+projection e prompt não mudaram. Nenhuma chamada OpenAI, retry, consulta/escrita em Staging,
+migration ou alteração de `Legacy` foi executada.
+
+## Correção local — metadata refs do Document Map (2026-08-23)
+
+Classificação: **READY FOR DOCUMENT MAP RETRY AFTER METADATA REF FIX**. O último retry passou por
+Structured Output, wire validation e reconstruction, mas falhou no canonicalizer com uma única
+`unknown_reference` originada em metadata hints; o Unit Plan não iniciou. Como o smoke anterior não
+expôs o diagnostic interno, o path real completo entre as quatro famílias de hint continua PENDENTE.
+
+Metadata hints possuem somente `value` e `sourceBlockIds`. Title, issuer, competence e validity usam
+o mesmo namespace `block`, e cada source deve resolver para um `contentBlocks[].contentBlockId` real
+emitido no mesmo map. A coleção pode ser vazia, mas um hint presente exige ao menos um source. Essa
+provenance não é derivável de ownership ou outra back-reference.
+
+O runtime agora emite `SEGMENTED_DOCUMENT_MAP_CANONICALIZATION` quando diagnostics estão opt-in,
+contendo somente total, categories, amostra `{ path, kind, category }` e truncation. O prompt do
+Document Map v3 exige definitions reais para todas as refs, orienta omitir o hint sem source block
+identificável e proíbe placeholders. Maps de todas as definitions já eram construídos antes dos
+hints; portanto não houve correção de ordem. Unknown refs, schema e canonicalizer não foram
+relaxados. Nenhuma chamada OpenAI, retry, consulta/escrita em Staging, migration ou alteração de
+`Legacy` foi executada.
+
+## Correção local — relationship factIds da Unit Extraction (2026-08-23)
+
+Classificação: **READY FOR UNIT EXTRACTION RETRY AFTER RELATIONSHIP PROMPT FIX**. O último retry real
+passou por Document Map e Unit Plan; a unit 4 falhou em transport validation com duas violações
+`composition.relationships[*].factIds: minItems`, e a unit 5 foi sibling abort.
+
+O schema atual exige `factIds` com ao menos um fact em todas as seis relationship types e evidence
+com ao menos um block. `groupIds` não substitui facts. `APPLIES_TOGETHER` e `MUTUALLY_EXCLUSIVE`
+também exigem dois subjects totais; as outras types aceitam um único fact. Relationship group-only é
+inválida, enquanto `relationships: []` é a ausência legítima.
+
+O prompt efetivo já era v4, apesar do contexto do retry citar v3. A frase genérica “at least one
+actual fact” estava presente, mas não impediu a interpretação group-only/placeholder. O prompt v5
+agora proíbe explicitamente `factIds: []`, diz que groups nunca suprem o fact obrigatório, manda
+omitir relações sem fact e inclui exemplos abstratos. Não há sanitização server-side: sem o conteúdo
+completo, descartar a relação poderia apagar intenção semântica. Schema, `minItems`, projection,
+validator e canonicalizer não mudaram. Nenhuma chamada OpenAI, retry, consulta/escrita em Staging,
+migration ou alteração de `Legacy` foi executada.
+
+## Correção local — back-reference página–seção do Document Map (2026-08-23)
+
+Classificação: **READY FOR DOCUMENT MAP RETRY AFTER BACK-REFERENCE NORMALIZATION**. O último retry
+real passou por Structured Output, wire validation, reconstruction, canonicalização de IDs e JSON
+Schema canônico. A única falha foi
+`/sections/4/pageIds: missingPageBackReference`; o Unit Plan não iniciou. Os blockers anteriores de
+ID/pattern e `headerBlockIds minItems` não reapareceram.
+
+`page.sectionIds` e `section.pageIds` representam a mesma relação de membership. O canonicalizer
+agora resolve primeiro todas as referências, forma a união dos pares declarados em qualquer lado e
+reprojeta listas únicas e determinísticas nos dois sentidos. Portanto não depende mais da IA repetir
+a mesma matemática, não perde relação observada e não inventa par sem evidência. Referência para page
+ou section inexistente continua falhando como `unknown_reference` antes da normalização.
+
+Relações com informação adicional não foram generalizadas: tabela–página exige segments ordenados;
+notes e content blocks têm ownership singular; entity hints/context edges são direcionais; blocks de
+tabela possuem papéis distintos. Schema, validator, transport, prompt, planner, Unit Extraction e
+etapas posteriores não mudaram. Nenhuma chamada OpenAI, retry, consulta/escrita em Staging, migration
+ou alteração de `Legacy` foi executada.
+
+## Correção local — coverage server-owned na Unit Extraction (2026-08-22)
+
+Classificação: **READY FOR UNIT EXTRACTION RETRY AFTER COVERAGE FIX**. A última execução real
+falhou na validação canônica da unit 1 em
+`/coverage/completedUnitCount: inconsistentWithUnits`; a unit 3 foi sibling abort.
+
+O v1 não possui `totalUnitCount`; `expectedUnitCount` é `coverage.units.length`, enquanto
+`completedUnitCount` conta units com status `complete` e `extractedVehicleCount` é o tamanho de
+`vehicleIdentities`. Esses valores required eram copiados do provider. O canonicalizer agora os
+reconstrói do próprio artifact, tanto unit-scoped quanto agregado. Status, status das units, gaps,
+unresolved, expected vehicles e famílias interpretativas continuam preservados; portanto a correção
+não fabrica completeness.
+
+O prompt segmentado v4 limita `coverage.units` à unit corrente e pede sentinel `0` para esses três
+campos transport-only antes da substituição server-owned. Schema e invariants não mudaram. Nenhuma
+chamada OpenAI, retry, consulta/escrita em Staging, migration ou alteração de `Legacy` foi executada.
+
+## Correção local — placeholders vazios em Unit Extraction composition (2026-08-22)
+
+Classificação: **READY FOR UNIT EXTRACTION RETRY AFTER COMPOSITION FIX**. A última execução real
+alcançou a Unit Extraction; a unit 3 falhou na transport validation com quatro `minItems`: dois
+`composition.groups[*].memberFactIds` vazios e dois
+`composition.relationships[*].factIds` vazios. A unit 4 recebeu abort de sibling após essa falha
+fatal.
+
+O contrato distingue ausência legítima de placeholder inválido. `composition`, `groups` e
+`relationships` são required no wire, mas as duas coleções externas não têm `minItems` e podem ser
+`[]`. Um group existente representa alternativa/cúmulo real e exige ao menos dois member facts e um
+scope; uma relationship existente exige ao menos um fact e evidence, e algumas relações ainda exigem
+dois subjects no total. Logo objetos com arrays internos vazios não carregam semântica contratual.
+
+O prompt anterior não ordenava a criação de placeholders, porém não explicava como representar
+composition não aplicável sob o schema completo do Structured Outputs. O prompt da Unit Extraction
+v3 agora proíbe placeholders, exige membros reais e orienta ausência para
+`groups: []`/`relationships: []`. Não há hardcode de fabricante. Schema, `minItems`, canonicalizer,
+transport validator, timeout e stages posteriores permaneceram intactos. Nenhuma chamada OpenAI,
+retry, consulta/escrita em Staging, migration ou alteração de `Legacy` foi executada.
+
+## Correção local — alinhamento do transport validator (2026-08-22)
+
+Classificação: **READY FOR SEGMENTED RETRY AFTER TRANSPORT VALIDATOR ALIGNMENT**. O último retry real
+teve provider call succeeded e Structured Output returned, mas o novo wire validator do Document Map
+falhou com 82 violações `pattern`. Não houve Unit Plan.
+
+O trace local mostrou que request e validator usam por identidade a mesma constante
+`openAITransportDocumentMapSchema`; não existiam duas projeções independentes. A inconsistência era
+interna ao schema projetado: o detector removia patterns apenas de
+`document|block|table|column|row|vehicle|fact|scope|group|relation|unit|gap`, deixando 20 ocorrências
+estruturais para `page|section|note|hint|edge`. Isso reproduziu localmente as falhas em page IDs,
+entity hints e context edges. A projection agora reconhece o formato exato de qualquer ID canônico
+server-owned, sem remover patterns comerciais como currency/amount/percentage.
+
+Document Map e Unit Extraction possuem guards que provam que o schema compilado no AJV é o mesmo
+objeto entregue ao provider. O fluxo das units também foi corrigido para
+wire output → transport validation → reconstruction → canonicalization → canonical validation;
+antes ele reconstruía e reprojetava o valor para validar, o que podia preencher propriedades wire
+ausentes com `null`. IDs model-local passam no wire e são remapeados; `headerBlockIds: []` continua
+falhando por `minItems`, e type/required continuam protegidos. Patterns canônicos permanecem intactos
+e enforced após os canonicalizers. Prompt v2, schemas canônicos e planner não mudaram. Nenhuma chamada
+OpenAI, retry, consulta/escrita em Staging, migration ou alteração de `Legacy` foi executada.
+
+## Correção local — Document Map table header minItems (2026-08-22)
+
+Classificação: **READY FOR DOCUMENT MAP RETRY AFTER MINITEMS FIX**. O retry real mais recente falhou
+antes do Unit Plan com uma única violação: `/tables/6/headerBlockIds`, `minItems`. Os antigos erros de
+`pattern` não reapareceram. Esta tarefa não consultou o output bruto nem o Staging.
+
+O contrato é inequívoco: `headerBlockIds` é required, non-nullable, array com `minItems: 1`,
+`maxItems: 500` e item `block-*`; a projeção OpenAI preserva required/min/max/items e remove apenas o
+pattern local/`uniqueItems` aplicáveis. A projection torna propriedades canônicas opcionais
+required-nullable no wire, mas nunca torna array items nullable. A reconstruction mapeia arrays sem
+filtrar: `[null]` continua `[null]`, mistos continuam mistos e `[]` continua `[]`. Portanto ela não
+consegue transformar um array wire não vazio em vazio. O `[]` observado na validação final já precisava
+existir no wire; o canonicalizer somente remapeia os elementos existentes.
+
+O runtime antes confiava no `strict: true` remoto e fazia apenas `JSON.parse` do Document Map, sem AJV
+local do schema transport. Agora valida o raw response contra `openAITransportDocumentMapSchema`
+antes de reconstruction/canonicalization e emite o mesmo diagnóstico seguro. O prompt do Document
+Map foi versionado para v2: table só existe com ao menos um header block real; região sem header deve
+ser representada por content blocks/sections. Continuação permanece a mesma table, mantém
+`headerBlockIds` originais e referencia-os por `inheritedHeaderBlockIds` nos segmentos `CONTINUE`.
+Schema, `minItems`, canonicalizer e planner não foram relaxados. Nenhuma chamada OpenAI, retry,
+consulta/escrita em Staging, migration ou alteração de `Legacy` foi executada.
+
+## Correção local — provenance de evidence e falha causal da Unit Extraction (2026-08-22)
+
+Classificação: **READY FOR UNIT EXTRACTION RETRY AFTER EVIDENCE REF FIX**. A reconciliação read-only
+do batch 117/documento 48 confirmou o Job 45/attempt 8, correlation
+`33776123-5d8a-49d7-a18d-161277e4f17a`, sem job ativo, row ou Unit Extraction artifact. Document Map
+artifact 3 e Unit Plan artifact 4 succeeded. A primeira causa real de Unit Extraction foi a unit 2:
+duas violações `unknownRef` em `documents[0].candidates[*].evidence.blockIds`; a unit 1 apenas recebeu
+`ABORTED_SIBLING`. O erro final posicional `UNIT_EXTRACTION_ABORTED_SIBLING` mascarava essa causa.
+
+O contrato foi confirmado como extraction-local: toda `evidence.blockIds` deve resolver contra um
+`blocks[].blockId` definido no mesmo `CommercialDocumentExtraction/1`. O Document Map usa outro papel:
+seus content block IDs canônicos são provenance de entrada. O Unit Context agora carrega os objetos de
+bloco primários e context-only, e o prompt v2 exige que uma fonte usada seja materializada como bloco
+documental real, com o ID canônico do mapa reutilizado temporariamente no `blockId`. Assim, o
+canonicalizer já existente remapeia a definição e todas as refs pelo mesmo mapa old→new. Citar um ID
+sem materializar seu bloco continua `unknownRef`; duplicatas continuam `uniqueItems`; nenhum
+placeholder é criado. Context-only pode sustentar interpretação/evidence, mas não originar fato novo
+exclusivamente de contexto.
+
+O runtime agora usa seleção determinística de falha. `INVALID_STRUCTURED_OUTPUT`,
+`CANONICAL_VALIDATION_FAILED`, `PROVIDER_FAILURE`, `PROVIDER_TIMEOUT` real e
+`ORCHESTRATION_TIMEOUT` têm precedência sobre `ABORTED_SIBLING`; ordinal/unit ID servem somente como
+desempate dentro da mesma classe. No caso observado, o resultado passa a ser
+`UNIT_EXTRACTION_CANONICAL_VALIDATION_FAILED`. A publicação continua all-or-nothing após o retorno do
+orchestrator: unit 2 inválida e unit 1 abortada não geram artifacts; Document Map/Unit Plan succeeded
+permanecem. Usage/providerRunId da resposta que falhou canonicalmente ainda se perde, dívida já
+registrada para retry granular. Nenhum retry/OpenAI, escrita em Staging, acesso a Production,
+migration ou alteração de `Legacy` foi executado.
+
 ## Correção local — autoridade server-owned dos IDs do Document Map (2026-08-22)
 
 Classificação: **READY FOR SEGMENTED RETRY AFTER DOCUMENT MAP ID CANONICALIZATION**. O último retry

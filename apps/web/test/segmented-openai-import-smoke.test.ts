@@ -65,6 +65,73 @@ export function assertSegmentedOpenAISmokeLifecyclePreconditions(input: {
   throw new Error('SEGMENTED_SMOKE_LIFECYCLE_INVALID');
 }
 
+interface SmokeJobSnapshot {
+  readonly id: string | number;
+  readonly batchId: string | number;
+  readonly attempt: number;
+  readonly status: string;
+}
+
+interface SmokeArtifactSnapshot {
+  readonly id: string | number;
+  readonly batchId: string | number;
+  readonly jobId: string | number;
+  readonly attempt: number;
+  readonly status: string;
+}
+
+interface SmokeArtifactDependencySnapshot {
+  readonly artifactId: string | number;
+  readonly sourceArtifactId: string | number;
+}
+
+const terminalStatuses = new Set(['succeeded', 'failed']);
+const activeStatuses = new Set(['queued', 'processing']);
+
+export function assertSegmentedOpenAISmokeArtifactPreconditions(input: {
+  readonly batchId: string;
+  readonly pricingRowCount: number;
+  readonly jobs: readonly SmokeJobSnapshot[];
+  readonly artifacts: readonly SmokeArtifactSnapshot[];
+  readonly dependencies: readonly SmokeArtifactDependencySnapshot[];
+}): void {
+  if (input.pricingRowCount !== 0) throw new Error('SEGMENTED_SMOKE_EXISTING_ROWS');
+  const jobs = new Map(input.jobs.map((job) => [String(job.id), job]));
+  if (jobs.size !== input.jobs.length) throw new Error('SEGMENTED_SMOKE_DUPLICATE_JOB');
+  for (const job of input.jobs) {
+    if (String(job.batchId) !== input.batchId) throw new Error('SEGMENTED_SMOKE_CROSS_BATCH_JOB');
+    if (activeStatuses.has(job.status)) throw new Error('SEGMENTED_SMOKE_ACTIVE_JOB');
+    if (!terminalStatuses.has(job.status)) throw new Error('SEGMENTED_SMOKE_JOB_NON_TERMINAL');
+  }
+  const artifacts = new Map(input.artifacts.map((artifact) => [String(artifact.id), artifact]));
+  if (artifacts.size !== input.artifacts.length)
+    throw new Error('SEGMENTED_SMOKE_DUPLICATE_ARTIFACT');
+  for (const artifact of input.artifacts) {
+    if (String(artifact.batchId) !== input.batchId)
+      throw new Error('SEGMENTED_SMOKE_CROSS_BATCH_ARTIFACT');
+    const job = jobs.get(String(artifact.jobId));
+    if (!job) throw new Error('SEGMENTED_SMOKE_ARTIFACT_UNKNOWN_JOB');
+    if (artifact.attempt !== job.attempt)
+      throw new Error('SEGMENTED_SMOKE_ARTIFACT_ATTEMPT_MISMATCH');
+    if (!terminalStatuses.has(artifact.status))
+      throw new Error('SEGMENTED_SMOKE_ARTIFACT_NON_TERMINAL');
+  }
+  for (const dependency of input.dependencies) {
+    if (String(dependency.artifactId) === String(dependency.sourceArtifactId))
+      throw new Error('SEGMENTED_SMOKE_ARTIFACT_SELF_DEPENDENCY');
+    const artifact = artifacts.get(String(dependency.artifactId));
+    const source = artifacts.get(String(dependency.sourceArtifactId));
+    if (!artifact || !source) throw new Error('SEGMENTED_SMOKE_ARTIFACT_DANGLING_DEPENDENCY');
+    if (
+      String(artifact.batchId) !== String(source.batchId) ||
+      String(artifact.jobId) !== String(source.jobId)
+    )
+      throw new Error('SEGMENTED_SMOKE_ARTIFACT_CROSS_JOB_DEPENDENCY');
+    if (source.status !== 'succeeded')
+      throw new Error('SEGMENTED_SMOKE_ARTIFACT_DEPENDENCY_NOT_SUCCEEDED');
+  }
+}
+
 const validEnv = (): SmokeEnvironment => ({
   SUPABASE_URL: `https://${STAGING_REF}.supabase.co`,
   SUPABASE_SERVER_KEY: 'server-secret-not-returned',
@@ -157,6 +224,162 @@ describe('Sprint 10C.4D segmented OpenAI smoke harness preconditions', () => {
       }),
     ).toBe('RETRY');
   });
+
+  it.each(['succeeded', 'failed'] as const)(
+    'allows terminal historical %s artifacts owned by a terminal prior job',
+    (artifactStatus) => {
+      expect(() =>
+        assertSegmentedOpenAISmokeArtifactPreconditions({
+          batchId: BENCHMARK_BATCH_ID,
+          pricingRowCount: 0,
+          jobs: [{ id: 44, batchId: 117, attempt: 7, status: 'failed' }],
+          artifacts: [
+            {
+              id: 1,
+              batchId: 117,
+              jobId: 44,
+              attempt: 7,
+              status: artifactStatus,
+            },
+          ],
+          dependencies: [],
+        }),
+      ).not.toThrow();
+    },
+  );
+
+  it('allows the Job 44 document_map and unit_plan succeeded lineage', () => {
+    expect(() =>
+      assertSegmentedOpenAISmokeArtifactPreconditions({
+        batchId: BENCHMARK_BATCH_ID,
+        pricingRowCount: 0,
+        jobs: [{ id: 44, batchId: 117, attempt: 7, status: 'failed' }],
+        artifacts: [
+          { id: 1, batchId: 117, jobId: 44, attempt: 7, status: 'succeeded' },
+          { id: 2, batchId: 117, jobId: 44, attempt: 7, status: 'succeeded' },
+        ],
+        dependencies: [{ artifactId: 2, sourceArtifactId: 1 }],
+      }),
+    ).not.toThrow();
+  });
+
+  it('rejects active jobs with or without an in-progress artifact', () => {
+    const activeJob = [{ id: 45, batchId: 117, attempt: 8, status: 'processing' }];
+    expect(() =>
+      assertSegmentedOpenAISmokeArtifactPreconditions({
+        batchId: BENCHMARK_BATCH_ID,
+        pricingRowCount: 0,
+        jobs: activeJob,
+        artifacts: [],
+        dependencies: [],
+      }),
+    ).toThrow('SEGMENTED_SMOKE_ACTIVE_JOB');
+    expect(() =>
+      assertSegmentedOpenAISmokeArtifactPreconditions({
+        batchId: BENCHMARK_BATCH_ID,
+        pricingRowCount: 0,
+        jobs: activeJob,
+        artifacts: [{ id: 3, batchId: 117, jobId: 45, attempt: 8, status: 'processing' }],
+        dependencies: [],
+      }),
+    ).toThrow('SEGMENTED_SMOKE_ACTIVE_JOB');
+  });
+
+  it('rejects a non-terminal artifact even when its historical job is terminal', () => {
+    expect(() =>
+      assertSegmentedOpenAISmokeArtifactPreconditions({
+        batchId: BENCHMARK_BATCH_ID,
+        pricingRowCount: 0,
+        jobs: [{ id: 44, batchId: 117, attempt: 7, status: 'failed' }],
+        artifacts: [{ id: 2, batchId: 117, jobId: 44, attempt: 7, status: 'queued' }],
+        dependencies: [],
+      }),
+    ).toThrow('SEGMENTED_SMOKE_ARTIFACT_NON_TERMINAL');
+  });
+
+  it('preserves the clean-benchmark pricing row gate', () => {
+    expect(() =>
+      assertSegmentedOpenAISmokeArtifactPreconditions({
+        batchId: BENCHMARK_BATCH_ID,
+        pricingRowCount: 1,
+        jobs: [],
+        artifacts: [],
+        dependencies: [],
+      }),
+    ).toThrow('SEGMENTED_SMOKE_EXISTING_ROWS');
+  });
+
+  it.each([
+    [
+      'cross-batch artifact',
+      [{ id: 1, batchId: 118, jobId: 44, attempt: 7, status: 'succeeded' }],
+      'SEGMENTED_SMOKE_CROSS_BATCH_ARTIFACT',
+    ],
+    [
+      'artifact for an unknown future job',
+      [{ id: 1, batchId: 117, jobId: 45, attempt: 8, status: 'succeeded' }],
+      'SEGMENTED_SMOKE_ARTIFACT_UNKNOWN_JOB',
+    ],
+    [
+      'artifact with mismatched attempt',
+      [{ id: 1, batchId: 117, jobId: 44, attempt: 8, status: 'succeeded' }],
+      'SEGMENTED_SMOKE_ARTIFACT_ATTEMPT_MISMATCH',
+    ],
+  ] as const)('rejects malformed %s data', (_name, artifacts, code) => {
+    expect(() =>
+      assertSegmentedOpenAISmokeArtifactPreconditions({
+        batchId: BENCHMARK_BATCH_ID,
+        pricingRowCount: 0,
+        jobs: [{ id: 44, batchId: 117, attempt: 7, status: 'failed' }],
+        artifacts,
+        dependencies: [],
+      }),
+    ).toThrow(code);
+  });
+
+  it.each([
+    [
+      'dangling dependency',
+      [{ artifactId: 2, sourceArtifactId: 99 }],
+      'SEGMENTED_SMOKE_ARTIFACT_DANGLING_DEPENDENCY',
+    ],
+    [
+      'self dependency',
+      [{ artifactId: 2, sourceArtifactId: 2 }],
+      'SEGMENTED_SMOKE_ARTIFACT_SELF_DEPENDENCY',
+    ],
+  ] as const)('rejects %s in historical artifact lineage', (_name, dependencies, code) => {
+    expect(() =>
+      assertSegmentedOpenAISmokeArtifactPreconditions({
+        batchId: BENCHMARK_BATCH_ID,
+        pricingRowCount: 0,
+        jobs: [{ id: 44, batchId: 117, attempt: 7, status: 'failed' }],
+        artifacts: [
+          { id: 1, batchId: 117, jobId: 44, attempt: 7, status: 'succeeded' },
+          { id: 2, batchId: 117, jobId: 44, attempt: 7, status: 'succeeded' },
+        ],
+        dependencies,
+      }),
+    ).toThrow(code);
+  });
+
+  it('rejects a cross-job historical dependency', () => {
+    expect(() =>
+      assertSegmentedOpenAISmokeArtifactPreconditions({
+        batchId: BENCHMARK_BATCH_ID,
+        pricingRowCount: 0,
+        jobs: [
+          { id: 43, batchId: 117, attempt: 6, status: 'failed' },
+          { id: 44, batchId: 117, attempt: 7, status: 'failed' },
+        ],
+        artifacts: [
+          { id: 1, batchId: 117, jobId: 43, attempt: 6, status: 'succeeded' },
+          { id: 2, batchId: 117, jobId: 44, attempt: 7, status: 'succeeded' },
+        ],
+        dependencies: [{ artifactId: 2, sourceArtifactId: 1 }],
+      }),
+    ).toThrow('SEGMENTED_SMOKE_ARTIFACT_CROSS_JOB_DEPENDENCY');
+  });
 });
 
 describe.skipIf(!enabled)('Sprint 10C.4D real segmented OpenAI smoke', () => {
@@ -183,28 +406,61 @@ describe.skipIf(!enabled)('Sprint 10C.4D real segmented OpenAI smoke', () => {
       contentSha256: BENCHMARK_SHA256,
     });
 
-    const [{ data: activeJobs }, { data: existingRows }, { data: existingArtifacts }] =
-      await Promise.all([
-        client
-          .from('pricing_import_processing_jobs')
-          .select('id')
-          .in('status', ['queued', 'processing']),
-        client.from('pricing_import_rows').select('id').eq('batch_id', config.batchId),
-        client
-          .from('pricing_import_processing_artifacts')
-          .select('id')
-          .eq('batch_id', config.batchId),
-      ]);
-    expect(activeJobs).toHaveLength(0);
+    const [jobsResult, rowsResult, artifactsResult] = await Promise.all([
+      client
+        .from('pricing_import_processing_jobs')
+        .select('id,batch_id,attempt,status')
+        .eq('batch_id', config.batchId),
+      client.from('pricing_import_rows').select('id').eq('batch_id', config.batchId),
+      client
+        .from('pricing_import_processing_artifacts')
+        .select('id,batch_id,processing_job_id,attempt,status')
+        .eq('batch_id', config.batchId),
+    ]);
+    expect(jobsResult.error).toBeNull();
+    expect(rowsResult.error).toBeNull();
+    expect(artifactsResult.error).toBeNull();
+    const historicalJobs = jobsResult.data ?? [];
+    const existingRows = rowsResult.data ?? [];
+    const existingArtifacts = artifactsResult.data ?? [];
+    const artifactIds = existingArtifacts.map((artifact) => artifact.id);
+    const dependenciesResult = artifactIds.length
+      ? await client
+          .from('pricing_import_processing_artifact_dependencies')
+          .select('artifact_id,source_artifact_id')
+          .in('artifact_id', artifactIds)
+      : { data: [], error: null };
+    expect(dependenciesResult.error).toBeNull();
+    const activeJobCount = historicalJobs.filter((job) => activeStatuses.has(job.status)).length;
     expect(existingRows).toHaveLength(0);
-    expect(existingArtifacts).toHaveLength(0);
     expect(
       assertSegmentedOpenAISmokeLifecyclePreconditions({
         batchStatus: batch!.status,
         documentStatuses: batch!.documents.map((item) => item.status),
-        activeJobCount: activeJobs?.length ?? 0,
+        activeJobCount,
       }),
     ).toMatch(/^(?:FIRST_RUN|RETRY)$/u);
+    assertSegmentedOpenAISmokeArtifactPreconditions({
+      batchId: config.batchId,
+      pricingRowCount: existingRows.length,
+      jobs: historicalJobs.map((job) => ({
+        id: job.id,
+        batchId: job.batch_id,
+        attempt: job.attempt,
+        status: job.status,
+      })),
+      artifacts: existingArtifacts.map((artifact) => ({
+        id: artifact.id,
+        batchId: artifact.batch_id,
+        jobId: artifact.processing_job_id,
+        attempt: artifact.attempt,
+        status: artifact.status,
+      })),
+      dependencies: (dependenciesResult.data ?? []).map((dependency) => ({
+        artifactId: dependency.artifact_id,
+        sourceArtifactId: dependency.source_artifact_id,
+      })),
+    });
 
     const document = batch!.documents[0]!;
     const bytes = await processing.downloadDocument(
@@ -231,5 +487,42 @@ describe.skipIf(!enabled)('Sprint 10C.4D real segmented OpenAI smoke', () => {
       extractionMode: 'segmented',
     });
     expect(result.rowCount).toBeGreaterThan(0);
+    const historicalJobIds = new Set(historicalJobs.map((job) => String(job.id)));
+    const { data: jobsAfter, error: jobsAfterError } = await client
+      .from('pricing_import_processing_jobs')
+      .select('id,attempt,status,correlation_id')
+      .eq('batch_id', config.batchId);
+    expect(jobsAfterError).toBeNull();
+    const newJobs = (jobsAfter ?? []).filter((job) => !historicalJobIds.has(String(job.id)));
+    expect(newJobs).toHaveLength(1);
+    const currentJob = newJobs[0]!;
+    expect(currentJob).toMatchObject({ status: 'succeeded', correlation_id: correlationId });
+    const { data: currentArtifacts, error: currentArtifactsError } = await client
+      .from('pricing_import_processing_artifacts')
+      .select('batch_id,processing_job_id,attempt,stage,status')
+      .eq('batch_id', config.batchId)
+      .eq('processing_job_id', currentJob.id)
+      .eq('attempt', currentJob.attempt);
+    expect(currentArtifactsError).toBeNull();
+    expect(currentArtifacts?.length).toBeGreaterThan(2);
+    expect(
+      currentArtifacts?.every(
+        (artifact) =>
+          String(artifact.batch_id) === config.batchId &&
+          String(artifact.processing_job_id) === String(currentJob.id) &&
+          artifact.attempt === currentJob.attempt &&
+          artifact.status === 'succeeded',
+      ),
+    ).toBe(true);
+    expect(new Set(currentArtifacts?.map((artifact) => artifact.stage))).toEqual(
+      new Set([
+        'document_map',
+        'unit_plan',
+        'unit_extraction',
+        'merge',
+        'semantic_reconciliation',
+        'domain_mapping',
+      ]),
+    );
   }, 1_200_000);
 });

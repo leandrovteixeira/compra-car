@@ -11,7 +11,9 @@ import {
 } from '@compra-car/core/segmented-artifact-lifecycle';
 import { geelyLikeCommercialDocumentMapFixture } from '../../../packages/core/test/fixtures/import/commercial-document-map-fixtures';
 import { geelyLikeCommercialDocumentExtractionFixture } from '../../../packages/core/test/fixtures/import/commercial-document-extraction-fixtures';
-import { validateCommercialDocumentExtraction } from '../../../packages/core/src/import/commercial-document-extraction-validator';
+import { commercialDocumentExtractionSchemaV1 } from '@compra-car/core/commercial-document-extraction-schema';
+import { commercialDocumentMapSchemaV1 } from '@compra-car/core/commercial-document-map-schema';
+import { projectCanonicalValueForOpenAITransport } from '../src/server/openai-structured-output-schema';
 
 import {
   executeSegmentedImportRuntime,
@@ -22,13 +24,41 @@ import {
 } from '../src/server/segmented-import-runtime';
 import { processAdminImportBatch } from '../src/server/import-engine-service';
 
-const modelOwnedDocumentMapIds = (): typeof geelyLikeCommercialDocumentMapFixture =>
-  JSON.parse(
-    JSON.stringify(geelyLikeCommercialDocumentMapFixture).replace(
-      /"(document|page|block|section|table|note|hint|edge)-/gu,
-      '"$1 raw ',
-    ),
+const documentMapTransport = (): typeof geelyLikeCommercialDocumentMapFixture => {
+  const projected = projectCanonicalValueForOpenAITransport(
+    geelyLikeCommercialDocumentMapFixture,
+    commercialDocumentMapSchemaV1,
   ) as typeof geelyLikeCommercialDocumentMapFixture;
+  const ids = new Map<string, string>();
+  let nextId = 0;
+  const localId = /^(?:document|page|block|section|table|note|hint|edge)-/u;
+  const replaceIds = (value: unknown): unknown => {
+    if (typeof value === 'string' && localId.test(value)) {
+      if (!ids.has(value)) ids.set(value, `Model Local ID ${++nextId}`);
+      return ids.get(value)!;
+    }
+    if (Array.isArray(value)) return value.map(replaceIds);
+    if (value && typeof value === 'object')
+      return Object.fromEntries(
+        Object.entries(value).map(([key, item]) => [key, replaceIds(item)]),
+      );
+    return value;
+  };
+  return replaceIds(projected) as typeof geelyLikeCommercialDocumentMapFixture;
+};
+
+const documentMapTransportMissingSectionBackReference = () => {
+  const map = documentMapTransport();
+  const section = map.sections[0]!;
+  const page = map.pages.find((item) => item.pageId === section.pageIds[0])!;
+  (page as unknown as { sectionIds: string[] }).sectionIds = page.sectionIds.filter(
+    (sectionId) => sectionId !== section.sectionId,
+  );
+  return map;
+};
+
+const extractionTransport = <T>(value: T): T =>
+  projectCanonicalValueForOpenAITransport(value, commercialDocumentExtractionSchemaV1) as T;
 
 const batch = {
   id: '10',
@@ -181,10 +211,10 @@ describe('segmented import runtime', () => {
                 : { facts: [], scopes: [], composition: { groups: [], relationships: [] } }),
               coverage: {
                 status: 'complete' as const,
-                expectedUnitCount: 1,
-                completedUnitCount: 1,
+                expectedUnitCount: 0,
+                completedUnitCount: 0,
                 expectedVehicleCount: selectedVehicleIds.size,
-                extractedVehicleCount: selectedVehicleIds.size,
+                extractedVehicleCount: 0,
                 expectedFamilies: selectedVehicleIds.size ? ['Linha Aurora'] : [],
                 extractedFamilies: selectedVehicleIds.size ? ['Linha Aurora'] : [],
                 units: [
@@ -202,9 +232,11 @@ describe('segmented import runtime', () => {
                 unresolvedScopeIds: [],
               },
             };
-            if (calls > 1) validateCommercialDocumentExtraction(unitArtifact);
             return {
-              output: calls === 1 ? modelOwnedDocumentMapIds() : unitArtifact,
+              output:
+                calls === 1
+                  ? documentMapTransportMissingSectionBackReference()
+                  : extractionTransport(unitArtifact),
               providerRunId: `fake-${calls}`,
               usage: { inputUnits: 1, outputUnits: 1, totalUnits: 2 },
             };
@@ -233,12 +265,63 @@ describe('segmented import runtime', () => {
     expect(first.summary.unitCount).toBe(6);
     expect(calls).toBe(7);
     expect(requests[0]?.metadata.schemaVersion).toBe('CommercialDocumentMap/1');
+    expect(requests[0]?.metadata.promptVersion).toBe('4');
+    expect(requests[0]?.instructions).toContain(
+      'Always emit every required collection from the schema',
+    );
+    expect(requests[0]?.instructions).toContain(
+      'always emit titleHints, issuerHints, competenceHints and validityHints',
+    );
+    expect(requests[0]?.instructions).toContain(
+      'Return [] for a hint collection when no supported candidate exists',
+    );
+    expect(requests[0]?.instructions).toContain('never omit a required collection');
+    expect(requests[0]?.instructions).toContain(
+      'never omit a required collection or invent an entry merely to avoid an empty collection',
+    );
+    expect(requests[0]?.instructions).toContain(
+      'Every table.headerBlockIds must contain at least one real',
+    );
+    expect(requests[0]?.instructions).toContain(
+      'Every local reference must resolve to a real object emitted in the same map',
+    );
+    expect(requests[0]?.instructions).toContain(
+      'if no source block is identifiable, omit the hint instead of inventing an ID',
+    );
     expect(requests[0]?.schema).toBe(openAITransportDocumentMapSchema);
     expect(
       requests
         .slice(1)
         .every((request) => request.schema === openAITransportDocumentExtractionSchema),
     ).toBe(true);
+    expect(requests.slice(1).every((request) => request.metadata.promptVersion === '8')).toBe(true);
+    expect(requests[1]?.instructions).toContain(
+      'A row cell is keyed by columnId, not by its array position',
+    );
+    expect(requests[1]?.instructions).toContain(
+      'For a visually blank cell, omit that cell while keeping every other cell',
+    );
+    expect(requests[1]?.instructions).toContain(
+      'Never replace a blank with whitespace, "-", "N/A", "unknown"',
+    );
+    expect(requests[1]?.instructions).toContain(
+      'literal visible text or symbols may be emitted only when the source displays them',
+    );
+    expect(requests[1]?.instructions).toContain('never copy a merged, repeated or inherited value');
+    expect(requests[1]?.instructions).toContain('report a genuine coverage gap/unresolved row');
+    expect(requests[1]?.instructions).toContain(
+      'Use complete only when every coverage unit is complete',
+    );
+    expect(requests[1]?.instructions).toContain(
+      'gaps, incompleteBlockIds, unresolvedTableRows and unresolvedScopeIds are all empty',
+    );
+    expect(requests[1]?.instructions).toContain('never use optimistic complete');
+    expect(requests[1]?.instructions).toContain('Use partial for known missing or incomplete');
+    expect(requests[1]?.instructions).toContain('Use ambiguous when unresolved interpretation');
+    expect(requests[1]?.instructions).toContain(
+      'Never emit a composition relationship with an empty factIds array',
+    );
+    expect(requests[1]?.instructions).toContain('groupIds never substitute for the required fact');
     expect(requests.slice(1).map((request) => request.metadata.unitOrdinal)).toEqual([
       1, 2, 3, 4, 5, 6,
     ]);
@@ -262,10 +345,20 @@ describe('segmented import runtime', () => {
     expect(mapBody.documents[0]?.documentId).toBe('document-0001');
     expect(mapBody.pages[0]?.pageId).toBe('page-0001');
     expect(mapBody.contentBlocks[0]?.contentBlockId).toBe('block-0001');
+    expect(mapBody.pages[0]?.sectionIds).toContain('section-0001');
     const planManifest = artifacts.values.find(
       (item) => item.manifest.stage === 'unit_plan',
     )!.manifest;
     const units = artifacts.values.filter((item) => item.manifest.stage === 'unit_extraction');
+    units.forEach((item) => {
+      const artifact = item.body as any;
+      expect(artifact.coverage.expectedUnitCount).toBe(artifact.coverage.units.length);
+      expect(artifact.coverage.completedUnitCount).toBe(
+        artifact.coverage.units.filter((unit: { status: string }) => unit.status === 'complete')
+          .length,
+      );
+      expect(artifact.coverage.extractedVehicleCount).toBe(artifact.vehicleIdentities.length);
+    });
     expect(new Set(units.map((item) => item.manifest.content.sha256)).size).toBe(6);
     const merge = artifacts.values.find((item) => item.manifest.stage === 'merge')!.manifest;
     const mergeBody = artifacts.values.find((item) => item.manifest.stage === 'merge')!.body as any;
@@ -400,7 +493,7 @@ describe('segmented import runtime', () => {
     const invalidProvider: StructuredExtractionProvider = {
       openSource: vi.fn(async () => ({
         extractStructured: vi.fn(async () => ({
-          output: { ...geelyLikeCommercialDocumentMapFixture, [secret]: secret },
+          output: { ...documentMapTransport(), [secret]: secret },
           providerRunId: 'provider-run-safe',
           usage: { inputUnits: 1, outputUnits: 1, totalUnits: 2 },
         })),
@@ -434,6 +527,163 @@ describe('segmented import runtime', () => {
     expect(close).toHaveBeenCalledTimes(1);
   });
 
+  it('identifies missing static Document Map properties in safe transport diagnostics', async () => {
+    const invalidMap = documentMapTransport();
+    const document = invalidMap.documents[0] as unknown as Record<string, unknown>;
+    delete document.competenceHints;
+    delete document.validityHints;
+    const observeDocumentMapValidation = vi.fn();
+    const publish = vi.fn();
+    const close = vi.fn(async () => undefined);
+    const invalidProvider: StructuredExtractionProvider = {
+      openSource: vi.fn(async () => ({
+        extractStructured: vi.fn(async () => ({
+          output: invalidMap,
+          providerRunId: 'provider-run-required-diagnostic',
+          usage: { inputUnits: 1, outputUnits: 1, totalUnits: 2 },
+        })),
+        close,
+      })),
+    };
+
+    await expect(
+      executeSegmentedImportRuntime({
+        batch: batch as any,
+        jobId: 'required-diagnostic-job',
+        attempt: 11,
+        correlationId: '00000000-0000-4000-8000-000000000011',
+        source: {
+          documents: [{ documentId: 'document-main', ordinal: 1, bytes: new Uint8Array([1]) }],
+        },
+        provider: invalidProvider,
+        artifacts: { load: vi.fn(async () => undefined), publish },
+        diagnostics: true,
+        observeDocumentMapValidation,
+      }),
+    ).rejects.toMatchObject({ code: 'COMMERCIAL_DOCUMENT_MAP_INVALID' });
+    expect(observeDocumentMapValidation).toHaveBeenCalledWith({
+      totalViolations: 2,
+      sampledViolations: [
+        {
+          path: '/documents/0',
+          keyword: 'required',
+          category: 'schema',
+          missingProperty: 'competenceHints',
+        },
+        {
+          path: '/documents/0',
+          keyword: 'required',
+          category: 'schema',
+          missingProperty: 'validityHints',
+        },
+      ],
+      truncated: false,
+      categories: { required: 2 },
+      broadCategories: { schema: 2, referential: 0, semantic: 0, invariant: 0 },
+    });
+    expect(publish).not.toHaveBeenCalled();
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+
+  it('emits safe opt-in Document Map canonicalization diagnostics for dangling metadata refs', async () => {
+    const secret = 'raw-metadata-block-must-not-escape';
+    const invalidMap = documentMapTransport();
+    (
+      invalidMap.documents[0]!.titleHints[0] as unknown as {
+        sourceBlockIds: string[];
+      }
+    ).sourceBlockIds = [secret];
+    const observeDocumentMapCanonicalization = vi.fn();
+    const publish = vi.fn();
+    const close = vi.fn(async () => undefined);
+    const invalidProvider: StructuredExtractionProvider = {
+      openSource: vi.fn(async () => ({
+        extractStructured: vi.fn(async () => ({
+          output: invalidMap,
+          providerRunId: 'provider-run-dangling-metadata',
+          usage: { inputUnits: 1, outputUnits: 1, totalUnits: 2 },
+        })),
+        close,
+      })),
+    };
+
+    await expect(
+      executeSegmentedImportRuntime({
+        batch: batch as any,
+        jobId: 'canonicalization-diagnostic-job',
+        attempt: 10,
+        correlationId: '00000000-0000-4000-8000-000000000010',
+        source: {
+          documents: [{ documentId: 'document-main', ordinal: 1, bytes: new Uint8Array([1]) }],
+        },
+        provider: invalidProvider,
+        artifacts: { load: vi.fn(async () => undefined), publish },
+        diagnostics: true,
+        observeDocumentMapCanonicalization,
+      }),
+    ).rejects.toMatchObject({ code: 'DOCUMENT_MAP_CANONICALIZATION_FAILED' });
+    expect(observeDocumentMapCanonicalization).toHaveBeenCalledWith({
+      totalViolations: 1,
+      categories: { unknown_reference: 1 },
+      sampledViolations: [
+        {
+          path: '/documents/0/titleHints/0/sourceBlockIds/0',
+          kind: 'block',
+          category: 'unknown_reference',
+        },
+      ],
+      truncated: false,
+    });
+    expect(JSON.stringify(observeDocumentMapCanonicalization.mock.calls)).not.toContain(secret);
+    expect(publish).not.toHaveBeenCalled();
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects empty table headers at the raw Document Map transport boundary', async () => {
+    const invalidMap = documentMapTransport();
+    (invalidMap.tables[0] as unknown as { headerBlockIds: string[] }).headerBlockIds = [];
+    const observeDocumentMapValidation = vi.fn();
+    const publish = vi.fn();
+    const close = vi.fn(async () => undefined);
+    const invalidProvider: StructuredExtractionProvider = {
+      openSource: vi.fn(async () => ({
+        extractStructured: vi.fn(async () => ({
+          output: invalidMap,
+          providerRunId: 'provider-run-min-items',
+          usage: { inputUnits: 1, outputUnits: 1, totalUnits: 2 },
+        })),
+        close,
+      })),
+    };
+
+    await expect(
+      executeSegmentedImportRuntime({
+        batch: batch as any,
+        jobId: 'min-items-job',
+        attempt: 9,
+        correlationId: '00000000-0000-4000-8000-000000000009',
+        source: {
+          documents: [{ documentId: 'document-main', ordinal: 1, bytes: new Uint8Array([1]) }],
+        },
+        provider: invalidProvider,
+        artifacts: { load: vi.fn(async () => undefined), publish },
+        diagnostics: true,
+        observeDocumentMapValidation,
+      }),
+    ).rejects.toMatchObject({ code: 'COMMERCIAL_DOCUMENT_MAP_INVALID' });
+    expect(observeDocumentMapValidation).toHaveBeenCalledWith({
+      totalViolations: 1,
+      sampledViolations: [
+        { path: '/tables/0/headerBlockIds', keyword: 'minItems', category: 'schema' },
+      ],
+      truncated: false,
+      categories: { minItems: 1 },
+      broadCategories: { schema: 1, referential: 0, semantic: 0, invariant: 0 },
+    });
+    expect(publish).not.toHaveBeenCalled();
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+
   it('routes safe Unit Extraction diagnostics without persisting unit output', async () => {
     const secret = 'unit-commercial-value-must-not-escape';
     const observeUnitExtractionValidation = vi.fn();
@@ -445,7 +695,7 @@ describe('segmented import runtime', () => {
             calls += 1;
             if (calls === 1)
               return {
-                output: modelOwnedDocumentMapIds(),
+                output: documentMapTransport(),
                 providerRunId: 'map-run',
                 usage: { inputUnits: 1, outputUnits: 1, totalUnits: 2 },
               };
@@ -493,6 +743,63 @@ describe('segmented import runtime', () => {
       }),
     );
     expect(JSON.stringify(observeUnitExtractionValidation.mock.calls)).not.toContain(secret);
+    expect(artifacts.values.map((item) => item.manifest.stage)).toEqual([
+      'document_map',
+      'unit_plan',
+    ]);
+  });
+
+  it('reports a causal canonical failure instead of an earlier sibling abort', async () => {
+    let calls = 0;
+    const dangling = structuredClone(geelyLikeCommercialDocumentExtractionFixture);
+    const danglingEvidence = dangling.documents[0]!.competenceCandidates[0]!.evidence as {
+      blockIds: string[];
+    };
+    danglingEvidence.blockIds = ['block-source-without-extraction-block'];
+    const provider: StructuredExtractionProvider = {
+      async openSource() {
+        return {
+          async extractStructured(request) {
+            calls += 1;
+            if (calls === 1)
+              return {
+                output: documentMapTransport(),
+                providerRunId: 'map-run',
+                usage: { inputUnits: 1, outputUnits: 1, totalUnits: 2 },
+              };
+            if (calls === 2)
+              return new Promise((_resolve, reject) =>
+                request.signal.addEventListener(
+                  'abort',
+                  () => reject(new Error('sibling aborted')),
+                  { once: true },
+                ),
+              );
+            return {
+              output: extractionTransport(dangling),
+              providerRunId: 'unit-causal-run',
+              usage: { inputUnits: 3, outputUnits: 4, totalUnits: 7 },
+            };
+          },
+          async close() {},
+        };
+      },
+    };
+    const artifacts = store();
+
+    await expect(
+      executeSegmentedImportRuntime({
+        batch,
+        jobId: 'causal-failure-job',
+        attempt: 8,
+        correlationId: '00000000-0000-4000-8000-000000000008',
+        source: {
+          documents: [{ documentId: 'document-main', ordinal: 1, bytes: new Uint8Array([1]) }],
+        },
+        provider,
+        artifacts,
+      }),
+    ).rejects.toThrow('UNIT_EXTRACTION_CANONICAL_VALIDATION_FAILED');
     expect(artifacts.values.map((item) => item.manifest.stage)).toEqual([
       'document_map',
       'unit_plan',

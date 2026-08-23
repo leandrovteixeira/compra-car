@@ -18,6 +18,7 @@ export interface CommercialDocumentMapViolationDiagnostic {
   readonly path: string;
   readonly keyword: string;
   readonly category: CommercialDocumentMapViolationCategory;
+  readonly missingProperty?: string;
 }
 
 export interface CommercialDocumentMapValidationDiagnostic {
@@ -29,6 +30,26 @@ export interface CommercialDocumentMapValidationDiagnostic {
 }
 
 const COMMERCIAL_DOCUMENT_MAP_DIAGNOSTIC_SAMPLE_LIMIT = 30;
+
+const collectStaticSchemaPropertyNames = (
+  schema: unknown,
+  names = new Set<string>(),
+): Set<string> => {
+  if (!schema || typeof schema !== 'object') return names;
+  if (Array.isArray(schema)) {
+    schema.forEach((item) => collectStaticSchemaPropertyNames(item, names));
+    return names;
+  }
+  const object = schema as Record<string, unknown>;
+  if (object.properties && typeof object.properties === 'object')
+    Object.keys(object.properties).forEach((name) => names.add(name));
+  Object.values(object).forEach((item) => collectStaticSchemaPropertyNames(item, names));
+  return names;
+};
+
+const commercialDocumentMapStaticPropertyNames = collectStaticSchemaPropertyNames(
+  commercialDocumentMapSchemaV1,
+);
 
 export class CommercialDocumentMapValidationError extends Error {
   readonly code = 'COMMERCIAL_DOCUMENT_MAP_INVALID' as const;
@@ -96,11 +117,20 @@ export function sanitizeCommercialDocumentMapAjvErrors(
   sampleLimit = COMMERCIAL_DOCUMENT_MAP_DIAGNOSTIC_SAMPLE_LIMIT,
 ): CommercialDocumentMapValidationDiagnostic {
   return summarizeDiagnostics(
-    (errors ?? []).map((error) => ({
-      path: error.instancePath || '/',
-      keyword: error.keyword,
-      category: 'schema' as const,
-    })),
+    (errors ?? []).map((error) => {
+      const diagnostic: CommercialDocumentMapViolationDiagnostic = {
+        path: error.instancePath || '/',
+        keyword: error.keyword,
+        category: 'schema',
+      };
+      const missingProperty = (error.params as { readonly missingProperty?: unknown })
+        .missingProperty;
+      return error.keyword === 'required' &&
+        typeof missingProperty === 'string' &&
+        commercialDocumentMapStaticPropertyNames.has(missingProperty)
+        ? { ...diagnostic, missingProperty }
+        : diagnostic;
+    }),
     sampleLimit,
   );
 }

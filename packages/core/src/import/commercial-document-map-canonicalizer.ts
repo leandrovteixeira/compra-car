@@ -129,6 +129,55 @@ const mappedRef = (maps: Maps, ref: CommercialDocumentMapRef, path: string) => (
   refId: mapped(maps, refKind[ref.refType], ref.refId, `${path}/refId`),
 });
 
+const compareText = (left: string, right: string): number =>
+  left < right ? -1 : left > right ? 1 : 0;
+
+const normalizePageSectionMembership = (
+  value: CommercialDocumentMapV1,
+): CommercialDocumentMapV1 => {
+  const pageSections = new Map(value.pages.map((page) => [page.pageId, new Set(page.sectionIds)]));
+  const sectionPages = new Map(
+    value.sections.map((section) => [section.sectionId, new Set(section.pageIds)]),
+  );
+  for (const page of value.pages)
+    for (const sectionId of page.sectionIds) sectionPages.get(sectionId)?.add(page.pageId);
+  for (const section of value.sections)
+    for (const pageId of section.pageIds) pageSections.get(pageId)?.add(section.sectionId);
+
+  const sectionOrder = new Map(value.sections.map((section, index) => [section.sectionId, index]));
+  const documentOrder = new Map(
+    value.documents.map((document) => [document.documentId, document.ordinal]),
+  );
+  const pages = new Map(value.pages.map((page, index) => [page.pageId, { page, index }]));
+  const comparePages = (leftId: string, rightId: string): number => {
+    const left = pages.get(leftId)!;
+    const right = pages.get(rightId)!;
+    return (
+      (documentOrder.get(left.page.documentId) ?? 0) -
+        (documentOrder.get(right.page.documentId) ?? 0) ||
+      left.page.pageNumber - right.page.pageNumber ||
+      left.index - right.index ||
+      compareText(leftId, rightId)
+    );
+  };
+
+  return {
+    ...value,
+    pages: value.pages.map((page) => ({
+      ...page,
+      sectionIds: [...pageSections.get(page.pageId)!].sort(
+        (left, right) =>
+          (sectionOrder.get(left) ?? Number.MAX_SAFE_INTEGER) -
+            (sectionOrder.get(right) ?? Number.MAX_SAFE_INTEGER) || compareText(left, right),
+      ),
+    })),
+    sections: value.sections.map((section) => ({
+      ...section,
+      pageIds: [...sectionPages.get(section.sectionId)!].sort(comparePages),
+    })),
+  };
+};
+
 export function canonicalizeCommercialDocumentMapIds(
   value: CommercialDocumentMapV1,
   options: { readonly sourceDocumentOrdinals?: readonly number[] } = {},
@@ -197,7 +246,7 @@ export function canonicalizeCommercialDocumentMapIds(
       ),
     }));
 
-  return {
+  const canonical: CommercialDocumentMapV1 = {
     ...structuredClone(value),
     documents: value.documents.map((document, index) => ({
       ...document,
@@ -318,4 +367,5 @@ export function canonicalizeCommercialDocumentMapIds(
       };
     }),
   };
+  return normalizePageSectionMembership(canonical);
 }

@@ -1,8 +1,14 @@
-import type {
-  CommercialDocumentEvidence,
-  CommercialDocumentExtractionV1,
-  CommercialDocumentScopeSelector,
+import {
+  COMMERCIAL_DOCUMENT_EXTRACTION_LIMITS,
+  type CommercialDocumentEvidence,
+  type CommercialDocumentExtractionV1,
+  type CommercialDocumentScopeSelector,
 } from './commercial-document-extraction';
+
+const boundDocumentExcerpt = (value: string, maxLength: number): string => {
+  const codePoints = Array.from(value);
+  return codePoints.length <= maxLength ? value : codePoints.slice(0, maxLength).join('');
+};
 
 type IdMap = ReadonlyMap<string, string>;
 const mapped = (map: IdMap, value: string | undefined): string | undefined =>
@@ -120,6 +126,10 @@ export function canonicalizeCommercialDocumentExtractionUnit(
       ...block,
       blockId: mapped(blocks, block.blockId)!,
       documentId: mapped(documents, block.documentId)!,
+      excerpt: boundDocumentExcerpt(
+        block.excerpt,
+        COMMERCIAL_DOCUMENT_EXTRACTION_LIMITS.maxExcerptLength,
+      ),
       ...(block.tableId ? { tableId: mapped(tables, block.tableId)! } : {}),
       ...(block.rowId ? { rowId: mapped(rows, block.rowId)! } : {}),
     })),
@@ -186,6 +196,9 @@ export function canonicalizeCommercialDocumentExtractionUnit(
     },
     coverage: {
       ...value.coverage,
+      expectedUnitCount: value.coverage.units.length,
+      completedUnitCount: value.coverage.units.filter((unit) => unit.status === 'complete').length,
+      extractedVehicleCount: value.vehicleIdentities.length,
       units: value.coverage.units.map((unit) => ({
         ...unit,
         unitId: mapped(units, unit.unitId)!,

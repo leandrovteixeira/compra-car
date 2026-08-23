@@ -104,9 +104,16 @@ describe('CommercialDocumentMap/1 and deterministic unit planning', () => {
     );
   });
 
-  it('reports schema and invariant failures without exposing document values', () => {
+  it('reports allow-listed required properties without exposing dynamic AJV params', () => {
     const secret = 'commercial-secret-value';
     const sanitized = sanitizeCommercialDocumentMapAjvErrors([
+      {
+        instancePath: '/documents/0',
+        schemaPath: '#/$defs/document/required',
+        keyword: 'required',
+        params: { missingProperty: 'competenceHints' },
+        message: "must have required property 'competenceHints'",
+      },
       {
         instancePath: '/documents/0',
         schemaPath: '#/$defs/document/required',
@@ -114,15 +121,50 @@ describe('CommercialDocumentMap/1 and deterministic unit planning', () => {
         params: { missingProperty: secret },
         message: `must have required property '${secret}'`,
       },
+      {
+        instancePath: '/documents/0/ordinal',
+        schemaPath: '#/$defs/document/properties/ordinal/type',
+        keyword: 'type',
+        params: { type: 'integer', actualValue: secret },
+        message: secret,
+      },
+      {
+        instancePath: '/documents/0/documentId',
+        schemaPath: '#/$defs/document/properties/documentId/pattern',
+        keyword: 'pattern',
+        params: { pattern: secret },
+        message: secret,
+      },
+      {
+        instancePath: '/documents/0',
+        schemaPath: '#/$defs/document/additionalProperties',
+        keyword: 'additionalProperties',
+        params: { additionalProperty: secret },
+        message: secret,
+      },
     ]);
     expect(sanitized).toMatchObject({
-      totalViolations: 1,
-      sampledViolations: [{ path: '/documents/0', keyword: 'required', category: 'schema' }],
+      totalViolations: 5,
+      sampledViolations: [
+        {
+          path: '/documents/0',
+          keyword: 'required',
+          category: 'schema',
+          missingProperty: 'competenceHints',
+        },
+        { path: '/documents/0', keyword: 'required', category: 'schema' },
+        { path: '/documents/0/ordinal', keyword: 'type', category: 'schema' },
+        { path: '/documents/0/documentId', keyword: 'pattern', category: 'schema' },
+        { path: '/documents/0', keyword: 'additionalProperties', category: 'schema' },
+      ],
       truncated: false,
-      keywordCounts: { required: 1 },
+      keywordCounts: { required: 2, type: 1, pattern: 1, additionalProperties: 1 },
     });
     expect(JSON.stringify(sanitized)).not.toContain(secret);
+    expect(new CommercialDocumentMapValidationError(sanitized).message).not.toContain(secret);
+  });
 
+  it('reports invariant failures without exposing document values', () => {
     const invalid = {
       ...geelyLikeCommercialDocumentMapFixture,
       pages: geelyLikeCommercialDocumentMapFixture.pages.map((page, index) =>

@@ -1,5 +1,175 @@
 # Changelog
 
+## 2026-08-23 — Bounding de source block excerpt na Unit Extraction
+
+- registra a falha canônica isolada de `unit-0003-table` em `/blocks/2/excerpt: maxLength` e o
+  sibling abort de `unit-0005-section`, após Document Map e Unit Plan concluídos;
+- preserva `CommercialDocumentExtraction/1`, inclusive `minLength: 1` e `maxLength: 1000`, e limita
+  no canonicalizer somente o prefixo literal de `blocks[].excerpt` por Unicode code point;
+- sobe o prompt da Unit Extraction de v7 para v8 e exige snippet literal curto, sem resumo,
+  reticências, placeholder ou dump de parágrafo/tabela/documento;
+- adiciona regressões de projection/transport/reconstruction/canonical validation, fronteiras do
+  limite, Unicode, vazio inválido, frozen input, determinismo e preservação de facts/evidence refs.
+
+## 2026-08-23 — Consistência de coverage status na Unit Extraction
+
+- registra que `unit-0005-table` falhou somente em
+  `/coverage/status: incompleteDataMarkedComplete` e que `unit-0006-table` foi sibling abort após
+  Document Map e Unit Plan concluídos;
+- formaliza os sete bloqueadores de `complete` e mantém status/provider semantics separados dos três
+  counters reconstruídos pelo servidor;
+- confirma que não existe downgrade universal seguro entre `partial` e `ambiguous`; o canonicalizer
+  não mascara a contradição e a invariant permanece ativa;
+- sobe o prompt da Unit Extraction de v6 para v7, explicita complete/partial/ambiguous, gaps,
+  unresolved e proíbe COMPLETE otimista;
+- adiciona regressões para todos os blockers, preservação de partial/ambiguous, ausência de promoção,
+  multi-unit, frozen input, determinismo e counters server-owned.
+
+## 2026-08-23 — Blank cells da Unit Extraction
+
+- registra a falha canônica real da unit 2 em duas `tables[].rows[].cells[].text: minLength`, seguida
+  de sibling abort da unit 1, após Document Map e Unit Plan concluídos;
+- confirma que cells são sparse e keyed por `columnId`, sem dependência do índice nem obrigação de
+  cobrir todas as columns; blank visual é representado pela ausência dessa cell;
+- mantém `text` required/non-nullable com `minLength: 1`, sem trim, fallback, placeholder ou mudança
+  de schema, pois merged/inherited/unknown não possuem estados próprios no contrato atual;
+- sobe o prompt da Unit Extraction de v5 para v6, orientando omissão de blank, preservação dos demais
+  `columnId`, proibição de conteúdo inventado e coverage gap quando material;
+- adiciona regressões de wire versus canonical boundary, blank inicial/intermediário/final,
+  rowSpan/colSpan não suportados, frozen input e determinismo.
+
+## 2026-08-23 — Required collections do Document Map
+
+- registra a falha real de transport validation por omissão de `documents[0].issuerHints`, uma
+  collection required/non-nullable que aceita `[]`;
+- sobe o prompt do Document Map de v3 para v4, exige todas as collections required, explicita as
+  quatro hint collections e diferencia array vazio legítimo de hint inventado;
+- mantém provenance obrigatória para hints presentes e preserva o transport validator sobre o raw
+  wire, sem preenchimento automático, alteração de schema, projection, provider ou canonicalizer;
+- adiciona inventário testável das required arrays que aceitam `[]` e regressões de issuer vazio,
+  omitido, válido com provenance e dangling.
+
+## 2026-08-23 — Diagnóstico seguro de required no Document Map
+
+- registra que o último retry falhou na validação do transport schema com dois campos obrigatórios
+  ausentes em `documents[0]`, cujos nomes não eram preservados pelo sanitizer;
+- adiciona `missingProperty` opcional aos diagnostics somente para `keyword: required` e somente
+  quando o nome pertence às propriedades estáticas do schema;
+- mantém descartados os demais params do AJV, incluindo nomes de `additionalProperties`, valores,
+  patterns e mensagens, sem alterar schema, projection, validator contract ou prompt;
+- cobre sanitizer, runtime segmentado, truncation e identidade entre o schema enviado ao provider e
+  o schema compilado pelo transport validator, com smoke externo desligado.
+
+## 2026-08-23 — Materialização e diagnóstico de metadata refs no Document Map
+
+- registra que o último retry passou por Structured Output, wire validation e reconstruction, mas
+  falhou na canonicalização com uma `unknown_reference` em metadata hints antes do Unit Plan;
+- confirma que title/issuer/competence/validity hints referenciam somente
+  `contentBlocks[].contentBlockId` por `sourceBlockIds`, obrigatório e com ao menos um item por hint;
+- adiciona o evento opt-in `SEGMENTED_DOCUMENT_MAP_CANONICALIZATION`, limitado a total, categories,
+  amostra `{ path, kind, category }` e truncation, sem raw IDs ou conteúdo documental;
+- sobe o prompt do Document Map para v3, exige que toda ref possua definition real no mesmo artifact,
+  orienta omitir hint sem source real e proíbe placeholders;
+- mantém unknown refs estritas e comprova indexação global, cross-kind isolado, same-kind duplicate,
+  deep-freeze, determinismo e idempotência sem alterar schema ou canonicalizer.
+
+## 2026-08-23 — Reforço de factIds em relationships da Unit Extraction
+
+- registra que Document Map e Unit Plan passaram no último retry e que a unit 4 falhou somente em
+  dois `composition.relationships[*].factIds: minItems`, seguida de sibling abort da unit 5;
+- confirma que todas as relationship types exigem ao menos um fact e evidence, enquanto somente
+  `APPLIES_TOGETHER`/`MUTUALLY_EXCLUSIVE` exigem dois subjects totais;
+- corrige a versão factual anterior do prompt: o runtime efetivo já estava em v4 e continha a regra
+  genérica de um fact, mas não dizia explicitamente que groups não substituem esse requisito;
+- sobe o prompt segmentado para v5, proíbe `factIds: []`, orienta omitir relações group-only e inclui
+  exemplos abstratos válidos/inválidos;
+- preserva schema, `minItems`, projection, validator e canonicalizer, sem sanitizar output raw com
+  possível intenção semântica;
+- adiciona regressões de collection vazia, empty/group-only, fact-only, fact+group e relações
+  combinatórias com subjects insuficientes.
+
+## 2026-08-23 — Normalização de back-reference página–seção no Document Map
+
+- registra que o último retry passou por wire validation, reconstruction, ID canonicalization e
+  schema canônico, falhando somente em `sections[*].pageIds: missingPageBackReference` antes do Unit
+  Plan;
+- comprova que `page.sectionIds` e `section.pageIds` são duas projeções do mesmo membership e forma a
+  união determinística somente dos pares declarados em ao menos um dos lados;
+- reprojeta ambos os lados após canonicalizar referências, eliminando duplicatas e preservando
+  dangling refs como falhas `unknown_reference`;
+- mantém schema, invariant, transport schema, prompt, planner e etapas posteriores inalterados;
+- adiciona regressões do caso causal, sentido inverso, idempotência, deep-freeze, determinismo,
+  duplicatas, dangling refs, fixtures sintéticas e runtime segmentado com smoke OFF.
+
+## 2026-08-22 — Coverage determinístico na Unit Extraction
+
+- comprova que `expectedUnitCount`, `completedUnitCount` e `extractedVehicleCount` são projeções
+  determinísticas de `coverage.units` e `vehicleIdentities`, embora antes fossem copiados do provider;
+- reconstrói os três contadores no canonicalizer sem hardcode unitário e preserva artifacts agregados;
+- sobe o prompt segmentado para v4, limita `coverage.units` à unit corrente e usa `0` apenas como
+  sentinel de wire para os contadores required que o servidor substitui;
+- preserva status complete/partial/ambiguous, gaps e unresolved, incluindo rejeição de completeness
+  semanticamente inconsistente; schema, Unit Plan e etapas posteriores permanecem inalterados;
+- adiciona regressões de contadores errados, unit-scoped/multi-unit, partial/unresolved, deep-freeze,
+  determinismo e runtime segmentado sem chamadas externas.
+
+## 2026-08-22 — Prevenção de placeholders vazios em composition
+
+- confirma no contrato `CommercialDocumentExtraction/1` que `composition.groups` e
+  `composition.relationships` podem ser coleções vazias, mas cada group exige ao menos dois
+  `memberFactIds` e cada relationship exige ao menos um `factId`;
+- sobe somente o prompt da Unit Extraction para v3 e proíbe objetos-placeholder: composição ausente
+  usa `groups: []`/`relationships: []`, enquanto objetos reais precisam de facts, scope e evidence
+  documentais conforme o contrato;
+- adiciona regressões transport/canônicas para coleções vazias, elementos vazios, grupo de um membro,
+  composições reais e composição hierárquica cumulative/alternative;
+- preserva schema, `minItems`, transport projection/validator, canonicalizer, timeout, Document Map,
+  Unit Plan, reconciliation, Domain Mapping e matching; não executa retry/OpenAI nem toca ambientes.
+
+## 2026-08-22 — Alinhamento do Document Map transport validator
+
+- comprova que provider request e AJV local já derivavam da mesma constante de transport schema,
+  mas a projection reconhecia somente parte dos prefixos de IDs locais e deixava 20 ocorrências de
+  `pattern` para `page`, `section`, `note`, `hint` e `edge` no Document Map wire;
+- generaliza a remoção somente para o formato exato de ID server-owned, preservando patterns de
+  negócio, `minItems`, `maxItems`, `minimum`, `maximum`, tipos e required no transport;
+- faz Unit Extraction validar o response wire bruto antes da reconstruction e remove a reprojeção
+  intermediária que podia mascarar propriedades wire ausentes com sentinelas `null`;
+- adiciona guards de identidade entre o schema compilado pelo AJV e o enviado ao provider, cobertura
+  de IDs model-local, canonicalização posterior, `minItems`, type e required;
+- mantém schemas e validators canônicos, canonicalizers, prompt v2 e planner inalterados; não executa
+  retry/OpenAI, não escreve em Staging, não cria migration e não toca `Legacy`.
+
+## 2026-08-22 — Defesa de minItems no Document Map transport
+
+- prova localmente que `tables[].headerBlockIds` é required/non-nullable com `minItems: 1`,
+  `maxItems: 500` e items string/block tanto no schema canônico quanto na projeção OpenAI;
+- refuta a hipótese de null sentinel: a projection não torna array items nullable e a reconstruction
+  preserva `['block-x']`, `[null]`, `['block-x', null]` e `[]` sem filtrar ou alterar cardinalidade;
+- adiciona validação AJV do raw Document Map transport antes de reconstruction/canonicalization, com
+  o mesmo diagnóstico estrutural sanitizado e sem persistir output inválido;
+- sobe o prompt do Document Map para v2 e exige header block documental real em toda table; conteúdo
+  sem header identificável deve permanecer em content blocks/sections, enquanto continuações usam o
+  header original via `inheritedHeaderBlockIds`;
+- mantém `minItems: 1`, schemas, canonicalizer e planner inalterados; não executa retry/OpenAI, não
+  escreve em Staging, não cria migration e não toca `Legacy`.
+
+## 2026-08-22 — Provenance de evidence e causalidade da Unit Extraction
+
+- reconcilia read-only o Job 45/attempt 8 do batch 117: Document Map e Unit Plan succeeded, zero
+  Unit Extraction artifact/row e zero job ativo; a unit 2 falhou com dois `unknownRef` em
+  `documents[0].candidates[*].evidence.blockIds`, enquanto a unit 1 foi `ABORTED_SIBLING`;
+- comprova que `evidence.blockIds` pertence ao namespace extraction-local e deve resolver contra
+  `CommercialDocumentExtraction.blocks[].blockId`, não diretamente contra `Document Map.contentBlocks`;
+- inclui os content blocks canônicos primários/context-only no Unit Context e sobe o prompt de Unit
+  Extraction para v2: source block usado deve materializar um bloco documental real, reutilizando
+  temporariamente o ID canônico do mapa para que definição e refs sejam remapeadas juntas; referências
+  soltas, duplicadas e placeholders continuam rejeitados;
+- substitui a escolha posicional da primeira falha por prioridade determinística: falhas causais
+  vencem `ABORTED_SIBLING`, inclusive com a lista de resultados invertida;
+- mantém a dívida existente: resposta que falha na validação canônica não publica artifact nem agrega
+  usage/providerRunId; não há reuso cross-job, migration, retry, OpenAI ou alteração de `Legacy`.
+
 ## 2026-08-22 — Diagnóstico e boundary de IDs da primeira Unit Extraction real
 
 - reconcilia read-only o Job 44/attempt 7 do batch 117: Document Map e Unit Plan succeeded, plano de

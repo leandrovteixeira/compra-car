@@ -74,14 +74,32 @@ O validator confirma unicidade e integridade de:
 - group/relation → facts/groups/scopes/blocks;
 - coverage → units/blocks/tables/rows/scopes.
 
+`coverage.status` distingue `complete`, `partial` e `ambiguous`. Complete exige todas as units
+completas, ausência de gaps e unresolved/incomplete references e igualdade das expectativas
+declaradas de vehicles/families. Partial representa incompletude conhecida e precisa de evidência
+estrutural dessa lacuna. Ambiguous representa interpretação não resolvida e precisa de gap de
+ambiguidade, unit ambígua ou scope não resolvido. Os sinais não tornam partial e ambiguous
+mutuamente exclusivos; por isso assemblers não reclassificam automaticamente um status sem base
+semântica.
+
 ## Blocks e tabelas
 
-Blocks guardam `excerpt` de até 1.000 caracteres, posição por página e região `[0,1]` opcional. Não há
-texto integral, bytes, base64, URL privada ou geometria completa.
+Blocks guardam `excerpt` literal, não vazio, de até 1.000 Unicode code points, posição por página e
+região `[0,1]` opcional. Não há texto integral, bytes, base64, URL privada ou geometria completa. Na
+fronteira de Unit Extraction, o canonicalizer limita somente um source block excerpt excedente ao
+prefixo literal permitido antes da validação, sem trim, resumo, reticências ou texto sintético;
+facts, evidence e demais campos comerciais permanecem intocados.
 
 Uma tabela multipágina possui uma única `tableId`, `pages` ascendentes e `continuation.segments`.
 Segmentos posteriores registram `inheritsHeadersFromPage`; `inheritedHeaderBlockIds` e
 `footnoteBlockIds` preservam contexto. A página seguinte não se torna tabela independente.
+
+Rows usam cells sparse identificadas explicitamente por `columnId`; a posição no array não substitui
+a identidade da column e uma row não precisa repetir todas as columns. Uma interseção visual sem
+texto é representada pela ausência da cell correspondente. `cell.text` existe apenas para conteúdo
+visível não vazio. O v1 não possui `rowSpan`, `colSpan` nem estado merged/inherited/unknown; esses
+valores não são inferidos ou propagados da linha anterior, e ausência material deve permanecer em
+coverage como gap/row não resolvida.
 
 ## Vehicle identities e fatos
 

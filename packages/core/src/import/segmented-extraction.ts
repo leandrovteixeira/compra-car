@@ -5,7 +5,7 @@ import type {
   CommercialExtractionUnitPlanV1,
 } from './commercial-document-map';
 
-export const SEGMENTED_EXTRACTION_PROMPT_VERSION = '1' as const;
+export const SEGMENTED_EXTRACTION_PROMPT_VERSION = '8' as const;
 export const SEGMENTED_EXTRACTION_SCHEMA_VERSION = 'CommercialDocumentExtraction/1' as const;
 
 export const SEGMENTED_EXTRACTION_LIMITS = Object.freeze({
@@ -68,6 +68,8 @@ export interface SegmentedExtractionUnitContext {
   readonly sourceDocument: CommercialDocumentMapV1['documents'][number];
   readonly primaryPages: readonly CommercialDocumentMapV1['pages'][number][];
   readonly contextOnlyPages: readonly CommercialDocumentMapV1['pages'][number][];
+  readonly primaryContentBlocks: readonly CommercialDocumentMapV1['contentBlocks'][number][];
+  readonly contextOnlyContentBlocks: readonly CommercialDocumentMapV1['contentBlocks'][number][];
   readonly tables: readonly CommercialDocumentMapV1['tables'][number][];
   readonly notes: readonly CommercialDocumentMapV1['notes'][number][];
   readonly contextEdges: readonly CommercialDocumentMapV1['contextEdges'][number][];

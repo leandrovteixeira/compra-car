@@ -6,6 +6,7 @@ import {
   type CommercialDocumentExtractionV1,
 } from '../src/import/commercial-document-extraction';
 import { commercialDocumentExtractionSchemaV1 } from '../src/import/commercial-document-extraction-schema';
+import { canonicalizeCommercialDocumentExtractionUnit } from '../src/import/commercial-document-extraction-canonicalizer';
 import {
   CommercialDocumentExtractionValidationError,
   validateCommercialDocumentExtraction,
@@ -35,6 +36,13 @@ const expectInvalid = (artifact: unknown, issue?: string): void => {
       );
   }
 };
+const deepFreeze = <T>(value: T): T => {
+  if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+    Object.values(value).forEach(deepFreeze);
+    Object.freeze(value);
+  }
+  return value;
+};
 
 describe('CommercialDocumentExtraction/1', () => {
   it('publishes a valid Draft 2020-12 JSON Schema', () => {
@@ -44,6 +52,78 @@ describe('CommercialDocumentExtraction/1', () => {
       'https://json-schema.org/draft/2020-12/schema',
     );
     expect(commercialDocumentExtractionSchemaV1.additionalProperties).toBe(false);
+  });
+
+  it('keeps table cells non-empty and keyed explicitly by columnId', () => {
+    const tableCell = commercialDocumentExtractionSchemaV1.$defs.tableCell;
+    expect(tableCell).toEqual({
+      type: 'object',
+      additionalProperties: false,
+      required: ['columnId', 'text'],
+      properties: {
+        columnId: {
+          type: 'string',
+          pattern: '^column-[a-z0-9][a-z0-9._-]{0,63}$',
+        },
+        text: {
+          type: 'string',
+          minLength: 1,
+          maxLength: COMMERCIAL_DOCUMENT_EXTRACTION_LIMITS.maxTextLength,
+        },
+      },
+    });
+
+    const empty = structuredClone(geelyLikeCommercialDocumentExtractionFixture);
+    (empty.tables[0]!.rows[0]!.cells[0] as { text: string }).text = '';
+    expectInvalid(empty, '/tables/0/rows/0/cells/0/text: minLength');
+  });
+
+  it.each([
+    ['first', 0],
+    ['middle', 1],
+    ['last', 2],
+  ] as const)(
+    'represents a visually blank %s column by omitting its keyed cell',
+    (_name, index) => {
+      const artifact = structuredClone(fiatLikeCommercialDocumentExtractionFixture);
+      const row = artifact.tables[0]!.rows[0]!;
+      const before = row.cells.map((cell) => cell.columnId);
+      const omitted = before[index]!;
+      (row as unknown as { cells: typeof row.cells }).cells = row.cells.filter(
+        (cell) => cell.columnId !== omitted,
+      );
+
+      expect(() => validateCommercialDocumentExtraction(artifact)).not.toThrow();
+      expect(row.cells.map((cell) => cell.columnId)).toEqual(
+        before.filter((columnId) => columnId !== omitted),
+      );
+      expect(row.cells.every((cell) => cell.text.length > 0)).toBe(true);
+    },
+  );
+
+  it('rejects invented merged-cell fields because rowSpan and colSpan are unsupported', () => {
+    const artifact = structuredClone(geelyLikeCommercialDocumentExtractionFixture);
+    const cell = artifact.tables[0]!.rows[0]!.cells[0] as unknown as Record<string, unknown>;
+    cell.rowSpan = 2;
+    cell.colSpan = 2;
+
+    expectInvalid(artifact, 'additionalProperties');
+  });
+
+  it('canonicalizes a frozen artifact with an omitted blank cell deterministically', () => {
+    const artifact = structuredClone(geelyLikeCommercialDocumentExtractionFixture);
+    const row = artifact.tables[0]!.rows[0]!;
+    (row as unknown as { cells: typeof row.cells }).cells = row.cells.slice(1);
+    const frozen = deepFreeze(artifact);
+    const before = JSON.stringify(frozen);
+
+    const first = canonicalizeCommercialDocumentExtractionUnit(frozen, 1);
+    const repeated = canonicalizeCommercialDocumentExtractionUnit(frozen, 1);
+
+    expect(JSON.stringify(frozen)).toBe(before);
+    expect(repeated).toEqual(first);
+    expect(first.tables[0]!.rows[0]!.cells).toHaveLength(1);
+    expect(() => validateCommercialDocumentExtraction(first)).not.toThrow();
   });
 
   it.each(fixtures)('accepts the %s synthetic fixture', (_name, fixture) => {
