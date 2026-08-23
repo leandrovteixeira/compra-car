@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-08-23 — Pausa estratégica do pipeline segmentado da Sprint 10C
+
+- classifica a Sprint 10C como `PAUSED AFTER EXPERIMENTAL SEGMENTED PIPELINE VALIDATION`, sem apagar
+  runtime, schemas, artifacts, canonicalizers, reconciliation, Domain Mapping, testes ou feature flag;
+- registra que o benchmark real chegou à Unit Extraction, mas não concluiu todas as units nem o
+  caminho segmentado real até matching/import E2E;
+- mantém `one_shot` como default funcional e declara o pipeline segmentado avançado não bloqueante
+  para o MVP;
+- reposiciona o roadmap para comparação utilizável, PDF, compartilhamento/link/WhatsApp, usuários,
+  convites, histórico e polish mobile; retomada futura começa por baseline e simplification review.
+
+## 2026-08-23 — Reasons seguros para coverage COMPLETE inválido
+
+- adiciona allow-list estática e ordenada dos sete predicados de
+  `incompleteDataMarkedComplete` aos diagnostics opt-in da Unit Extraction;
+- preserva a mensagem pública curta e não expõe counts, expected values, family names, IDs,
+  mensagens de gaps, excerpts ou output do provider;
+- mantém invariant, artifact, canonicalizer e prompt v8 inalterados e adiciona regressões isoladas
+  dos sete blockers, combinação, COMPLETE válido e propagação segura pelo segmented runtime.
+
 ## 2026-08-23 — Bounding de source block excerpt na Unit Extraction
 
 - registra a falha canônica isolada de `unit-0003-table` em `/blocks/2/excerpt: maxLength` e o

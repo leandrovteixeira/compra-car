@@ -10,10 +10,23 @@ import { commercialDocumentExtractionSchemaV1 } from './commercial-document-extr
 export type CommercialDocumentExtractionViolationCategory =
   'schema' | 'referential' | 'semantic' | 'invariant';
 
+export const INCOMPLETE_DATA_MARKED_COMPLETE_REASON_CODES = Object.freeze([
+  'UNIT_COUNT_MISMATCH',
+  'GAPS_PRESENT',
+  'INCOMPLETE_BLOCKS_PRESENT',
+  'UNRESOLVED_TABLE_ROWS_PRESENT',
+  'UNRESOLVED_SCOPES_PRESENT',
+  'VEHICLE_COUNT_MISMATCH',
+  'FAMILY_SET_MISMATCH',
+] as const);
+export type IncompleteDataMarkedCompleteReasonCode =
+  (typeof INCOMPLETE_DATA_MARKED_COMPLETE_REASON_CODES)[number];
+
 export interface CommercialDocumentExtractionViolationDiagnostic {
   readonly path: string;
   readonly keyword: string;
   readonly category: CommercialDocumentExtractionViolationCategory;
+  readonly reasons?: readonly IncompleteDataMarkedCompleteReasonCode[];
 }
 
 export interface CommercialDocumentExtractionValidationDiagnostic {
@@ -101,6 +114,7 @@ const semanticKeywords = new Set([
 ]);
 const sanitizeInvariantIssues = (
   issues: readonly string[],
+  incompleteDataMarkedCompleteReasons: readonly IncompleteDataMarkedCompleteReasonCode[] = [],
 ): CommercialDocumentExtractionValidationDiagnostic =>
   summarizeDiagnostics(
     issues.map((issue) => {
@@ -116,7 +130,10 @@ const sanitizeInvariantIssues = (
         : semanticKeywords.has(keyword) || keyword.startsWith('missingTargetFor')
           ? 'semantic'
           : 'invariant';
-      return { path, keyword, category };
+      return keyword === 'incompleteDataMarkedComplete' &&
+        incompleteDataMarkedCompleteReasons.length
+        ? { path, keyword, category, reasons: incompleteDataMarkedCompleteReasons }
+        : { path, keyword, category };
     }),
   );
 const isIsoCalendarDate = (value: string): boolean => {
@@ -160,6 +177,26 @@ const addUnknownRefs = (
 };
 const equalSets = (left: readonly string[], right: readonly string[]): boolean =>
   left.length === right.length && left.every((item) => right.includes(item));
+
+const incompleteDataMarkedCompleteReasons = (
+  coverage: CommercialDocumentExtractionV1['coverage'],
+): IncompleteDataMarkedCompleteReasonCode[] => {
+  const reasons: IncompleteDataMarkedCompleteReasonCode[] = [];
+  if (coverage.completedUnitCount !== coverage.expectedUnitCount)
+    reasons.push('UNIT_COUNT_MISMATCH');
+  if (coverage.gaps.length) reasons.push('GAPS_PRESENT');
+  if (coverage.incompleteBlockIds.length) reasons.push('INCOMPLETE_BLOCKS_PRESENT');
+  if (coverage.unresolvedTableRows.length) reasons.push('UNRESOLVED_TABLE_ROWS_PRESENT');
+  if (coverage.unresolvedScopeIds.length) reasons.push('UNRESOLVED_SCOPES_PRESENT');
+  if (
+    coverage.expectedVehicleCount !== undefined &&
+    coverage.expectedVehicleCount !== coverage.extractedVehicleCount
+  )
+    reasons.push('VEHICLE_COUNT_MISMATCH');
+  if (!equalSets(coverage.expectedFamilies, coverage.extractedFamilies))
+    reasons.push('FAMILY_SET_MISMATCH');
+  return reasons;
+};
 
 export function validateCommercialDocumentExtractionInvariants(
   artifact: CommercialDocumentExtractionV1,
@@ -389,6 +426,8 @@ export function validateCommercialDocumentExtractionInvariants(
   });
 
   const coverage = artifact.coverage;
+  const completeReasons =
+    coverage.status === 'complete' ? incompleteDataMarkedCompleteReasons(coverage) : [];
   if (coverage.expectedUnitCount !== coverage.units.length)
     issues.push('/coverage/expectedUnitCount: inconsistentWithUnits');
   const completedUnits = coverage.units.filter((unit) => unit.status === 'complete').length;
@@ -434,19 +473,7 @@ export function validateCommercialDocumentExtractionInvariants(
     if (!rowsByTable.get(row.tableId)?.has(row.rowId))
       issues.push(`/coverage/unresolvedTableRows/${index}: unknownRef`);
   });
-  if (coverage.status === 'complete') {
-    if (
-      coverage.completedUnitCount !== coverage.expectedUnitCount ||
-      coverage.gaps.length ||
-      coverage.incompleteBlockIds.length ||
-      coverage.unresolvedTableRows.length ||
-      coverage.unresolvedScopeIds.length ||
-      (coverage.expectedVehicleCount !== undefined &&
-        coverage.expectedVehicleCount !== coverage.extractedVehicleCount) ||
-      !equalSets(coverage.expectedFamilies, coverage.extractedFamilies)
-    )
-      issues.push('/coverage/status: incompleteDataMarkedComplete');
-  }
+  if (completeReasons.length) issues.push('/coverage/status: incompleteDataMarkedComplete');
   if (
     coverage.status === 'partial' &&
     coverage.completedUnitCount === coverage.expectedUnitCount &&
@@ -465,7 +492,9 @@ export function validateCommercialDocumentExtractionInvariants(
     issues.push('/coverage/status: ambiguousWithoutEvidence');
 
   if (issues.length)
-    throw new CommercialDocumentExtractionValidationError(sanitizeInvariantIssues(issues));
+    throw new CommercialDocumentExtractionValidationError(
+      sanitizeInvariantIssues(issues, completeReasons),
+    );
 }
 
 export function validateCommercialDocumentExtraction(

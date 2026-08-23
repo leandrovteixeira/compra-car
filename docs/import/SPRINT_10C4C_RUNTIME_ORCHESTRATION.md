@@ -1,7 +1,22 @@
 # Sprint 10C.4C — Runtime Orchestration
 
-Status: **implementada localmente; default one-shot; próximo gate é retry da Unit Extraction após
-bounding de source block excerpt**
+Status: **PAUSED AFTER EXPERIMENTAL SEGMENTED PIPELINE VALIDATION; default one-shot**
+
+> A Sprint 10C foi pausada estrategicamente em 2026-08-23. Não executar novo benchmark ou continuar
+> prompt/contract patches sem decisão explícita e simplification review. O código permanece
+> versionado e disponível. Ver `SPRINT_10C_PAUSE_CHECKPOINT.md`.
+
+## Unit Extraction coverage reason diagnostics
+
+Quando `/coverage/status: incompleteDataMarkedComplete` ocorre, o diagnostic estrutural opt-in pode
+agora informar, em ordem fixa, somente quais predicados estáticos estavam verdadeiros:
+`UNIT_COUNT_MISMATCH`, `GAPS_PRESENT`, `INCOMPLETE_BLOCKS_PRESENT`,
+`UNRESOLVED_TABLE_ROWS_PRESENT`, `UNRESOLVED_SCOPES_PRESENT`, `VEHICLE_COUNT_MISMATCH` e
+`FAMILY_SET_MISMATCH`. A lista não contém counts, valores, family names, IDs, mensagens, excerpts ou
+raw output e não é concatenada à mensagem pública do erro.
+
+A mudança é exclusivamente observacional: não altera artifact, canonicalizer, coverage status,
+invariants, prompt v8 ou escolha entre partial e ambiguous.
 
 ## Unit Extraction source block excerpt
 

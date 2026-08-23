@@ -1,5 +1,26 @@
 # Contexto para agentes de IA
 
+## Estado operacional prioritário — Sprint 10C PAUSED (2026-08-23)
+
+Classificação: **PAUSED AFTER EXPERIMENTAL SEGMENTED PIPELINE VALIDATION**. Não retomar o pipeline
+segmentado, executar novo smoke OpenAI ou reprocessar o benchmark sem decisão e autorização
+explícitas. O runtime continua preservado por feature flag e o default funcional permanece
+`one_shot`; o pipeline avançado não é blocker do MVP.
+
+O benchmark real comprovou provider/Structured Outputs, Document Map, IDs server-owned, Unit Plan,
+Unit Extraction segmentada e boundaries de transport/canonical, chegando a `unit-0001-table`. Não
+chegou a todas as units succeeded nem às etapas reais de merge, reconciliation, Domain Mapping,
+handoff, matching ou import segmentado E2E. O último blocker foi
+`/coverage/status: incompleteDataMarkedComplete`; diagnostics opt-in agora podem revelar quais dos
+sete predicados estáticos causaram a contradição sem expor valores, IDs ou conteúdo documental.
+
+Para uma retomada futura, começar por Simple Extraction Baseline, resultado comercial mínimo e
+medição de qualidade/custo/latência; depois revisar quais campos devem ser server-derived e
+simplificar o intermediate contract. Não continuar automaticamente pelo próximo coverage retry. Os
+checkpoints locais relevantes são `45b2964` e `ae9cd35`. O foco imediato volta ao MVP user-facing:
+comparação utilizável, PDF, compartilhamento/link/WhatsApp, usuários e convites, histórico e polish
+mobile.
+
 ## Correção local — source block excerpt da Unit Extraction (2026-08-23)
 
 Classificação: **READY FOR UNIT EXTRACTION RETRY AFTER EXCERPT BOUNDING FIX**. O retry real mais

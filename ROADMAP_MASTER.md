@@ -1,8 +1,10 @@
 # Compra Car — Cronograma Mestre do Projeto
 
-> Atualização 2026-08-21: a 10C.4C integrou localmente o runtime segmentado por opt-in, com E2E fake,
-> artifacts, replay e handoff canônico. Default one-shot; smoke OpenAI não executado. Próxima etapa:
-> 10C.4D Real Benchmark.
+> Atualização 2026-08-23: **Sprint 10C PAUSED AFTER EXPERIMENTAL SEGMENTED PIPELINE VALIDATION**. O
+> benchmark real alcançou Unit Extraction, mas não concluiu o import segmentado E2E. O runtime
+> permanece preservado por opt-in e o default continua `one_shot`. Uma retomada exige decisão
+> explícita, Simple Extraction Baseline e simplification review; o foco imediato retorna ao MVP
+> user-facing.
 
 ### Sprint 10C.4 — Operacionalização segmentada
 
@@ -11,7 +13,8 @@
   nenhum push remoto foi feito.
 - **10C.4C — IMPLEMENTADA LOCALMENTE:** Runtime Orchestration / End-to-End Dry Run fake, opt-in e sem
   efeito comercial.
-- **10C.4D:** Real Benchmark de qualidade, escala, latência e custo.
+- **10C.4D — PAUSED:** benchmark real validou o pipeline até Unit Extraction; todas as units,
+  merge/reconciliation/Domain Mapping/handoff/matching reais e E2E bem-sucedido permanecem pendentes.
 
 > Histórico 2026-08-16: 10C.3A implementou `CommercialDocumentExtraction/1`; 10C.3B implementou
 > `CommercialDocumentMap/1`, `CommercialExtractionUnitPlan/1`, validators e planner determinístico;
@@ -40,6 +43,23 @@ Status: 10C.3 concluída internamente sem integração runtime.
 ## Objetivo
 
 Criar rapidamente um MVP mobile-first para vendedores de concessionárias, permitindo comparar 2 ou 3 veículos, destacar diferenças e vantagens e gerar um PDF completo com aviso legal.
+
+## Próximas prioridades do MVP user-facing
+
+Sem renumerar as sprints existentes, a ordem conceitual imediata é:
+
+1. concluir uma comparação final utilizável;
+2. gerar o PDF completo já previsto, com aviso legal;
+3. disponibilizar compartilhamento e link compartilhável;
+4. integrar o fluxo de compartilhamento com WhatsApp;
+5. consolidar usuários/login para uso real;
+6. adicionar convites;
+7. permitir salvar e consultar histórico de comparações;
+8. executar polish mobile.
+
+O pipeline segmentado avançado não é blocker dessas entregas. O Import Engine do MVP pode continuar
+com one-shot extraction, canonical validation, revisão humana/admin, staging/approval e persistência
+existente. Correções administrativas manuais são aceitáveis nesta fase.
 
 ## Estado atual da Fase 1
 
@@ -124,8 +144,9 @@ Criar rapidamente um MVP mobile-first para vendedores de concessionárias, permi
 - [x] Sprint 10A/10A.2 — auditar o pipeline e definir guia, contrato canônico e UX de revisão por MMV.
 - [x] Sprint 10B — formalizar o Import Engine e entregar dossiês com múltiplos PDFs, Storage privado,
   hash/idempotência, lifecycle inicial e UI administrativa, sem provider ou extração.
-- [ ] Sprint 10C — definir provider/job maduros, indexar documentos e gerar prévia normalizada por
-  MMV, mantendo revisão humana e domínio soberano.
+- [ ] Sprint 10C — **PAUSED AFTER EXPERIMENTAL SEGMENTED PIPELINE VALIDATION**. Provider/job,
+  contratos e runtime opt-in foram validados parcialmente; a retomada começa por baseline e revisão
+  de simplificação, mantendo revisão humana e domínio soberano.
 
 - [ ] Sprint 10 — importar cartas comerciais e fichas técnicas em staging com saída estruturada,
   revisão humana e persistência aprovada; preços presentes na carta podem ser capturados.

@@ -9,7 +9,9 @@ import { commercialDocumentExtractionSchemaV1 } from '../src/import/commercial-d
 import { canonicalizeCommercialDocumentExtractionUnit } from '../src/import/commercial-document-extraction-canonicalizer';
 import {
   CommercialDocumentExtractionValidationError,
+  INCOMPLETE_DATA_MARKED_COMPLETE_REASON_CODES,
   validateCommercialDocumentExtraction,
+  type CommercialDocumentExtractionViolationDiagnostic,
 } from '../src/import/commercial-document-extraction-validator';
 import {
   fiatLikeCommercialDocumentExtractionFixture,
@@ -42,6 +44,22 @@ const deepFreeze = <T>(value: T): T => {
     Object.freeze(value);
   }
   return value;
+};
+const incompleteCompleteDiagnostic = (
+  coverage: CommercialDocumentExtractionV1['coverage'],
+  artifact: CommercialDocumentExtractionV1 = geelyLikeCommercialDocumentExtractionFixture,
+): CommercialDocumentExtractionViolationDiagnostic => {
+  try {
+    validateCommercialDocumentExtraction({ ...artifact, coverage });
+    throw new Error('Expected incompleteDataMarkedComplete validation to fail.');
+  } catch (error) {
+    expect(error).toBeInstanceOf(CommercialDocumentExtractionValidationError);
+    const diagnostic = (error as CommercialDocumentExtractionValidationError).diagnostics.find(
+      (item) => item.keyword === 'incompleteDataMarkedComplete',
+    );
+    expect(diagnostic).toBeDefined();
+    return diagnostic!;
+  }
 };
 
 describe('CommercialDocumentExtraction/1', () => {
@@ -169,6 +187,206 @@ describe('CommercialDocumentExtraction/1', () => {
         category: 'invariant',
       });
       expect(JSON.stringify(validation)).not.toContain(secretId);
+    }
+  });
+
+  it.each([
+    [
+      'unit count mismatch',
+      'UNIT_COUNT_MISMATCH',
+      {
+        ...structuredClone(geelyLikeCommercialDocumentExtractionFixture.coverage),
+        completedUnitCount:
+          geelyLikeCommercialDocumentExtractionFixture.coverage.completedUnitCount - 1,
+        units: geelyLikeCommercialDocumentExtractionFixture.coverage.units.map((unit, index) =>
+          index === 0 ? { ...unit, status: 'incomplete' as const } : structuredClone(unit),
+        ),
+      },
+    ],
+    [
+      'gap',
+      'GAPS_PRESENT',
+      {
+        ...structuredClone(geelyLikeCommercialDocumentExtractionFixture.coverage),
+        gaps: [
+          {
+            gapId: 'gap-observed',
+            gapType: 'OTHER' as const,
+            message: 'Observed gap.',
+            unitId: geelyLikeCommercialDocumentExtractionFixture.coverage.units[0]!.unitId,
+          },
+        ],
+      },
+    ],
+    [
+      'incomplete block',
+      'INCOMPLETE_BLOCKS_PRESENT',
+      {
+        ...structuredClone(geelyLikeCommercialDocumentExtractionFixture.coverage),
+        incompleteBlockIds: [geelyLikeCommercialDocumentExtractionFixture.blocks[0]!.blockId],
+      },
+    ],
+    [
+      'unresolved table row',
+      'UNRESOLVED_TABLE_ROWS_PRESENT',
+      {
+        ...structuredClone(geelyLikeCommercialDocumentExtractionFixture.coverage),
+        unresolvedTableRows: [
+          {
+            tableId: geelyLikeCommercialDocumentExtractionFixture.tables[0]!.tableId,
+            rowId: geelyLikeCommercialDocumentExtractionFixture.tables[0]!.rows[0]!.rowId,
+          },
+        ],
+      },
+    ],
+    [
+      'unresolved scope',
+      'UNRESOLVED_SCOPES_PRESENT',
+      {
+        ...structuredClone(geelyLikeCommercialDocumentExtractionFixture.coverage),
+        unresolvedScopeIds: [geelyLikeCommercialDocumentExtractionFixture.scopes[0]!.scopeId],
+      },
+    ],
+    [
+      'vehicle count mismatch',
+      'VEHICLE_COUNT_MISMATCH',
+      {
+        ...structuredClone(geelyLikeCommercialDocumentExtractionFixture.coverage),
+        expectedVehicleCount:
+          geelyLikeCommercialDocumentExtractionFixture.coverage.extractedVehicleCount + 1,
+      },
+    ],
+    [
+      'family set mismatch',
+      'FAMILY_SET_MISMATCH',
+      {
+        ...structuredClone(geelyLikeCommercialDocumentExtractionFixture.coverage),
+        expectedFamilies: [
+          ...geelyLikeCommercialDocumentExtractionFixture.coverage.expectedFamilies,
+          'Missing family',
+        ],
+      },
+    ],
+  ] as const)('reports only the static reason for %s', (_name, reason, coverage) => {
+    expect(incompleteCompleteDiagnostic(coverage).reasons).toEqual([reason]);
+  });
+
+  it('orders simultaneous incomplete COMPLETE reasons by the static allow-list', () => {
+    const original = geelyLikeCommercialDocumentExtractionFixture;
+    const coverage = {
+      ...structuredClone(original.coverage),
+      completedUnitCount: original.coverage.completedUnitCount - 1,
+      units: original.coverage.units.map((unit, index) =>
+        index === 0 ? { ...unit, status: 'incomplete' as const } : structuredClone(unit),
+      ),
+      gaps: [
+        {
+          gapId: 'gap-multiple',
+          gapType: 'OTHER' as const,
+          message: 'Multiple blocker test.',
+          unitId: original.coverage.units[0]!.unitId,
+        },
+      ],
+      incompleteBlockIds: [original.blocks[0]!.blockId],
+      unresolvedTableRows: [
+        { tableId: original.tables[0]!.tableId, rowId: original.tables[0]!.rows[0]!.rowId },
+      ],
+      unresolvedScopeIds: [original.scopes[0]!.scopeId],
+      expectedVehicleCount: original.coverage.extractedVehicleCount + 1,
+      expectedFamilies: [...original.coverage.expectedFamilies, 'Missing family'],
+    };
+
+    expect(incompleteCompleteDiagnostic(coverage).reasons).toEqual(
+      INCOMPLETE_DATA_MARKED_COMPLETE_REASON_CODES,
+    );
+  });
+
+  it('keeps COMPLETE reason diagnostics free of values, IDs, counts, messages and excerpts', () => {
+    const original = structuredClone(geelyLikeCommercialDocumentExtractionFixture);
+    const secretFamily = 'Confidential Family Name';
+    const secretMessage = 'Confidential gap message with commercial value 123456';
+    const secretExcerpt = 'Confidential evidence excerpt';
+    const secretBlockId = original.blocks[0]!.blockId;
+    const secretRowId = original.tables[0]!.rows[0]!.rowId;
+    const secretScopeId = original.scopes[0]!.scopeId;
+    const artifact = {
+      ...original,
+      facts: original.facts.map((fact, index) =>
+        index === 0 ? { ...fact, evidence: { ...fact.evidence, excerpt: secretExcerpt } } : fact,
+      ),
+      coverage: {
+        ...original.coverage,
+        gaps: [
+          {
+            gapId: 'gap-security',
+            gapType: 'OTHER' as const,
+            message: secretMessage,
+            unitId: original.coverage.units[0]!.unitId,
+          },
+        ],
+        incompleteBlockIds: [secretBlockId],
+        unresolvedTableRows: [{ tableId: original.tables[0]!.tableId, rowId: secretRowId }],
+        unresolvedScopeIds: [secretScopeId],
+        expectedVehicleCount: 999,
+        expectedFamilies: [...original.coverage.expectedFamilies, secretFamily],
+      },
+    };
+
+    try {
+      validateCommercialDocumentExtraction(artifact);
+      throw new Error('Expected validation to fail.');
+    } catch (error) {
+      expect(error).toBeInstanceOf(CommercialDocumentExtractionValidationError);
+      const validation = error as CommercialDocumentExtractionValidationError;
+      const serialized = JSON.stringify(validation);
+      expect(validation.message).toBe(
+        `CommercialDocumentExtraction/1 inválido (${validation.totalViolations} violação(ões)).`,
+      );
+      expect(serialized).not.toContain(secretFamily);
+      expect(serialized).not.toContain(secretMessage);
+      expect(serialized).not.toContain(secretExcerpt);
+      expect(serialized).not.toContain(secretBlockId);
+      expect(serialized).not.toContain(secretRowId);
+      expect(serialized).not.toContain(secretScopeId);
+      expect(serialized).not.toContain('999');
+      expect(
+        validation.diagnostics.find((item) => item.keyword === 'incompleteDataMarkedComplete')
+          ?.reasons,
+      ).toEqual([
+        'GAPS_PRESENT',
+        'INCOMPLETE_BLOCKS_PRESENT',
+        'UNRESOLVED_TABLE_ROWS_PRESENT',
+        'UNRESOLVED_SCOPES_PRESENT',
+        'VEHICLE_COUNT_MISMATCH',
+        'FAMILY_SET_MISMATCH',
+      ]);
+    }
+  });
+
+  it('keeps a valid COMPLETE artifact free of the semantic invariant issue', () => {
+    expect(() =>
+      validateCommercialDocumentExtraction(geelyLikeCommercialDocumentExtractionFixture),
+    ).not.toThrow();
+  });
+
+  it.each([
+    ['partialWithoutGap', 'partial'],
+    ['ambiguousWithoutEvidence', 'ambiguous'],
+  ] as const)('does not attach COMPLETE reasons to %s', (keyword, status) => {
+    const original = geelyLikeCommercialDocumentExtractionFixture;
+    try {
+      validateCommercialDocumentExtraction({
+        ...original,
+        coverage: { ...original.coverage, status },
+      });
+      throw new Error('Expected validation to fail.');
+    } catch (error) {
+      expect(error).toBeInstanceOf(CommercialDocumentExtractionValidationError);
+      const diagnostic = (error as CommercialDocumentExtractionValidationError).diagnostics.find(
+        (item) => item.keyword === keyword,
+      );
+      expect(diagnostic).toBeDefined();
+      expect(diagnostic).not.toHaveProperty('reasons');
     }
   });
 

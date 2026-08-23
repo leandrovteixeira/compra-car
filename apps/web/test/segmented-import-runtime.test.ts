@@ -749,6 +749,95 @@ describe('segmented import runtime', () => {
     ]);
   });
 
+  it('routes static COMPLETE blocker reasons without exposing coverage values', async () => {
+    const secretGapMessage = 'private gap message with commercial value 987654';
+    const original = geelyLikeCommercialDocumentExtractionFixture;
+    const invalidComplete = {
+      ...structuredClone(original),
+      coverage: {
+        ...structuredClone(original.coverage),
+        gaps: [
+          {
+            gapId: 'gap-runtime-observed',
+            gapType: 'OTHER' as const,
+            message: secretGapMessage,
+            unitId: original.coverage.units[0]!.unitId,
+          },
+        ],
+      },
+    };
+    const observeUnitExtractionValidation = vi.fn();
+    let calls = 0;
+    const provider: StructuredExtractionProvider = {
+      async openSource() {
+        return {
+          async extractStructured(request) {
+            calls += 1;
+            if (calls === 1)
+              return {
+                output: documentMapTransport(),
+                providerRunId: 'map-run',
+                usage: { inputUnits: 1, outputUnits: 1, totalUnits: 2 },
+              };
+            if (calls === 2)
+              return {
+                output: extractionTransport(invalidComplete),
+                providerRunId: 'unit-incomplete-complete-run',
+                usage: { inputUnits: 3, outputUnits: 4, totalUnits: 7 },
+              };
+            return new Promise((_resolve, reject) =>
+              request.signal.addEventListener('abort', () => reject(new Error('sibling aborted')), {
+                once: true,
+              }),
+            );
+          },
+          async close() {},
+        };
+      },
+    };
+    const artifacts = store();
+
+    await expect(
+      executeSegmentedImportRuntime({
+        batch,
+        jobId: 'coverage-reason-diagnostic-job',
+        attempt: 12,
+        correlationId: '00000000-0000-4000-8000-000000000012',
+        source: {
+          documents: [{ documentId: 'document-main', ordinal: 1, bytes: new Uint8Array([1]) }],
+        },
+        provider,
+        artifacts,
+        diagnostics: true,
+        observeUnitExtractionValidation,
+      }),
+    ).rejects.toThrow('UNIT_EXTRACTION_CANONICAL_VALIDATION_FAILED');
+    expect(observeUnitExtractionValidation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        unitOrdinal: 1,
+        phase: 'canonical_validation',
+        totalViolations: 1,
+        categories: { incompleteDataMarkedComplete: 1 },
+        sampledViolations: [
+          {
+            path: '/coverage/status',
+            keyword: 'incompleteDataMarkedComplete',
+            category: 'semantic',
+            reasons: ['GAPS_PRESENT'],
+          },
+        ],
+        truncated: false,
+      }),
+    );
+    expect(JSON.stringify(observeUnitExtractionValidation.mock.calls)).not.toContain(
+      secretGapMessage,
+    );
+    expect(artifacts.values.map((item) => item.manifest.stage)).toEqual([
+      'document_map',
+      'unit_plan',
+    ]);
+  });
+
   it('reports a causal canonical failure instead of an earlier sibling abort', async () => {
     let calls = 0;
     const dangling = structuredClone(geelyLikeCommercialDocumentExtractionFixture);
