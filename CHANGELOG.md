@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-08-23 — Foundation server-side do PDF de comparação
+
+- adiciona `@react-pdf/renderer` 4.6.1 ao app web e uma rota Node em `/comparar/pdf`, com saída A4
+  portrait, tema escuro full-page, headers controlados e sem persistência;
+- reutiliza `loadComparisonPage` e `filterComparisonCategories`, preservando `vehicles` e
+  `highlights=true` sem recalcular vantagens no documento;
+- inclui o botão `Gerar PDF`, atualiza o wording visível para `Ver vantagens` e cobre parâmetros,
+  URL, view model de dois/três veículos, filtro, documento PDF e respostas HTTP;
+- mantém a entrega limitada à foundation: a tabela completa, paginação e header repetido continuam
+  fora desta etapa.
+
 ## 2026-08-23 — Pausa estratégica do pipeline segmentado da Sprint 10C
 
 - classifica a Sprint 10C como `PAUSED AFTER EXPERIMENTAL SEGMENTED PIPELINE VALIDATION`, sem apagar

@@ -1,5 +1,17 @@
 # Contexto para agentes de IA
 
+## Foundation do PDF de comparação — Sprint 11B.1 (2026-08-23)
+
+A comparação possui agora a rota server-side `/comparar/pdf`, executada em runtime Node e baseada em
+`@react-pdf/renderer` 4.6.1. A rota recebe `vehicles` e `highlights`, reutiliza
+`loadComparisonPage`, aplica `filterComparisonCategories` antes de montar o view model e retorna um
+PDF A4 portrait com tema escuro, sem storage, snapshot ou persistência.
+
+Esta etapa prova apenas a integração e apresenta título, modo, veículos e contagens filtradas. A
+tabela completa, paginação final, header repetido e ajuste fino de fontes permanecem pendentes para
+uma etapa posterior. A toolbar abre a rota diretamente em nova aba e usa o wording `Ver vantagens`;
+não criar Blob no client nem duplicar a regra de comparação ao evoluir o documento.
+
 ## Estado operacional prioritário — Sprint 10C PAUSED (2026-08-23)
 
 Classificação: **PAUSED AFTER EXPERIMENTAL SEGMENTED PIPELINE VALIDATION**. Não retomar o pipeline

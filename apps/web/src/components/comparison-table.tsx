@@ -22,7 +22,7 @@ export function ComparisonTable({ vehicles, categories, onlyHighlights }: Compar
         compact
         description={
           onlyHighlights
-            ? 'Desative “Ver destaques” para consultar todos os equipamentos e especificações.'
+            ? 'Desative “Ver vantagens” para consultar todos os equipamentos e especificações.'
             : 'Não encontramos itens comparáveis para os veículos selecionados.'
         }
         kind="empty"

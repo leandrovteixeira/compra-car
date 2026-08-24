@@ -16,6 +16,7 @@
     "@compra-car/core": "workspace:*",
     "@compra-car/shared": "workspace:*",
     "@compra-car/ui": "workspace:*",
+    "@react-pdf/renderer": "4.6.1",
     "ajv": "8.20.0",
     "next": "15.5.20",
     "openai": "6.49.0",
