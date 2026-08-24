@@ -76,6 +76,17 @@ describe('admin user UX', () => {
     expect(ordered.map(({ id }) => id)).toEqual(['newer', 'older']);
   });
 
+  it('keeps desktop action menus unclipped and centers row content vertically', () => {
+    const list = source('../src/components/admin/admin-user-list.tsx');
+
+    expect(list).toContain('hidden overflow-x-clip overflow-y-visible rounded-2xl');
+    expect(list).not.toContain('hidden overflow-hidden rounded-2xl');
+    expect(list).toContain('className="align-middle transition hover:bg-slate-900/80"');
+    expect(list).not.toContain('className="align-top transition hover:bg-slate-900/80"');
+    expect(list).toContain('[&_th:first-child]:rounded-tl-2xl');
+    expect(list).toContain('[&_th:last-child]:rounded-tr-2xl');
+  });
+
   it('exposes invitation and state-aware actions without browser-side privileged access', () => {
     const invite = source('../src/components/admin/admin-user-invite.tsx');
     const actions = source('../src/components/admin/admin-user-actions.tsx');

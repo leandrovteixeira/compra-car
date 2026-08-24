@@ -88,10 +88,10 @@ export function AdminUserList({ users }: AdminUserListProps) {
         ))}
       </div>
 
-      <div className="hidden overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/50 md:block">
+      <div className="hidden overflow-x-clip overflow-y-visible rounded-2xl border border-slate-800 bg-slate-900/50 md:block">
         <table className="w-full border-collapse text-left text-sm">
           <caption className="sr-only">Usuários cadastrados no Supabase Auth</caption>
-          <thead className="border-b border-slate-800 bg-slate-900 text-xs uppercase tracking-wide text-slate-400">
+          <thead className="border-b border-slate-800 bg-slate-900 text-xs uppercase tracking-wide text-slate-400 [&_th:first-child]:rounded-tl-2xl [&_th:last-child]:rounded-tr-2xl">
             <tr>
               {['Nome', 'E-mail', 'Perfil e status', 'Criado em', 'Último acesso', 'Ações'].map(
                 (label) => (
@@ -104,7 +104,7 @@ export function AdminUserList({ users }: AdminUserListProps) {
           </thead>
           <tbody className="divide-y divide-slate-800">
             {users.map((user) => (
-              <tr className="align-top transition hover:bg-slate-900/80" key={user.id}>
+              <tr className="align-middle transition hover:bg-slate-900/80" key={user.id}>
                 <td className="max-w-48 px-4 py-4 font-semibold text-slate-100">
                   <span className="block truncate" title={user.fullName ?? undefined}>
                     {user.fullName || '—'}

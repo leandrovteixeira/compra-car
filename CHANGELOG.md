@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-08-24 — Ajuste visual de QA em usuários administrativos
+
+- evita que o menu de ações da tabela desktop seja recortado pelo container e centraliza verticalmente
+  o conteúdo das linhas, preservando cartões móveis, ações e cantos arredondados.
+
 ## 2026-08-24 — Ambiente online de testes (Sprint 13)
 
 - prepara o deploy Railway com Node 22, pnpm fixado e healthcheck dedicado em `/api/health`, fora do
