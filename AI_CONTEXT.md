@@ -1,5 +1,18 @@
 # Contexto para agentes de IA
 
+## Tabela completa do PDF de comparação — Sprint 11B.2 (2026-08-23)
+
+O PDF de `/comparar/pdf` agora renderiza a ficha técnica completa. O model PDF recebe somente as
+categorias previamente filtradas e transforma cada valor com os mesmos helpers puros da web. A
+geometria mantém tabela de 540 pt: item com 300 pt e o restante dividido entre os veículos, dando
+120 pt para dois ou 80 pt para três.
+
+O header React-PDF é `fixed` e ocupa a faixa reservada pelo `paddingTop` de todas as páginas. Rows
+usam `wrap=false`; faixas de categoria usam `minPresenceAhead` equivalente à altura mínima de uma
+row. Labels do item têm `maxLines: 1` e fonte 9/8/7/6.25 conforme o comprimento. Casos extremos de
+tipografia ainda podem exigir medição real de glyphs em uma etapa futura; não criar engine complexa
+nem mover comparação para os componentes PDF.
+
 ## Foundation do PDF de comparação — Sprint 11B.1 (2026-08-23)
 
 A comparação possui agora a rota server-side `/comparar/pdf`, executada em runtime Node e baseada em

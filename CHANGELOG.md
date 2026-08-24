@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-08-23 — Tabela completa do PDF de comparação
+
+- evolui o PDF A4 portrait para uma ficha técnica completa com header fixo, nomes dos veículos,
+  categorias, rows, valores e indicação visual de vantagem;
+- mantém 540 pt de largura estrutural, com primeira coluna de 300 pt e colunas de 120 pt para dois
+  veículos ou 80 pt para três veículos;
+- reutiliza `filterComparisonCategories`, `shouldShowAdvantageCheck` e
+  `getComparisonValuePresentation`, sem duplicar filtro, comparação ou formatação de presença;
+- adiciona redução de fonte por comprimento, label limitado a uma linha, rows indivisíveis e
+  proteção de categoria contra orphan por `minPresenceAhead`;
+- cobre geometrias, filtro, ordem/referência, header, valores, vantagens, labels longos, quatro
+  cenários de dois/três veículos e paginação real com 90 rows.
+
 ## 2026-08-23 — Foundation server-side do PDF de comparação
 
 - adiciona `@react-pdf/renderer` 4.6.1 ao app web e uma rota Node em `/comparar/pdf`, com saída A4

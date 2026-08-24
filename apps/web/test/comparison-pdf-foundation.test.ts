@@ -4,17 +4,46 @@ import type {
   ComparisonPageResultDto,
 } from '@compra-car/contracts';
 import { renderToBuffer } from '@react-pdf/renderer';
+import { isValidElement, type ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { buildComparisonPdfUrl } from '../src/application/comparison/comparison-pdf-url';
 import { createComparisonPdfDocument } from '../src/pdf/comparison/comparison-pdf-document';
 import {
+  COMPARISON_PDF_HEADER_FIXED,
+  createComparisonPdfHeader,
+} from '../src/pdf/comparison/comparison-pdf-header';
+import {
+  COMPARISON_PDF_ITEM_MAX_LINES,
+  getComparisonPdfColumnGeometry,
+  getComparisonPdfItemFontSize,
   isComparisonHighlightsMode,
   prepareComparisonPdf,
 } from '../src/pdf/comparison/comparison-pdf-model';
+import {
+  COMPARISON_PDF_CATEGORY_PRESENCE_AHEAD,
+  COMPARISON_PDF_ROW_WRAP,
+} from '../src/pdf/comparison/comparison-pdf-table';
 import { handleComparisonPdfRequest } from '../src/server/comparison-pdf-route';
 
 function createComparisonData(vehicleCount: 2 | 3): ComparisonPageDataDto {
+  const binaryValues = (referencePresent: boolean) =>
+    Array.from({ length: vehicleCount }, (_, index) => ({
+      type: 'binary' as const,
+      displayValue: (index === 0 ? referencePresent : !referencePresent) ? '●' : '—',
+      comparison:
+        index === 0
+          ? ('not-applicable' as const)
+          : referencePresent
+            ? ('tie' as const)
+            : ('disadvantage' as const),
+    }));
+  const numericValues = Array.from({ length: vehicleCount }, (_, index) => ({
+    type: 'numeric' as const,
+    displayValue: `${150 + index * 25} cv`,
+    comparison: index === 0 ? ('advantage' as const) : ('disadvantage' as const),
+  }));
+
   return {
     vehicles: Array.from({ length: vehicleCount }, (_, index) => ({
       id: String(index + 1),
@@ -34,7 +63,7 @@ function createComparisonData(vehicleCount: 2 | 3): ComparisonPageDataDto {
             equipmentGroup: 'Segurança',
             specSet: 'equipment',
             hasReferenceAdvantage: true,
-            values: [],
+            values: binaryValues(true),
           },
           {
             code: 'safety.airbags',
@@ -42,7 +71,7 @@ function createComparisonData(vehicleCount: 2 | 3): ComparisonPageDataDto {
             equipmentGroup: 'Segurança',
             specSet: 'equipment',
             hasReferenceAdvantage: false,
-            values: [],
+            values: binaryValues(false),
           },
         ],
       },
@@ -55,7 +84,7 @@ function createComparisonData(vehicleCount: 2 | 3): ComparisonPageDataDto {
             equipmentGroup: 'Conforto',
             specSet: 'equipment',
             hasReferenceAdvantage: false,
-            values: [],
+            values: numericValues,
           },
         ],
       },
@@ -69,6 +98,32 @@ function successfulResult(data: ComparisonPageDataDto): ComparisonPageResultDto 
 
 function failedResult(error: ComparisonPageErrorDto): ComparisonPageResultDto {
   return { ok: false, error };
+}
+
+function collectText(node: ReactNode): string {
+  if (typeof node === 'string' || typeof node === 'number') return String(node);
+  if (Array.isArray(node)) return node.map(collectText).join(' ');
+  if (isValidElement<{ children?: ReactNode }>(node)) return collectText(node.props.children);
+  return '';
+}
+
+function createManyRowsData(vehicleCount: 2 | 3, rowCount = 90): ComparisonPageDataDto {
+  const base = createComparisonData(vehicleCount);
+  const template = base.categories[0]?.rows[0];
+  if (template === undefined) throw new Error('Fixture de comparação inválida.');
+
+  return {
+    vehicles: base.vehicles,
+    categories: Array.from({ length: 3 }, (_, categoryIndex) => ({
+      name: `Categoria ${categoryIndex + 1}`,
+      rows: Array.from({ length: rowCount / 3 }, (_, rowIndex) => ({
+        ...template,
+        code: `category-${categoryIndex + 1}.item-${rowIndex + 1}`,
+        label: `Item comparativo ${categoryIndex + 1}.${rowIndex + 1} com descrição técnica`,
+        hasReferenceAdvantage: rowIndex % 2 === 0,
+      })),
+    })),
+  };
 }
 
 describe('parâmetros e URL do PDF de comparação', () => {
@@ -128,6 +183,97 @@ describe('view model e documento PDF', () => {
       categoryCount: 1,
       rowCount: 1,
     });
+  });
+
+  it('usa as geometrias aprovadas para dois e três veículos', () => {
+    expect(getComparisonPdfColumnGeometry(2)).toEqual({
+      tableWidth: 540,
+      itemColumnWidth: 300,
+      vehicleColumnWidth: 120,
+    });
+    expect(getComparisonPdfColumnGeometry(3)).toEqual({
+      tableWidth: 540,
+      itemColumnWidth: 300,
+      vehicleColumnWidth: 80,
+    });
+  });
+
+  it('preserva ordem, referência e nomes no header fixo', () => {
+    const model = prepareComparisonPdf(createComparisonData(3), false).model;
+    const headerText = collectText(createComparisonPdfHeader(model));
+
+    expect(model.vehicles.map((vehicle) => vehicle.id)).toEqual(['1', '2', '3']);
+    expect(model.vehicles.map((vehicle) => vehicle.isReference)).toEqual([true, false, false]);
+    expect(COMPARISON_PDF_HEADER_FIXED).toBe(true);
+    expect(headerText.indexOf('Volvo XC40 Plus')).toBeLessThan(headerText.indexOf('Audi Q3 Plus'));
+    expect(headerText.indexOf('Audi Q3 Plus')).toBeLessThan(headerText.indexOf('BMW X1 Plus'));
+    expect(headerText).toContain('Referência');
+  });
+
+  it('mantém valores por veículo e reutiliza a regra existente de vantagem', () => {
+    const model = prepareComparisonPdf(createComparisonData(3), false).model;
+    const referenceAdvantage = model.categories[0]?.rows[0];
+    const comparedAdvantage = model.categories[0]?.rows[1];
+
+    expect(referenceAdvantage?.values.map((value) => value.vehicleId)).toEqual(['1', '2', '3']);
+    expect(referenceAdvantage?.values.map((value) => value.showAdvantageCheck)).toEqual([
+      true,
+      false,
+      false,
+    ]);
+    expect(comparedAdvantage?.values.map((value) => value.showAdvantageCheck)).toEqual([
+      false,
+      true,
+      true,
+    ]);
+    expect(referenceAdvantage?.values[0]).toMatchObject({
+      displayValue: null,
+      showPresenceDot: true,
+    });
+  });
+
+  it('reduz a fonte por comprimento e mantém o label em uma linha', () => {
+    const sizes = [
+      getComparisonPdfItemFontSize('Label curto'),
+      getComparisonPdfItemFontSize('M'.repeat(50)),
+      getComparisonPdfItemFontSize('L'.repeat(70)),
+      getComparisonPdfItemFontSize('X'.repeat(100)),
+    ];
+
+    expect(sizes).toEqual([9, 8, 7, 6.25]);
+    expect(sizes).toEqual([...sizes].sort((left, right) => right - left));
+    expect(COMPARISON_PDF_ITEM_MAX_LINES).toBe(1);
+    expect(
+      prepareComparisonPdf(createComparisonData(2), false).model.categories[0]?.rows[0],
+    ).toHaveProperty('labelMaxLines', 1);
+  });
+
+  it.each([
+    [2, false, 2, 3],
+    [2, true, 1, 1],
+    [3, false, 2, 3],
+    [3, true, 1, 1],
+  ] as const)(
+    'renderiza o cenário manual %s veículos / highlights=%s',
+    async (vehicleCount, onlyHighlights, categoryCount, rowCount) => {
+      const model = prepareComparisonPdf(createComparisonData(vehicleCount), onlyHighlights).model;
+      const buffer = await renderToBuffer(createComparisonPdfDocument(model));
+
+      expect(model).toMatchObject({ vehicleCount, categoryCount, rowCount });
+      expect(buffer.subarray(0, 5).toString()).toBe('%PDF-');
+      expect(buffer.byteLength).toBeGreaterThan(1_000);
+    },
+  );
+
+  it('pagina muitas rows sem dividir rows e protege a primeira row da categoria', async () => {
+    const model = prepareComparisonPdf(createManyRowsData(3), false).model;
+    const buffer = await renderToBuffer(createComparisonPdfDocument(model));
+    const pageCount = buffer.toString('latin1').match(/\/Type \/Page\b/g)?.length ?? 0;
+
+    expect(model.rowCount).toBe(90);
+    expect(COMPARISON_PDF_ROW_WRAP).toBe(false);
+    expect(COMPARISON_PDF_CATEGORY_PRESENCE_AHEAD).toBeGreaterThanOrEqual(28);
+    expect(pageCount).toBeGreaterThan(1);
   });
 });
 
