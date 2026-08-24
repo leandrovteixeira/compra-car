@@ -6,21 +6,20 @@ export const comparisonPdfStyles = StyleSheet.create({
     color: '#f1f5f9',
     fontFamily: 'Helvetica',
     paddingBottom: 24,
-    paddingHorizontal: 27.5,
-    paddingTop: 104,
+    paddingHorizontal: 10,
+    paddingTop: 108,
   },
   header: {
-    backgroundColor: '#020617',
-    left: 27.5,
-    position: 'absolute',
-    top: 16,
-    width: 540,
-  },
-  identityRow: {
     alignItems: 'center',
+    backgroundColor: '#020617',
     flexDirection: 'row',
     height: 24,
     justifyContent: 'space-between',
+    left: 10,
+    position: 'absolute',
+    top: 16,
+    width: 460,
+    zIndex: 10,
   },
   brand: {
     color: '#22d3ee',
@@ -43,11 +42,14 @@ export const comparisonPdfStyles = StyleSheet.create({
   columnHeader: {
     backgroundColor: '#0f172a',
     borderColor: '#334155',
-    borderRadius: 5,
     borderWidth: 1,
     flexDirection: 'row',
-    height: 58,
-    overflow: 'hidden',
+    height: 64,
+    left: 10,
+    position: 'absolute',
+    top: 40,
+    width: 460,
+    zIndex: 10,
   },
   itemHeader: {
     borderRightColor: '#334155',
@@ -66,7 +68,7 @@ export const comparisonPdfStyles = StyleSheet.create({
     borderRightColor: '#334155',
     borderRightWidth: 1,
     justifyContent: 'center',
-    paddingHorizontal: 5,
+    paddingHorizontal: 4,
   },
   lastColumn: {
     borderRightWidth: 0,
@@ -84,16 +86,13 @@ export const comparisonPdfStyles = StyleSheet.create({
   },
   vehicleName: {
     color: '#f1f5f9',
-    fontSize: 7.5,
+    fontSize: 8,
     fontWeight: 700,
     lineHeight: 1.15,
     maxLines: 2,
   },
   referenceVehicle: {
     backgroundColor: '#0e2934',
-  },
-  table: {
-    width: 540,
   },
   category: {
     backgroundColor: '#1e293b',
@@ -127,8 +126,8 @@ export const comparisonPdfStyles = StyleSheet.create({
   itemLabel: {
     color: '#e2e8f0',
     fontWeight: 700,
-    lineHeight: 1,
-    maxLines: 1,
+    lineHeight: 1.12,
+    maxLines: 2,
   },
   valueCell: {
     alignItems: 'center',

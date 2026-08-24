@@ -1,5 +1,21 @@
 # Contexto para agentes de IA
 
+## Otimização mobile do PDF de comparação — Sprint 11B.3 (2026-08-24)
+
+O único formato de `/comparar/pdf` agora é uma página vertical customizada de 480 × 853 pt, voltada
+à leitura digital em smartphones. A área útil tem 460 pt: item com 220 pt e veículos com 120 pt em
+comparações de dois ou 80 pt em comparações de três. Não reintroduzir A4 nem seletor de formato sem
+nova decisão de produto.
+
+Labels usam até duas linhas e fonte 8,5/8/7,5 pt conforme o comprimento; rows mantêm mínimo de 28 pt
+e crescem conforme o wrap. `equipmentGroup` continua fora do PDF por ser redundante com as faixas de
+categoria. Valores, filtro e vantagens permanecem derivados dos helpers compartilhados.
+
+O header usa dois blocos `fixed` absolutos sobre `paddingTop: 108`, com nomes em até duas linhas. Não
+adicionar `borderRadius`/clipping ao bloco fixo: no React-PDF 4.6.1 esse recorte vazou entre páginas
+em stress multipágina. Categorias e rows fluem como siblings, sem wrappers que atravessem páginas;
+rows seguem `wrap=false` e categorias usam `minPresenceAhead: 34`.
+
 ## Tabela completa do PDF de comparação — Sprint 11B.2 (2026-08-23)
 
 O PDF de `/comparar/pdf` agora renderiza a ficha técnica completa. O model PDF recebe somente as

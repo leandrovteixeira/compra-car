@@ -8,7 +8,10 @@ import { isValidElement, type ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { buildComparisonPdfUrl } from '../src/application/comparison/comparison-pdf-url';
-import { createComparisonPdfDocument } from '../src/pdf/comparison/comparison-pdf-document';
+import {
+  COMPARISON_PDF_PAGE_SIZE,
+  createComparisonPdfDocument,
+} from '../src/pdf/comparison/comparison-pdf-document';
 import {
   COMPARISON_PDF_HEADER_FIXED,
   createComparisonPdfHeader,
@@ -187,15 +190,19 @@ describe('view model e documento PDF', () => {
 
   it('usa as geometrias aprovadas para dois e três veículos', () => {
     expect(getComparisonPdfColumnGeometry(2)).toEqual({
-      tableWidth: 540,
-      itemColumnWidth: 300,
+      tableWidth: 460,
+      itemColumnWidth: 220,
       vehicleColumnWidth: 120,
     });
     expect(getComparisonPdfColumnGeometry(3)).toEqual({
-      tableWidth: 540,
-      itemColumnWidth: 300,
+      tableWidth: 460,
+      itemColumnWidth: 220,
       vehicleColumnWidth: 80,
     });
+  });
+
+  it('usa a página mobile vertical aprovada', () => {
+    expect(COMPARISON_PDF_PAGE_SIZE).toEqual({ width: 480, height: 853 });
   });
 
   it('preserva ordem, referência e nomes no header fixo', () => {
@@ -240,12 +247,13 @@ describe('view model e documento PDF', () => {
       getComparisonPdfItemFontSize('X'.repeat(100)),
     ];
 
-    expect(sizes).toEqual([9, 8, 7, 6.25]);
+    expect(sizes).toEqual([8.5, 8, 8, 7.5]);
     expect(sizes).toEqual([...sizes].sort((left, right) => right - left));
-    expect(COMPARISON_PDF_ITEM_MAX_LINES).toBe(1);
+    expect(Math.min(...sizes)).toBeGreaterThan(6.25);
+    expect(COMPARISON_PDF_ITEM_MAX_LINES).toBe(2);
     expect(
       prepareComparisonPdf(createComparisonData(2), false).model.categories[0]?.rows[0],
-    ).toHaveProperty('labelMaxLines', 1);
+    ).toHaveProperty('labelMaxLines', 2);
   });
 
   it.each([

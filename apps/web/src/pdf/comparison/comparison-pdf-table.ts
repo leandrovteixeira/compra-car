@@ -1,5 +1,5 @@
 import { Text, View } from '@react-pdf/renderer';
-import { createElement, type ReactElement } from 'react';
+import { createElement, Fragment, type ReactElement } from 'react';
 
 import type {
   ComparisonPdfCategoryViewModel,
@@ -10,7 +10,7 @@ import { comparisonPdfStyles as styles } from './comparison-pdf-styles';
 import { createComparisonPdfValue } from './comparison-pdf-value';
 
 export const COMPARISON_PDF_ROW_MIN_HEIGHT = 28;
-export const COMPARISON_PDF_CATEGORY_PRESENCE_AHEAD = COMPARISON_PDF_ROW_MIN_HEIGHT;
+export const COMPARISON_PDF_CATEGORY_PRESENCE_AHEAD = 34;
 export const COMPARISON_PDF_ROW_WRAP = false;
 
 function createComparisonPdfRow(
@@ -44,8 +44,8 @@ function createComparisonPdfCategory(
   geometry: ComparisonPdfColumnGeometry,
 ): ReactElement {
   return createElement(
-    View,
-    { key: category.name, wrap: true },
+    Fragment,
+    { key: category.name },
     createElement(
       View,
       {
@@ -63,8 +63,8 @@ export function createComparisonPdfTable(
   geometry: ComparisonPdfColumnGeometry,
 ): ReactElement {
   return createElement(
-    View,
-    { style: styles.table },
+    Fragment,
+    null,
     ...categories.map((category) => createComparisonPdfCategory(category, geometry)),
   );
 }

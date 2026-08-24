@@ -1,5 +1,5 @@
 import { Text, View } from '@react-pdf/renderer';
-import { createElement, type ReactElement } from 'react';
+import { createElement, Fragment, type ReactElement } from 'react';
 
 import type { ComparisonPdfViewModel } from './comparison-pdf-model';
 import { comparisonPdfStyles as styles } from './comparison-pdf-styles';
@@ -31,11 +31,14 @@ export function createComparisonPdfHeader(model: ComparisonPdfViewModel): ReactE
   );
 
   return createElement(
-    View,
-    { fixed: COMPARISON_PDF_HEADER_FIXED, style: styles.header },
+    Fragment,
+    null,
     createElement(
       View,
-      { style: styles.identityRow },
+      {
+        fixed: COMPARISON_PDF_HEADER_FIXED,
+        style: styles.header,
+      },
       createElement(
         View,
         null,
@@ -46,7 +49,10 @@ export function createComparisonPdfHeader(model: ComparisonPdfViewModel): ReactE
     ),
     createElement(
       View,
-      { style: styles.columnHeader },
+      {
+        fixed: COMPARISON_PDF_HEADER_FIXED,
+        style: styles.columnHeader,
+      },
       createElement(
         View,
         { style: [styles.itemHeader, { width: model.geometry.itemColumnWidth }] },

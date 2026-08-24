@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-08-24 — Otimização mobile do PDF de comparação
+
+- substitui A4 portrait pelo formato vertical customizado de 480 × 853 pt, com 10 pt de margem
+  lateral e tabela estrutural de 460 pt;
+- adota primeira coluna de 220 pt e colunas de 120 pt para dois veículos ou 80 pt para três,
+  preservando a ordem e o primeiro veículo como referência;
+- permite labels em até duas linhas com fonte 8,5/8/7,5 pt, rows de altura variável e valores
+  centralizados, sem renderizar o `equipmentGroup` redundante;
+- aumenta discretamente o header para nomes de veículos em duas linhas e separa seus blocos fixos
+  para repetição estável no React-PDF, sem recorte arredondado que vaze entre páginas;
+- eleva `minPresenceAhead` para 34 pt, mantém rows com `wrap=false` e achata wrappers de fluxo para
+  impedir clipping em categorias multipágina;
+- atualiza a cobertura automatizada de página, geometrias, wrap, tipografia, header e paginação e
+  valida cinco PDFs reais de dois/três veículos, completo/vantagens e stress multipágina.
+
 ## 2026-08-23 — Tabela completa do PDF de comparação
 
 - evolui o PDF A4 portrait para uma ficha técnica completa com header fixo, nomes dos veículos,

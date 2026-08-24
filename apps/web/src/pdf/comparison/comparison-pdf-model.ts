@@ -9,13 +9,13 @@ import {
   shouldShowAdvantageCheck,
 } from '@/application/comparison/comparison-value-presentation';
 
-export const COMPARISON_PDF_TABLE_WIDTH = 540;
-export const COMPARISON_PDF_ITEM_COLUMN_WIDTH = 300;
-export const COMPARISON_PDF_ITEM_MAX_LINES = 1;
+export const COMPARISON_PDF_TABLE_WIDTH = 460;
+export const COMPARISON_PDF_ITEM_COLUMN_WIDTH = 220;
+export const COMPARISON_PDF_ITEM_MAX_LINES = 2;
 
 export interface ComparisonPdfColumnGeometry {
-  readonly tableWidth: 540;
-  readonly itemColumnWidth: 300;
+  readonly tableWidth: 460;
+  readonly itemColumnWidth: 220;
   readonly vehicleColumnWidth: number;
 }
 
@@ -37,7 +37,7 @@ export interface ComparisonPdfRowViewModel {
   readonly code: string;
   readonly label: string;
   readonly labelFontSize: number;
-  readonly labelMaxLines: 1;
+  readonly labelMaxLines: 2;
   readonly values: readonly ComparisonPdfValueViewModel[];
 }
 
@@ -79,10 +79,9 @@ export function getComparisonPdfColumnGeometry(vehicleCount: number): Comparison
 
 export function getComparisonPdfItemFontSize(label: string): number {
   const length = Array.from(label).length;
-  if (length <= 42) return 9;
-  if (length <= 60) return 8;
-  if (length <= 78) return 7;
-  return 6.25;
+  if (length <= 48) return 8.5;
+  if (length <= 78) return 8;
+  return 7.5;
 }
 
 export function getComparisonPdfValueFontSize(displayValue: string | null): number {

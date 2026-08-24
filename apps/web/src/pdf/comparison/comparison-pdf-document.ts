@@ -6,6 +6,8 @@ import type { ComparisonPdfViewModel } from './comparison-pdf-model';
 import { comparisonPdfStyles as styles } from './comparison-pdf-styles';
 import { createComparisonPdfTable } from './comparison-pdf-table';
 
+export const COMPARISON_PDF_PAGE_SIZE = { height: 853, width: 480 } as const;
+
 export function createComparisonPdfDocument(
   model: ComparisonPdfViewModel,
 ): ReactElement<DocumentProps> {
@@ -18,7 +20,12 @@ export function createComparisonPdfDocument(
     },
     createElement(
       Page,
-      { orientation: 'portrait', size: 'A4', style: styles.page, wrap: true },
+      {
+        orientation: 'portrait',
+        size: COMPARISON_PDF_PAGE_SIZE,
+        style: styles.page,
+        wrap: true,
+      },
       createComparisonPdfHeader(model),
       createComparisonPdfTable(model.categories, model.geometry),
     ),
