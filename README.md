@@ -36,7 +36,7 @@ O domínio implementa `Vehicle`, `ComparisonItem`, valores discriminados, elegib
 - Railway com Railpack e configuração versionada em `railway.json`;
 - PWA instalável com manifesto, ícones e modo `standalone`, sem service worker ou funcionalidades offline.
 
-É necessário Node.js 20 ou superior e anterior à versão 25.
+O runtime suportado e usado no deploy é Node.js 22, com pnpm 10.
 
 ## Desenvolvimento local
 
@@ -65,6 +65,11 @@ O comando `pnpm start` executa o build já gerado em modo de produção.
 O arquivo `railway.json` define o build e o start da aplicação web. No Railway, o serviço deve usar a raiz do repositório; o Railpack instalará as dependências a partir do lockfile e executará apenas o escopo necessário da aplicação.
 
 Configure `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` para Supabase Auth no browser e no SSR. A publishable key é pública por definição e não pode ser substituída por secret/service-role. Mantenha `SUPABASE_URL` e `SUPABASE_SERVER_KEY` apenas nas variáveis privadas do serviço Railway para o adapter legado. Nunca use prefixo `NEXT_PUBLIC_` para a chave do servidor. Consulte `.env.example`; arquivos `.env` reais nunca são versionados.
+
+O ambiente online inicial é um beta `staging`, não produção. O procedimento reproduzível, inventário
+de variáveis, configuração das callbacks e checklist pós-deploy estão em
+[`docs/operations/HOSTED_BETA.md`](docs/operations/HOSTED_BETA.md). `/api/health` é usado somente pelo
+healthcheck e não consulta banco nem expõe configuração.
 
 ## Estado do MVP
 

@@ -1,5 +1,69 @@
 # Changelog
 
+## 2026-08-24 — Ambiente online de testes (Sprint 13)
+
+- prepara o deploy Railway com Node 22, pnpm fixado e healthcheck dedicado em `/api/health`, fora do
+  middleware autenticado e sem dependência do Supabase;
+- completa o template `staging` com callbacks separadas de convite e recuperação;
+- documenta arquitetura, variáveis, Supabase Auth, migrations e checklist repetível do beta hospedado;
+- registra deploy real, inspeção remota e testes de e-mail como validações operacionais pendentes sem
+  acesso autenticado aos provedores.
+
+## 2026-08-24 — Aceite, onboarding e recuperação de senha (Sprint 12C)
+
+- adiciona callbacks PKCE separados em `/auth/callback/invite` e `/auth/callback/recovery`, com sessão SSR e destinos internos fixos;
+- adiciona formulários móveis de senha em `/auth/invite` e `/auth/recovery`, sem user ID, tokens ou credenciais privilegiadas no browser;
+- ativa condicionalmente somente profiles `pending` após senha de convite definida; recovery nunca altera status e disabled permanece disabled;
+- trata links inválidos, repetição idempotente e falha parcial senha-atualizada/ativação-falhou sem armazenar ou registrar senhas;
+- não requer migration e mantém signup público inexistente.
+
+## 2026-08-24 — Pedidos de convite (Sprint 12B)
+
+- adiciona `user_invite_requests` com ownership RLS, histórico, transições pending→approved/rejected e unicidade parcial de e-mail pendente;
+- permite ao usuário ativo solicitar e acompanhar convites sem criar Auth user imediatamente;
+- adiciona fila em `/admin/users`, aprovação/rejeição condicional e reutiliza o convite 12A com role fixa `seller`;
+- preserva falhas parciais/concor­rência de forma diagnosticável, sem aprovação automática ou onboarding 12C.
+
+## 2026-08-24 — Ações administrativas de usuários (Sprint 12A.3)
+
+- torna “Novo usuário” funcional com convite oficial do Supabase Auth, profile automático ajustado
+  para nome/role selecionados e status inicial `pending`;
+- adiciona alteração de role, ativação/desativação de acesso e solicitação de recuperação de senha por
+  Server Actions autorizadas, com revalidação de `/admin/users`;
+- bloqueia auto-desativação, auto-rebaixamento, remoção do último admin ativo, mutação de pending e de
+  profiles ausentes/inválidos;
+- adiciona menus responsivos e dialogs de confirmação, feedback controlado e redirects de e-mail
+  configurados por `AUTH_INVITE_REDIRECT_URL` e `AUTH_RECOVERY_REDIRECT_URL`;
+- preserva o trigger existente de criação de profiles e não adiciona migration, senha administrativa,
+  signup público ou reparo implícito de inconsistências.
+
+## 2026-08-24 — Administração de usuários somente leitura (Sprint 12A.2)
+
+- adiciona `/admin/users` como workspace administrativo protegido e alimentado exclusivamente por
+  `loadAdminUsers()`;
+- apresenta usuários em tabela semântica no desktop e cartões compactos no mobile, com nome, e-mail,
+  role, status, criação e último acesso;
+- torna profiles ausentes ou inválidos visíveis sem aplicar role/status permissivos;
+- adiciona estados controlados de carregamento, erro e lista vazia, além de formatação brasileira e
+  ordenação determinística por criação mais recente;
+- ativa o módulo na navegação e mantém “Novo usuário” desabilitado até a Sprint 12A.3. Nenhuma
+  mutação administrativa ou migration foi adicionada.
+
+## 2026-08-24 — Fundação administrativa de usuários (Sprint 12A.1)
+
+- adiciona `AdminUserDto`, compondo identidade do Supabase Auth com nome, role e status de
+  `public.profiles`, sem duplicar email ou timestamps no profile;
+- representa profiles ausentes ou inválidos explicitamente e mantém role/status nulos nesses casos,
+  sem conceder autorização implícita;
+- adiciona adapter paginado sobre `auth.admin.listUsers()` com uma consulta de profiles por lote,
+  tratamento sanitizado de erros e validação dos enums existentes;
+- cria cliente Auth Admin em módulo `server-only`, reutilizando `SUPABASE_URL` e
+  `SUPABASE_SERVER_KEY` sem expor credenciais `NEXT_PUBLIC_*`;
+- adiciona operação de aplicação que executa `requireRole('admin')` antes de criar o cliente
+  privilegiado ou consultar usuários;
+- cobre mapping, opcionais, inconsistências, paginação, falhas e autorização. Nenhuma migration,
+  policy, view, signup, convite ou UX de gestão foi criada.
+
 ## 2026-08-24 — Download e compartilhamento nativo do PDF
 
 - substitui a ação genérica `Gerar PDF` por `Baixar PDF` e `Compartilhar`, com SVGs inline,

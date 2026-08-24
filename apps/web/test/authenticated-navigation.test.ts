@@ -25,13 +25,16 @@ describe('authenticated navigation', () => {
 
     expect(navigation.areaLabel).toBe('Área do vendedor');
     expect(navigation.roleLabel).toBe('Vendedor');
-    expect(navigation.links).toEqual([]);
+    expect(navigation.links).toEqual([{ href: '/invite-requests', label: 'Convidar alguém' }]);
   });
 
   it('shows the admin link in the seller area for an active admin', () => {
     const navigation = getAuthenticatedNavigationModel(adminProfile, 'seller');
 
-    expect(navigation.links).toEqual([{ href: '/admin', label: 'Administração' }]);
+    expect(navigation.links).toEqual([
+      { href: '/invite-requests', label: 'Convidar alguém' },
+      { href: '/admin', label: 'Administração' },
+    ]);
     expect(navigation.roleLabel).toBe('Administrador');
   });
 
@@ -48,9 +51,9 @@ describe('authenticated navigation', () => {
       user_metadata: { role: 'admin' },
     };
 
-    expect(getAuthenticatedNavigationModel(profileWithUntrustedMetadata, 'seller').links).toEqual(
-      [],
-    );
+    expect(getAuthenticatedNavigationModel(profileWithUntrustedMetadata, 'seller').links).toEqual([
+      { href: '/invite-requests', label: 'Convidar alguém' },
+    ]);
   });
 
   it('uses the shared component in both layouts and binds the existing logout action', () => {

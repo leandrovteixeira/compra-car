@@ -27,7 +27,10 @@ export function getAuthenticatedNavigationModel(
 
   return {
     areaLabel: 'Área do vendedor',
-    links: profile.role === 'admin' ? [{ href: '/admin', label: 'Administração' }] : [],
+    links: [
+      { href: '/invite-requests', label: 'Convidar alguém' },
+      ...(profile.role === 'admin' ? [{ href: '/admin', label: 'Administração' }] : []),
+    ],
     roleLabel: profile.role === 'admin' ? 'Administrador' : 'Vendedor',
   };
 }

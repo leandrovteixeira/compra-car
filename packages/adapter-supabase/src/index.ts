@@ -1,4 +1,6 @@
 export * from './auth';
+export * from './admin-user-supabase-adapter';
+export * from './invite-request-supabase-adapter';
 export * from './client';
 export * from './errors';
 export * from './legacy-supabase-adapter';

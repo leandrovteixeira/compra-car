@@ -1,5 +1,65 @@
 # Contexto para agentes de IA
 
+## Ambiente online de testes — Sprint 13 (2026-08-24)
+
+Railway permanece o único alvo: raiz do monorepo, Railpack, build filtrado para
+`@compra-car/web...` e start apenas da aplicação web. Runtime Node 22/pnpm 10.34.5; o beta é
+`staging`, separado de produção. `GET /api/health` é o probe barato e fica fora do middleware para não
+depender de Auth/Supabase. Runbook e checklist: `docs/operations/HOSTED_BETA.md`.
+
+PENDENTE: deploy real, hostname HTTPS, Site URL/allowlist do Supabase, migrations remotas, pgTAP 024 e
+smokes com contas/e-mails reais. Não declarar Sprint 13 concluída antes dessas validações externas.
+
+## Ciclo de senha e onboarding — Sprint 12C (2026-08-24)
+
+Redirects Supabase devem apontar exatamente para `/auth/callback/invite` e `/auth/callback/recovery` e estar na Auth redirect allowlist em localhost e no futuro host da Sprint 13. Os callbacks trocam o code PKCE pelo cliente SSR mutável, gravam marcador HttpOnly de fluxo por 15 minutos e seguem para páginas distintas.
+
+Senha é atualizada apenas via `auth.updateUser()` na sessão do próprio usuário. Invite ativa condicionalmente `pending → active` depois da senha; active é idempotente e disabled nunca reativa. Recovery preserva qualquer status. Nenhuma migration 12C foi necessária. E-mail/link real e o pgTAP 024 da 12B permanecem pendentes enquanto Docker/ambiente Auth local estiver indisponível.
+
+## Pedidos de convite — Sprint 12B (2026-08-24)
+
+`user_invite_requests` separa workflow de indicação do status de acesso. Auth user só nasce após aprovação administrativa, que reutiliza `inviteAdminUser` com role `seller`; depois o pedido transiciona condicionalmente de pending para approved. Rejeição preserva histórico. RLS permite authenticated inserir/ler apenas os próprios pedidos; revisão usa service role server-only. Solicitante e revisor são derivados das sessões, nunca do browser. Sprint 12C permanece pendente.
+
+## Ações administrativas de usuários — Sprint 12A.3 (2026-08-24)
+
+As mutações de `/admin/users` seguem UI client pequena → Server Action → operação de aplicação com
+`requireRole('admin')` → `AdminUserSupabaseAdapter` → cliente privilegiado server-only. O browser envia
+somente intenção/IDs; ator, alvo, e-mail, profile e contagem de admins são carregados no servidor.
+
+Convites usam o trigger `handle_new_auth_user` (`seller/pending`) e depois ajustam nome, role e
+`invited_by`; falha posterior do profile é reportada como parcial e não apaga o Auth user. Status
+pending não é ativado pela ação genérica. Auto-desativação/auto-rebaixamento e remoção do último admin
+ativo são bloqueados. Redirects exigem `AUTH_INVITE_REDIRECT_URL` e `AUTH_RECOVERY_REDIRECT_URL`; a UX
+final de aceite/atualização de senha permanece dependência da Sprint 12C. Nenhuma migration foi criada.
+
+## UX administrativa de usuários — Sprint 12A.2 (2026-08-24)
+
+`/admin/users` é uma Server Component somente leitura que consome `loadAdminUsers()`. A página ordena
+por criação mais recente e apresenta tabela semântica a partir de `md`, cartões no mobile e estados
+de loading, vazio e erro controlado. Labels de role/status, datas em `America/Sao_Paulo` e avisos de
+profile ficam nos helpers/componentes de apresentação, nunca no adapter.
+
+Profiles `missing` e `invalid` aparecem como inconsistências e não recebem role/status substitutos.
+“Novo usuário” permanece desabilitado até a Sprint 12A.3. Não há Client Component privilegiada,
+mutação de usuário, mudança de Auth, migration, RLS ou grants nesta entrega.
+
+## Fundação administrativa de usuários — Sprint 12A.1 (2026-08-24)
+
+`AdminUserDto` é o read model da futura administração: Auth mantém email, criação e último login;
+`public.profiles` mantém nome, role e status. `profileState` distingue `valid`, `missing` e `invalid`;
+nos dois estados inconsistentes role/status são nulos e nunca recebem fallback permissivo.
+
+`AdminUserSupabaseAdapter` pagina `auth.admin.listUsers()` em lotes de 200 e busca os profiles do
+lote em uma única consulta, sem view sobre `auth.users` e sem N+1. O cliente privilegiado é criado
+somente por `apps/web/src/auth/admin-client.ts`, marcado `server-only`, com as variáveis privadas já
+existentes `SUPABASE_URL` e `SUPABASE_SERVER_KEY`. A operação `loadAdminUsers` exige
+`requireRole('admin')` antes de instanciar o adapter. Não adicionar email/timestamps a profiles,
+ampliar RLS ou usar `user_metadata` como fonte de autorização.
+
+Nenhuma migration foi necessária: schema, grants e policies de profiles já suportam a composição
+confiável server-side. Sprint 12A.2 implementará a UX `/admin/users`; convites e recuperação continuam
+fora desta fundação.
+
 ## Download e compartilhamento nativo — Sprint 11C (2026-08-24)
 
 A toolbar de `/comparar` oferece ações independentes `Baixar PDF` e `Compartilhar`, ambas sobre a

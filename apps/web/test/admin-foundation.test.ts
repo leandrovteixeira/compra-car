@@ -25,6 +25,7 @@ describe('admin foundation', () => {
       { href: '/admin/prices/input', label: 'Criar preços', status: 'active' },
       { href: '/admin/prices/policies/input', label: 'Criar políticas', status: 'active' },
       { href: '/admin/imports', label: 'Importações', status: 'active' },
+      { href: '/admin/users', label: 'Usuários', status: 'active' },
     ]);
   });
 
@@ -34,15 +35,19 @@ describe('admin foundation', () => {
       .map((item) => item.label);
     const navigation = source('../src/components/admin/admin-nav.tsx');
 
-    expect(plannedLabels).toEqual([
-      'Equipamentos',
-      'Categorias',
-      'Marcas',
-      'Usuários',
-      'Configurações',
-    ]);
+    expect(plannedLabels).toEqual(['Equipamentos', 'Categorias', 'Marcas', 'Configurações']);
     expect(navigation).toContain('aria-disabled="true"');
     expect(navigation).toContain('Em breve');
+  });
+
+  it('loads administrative users through the authorized server operation', () => {
+    const page = source('../src/app/admin/users/page.tsx');
+
+    expect(page).toContain('await loadAdminUsers()');
+    expect(page).toContain('<AdminUserList users={users}');
+    expect(page).not.toContain("'use client'");
+    expect(page).not.toContain('createClient');
+    expect(page).not.toContain('auth.admin');
   });
 
   it('keeps seller access and logout in the admin account controls', () => {

@@ -521,6 +521,32 @@ export interface AuthProfile {
   readonly status: UserStatus;
 }
 
+export type AdminUserProfileState = 'invalid' | 'missing' | 'valid';
+
+export interface AdminUserDto {
+  readonly id: string;
+  readonly email: string | null;
+  readonly fullName: string | null;
+  readonly role: AppRole | null;
+  readonly status: UserStatus | null;
+  readonly profileState: AdminUserProfileState;
+  readonly createdAt: string;
+  readonly lastSignInAt: string | null;
+}
+
+export const INVITE_REQUEST_STATUSES = ['pending', 'approved', 'rejected'] as const;
+export type InviteRequestStatus = (typeof INVITE_REQUEST_STATUSES)[number];
+export interface InviteRequestDto {
+  readonly id: string;
+  readonly requestedBy: string;
+  readonly inviteeName: string;
+  readonly inviteeEmail: string;
+  readonly status: InviteRequestStatus;
+  readonly createdAt: string;
+  readonly reviewedAt: string | null;
+  readonly reviewedBy: string | null;
+}
+
 export interface ComparisonVehiclePresentationDto {
   readonly id: string;
   readonly brand: string;

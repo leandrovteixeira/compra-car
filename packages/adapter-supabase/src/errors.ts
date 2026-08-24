@@ -44,3 +44,17 @@ export class ManualPriceBatchConflictError extends PricingAdapterError {
 }
 export class ManualPriceBatchAuthorizationError extends PricingAdapterError {}
 export class AuthVerificationError extends LegacyAdapterError {}
+
+export class AdminUserAdapterError extends Error {
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options);
+    this.name = new.target.name;
+  }
+}
+
+export class AdminUserAdapterConfigurationError extends AdminUserAdapterError {}
+export class AdminUserAdapterQueryError extends AdminUserAdapterError {}
+export class AdminUserAdapterMappingError extends AdminUserAdapterError {}
+export class AdminUserAdapterInviteError extends AdminUserAdapterError {}
+export class AdminUserAdapterProfileUpdateError extends AdminUserAdapterError {}
+export class AdminUserAdapterRecoveryError extends AdminUserAdapterError {}
