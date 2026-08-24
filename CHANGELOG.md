@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-08-24 — Download e compartilhamento nativo do PDF
+
+- substitui a ação genérica `Gerar PDF` por `Baixar PDF` e `Compartilhar`, com SVGs inline,
+  touch targets de 44 px e reorganização responsiva na toolbar;
+- mantém uma única URL construída por `buildComparisonPdfUrl`, preservando todos os parâmetros
+  `vehicles` e `highlights=true` quando ativo;
+- baixa diretamente a rota `/comparar/pdf` com filename `comparacao-veiculos.pdf`, sem gerar Blob no
+  client para o fluxo de download;
+- implementa compartilhamento explícito via `fetch` → `Blob` → `File(application/pdf)` →
+  `navigator.canShare` → `navigator.share`, com estado `Preparando...` e bloqueio de cliques;
+- usa download como fallback para ausência de file sharing, resposta/fetch falhos ou erro técnico,
+  mas trata `AbortError` como cancelamento voluntário sem download;
+- adiciona testes isolados das APIs de browser, URL, filename/MIME, fallback, cancelamento e estado
+  visual, sem link público, Storage, persistência ou integração específica com aplicativos.
+
 ## 2026-08-24 — Otimização mobile do PDF de comparação
 
 - substitui A4 portrait pelo formato vertical customizado de 480 × 853 pt, com 10 pt de margem

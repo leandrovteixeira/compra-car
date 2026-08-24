@@ -3,6 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 import { buildComparisonPdfUrl } from '@/application/comparison/comparison-pdf-url';
+import { ComparisonPdfActions } from '@/components/comparison-pdf-actions';
 
 interface ComparisonToolbarProps {
   readonly onlyHighlights: boolean;
@@ -31,15 +32,8 @@ export function ComparisonToolbar({ onlyHighlights }: ComparisonToolbarProps) {
             : 'Exibindo todos os equipamentos e especificações.'}
         </p>
       </div>
-      <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
-        <a
-          className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-700 bg-slate-950/60 px-4 text-sm font-semibold text-slate-200 transition hover:border-cyan-300/40 hover:text-cyan-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"
-          href={pdfUrl}
-          rel="noreferrer"
-          target="_blank"
-        >
-          Gerar PDF
-        </a>
+      <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+        <ComparisonPdfActions pdfUrl={pdfUrl} />
         <label
           className={`group flex min-h-11 shrink-0 cursor-pointer items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 text-sm font-semibold transition-all focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-cyan-300 sm:justify-start ${
             onlyHighlights

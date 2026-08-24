@@ -1,5 +1,17 @@
 # Contexto para agentes de IA
 
+## Download e compartilhamento nativo — Sprint 11C (2026-08-24)
+
+A toolbar de `/comparar` oferece ações independentes `Baixar PDF` e `Compartilhar`, ambas sobre a
+mesma URL de `/comparar/pdf` produzida por `buildComparisonPdfUrl`. O download usa anchor same-origin
+com `download="comparacao-veiculos.pdf"`; não criar Blob para esse caminho.
+
+O compartilhamento fica isolado em `comparison-pdf-share.ts`: busca o PDF, cria `File` com MIME
+`application/pdf`, exige `navigator.share` e `navigator.canShare({ files })` e abre o share sheet do
+sistema. Ausência de suporte ou falha técnica aciona download; `AbortError` retorna cancelamento sem
+fallback. O componente mantém `isSharing`, desabilita o botão e mostra `Preparando...` durante todo o
+fluxo. Não substituir por WhatsApp URL, menu próprio, link público, Storage ou sharing server-side.
+
 ## Otimização mobile do PDF de comparação — Sprint 11B.3 (2026-08-24)
 
 O único formato de `/comparar/pdf` agora é uma página vertical customizada de 480 × 853 pt, voltada
