@@ -45,6 +45,27 @@ Repita as callbacks nas variáveis `AUTH_*_REDIRECT_URL` do Railway. Não use cu
 e recovery devem ser testados por e-mail real, inclusive abrindo o link em outro dispositivo. Uma
 limitação PKCE/cross-device é bloqueadora e não deve ser contornada enfraquecendo cookies.
 
+### Template obrigatório de Invite User
+
+No painel Supabase, o template **Invite User** deve usar o callback SSR direto com `TokenHash`:
+
+```html
+<h2>You've been invited</h2>
+
+<p>You've been invited to create an account. Follow the link below to accept.</p>
+
+<p>
+  <a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=invite">
+    Accept invitation
+  </a>
+</p>
+```
+
+Não use `{{ .ConfirmationURL }}` nesse fluxo. O link padrão devolve a sessão no fragmento da URL,
+que não é enviado ao callback server-side e não funciona de forma confiável quando o convite é aberto
+em outro navegador/dispositivo. O callback valida o hash com `verifyOtp`, grava a sessão nos cookies SSR
+e segue para `/auth/invite`.
+
 ## Banco remoto
 
 Antes da liberação, compare o histórico remoto com `supabase/migrations/`. Nunca execute `db reset` no

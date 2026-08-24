@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-08-24 — Correção SSR do aceite de convite
+
+- troca o callback de convite administrativo de code/PKCE para `TokenHash + verifyOtp`, compatível com
+  links abertos em outro navegador ou dispositivo;
+- constrói redirects de convite e recovery a partir das callbacks externas confiáveis configuradas,
+  evitando o origin interno do proxy Railway;
+- documenta o template obrigatório de Invite User no Supabase.
+
 ## 2026-08-24 — Ajuste visual de QA em usuários administrativos
 
 - evita que o menu de ações da tabela desktop seja recortado pelo container e centraliza verticalmente
