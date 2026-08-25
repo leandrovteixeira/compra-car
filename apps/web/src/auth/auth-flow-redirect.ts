@@ -16,6 +16,14 @@ export function buildAuthFlowRedirect(flow: AuthFlow, valid: boolean): URL {
   return destination;
 }
 
+export function buildRecoveryConfirmationRedirect(valid: boolean): URL {
+  const destination = configuredCallbackUrl('recovery');
+  destination.pathname = valid ? '/auth/recovery/confirm' : '/auth/recovery';
+  destination.search = valid ? '' : '?error=invalid';
+  destination.hash = '';
+  return destination;
+}
+
 export function authFlowUsesSecureCookies(flow: AuthFlow): boolean {
   return configuredCallbackUrl(flow).protocol === 'https:';
 }

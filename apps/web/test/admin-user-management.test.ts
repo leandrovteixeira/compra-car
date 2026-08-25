@@ -1,4 +1,5 @@
 import type { AdminUserDto } from '@compra-car/contracts';
+import { AdminUserAdapterRecoveryRateLimitError } from '@compra-car/adapter-supabase';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -193,6 +194,18 @@ describe('admin user management rules', () => {
     expect(
       await sendAdminUserPasswordRecovery(form({ userId: 'target' }), dependencies),
     ).toMatchObject({ status: 'error' });
+  });
+
+  it('maps recovery rate limits to controlled administrative feedback', async () => {
+    vi.mocked(manager.requestPasswordRecovery).mockRejectedValue(
+      new AdminUserAdapterRecoveryRateLimitError('rate limited'),
+    );
+    await expect(
+      sendAdminUserPasswordRecovery(form({ userId: 'target' }), dependencies),
+    ).resolves.toEqual({
+      status: 'error',
+      message: 'Aguarde alguns instantes antes de solicitar um novo e-mail.',
+    });
   });
 
   it('authorizes before every privileged operation', async () => {

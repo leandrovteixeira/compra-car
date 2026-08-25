@@ -58,3 +58,4 @@ export class AdminUserAdapterMappingError extends AdminUserAdapterError {}
 export class AdminUserAdapterInviteError extends AdminUserAdapterError {}
 export class AdminUserAdapterProfileUpdateError extends AdminUserAdapterError {}
 export class AdminUserAdapterRecoveryError extends AdminUserAdapterError {}
+export class AdminUserAdapterRecoveryRateLimitError extends AdminUserAdapterRecoveryError {}

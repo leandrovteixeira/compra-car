@@ -73,7 +73,7 @@ O template **Reset Password / Recovery** também deve usar o callback SSR direto
 ```html
 <h2>Reset your password</h2>
 
-<p>Follow the link below to choose a new password.</p>
+<p>Follow the link below to continue.</p>
 
 <p>
   <a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=recovery">
@@ -82,10 +82,18 @@ O template **Reset Password / Recovery** também deve usar o callback SSR direto
 </p>
 ```
 
-`AUTH_RECOVERY_REDIRECT_URL` deve apontar para `/auth/callback/recovery`. O callback valida o hash com
-`verifyOtp(type='recovery')`, estabelece a sessão SSR e nunca depende de fragmentos da URL. Como tokens
-são de uso único, desative link tracking no provedor de e-mail e considere scanners/prefetch na
-validação operacional.
+`AUTH_RECOVERY_REDIRECT_URL` deve apontar para `/auth/callback/recovery`. O primeiro `GET` nunca valida
+nem consome o OTP: ele guarda o `token_hash` por até 15 minutos em cookie HttpOnly, `SameSite=Lax`,
+`Secure` em HTTPS e restrito a `/auth/recovery`, remove o token da URL e segue para
+`/auth/recovery/confirm`. Somente o clique explícito em **Continuar** executa o POST/Server Action que
+chama `verifyOtp(type='recovery')`, estabelece a sessão SSR, remove o cookie temporário e segue para o
+formulário de nova senha. Assim, scanners/Safe Links que apenas fazem GET ou prefetch não invalidam o
+pedido.
+
+Os erros `over_email_send_rate_limit` e `over_request_rate_limit` geram instrução controlada de espera
+para administradores. O formulário público continua devolvendo a mesma resposta neutra, inclusive sob
+rate limit, para não revelar se a conta existe. Um envio recusado não atualiza
+`password_recovery_requested_at`.
 
 ## Banco remoto
 
@@ -136,6 +144,9 @@ Registre aprovado, falhou ou não executado. Nunca transforme “não executado�
 - [ ] E-mail chega e callback abre, inclusive em dispositivo diferente.
 - [ ] Senha altera `pending` para `active` e mantém a sessão.
 - [ ] Recovery troca a senha de usuário ativo.
+- [ ] O primeiro GET de recovery abre a confirmação sem consumir o OTP; somente **Continuar** valida.
+- [ ] Recovery funciona no ambiente corporativo com Safe Links/prefetch.
+- [ ] Rate limit de novos e-mails apresenta feedback controlado sem enumeração pública.
 - [ ] Recovery não altera `pending` ou `disabled`.
 - [ ] Links ausentes, inválidos e expirados exibem erro controlado.
 

@@ -2,11 +2,15 @@
 
 ## Recovery SSR e tracking — Sprint 13 QA/Auth (2026-08-25)
 
-Recovery usa template Supabase com `RedirectTo + TokenHash + type=recovery`, callback SSR com
-`verifyOtp` e cookie `cc-auth-flow=recovery`. A solicitação pública fica em `/forgot-password`, usa
+Recovery usa template Supabase com `RedirectTo + TokenHash + type=recovery`. O callback SSR faz um GET
+não consumidor que guarda o hash em cookie HttpOnly curto e redireciona para
+`/auth/recovery/confirm`; somente a confirmação explícita via POST chama `verifyOtp` e cria o cookie
+`cc-auth-flow=recovery`. A solicitação pública fica em `/forgot-password`, usa
 resposta neutra e consulta usuários apenas no servidor privilegiado. O tracking separado é
 `profiles.password_recovery_requested_at`: definido após envio bem-sucedido e limpo somente após a
 senha ser atualizada. Recovery nunca altera `profiles.status`; active/disabled/pending são preservados.
+Rate limits conhecidos do Supabase são explícitos apenas para admins e permanecem neutros no fluxo
+público. A validação real no ambiente corporativo com Safe Links continua PENDENTE.
 
 ## Ambiente online de testes — Sprint 13 (2026-08-24)
 

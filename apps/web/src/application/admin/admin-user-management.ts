@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { APP_ROLES, type AdminUserDto, type AppRole } from '@compra-car/contracts';
+import { AdminUserAdapterRecoveryRateLimitError } from '@compra-car/adapter-supabase';
 
 export type AdminUserActionState =
   | { readonly status: 'idle' }
@@ -176,6 +177,9 @@ export async function sendAdminUserPasswordRecovery(
     return { status: 'success', message: 'E-mail de redefinição solicitado.' };
   } catch (error) {
     console.error('Administrative password recovery failed.', { error });
+    if (error instanceof AdminUserAdapterRecoveryRateLimitError) {
+      return failed('Aguarde alguns instantes antes de solicitar um novo e-mail.');
+    }
     return failed();
   }
 }

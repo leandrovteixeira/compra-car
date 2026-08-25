@@ -6,7 +6,11 @@ import {
   createAdminUserSupabaseClient,
   mapAdminUser,
 } from '../src/admin-user-supabase-adapter';
-import { AdminUserAdapterConfigurationError, AdminUserAdapterQueryError } from '../src/errors';
+import {
+  AdminUserAdapterConfigurationError,
+  AdminUserAdapterQueryError,
+  AdminUserAdapterRecoveryRateLimitError,
+} from '../src/errors';
 
 function authUser(overrides: Partial<User> = {}): User {
   return {
@@ -230,4 +234,25 @@ describe('admin user Supabase adapter', () => {
       message: 'Password recovery request failed.',
     });
   });
+
+  it.each(['over_email_send_rate_limit', 'over_request_rate_limit'])(
+    'maps %s without falsely updating recovery tracking',
+    async (code) => {
+      const resetPasswordForEmail = vi.fn(async () => ({ data: null, error: { code } }));
+      const update = vi.fn();
+      const adapter = new AdminUserSupabaseAdapter({
+        auth: { resetPasswordForEmail },
+        from: vi.fn(() => ({ update })),
+      } as unknown as SupabaseClient);
+
+      await expect(
+        adapter.requestPasswordRecovery(
+          authUser().id,
+          'pessoa@example.com',
+          'https://app.example.com/recovery',
+        ),
+      ).rejects.toBeInstanceOf(AdminUserAdapterRecoveryRateLimitError);
+      expect(update).not.toHaveBeenCalled();
+    },
+  );
 });

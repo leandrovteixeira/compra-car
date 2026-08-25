@@ -2,6 +2,10 @@
 
 ## 2026-08-25 — Hardening do ciclo de recuperação de senha
 
+- torna o recovery resistente a scanners de e-mail: o primeiro GET apenas guarda o hash em cookie
+  HttpOnly curto e a verificação do OTP ocorre somente após confirmação explícita por POST;
+- trata rate limits de envio do Supabase com mensagem administrativa controlada e preserva a resposta
+  pública neutra contra enumeração;
 - alinha recovery hospedado ao padrão SSR `TokenHash + verifyOtp(type='recovery')`;
 - adiciona “Esqueci minha senha” com resposta neutra contra enumeração;
 - registra solicitações em `profiles.password_recovery_requested_at`, limpa o indicador após troca de

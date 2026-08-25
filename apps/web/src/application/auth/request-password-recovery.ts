@@ -1,6 +1,7 @@
 import 'server-only';
 
 import type { AdminUserDto } from '@compra-car/contracts';
+import { AdminUserAdapterRecoveryRateLimitError } from '@compra-car/adapter-supabase';
 
 export const PASSWORD_RECOVERY_NEUTRAL_MESSAGE =
   'Se existir uma conta para este e-mail, enviaremos as instruções para redefinir sua senha.';
@@ -47,6 +48,9 @@ export async function requestPasswordRecovery(
     return { status: 'success', message: PASSWORD_RECOVERY_NEUTRAL_MESSAGE };
   } catch (error) {
     console.error('Public password recovery request failed.', { error });
+    if (error instanceof AdminUserAdapterRecoveryRateLimitError) {
+      return { status: 'success', message: PASSWORD_RECOVERY_NEUTRAL_MESSAGE };
+    }
     return {
       status: 'error',
       message: 'Não foi possível concluir a solicitação. Tente novamente.',

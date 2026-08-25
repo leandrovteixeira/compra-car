@@ -1,19 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { authFlowUsesSecureCookies, buildAuthFlowRedirect } from '@/auth/auth-flow-redirect';
-import { verifyRecoveryToken } from '@/auth/verify-recovery-token';
+import {
+  authFlowUsesSecureCookies,
+  buildRecoveryConfirmationRedirect,
+} from '@/auth/auth-flow-redirect';
+import {
+  RECOVERY_ATTEMPT_COOKIE,
+  RECOVERY_ATTEMPT_MAX_AGE,
+  validRecoveryAttempt,
+} from '@/auth/recovery-attempt';
 
 export async function GET(request: NextRequest) {
-  const valid = await verifyRecoveryToken(
-    request.nextUrl.searchParams.get('token_hash'),
-    request.nextUrl.searchParams.get('type'),
-  );
-  const response = NextResponse.redirect(buildAuthFlowRedirect('recovery', valid));
+  const tokenHash = request.nextUrl.searchParams.get('token_hash');
+  const valid = validRecoveryAttempt(tokenHash, request.nextUrl.searchParams.get('type'));
+  const response = NextResponse.redirect(buildRecoveryConfirmationRedirect(valid));
   if (valid)
-    response.cookies.set('cc-auth-flow', 'recovery', {
+    response.cookies.set(RECOVERY_ATTEMPT_COOKIE, tokenHash!, {
       httpOnly: true,
-      maxAge: 900,
-      path: '/auth',
+      maxAge: RECOVERY_ATTEMPT_MAX_AGE,
+      path: '/auth/recovery',
+      sameSite: 'lax',
+      secure: authFlowUsesSecureCookies('recovery'),
+    });
+  else
+    response.cookies.set(RECOVERY_ATTEMPT_COOKIE, '', {
+      httpOnly: true,
+      maxAge: 0,
+      path: '/auth/recovery',
       sameSite: 'lax',
       secure: authFlowUsesSecureCookies('recovery'),
     });
