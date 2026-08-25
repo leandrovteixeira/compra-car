@@ -530,6 +530,7 @@ export interface AdminUserDto {
   readonly role: AppRole | null;
   readonly status: UserStatus | null;
   readonly profileState: AdminUserProfileState;
+  readonly passwordRecoveryRequestedAt: string | null;
   readonly createdAt: string;
   readonly lastSignInAt: string | null;
 }

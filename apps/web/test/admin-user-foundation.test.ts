@@ -12,6 +12,7 @@ const user: AdminUserDto = {
   profileState: 'valid',
   createdAt: '2026-08-01T10:00:00.000Z',
   lastSignInAt: null,
+  passwordRecoveryRequestedAt: null,
 };
 
 describe('admin user application foundation', () => {

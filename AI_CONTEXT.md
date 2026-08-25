@@ -1,5 +1,13 @@
 # Contexto para agentes de IA
 
+## Recovery SSR e tracking — Sprint 13 QA/Auth (2026-08-25)
+
+Recovery usa template Supabase com `RedirectTo + TokenHash + type=recovery`, callback SSR com
+`verifyOtp` e cookie `cc-auth-flow=recovery`. A solicitação pública fica em `/forgot-password`, usa
+resposta neutra e consulta usuários apenas no servidor privilegiado. O tracking separado é
+`profiles.password_recovery_requested_at`: definido após envio bem-sucedido e limpo somente após a
+senha ser atualizada. Recovery nunca altera `profiles.status`; active/disabled/pending são preservados.
+
 ## Ambiente online de testes — Sprint 13 (2026-08-24)
 
 Railway permanece o único alvo: raiz do monorepo, Railpack, build filtrado para

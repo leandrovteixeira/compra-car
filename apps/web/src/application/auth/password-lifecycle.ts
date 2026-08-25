@@ -12,6 +12,7 @@ export interface PasswordLifecycleDependencies {
   readonly identity: () => Promise<PasswordLifecycleIdentity | null>;
   readonly updatePassword: (password: string) => Promise<boolean>;
   readonly activatePending: (id: string) => Promise<boolean>;
+  readonly clearRecoveryRequested: (id: string) => Promise<void>;
 }
 function validate(data: FormData): { password: string } | PasswordLifecycleState {
   const p = data.get('password'),
@@ -68,6 +69,15 @@ export async function completePasswordRecovery(
       status: 'error',
       message: 'Não foi possível atualizar a senha. Solicite uma nova redefinição.',
     };
+  try {
+    await d.clearRecoveryRequested(identity.user.id);
+  } catch {
+    return {
+      status: 'error',
+      message:
+        'A senha foi atualizada, mas o indicador de redefinição não pôde ser limpo. Entre em contato com o administrador.',
+    };
+  }
   const message =
     identity.profile.status === 'disabled'
       ? 'Senha atualizada. Seu acesso ao Compra Car continua desativado.'

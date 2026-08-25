@@ -33,7 +33,7 @@ select is(
          where table_schema = 'public'
            and table_name = 'profiles'
     ),
-    '{id,full_name,role,status,invited_by,disabled_by,invited_at,accepted_at,disabled_at,created_at,updated_at}',
+    '{id,full_name,role,status,invited_by,disabled_by,invited_at,accepted_at,disabled_at,created_at,updated_at,password_recovery_requested_at}',
     'profiles has exactly the approved columns in order'
 );
 select is(
@@ -456,7 +456,8 @@ select ok(
     and not has_column_privilege('authenticated', 'public.profiles', 'accepted_at', 'UPDATE')
     and not has_column_privilege('authenticated', 'public.profiles', 'disabled_at', 'UPDATE')
     and not has_column_privilege('authenticated', 'public.profiles', 'created_at', 'UPDATE')
-    and not has_column_privilege('authenticated', 'public.profiles', 'updated_at', 'UPDATE'),
+    and not has_column_privilege('authenticated', 'public.profiles', 'updated_at', 'UPDATE')
+    and not has_column_privilege('authenticated', 'public.profiles', 'password_recovery_requested_at', 'UPDATE'),
     'authenticated has no UPDATE privilege on authorization, lifecycle or audit columns'
 );
 

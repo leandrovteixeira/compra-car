@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { authFlowUsesSecureCookies, buildAuthFlowRedirect } from '@/auth/auth-flow-redirect';
-import { exchangeAuthCode } from '@/auth/exchange-auth-code';
+import { verifyRecoveryToken } from '@/auth/verify-recovery-token';
 
 export async function GET(request: NextRequest) {
-  const valid = await exchangeAuthCode(request.nextUrl.searchParams.get('code'));
+  const valid = await verifyRecoveryToken(
+    request.nextUrl.searchParams.get('token_hash'),
+    request.nextUrl.searchParams.get('type'),
+  );
   const response = NextResponse.redirect(buildAuthFlowRedirect('recovery', valid));
   if (valid)
     response.cookies.set('cc-auth-flow', 'recovery', {

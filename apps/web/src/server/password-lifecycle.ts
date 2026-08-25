@@ -27,6 +27,10 @@ async function dependencies(flow: 'invite' | 'recovery'): Promise<PasswordLifecy
     },
     activatePending: (id) =>
       new AdminUserSupabaseAdapter(createPrivilegedAdminClient()).activatePendingUser(id),
+    clearRecoveryRequested: (id) =>
+      new AdminUserSupabaseAdapter(createPrivilegedAdminClient()).clearPasswordRecoveryRequested(
+        id,
+      ),
   };
 }
 export async function completeInviteAction(_: PasswordLifecycleState, data: FormData) {

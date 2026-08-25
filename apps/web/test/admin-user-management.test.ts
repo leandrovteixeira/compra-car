@@ -16,6 +16,7 @@ const healthy = (overrides: Partial<AdminUserDto> = {}): AdminUserDto => ({
   fullName: 'User',
   id: 'target',
   lastSignInAt: null,
+  passwordRecoveryRequestedAt: null,
   profileState: 'valid',
   role: 'seller',
   status: 'active',
@@ -37,7 +38,7 @@ describe('admin user management rules', () => {
       findAdminUserByEmail: vi.fn(async () => null),
       getAdminUser: vi.fn(async () => healthy()),
       inviteAdminUser: vi.fn(async () => 'new-id'),
-      sendAdminUserPasswordRecovery: vi.fn(async () => undefined),
+      requestPasswordRecovery: vi.fn(async () => undefined),
       setAdminUserRole: vi.fn(async () => undefined),
       setAdminUserStatus: vi.fn(async () => undefined),
     };
@@ -173,10 +174,12 @@ describe('admin user management rules', () => {
     expect(
       await sendAdminUserPasswordRecovery(form({ userId: 'target' }), dependencies),
     ).toMatchObject({ status: 'success' });
-    expect(manager.sendAdminUserPasswordRecovery).toHaveBeenCalledWith(
+    expect(manager.requestPasswordRecovery).toHaveBeenCalledWith(
+      'target',
       'user@example.com',
       'https://app.example.com/recovery',
     );
+    expect(dependencies.revalidate).toHaveBeenCalledWith('/admin/users');
     vi.mocked(manager.getAdminUser).mockResolvedValueOnce(null);
     expect(
       await sendAdminUserPasswordRecovery(form({ userId: 'unknown' }), dependencies),
@@ -186,7 +189,7 @@ describe('admin user management rules', () => {
       await sendAdminUserPasswordRecovery(form({ userId: 'target' }), dependencies),
     ).toMatchObject({ status: 'error' });
     vi.mocked(manager.getAdminUser).mockResolvedValueOnce(healthy());
-    vi.mocked(manager.sendAdminUserPasswordRecovery).mockRejectedValue(new Error('provider'));
+    vi.mocked(manager.requestPasswordRecovery).mockRejectedValue(new Error('provider'));
     expect(
       await sendAdminUserPasswordRecovery(form({ userId: 'target' }), dependencies),
     ).toMatchObject({ status: 'error' });

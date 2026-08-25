@@ -25,6 +25,7 @@ function deps(
     identity: vi.fn(async () => ({ user, profile: status === 'missing' ? null : profile(status) })),
     updatePassword: vi.fn(async () => true),
     activatePending: vi.fn(async () => true),
+    clearRecoveryRequested: vi.fn(async () => undefined),
   };
 }
 describe('password lifecycle', () => {
@@ -86,6 +87,7 @@ describe('password lifecycle', () => {
       const result = await completePasswordRecovery(data(), d);
       expect(result.status).toBe('success');
       expect(d.activatePending).not.toHaveBeenCalled();
+      expect(d.clearRecoveryRequested).toHaveBeenCalledWith(user.id);
       expect(d.identity).toHaveBeenCalled();
     },
   );
@@ -104,6 +106,17 @@ describe('password lifecycle', () => {
     const d = deps('disabled');
     vi.mocked(d.updatePassword).mockResolvedValue(false);
     expect(await completePasswordRecovery(data(), d)).toMatchObject({ status: 'error' });
+    expect(d.activatePending).not.toHaveBeenCalled();
+    expect(d.clearRecoveryRequested).not.toHaveBeenCalled();
+  });
+  it('reports password-updated/tracking-clear-failed without changing profile status', async () => {
+    const d = deps('active');
+    vi.mocked(d.clearRecoveryRequested).mockRejectedValue(new Error('database'));
+    expect(await completePasswordRecovery(data(), d)).toMatchObject({
+      status: 'error',
+      message: expect.stringContaining('senha foi atualizada'),
+    });
+    expect(d.updatePassword).toHaveBeenCalled();
     expect(d.activatePending).not.toHaveBeenCalled();
   });
 });

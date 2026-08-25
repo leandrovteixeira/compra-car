@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-08-25 — Hardening do ciclo de recuperação de senha
+
+- alinha recovery hospedado ao padrão SSR `TokenHash + verifyOtp(type='recovery')`;
+- adiciona “Esqueci minha senha” com resposta neutra contra enumeração;
+- registra solicitações em `profiles.password_recovery_requested_at`, limpa o indicador após troca de
+  senha e preserva integralmente o status de acesso;
+- exibe a redefinição pendente separadamente na tabela e nos cartões administrativos.
+
 ## 2026-08-24 — Correção SSR do aceite de convite
 
 - troca o callback de convite administrativo de code/PKCE para `TokenHash + verifyOtp`, compatível com

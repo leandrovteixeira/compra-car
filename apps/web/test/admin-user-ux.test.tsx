@@ -8,6 +8,7 @@ import {
   adminUserStatusLabel,
   formatAdminUserCreatedAt,
   formatAdminUserLastSignIn,
+  formatAdminUserPasswordRecovery,
   newestAdminUsersFirst,
 } from '../src/components/admin/admin-user-presentation';
 
@@ -22,6 +23,7 @@ function user(overrides: Partial<AdminUserDto> = {}): AdminUserDto {
     fullName: 'Admin Compra Car',
     id: 'user-1',
     lastSignInAt: '2026-08-24T17:32:00.000Z',
+    passwordRecoveryRequestedAt: null,
     profileState: 'valid',
     role: 'admin',
     status: 'active',
@@ -44,6 +46,17 @@ describe('admin user UX', () => {
   it('handles a missing name and a user who never signed in', () => {
     expect(user({ fullName: null }).fullName).toBeNull();
     expect(formatAdminUserLastSignIn(null)).toBe('Nunca');
+  });
+
+  it('presents password recovery separately on desktop and mobile', () => {
+    const list = source('../src/components/admin/admin-user-list.tsx');
+    const requestedAt = '2026-08-25T13:42:00.000Z';
+
+    expect(formatAdminUserPasswordRecovery(null)).toBe('—');
+    expect(formatAdminUserPasswordRecovery(requestedAt)).toBe('25/08/2026 10:42');
+    expect(list).toContain("'Senha'");
+    expect(list).toContain('Redefinição solicitada');
+    expect(list).toContain('user.passwordRecoveryRequestedAt');
   });
 
   it.each([

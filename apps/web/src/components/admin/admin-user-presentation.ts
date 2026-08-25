@@ -67,6 +67,12 @@ export function formatAdminUserLastSignIn(value: string | null): string {
   return date ? DATE_TIME_FORMATTER.format(date).replace(',', '') : '—';
 }
 
+export function formatAdminUserPasswordRecovery(value: string | null): string {
+  if (!value) return '—';
+  const date = validDate(value);
+  return date ? DATE_TIME_FORMATTER.format(date).replace(',', '') : '—';
+}
+
 export function newestAdminUsersFirst(users: readonly AdminUserDto[]): readonly AdminUserDto[] {
   return [...users].sort((left, right) => {
     const leftTime = validDate(left.createdAt)?.getTime() ?? 0;

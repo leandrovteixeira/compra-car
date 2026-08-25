@@ -7,6 +7,7 @@ import {
   adminUserStatusLabel,
   formatAdminUserCreatedAt,
   formatAdminUserLastSignIn,
+  formatAdminUserPasswordRecovery,
 } from './admin-user-presentation';
 
 interface AdminUserListProps {
@@ -65,6 +66,19 @@ export function AdminUserList({ users }: AdminUserListProps) {
             <div className="mt-4">
               <ProfileBadges user={user} />
             </div>
+            <div className="mt-4 text-sm">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Senha</p>
+              {user.passwordRecoveryRequestedAt ? (
+                <div className="mt-1 text-amber-300">
+                  <p className="font-semibold">Redefinição solicitada</p>
+                  <p className="text-xs text-slate-400">
+                    {formatAdminUserPasswordRecovery(user.passwordRecoveryRequestedAt)}
+                  </p>
+                </div>
+              ) : (
+                <p className="mt-1 text-slate-300">—</p>
+              )}
+            </div>
             <div className="mt-4">
               <AdminUserActions user={user} />
             </div>
@@ -93,13 +107,19 @@ export function AdminUserList({ users }: AdminUserListProps) {
           <caption className="sr-only">Usuários cadastrados no Supabase Auth</caption>
           <thead className="border-b border-slate-800 bg-slate-900 text-xs uppercase tracking-wide text-slate-400 [&_th:first-child]:rounded-tl-2xl [&_th:last-child]:rounded-tr-2xl">
             <tr>
-              {['Nome', 'E-mail', 'Perfil e status', 'Criado em', 'Último acesso', 'Ações'].map(
-                (label) => (
-                  <th className="px-4 py-3 font-semibold" key={label} scope="col">
-                    {label}
-                  </th>
-                ),
-              )}
+              {[
+                'Nome',
+                'E-mail',
+                'Perfil e status',
+                'Senha',
+                'Criado em',
+                'Último acesso',
+                'Ações',
+              ].map((label) => (
+                <th className="px-4 py-3 font-semibold" key={label} scope="col">
+                  {label}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800">
@@ -115,6 +135,18 @@ export function AdminUserList({ users }: AdminUserListProps) {
                 </td>
                 <td className="px-4 py-4">
                   <ProfileBadges user={user} />
+                </td>
+                <td className="whitespace-nowrap px-4 py-4">
+                  {user.passwordRecoveryRequestedAt ? (
+                    <div className="text-amber-300">
+                      <p className="font-semibold">Redefinição solicitada</p>
+                      <p className="text-xs text-slate-400">
+                        {formatAdminUserPasswordRecovery(user.passwordRecoveryRequestedAt)}
+                      </p>
+                    </div>
+                  ) : (
+                    <span className="text-slate-300">—</span>
+                  )}
                 </td>
                 <td className="whitespace-nowrap px-4 py-4 text-slate-300">
                   {formatAdminUserCreatedAt(user.createdAt)}

@@ -28,6 +28,7 @@ interface AdminProfileRow {
   readonly full_name: unknown;
   readonly role: unknown;
   readonly status: unknown;
+  readonly password_recovery_requested_at?: unknown;
 }
 
 function requiredServerConfig(value: string | undefined, name: string): string {
@@ -95,6 +96,10 @@ export function mapAdminUser(user: User, profile: AdminProfileRow | undefined): 
     role: hasValidProfile ? (profile.role as AppRole) : null,
     status: hasValidProfile ? (profile.status as UserStatus) : null,
     profileState,
+    passwordRecoveryRequestedAt:
+      typeof profile?.password_recovery_requested_at === 'string'
+        ? profile.password_recovery_requested_at
+        : null,
     createdAt: user.created_at,
     lastSignInAt: typeof user.last_sign_in_at === 'string' ? user.last_sign_in_at : null,
   });
@@ -123,7 +128,7 @@ export class AdminUserSupabaseAdapter {
 
       const { data: profileData, error: profileError } = await this.client
         .from('profiles')
-        .select('id,full_name,role,status')
+        .select('id,full_name,role,status,password_recovery_requested_at')
         .in(
           'id',
           users.map((user) => user.id),
@@ -156,7 +161,7 @@ export class AdminUserSupabaseAdapter {
     if (authError || !authData.user) return null;
     const { data: profile, error: profileError } = await this.client
       .from('profiles')
-      .select('id,full_name,role,status')
+      .select('id,full_name,role,status,password_recovery_requested_at')
       .eq('id', id)
       .maybeSingle();
     if (profileError) {
@@ -233,13 +238,18 @@ export class AdminUserSupabaseAdapter {
     );
   }
 
-  async sendAdminUserPasswordRecovery(email: string, redirectTo: string): Promise<void> {
+  async requestPasswordRecovery(id: string, email: string, redirectTo: string): Promise<void> {
     const { error } = await this.client.auth.resetPasswordForEmail(email, { redirectTo });
     if (error) {
       throw new AdminUserAdapterRecoveryError('Password recovery request failed.', {
         cause: error,
       });
     }
+    await this.updateProfile(id, { password_recovery_requested_at: new Date().toISOString() });
+  }
+
+  async clearPasswordRecoveryRequested(id: string): Promise<void> {
+    await this.updateProfile(id, { password_recovery_requested_at: null });
   }
 
   async activatePendingUser(id: string): Promise<boolean> {

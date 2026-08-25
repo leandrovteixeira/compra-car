@@ -66,6 +66,27 @@ que não é enviado ao callback server-side e não funciona de forma confiável 
 em outro navegador/dispositivo. O callback valida o hash com `verifyOtp`, grava a sessão nos cookies SSR
 e segue para `/auth/invite`.
 
+### Template obrigatório de Reset Password
+
+O template **Reset Password / Recovery** também deve usar o callback SSR direto:
+
+```html
+<h2>Reset your password</h2>
+
+<p>Follow the link below to choose a new password.</p>
+
+<p>
+  <a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=recovery">
+    Reset password
+  </a>
+</p>
+```
+
+`AUTH_RECOVERY_REDIRECT_URL` deve apontar para `/auth/callback/recovery`. O callback valida o hash com
+`verifyOtp(type='recovery')`, estabelece a sessão SSR e nunca depende de fragmentos da URL. Como tokens
+são de uso único, desative link tracking no provedor de e-mail e considere scanners/prefetch na
+validação operacional.
+
 ## Banco remoto
 
 Antes da liberação, compare o histórico remoto com `supabase/migrations/`. Nunca execute `db reset` no

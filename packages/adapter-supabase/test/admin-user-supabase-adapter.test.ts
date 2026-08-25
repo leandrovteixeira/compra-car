@@ -43,6 +43,7 @@ describe('admin user Supabase adapter', () => {
       role: 'admin',
       status: 'active',
       profileState: 'valid',
+      passwordRecoveryRequestedAt: null,
       createdAt: '2026-08-01T10:00:00.000Z',
       lastSignInAt: '2026-08-20T12:00:00.000Z',
     });
@@ -183,23 +184,44 @@ describe('admin user Supabase adapter', () => {
     );
   });
 
-  it('usa o fluxo oficial de recovery e sanitiza falhas do provedor', async () => {
+  it('solicita recovery e marca/limpa o tracking sem alterar status', async () => {
     const resetPasswordForEmail = vi
       .fn()
       .mockResolvedValueOnce({ data: {}, error: null })
+      .mockResolvedValueOnce({ data: {}, error: null })
       .mockResolvedValueOnce({ data: null, error: new Error('provider detail') });
+    const single = vi.fn(async () => ({ data: { id: authUser().id }, error: null }));
+    const select = vi.fn(() => ({ single }));
+    const eq = vi.fn(() => ({ select }));
+    const update = vi.fn(() => ({ eq }));
     const adapter = new AdminUserSupabaseAdapter({
       auth: { resetPasswordForEmail },
+      from: vi.fn(() => ({ update })),
     } as unknown as SupabaseClient);
-    await adapter.sendAdminUserPasswordRecovery(
+    await adapter.requestPasswordRecovery(
+      authUser().id,
       'pessoa@example.com',
       'https://app.example.com/recovery',
     );
     expect(resetPasswordForEmail).toHaveBeenCalledWith('pessoa@example.com', {
       redirectTo: 'https://app.example.com/recovery',
     });
+    expect(update).toHaveBeenCalledWith({
+      password_recovery_requested_at: expect.any(String),
+    });
+    await adapter.clearPasswordRecoveryRequested(authUser().id);
+    expect(update).toHaveBeenLastCalledWith({ password_recovery_requested_at: null });
+    await adapter.requestPasswordRecovery(
+      authUser().id,
+      'pessoa@example.com',
+      'https://app.example.com/recovery',
+    );
+    expect(update).toHaveBeenLastCalledWith({
+      password_recovery_requested_at: expect.any(String),
+    });
     await expect(
-      adapter.sendAdminUserPasswordRecovery(
+      adapter.requestPasswordRecovery(
+        authUser().id,
         'pessoa@example.com',
         'https://app.example.com/recovery',
       ),

@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { buildAuthFlowRedirect } from '../src/auth/auth-flow-redirect';
 import { isPublicPath } from '../src/auth/route-policy';
 import { verifyInviteToken } from '../src/auth/verify-invite-token';
+import { verifyRecoveryToken } from '../src/auth/verify-recovery-token';
 const source = (p: string) => readFileSync(resolve(__dirname, p), 'utf8');
 describe('auth lifecycle callback routes', () => {
   it('keeps auth callbacks public while application routes remain protected', () => {
@@ -11,7 +12,7 @@ describe('auth lifecycle callback routes', () => {
     expect(isPublicPath('/auth/recovery')).toBe(true);
     expect(isPublicPath('/admin/users')).toBe(false);
   });
-  it('uses token-hash verification for invite and preserves code exchange for recovery', () => {
+  it('uses token-hash verification for invite and recovery', () => {
     const invite = source('../src/app/auth/callback/invite/route.ts'),
       recovery = source('../src/app/auth/callback/recovery/route.ts');
     expect(invite).toContain("searchParams.get('token_hash')");
@@ -21,14 +22,41 @@ describe('auth lifecycle callback routes', () => {
     expect(invite).not.toContain("searchParams.get('code')");
     expect(invite).not.toContain('access_token');
     expect(invite).not.toContain('refresh_token');
-    expect(recovery).toContain("searchParams.get('code')");
-    expect(recovery).toContain('exchangeAuthCode');
+    expect(recovery).toContain("searchParams.get('token_hash')");
+    expect(recovery).toContain("searchParams.get('type')");
+    expect(recovery).toContain('verifyRecoveryToken');
+    expect(recovery).not.toContain('exchangeAuthCode');
+    expect(recovery).not.toContain('access_token');
+    expect(recovery).not.toContain('refresh_token');
     for (const route of [invite, recovery]) {
       expect(route).not.toContain("searchParams.get('next')");
       expect(route).not.toContain('SUPABASE_SERVER_KEY');
       expect(route).not.toContain('request.url');
       expect(route).toContain('buildAuthFlowRedirect');
     }
+  });
+  it('verifies only recovery token hashes and maps expired/provider errors safely', async () => {
+    const calls: unknown[] = [];
+    const success = async (params: unknown) => {
+      calls.push(params);
+      return { error: null };
+    };
+
+    await expect(verifyRecoveryToken('recovery-hash', 'recovery', success)).resolves.toBe(true);
+    expect(calls).toEqual([{ token_hash: 'recovery-hash', type: 'recovery' }]);
+    await expect(verifyRecoveryToken(null, 'recovery', success)).resolves.toBe(false);
+    await expect(verifyRecoveryToken('recovery-hash', 'invite', success)).resolves.toBe(false);
+    expect(calls).toHaveLength(1);
+    await expect(
+      verifyRecoveryToken('recovery-hash', 'recovery', async () => ({
+        error: new Error('expired'),
+      })),
+    ).resolves.toBe(false);
+    await expect(
+      verifyRecoveryToken('recovery-hash', 'recovery', async () => {
+        throw new Error('provider');
+      }),
+    ).resolves.toBe(false);
   });
   it('verifies only a valid invite token hash and maps provider errors safely', async () => {
     const calls: unknown[] = [];
@@ -78,6 +106,9 @@ describe('auth lifecycle callback routes', () => {
       );
       expect(buildAuthFlowRedirect('recovery', true).toString()).toBe(
         'https://compra-carqa.up.railway.app/auth/recovery',
+      );
+      expect(buildAuthFlowRedirect('recovery', false).toString()).toBe(
+        'https://compra-carqa.up.railway.app/auth/recovery?error=invalid',
       );
     } finally {
       if (previousInvite === undefined) delete process.env.AUTH_INVITE_REDIRECT_URL;

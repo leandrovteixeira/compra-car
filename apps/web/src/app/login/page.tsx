@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 
 import { getActiveProfile } from '@/auth/authorization';
 import { getSafeInternalDestination } from '@/auth/safe-redirect';
@@ -69,6 +70,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             Entrar
           </button>
         </form>
+        <Link
+          className="mt-5 inline-flex text-sm font-semibold text-cyan-300 hover:text-cyan-200"
+          href="/forgot-password"
+        >
+          Esqueci minha senha
+        </Link>
       </section>
     </main>
   );

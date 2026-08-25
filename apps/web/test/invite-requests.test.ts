@@ -28,7 +28,7 @@ function deps(): InviteRequestDependencies {
     findAdminUserByEmail: vi.fn(async () => null),
     getAdminUser: vi.fn(async () => null),
     inviteAdminUser: vi.fn(async () => 'id'),
-    sendAdminUserPasswordRecovery: vi.fn(),
+    requestPasswordRecovery: vi.fn(),
     setAdminUserRole: vi.fn(),
     setAdminUserStatus: vi.fn(),
   };

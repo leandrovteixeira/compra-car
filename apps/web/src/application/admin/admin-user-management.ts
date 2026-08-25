@@ -18,7 +18,7 @@ export interface AdminUserManager {
     readonly redirectTo: string;
     readonly role: AppRole;
   }): Promise<string>;
-  sendAdminUserPasswordRecovery(email: string, redirectTo: string): Promise<void>;
+  requestPasswordRecovery(id: string, email: string, redirectTo: string): Promise<void>;
   setAdminUserRole(id: string, role: AppRole): Promise<void>;
   setAdminUserStatus(id: string, status: 'active' | 'disabled', actorId: string): Promise<void>;
 }
@@ -167,7 +167,12 @@ export async function sendAdminUserPasswordRecovery(
   try {
     const target = id ? await manager.getAdminUser(id) : null;
     if (!target?.email) return failed('Usuário não encontrado ou sem e-mail disponível.');
-    await manager.sendAdminUserPasswordRecovery(target.email, dependencies.recoveryRedirectUrl());
+    await manager.requestPasswordRecovery(
+      target.id,
+      target.email,
+      dependencies.recoveryRedirectUrl(),
+    );
+    dependencies.revalidate('/admin/users');
     return { status: 'success', message: 'E-mail de redefinição solicitado.' };
   } catch (error) {
     console.error('Administrative password recovery failed.', { error });
