@@ -1,4 +1,5 @@
 'use client';
+import { buttonClassName, fieldClassName, labelClassName, surfaceClassName } from '@compra-car/ui';
 import { useActionState } from 'react';
 import { createInviteRequestAction } from '@/app/(seller)/invite-requests/actions';
 export function InviteRequestForm() {
@@ -6,21 +7,16 @@ export function InviteRequestForm() {
     status: 'idle',
   } as const);
   return (
-    <form action={action} className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label>
+    <form action={action} className={surfaceClassName}>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className={labelClassName}>
           Nome
-          <input
-            className="mt-2 min-h-11 w-full rounded-xl border border-slate-700 bg-slate-950 px-3"
-            maxLength={160}
-            name="name"
-            required
-          />
+          <input className={`${fieldClassName} mt-1.5`} maxLength={160} name="name" required />
         </label>
-        <label>
+        <label className={labelClassName}>
           E-mail
           <input
-            className="mt-2 min-h-11 w-full rounded-xl border border-slate-700 bg-slate-950 px-3"
+            className={`${fieldClassName} mt-1.5`}
             maxLength={254}
             name="email"
             required
@@ -36,10 +32,7 @@ export function InviteRequestForm() {
           {state.message}
         </p>
       ) : null}
-      <button
-        className="mt-5 min-h-11 rounded-xl bg-cyan-400 px-5 font-semibold text-slate-950 disabled:opacity-60"
-        disabled={pending}
-      >
+      <button className={`${buttonClassName()} mt-4`} disabled={pending}>
         {pending ? 'Enviando…' : 'Solicitar convite'}
       </button>
     </form>

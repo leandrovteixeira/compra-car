@@ -164,7 +164,7 @@ describe('admin product specs UI state', () => {
     expect(page).toContain('if (!vehicle) notFound()');
     expect(page).toContain('title="Especificações e equipamentos"');
     expect(editor).toContain('placeholder="Buscar especificações..."');
-    expect(editor).toContain('sticky top-[4.25rem]');
+    expect(editor).toContain('sticky top-[var(--admin-topbar-height)]');
     expect(editor).toContain('<details');
     expect(editor).toContain('<option value="">-</option>');
     expect(editor).toContain('role="radiogroup"');

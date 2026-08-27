@@ -23,7 +23,7 @@ function badgeClass(status: UserStatus | null): string {
 function ProfileBadges({ user }: { readonly user: AdminUserDto }) {
   if (user.profileState !== 'valid') {
     return (
-      <span className="inline-flex rounded-full border border-amber-800 bg-amber-950/50 px-2.5 py-1 text-xs font-semibold text-amber-300">
+      <span className="ui-badge border-amber-800 bg-amber-950/50 text-amber-300">
         {adminUserProfileStateLabel(user.profileState)}
       </span>
     );
@@ -31,12 +31,10 @@ function ProfileBadges({ user }: { readonly user: AdminUserDto }) {
 
   return (
     <div className="flex flex-wrap gap-2">
-      <span className="inline-flex rounded-full border border-sky-800 bg-sky-950/50 px-2.5 py-1 text-xs font-semibold text-sky-300">
+      <span className="ui-badge border-sky-800 bg-sky-950/50 text-sky-300">
         {adminUserRoleLabel(user.role)}
       </span>
-      <span
-        className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${badgeClass(user.status)}`}
-      >
+      <span className={`ui-badge ${badgeClass(user.status)}`}>
         {adminUserStatusLabel(user.status)}
       </span>
     </div>
@@ -103,7 +101,7 @@ export function AdminUserList({ users }: AdminUserListProps) {
       </div>
 
       <div className="hidden overflow-x-clip overflow-y-visible rounded-2xl border border-slate-800 bg-slate-900/50 md:block">
-        <table className="w-full border-collapse text-left text-sm">
+        <table className="ui-table">
           <caption className="sr-only">Usuários cadastrados no Supabase Auth</caption>
           <thead className="border-b border-slate-800 bg-slate-900 text-xs uppercase tracking-wide text-slate-400 [&_th:first-child]:rounded-tl-2xl [&_th:last-child]:rounded-tr-2xl">
             <tr>
@@ -116,7 +114,7 @@ export function AdminUserList({ users }: AdminUserListProps) {
                 'Último acesso',
                 'Ações',
               ].map((label) => (
-                <th className="px-4 py-3 font-semibold" key={label} scope="col">
+                <th key={label} scope="col">
                   {label}
                 </th>
               ))}
@@ -125,18 +123,18 @@ export function AdminUserList({ users }: AdminUserListProps) {
           <tbody className="divide-y divide-slate-800">
             {users.map((user) => (
               <tr className="align-middle transition hover:bg-slate-900/80" key={user.id}>
-                <td className="max-w-48 px-4 py-4 font-semibold text-slate-100">
+                <td className="max-w-48 font-semibold text-slate-100">
                   <span className="block truncate" title={user.fullName ?? undefined}>
                     {user.fullName || '—'}
                   </span>
                 </td>
-                <td className="max-w-64 px-4 py-4 text-slate-300">
+                <td className="max-w-64 text-slate-300">
                   <span className="block break-all">{user.email || '—'}</span>
                 </td>
-                <td className="px-4 py-4">
+                <td>
                   <ProfileBadges user={user} />
                 </td>
-                <td className="whitespace-nowrap px-4 py-4">
+                <td className="whitespace-nowrap">
                   {user.passwordRecoveryRequestedAt ? (
                     <div className="text-amber-300">
                       <p className="font-semibold">Redefinição solicitada</p>
@@ -148,13 +146,13 @@ export function AdminUserList({ users }: AdminUserListProps) {
                     <span className="text-slate-300">—</span>
                   )}
                 </td>
-                <td className="whitespace-nowrap px-4 py-4 text-slate-300">
+                <td className="whitespace-nowrap text-slate-300">
                   {formatAdminUserCreatedAt(user.createdAt)}
                 </td>
-                <td className="whitespace-nowrap px-4 py-4 text-slate-300">
+                <td className="whitespace-nowrap text-slate-300">
                   {formatAdminUserLastSignIn(user.lastSignInAt)}
                 </td>
-                <td className="px-4 py-4">
+                <td>
                   <AdminUserActions user={user} />
                 </td>
               </tr>

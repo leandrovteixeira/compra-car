@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-08-27 — Design system e densidade light-first
+
+- centraliza paleta semântica, tipografia Inter temporária, densidade, radius e estados visuais;
+- adiciona primitives compartilhadas para buttons, fields, surfaces, badges e tabelas densas;
+- adapta shells e autenticação à interface clara e reserva o laranja para vantagem/atenção.
+
 ## 2026-08-27 — Aceite de convite resistente a scanners
 
 - torna o GET inicial do convite não consumidor e exige confirmação explícita antes de `verifyOtp`;

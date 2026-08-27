@@ -126,9 +126,9 @@ describe('administrative product filters', () => {
     const list = source('../src/components/admin/admin-product-list.tsx');
 
     expect(shell).toContain('sticky top-0 z-40');
-    expect(page).toContain('lg:top-[4.25rem]');
-    expect(page).toContain('lg:h-[15rem]');
-    expect(list).toContain('lg:top-[19.25rem]');
+    expect(page).toContain('lg:top-[var(--admin-topbar-height)]');
+    expect(page).toContain('lg:h-[12.5rem]');
+    expect(list).toContain('lg:top-[16.25rem]');
     expect(list).toContain('overflow-x-auto lg:overflow-visible');
     expect(list).not.toMatch(/overflow-y-(?:auto|scroll)/);
   });

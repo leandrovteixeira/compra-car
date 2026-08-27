@@ -1,4 +1,5 @@
 import { logout } from '../app/actions/auth';
+import { buttonClassName } from '@compra-car/ui';
 
 export interface LogoutControlProps {
   readonly action: () => Promise<never>;
@@ -9,10 +10,7 @@ export function LogoutControl({ action, className }: LogoutControlProps) {
   return (
     <form action={action}>
       <button
-        className={
-          className ??
-          'min-h-11 w-full rounded-xl bg-slate-100 px-4 text-sm font-semibold text-slate-950 transition hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300'
-        }
+        className={className ?? buttonClassName({ fullWidth: true, variant: 'secondary' })}
         type="submit"
       >
         Sair

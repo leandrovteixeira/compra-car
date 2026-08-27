@@ -22,7 +22,7 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
 
   return (
     <>
-      <div className="bg-slate-950 lg:sticky lg:top-[4.25rem] lg:z-30 lg:h-[15rem]">
+      <div className="bg-background lg:sticky lg:top-[var(--admin-topbar-height)] lg:z-30 lg:h-[12.5rem]">
         <PageHeader
           actions={
             <Link

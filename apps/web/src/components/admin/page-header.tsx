@@ -19,22 +19,22 @@ export function PageHeader({
 }: PageHeaderProps) {
   return (
     <header
-      className={`flex flex-col gap-5 border-b border-slate-800 sm:flex-row sm:items-end sm:justify-between ${
-        compact ? 'pb-4' : 'pb-7'
+      className={`flex flex-col gap-3 border-b border-border sm:flex-row sm:items-end sm:justify-between ${
+        compact ? 'pb-3' : 'pb-5'
       } ${sticky ? 'admin-page-header' : ''}`}
     >
       <div>
         {eyebrow ? (
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">{eyebrow}</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
+            {eyebrow}
+          </p>
         ) : null}
         <h1
-          className={`${eyebrow ? 'mt-2' : ''} text-3xl font-semibold tracking-tight text-white ${
-            compact ? '' : 'sm:text-4xl'
-          }`}
+          className={`${eyebrow ? 'mt-1' : ''} text-2xl font-semibold tracking-tight text-text-primary`}
         >
           {title}
         </h1>
-        <p className={`${compact ? 'mt-2 leading-6' : 'mt-3 leading-7'} max-w-2xl text-slate-400`}>
+        <p className={`${compact ? 'mt-1' : 'mt-1.5'} max-w-2xl text-sm text-text-secondary`}>
           {description}
         </p>
       </div>

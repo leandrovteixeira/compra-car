@@ -15,7 +15,7 @@ function AdvantageCheck() {
   return (
     <span
       aria-label="Vantagem"
-      className="grid size-4 place-items-center rounded-full bg-emerald-400/90 text-[0.625rem] text-emerald-950 shadow-[0_0_10px_-3px_rgba(74,222,128,0.8)]"
+      className="grid size-4 place-items-center rounded-full bg-attention text-[0.625rem] font-bold text-slate-950"
       role="img"
       title="Vantagem"
     >

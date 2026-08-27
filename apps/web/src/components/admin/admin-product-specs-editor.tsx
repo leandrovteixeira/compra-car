@@ -74,7 +74,7 @@ export function AdminProductSpecsEditor({
 
   return (
     <section className="min-w-0">
-      <div className="sticky top-[4.25rem] z-30 rounded-2xl border border-slate-800 bg-slate-950/95 p-4 shadow-xl backdrop-blur">
+      <div className="sticky top-[var(--admin-topbar-height)] z-30 rounded-lg border border-border bg-surface/95 p-4 shadow-sm backdrop-blur">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
           <label className="min-w-0 flex-1">
             <span className="sr-only">Buscar especificações</span>

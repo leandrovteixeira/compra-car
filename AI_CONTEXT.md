@@ -1,5 +1,14 @@
 # Contexto para agentes de IA
 
+## Design system light-first — Sprint 14A.1 (2026-08-27)
+
+A UI usa tokens centralizados em `apps/web/src/app/globals.css` e primitives de classe em
+`@compra-car/ui`. Inter é a fonte temporária; Söhne deverá substituir somente o token global. A regra
+visual é **Orange = Attention, not Action**: `#EF7732` fica reservado à vantagem de comparação e futura
+prioridade excepcional, enquanto ações usam interactive azul/grafite. Controles desktop têm 36px,
+touch mantém 44px, rows densas têm 48px e surfaces comuns usam 16px. A compatibilidade das utilities
+Slate/Sky/Cyan antigas é intencional e permite migração incremental de grids especializados.
+
 ## Invite scanner-safe — Sprint 13 QA/Auth (2026-08-27)
 
 Invite usa o mesmo desenho em duas etapas do recovery, mas com estado e semântica próprios. O GET de

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { AuthPasswordForm } from '@/components/auth-password-form';
+import { AuthShell } from '@/components/auth-shell';
 import { loadPasswordFlowIdentity } from '@/server/password-lifecycle';
 import { completeInviteAction } from './actions';
 export default async function InvitePage({
@@ -35,25 +36,5 @@ export default async function InvitePage({
         <AuthPasswordForm action={completeInviteAction} mode="invite" />
       )}
     </AuthShell>
-  );
-}
-function AuthShell({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <main className="flex min-h-dvh items-center justify-center bg-slate-950 px-4 py-10 text-slate-50">
-      <section className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900/80 p-6 sm:p-8">
-        <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-400">Compra Car</p>
-        <h1 className="mt-3 text-2xl font-semibold">{title}</h1>
-        <p className="mt-2 text-sm text-slate-400">{description}</p>
-        {children}
-      </section>
-    </main>
   );
 }

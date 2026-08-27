@@ -41,7 +41,7 @@ describe('commercial period workspace', () => {
 
   it('marks dirty before the row state update and excludes empty support rows from payload', () => {
     const grid = source('../src/components/admin/admin-policy-batch-grid.tsx');
-    expect(grid).toContain('onDirty?.();\n    setRows((current) =>');
+    expect(grid).toMatch(/onDirty\?\.\(\);\r?\n    setRows\(\(current\) =>/);
     expect(grid).not.toContain('setRows((current) => {\n      onDirty?.();');
     expect(grid).toContain('.filter((row) => !isEmpty(row))');
     expect(grid).not.toContain('type="date"');
@@ -70,9 +70,9 @@ describe('commercial period workspace', () => {
     const css = source('../src/app/globals.css');
     const pageHeader = source('../src/components/admin/page-header.tsx');
     const priceList = source('../src/components/admin/admin-price-list.tsx');
-    expect(css).toContain('--admin-topbar-height: 4.25rem');
-    expect(css).toContain('--admin-page-header-height: 9.5rem');
-    expect(css).toContain('margin-top: -2.5rem');
+    expect(css).toContain('--admin-topbar-height: 3.75rem');
+    expect(css).toContain('--admin-page-header-height: 7.75rem');
+    expect(css).toContain('margin-top: -2rem');
     expect(css).toContain(
       'top: calc(var(--admin-topbar-height) + var(--admin-page-header-height))',
     );
