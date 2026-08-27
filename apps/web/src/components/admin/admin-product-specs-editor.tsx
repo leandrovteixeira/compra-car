@@ -130,11 +130,11 @@ export function AdminProductSpecsEditor({
           let previousEquipment = '';
           return (
             <details
-              className="overflow-hidden rounded-lg border border-border bg-surface"
+              className="overflow-hidden border border-border bg-surface"
               key={group.name}
               open={query ? true : undefined}
             >
-              <summary className="flex min-h-10 cursor-pointer items-center justify-between gap-3 bg-surface-muted px-3 py-1.5 text-sm font-semibold text-text-primary">
+              <summary className="flex min-h-8 cursor-pointer items-center justify-between gap-3 bg-surface-muted px-3 py-1 text-[0.8125rem] font-semibold text-text-primary">
                 {group.name}
                 <span className="text-xs font-normal text-text-muted">
                   {groupCounts.filled} / {groupCounts.total}
@@ -160,7 +160,7 @@ export function AdminProductSpecsEditor({
                           {field.equipmentGroup}
                         </h3>
                       ) : null}
-                      <div className="grid gap-2 md:min-h-8 md:grid-cols-[minmax(0,1fr)_18rem] md:items-center md:gap-4">
+                      <div className="grid gap-2 md:min-h-7 md:grid-cols-[minmax(0,1fr)_18rem] md:items-center md:gap-4">
                         <div>
                           <p className="text-[0.8125rem] font-medium leading-4 text-text-primary">
                             {field.label}
@@ -177,7 +177,7 @@ export function AdminProductSpecsEditor({
                           </p>
                         </div>
                         {field.kind === 'numeric' ? (
-                          <div className="flex items-center gap-2">
+                          <div className="flex w-full items-center gap-2 md:justify-self-end">
                             <input
                               aria-label={field.label}
                               className="ui-field min-h-8 min-w-0 flex-1 text-right text-xs tabular-nums"
@@ -190,7 +190,7 @@ export function AdminProductSpecsEditor({
                             {field.supportsTorqueUnit ? (
                               <select
                                 aria-label={`Unidade de ${field.label}`}
-                                className="ui-field min-h-8 w-20 text-xs"
+                                className="ui-field min-h-8 w-16 shrink-0 text-xs"
                                 onChange={(event) =>
                                   update(field, { ...field, inputUnit: event.target.value })
                                 }
@@ -200,13 +200,15 @@ export function AdminProductSpecsEditor({
                                 <option value="kgfm">kgfm</option>
                               </select>
                             ) : (
-                              <span className="w-14 text-xs text-text-muted">{field.unit}</span>
+                              <span className="w-16 shrink-0 text-xs text-text-muted">
+                                {field.unit}
+                              </span>
                             )}
                           </div>
                         ) : field.kind === 'binary' ? (
                           <div
                             aria-label={`Estado de ${field.label}`}
-                            className="flex justify-end"
+                            className="flex w-full justify-end md:justify-self-end"
                             role="radiogroup"
                           >
                             {(
@@ -237,7 +239,7 @@ export function AdminProductSpecsEditor({
                         ) : (
                           <select
                             aria-label={field.label}
-                            className="ui-field min-h-8 w-full text-xs"
+                            className="ui-field min-h-8 w-full text-xs md:justify-self-end"
                             onChange={(event) =>
                               update(field, {
                                 ...field,

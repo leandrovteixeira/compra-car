@@ -22,7 +22,7 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
 
   return (
     <>
-      <div className="admin-catalog-sticky">
+      <div className="admin-catalog-page-header">
         <PageHeader
           actions={
             <Link className="ui-button ui-button--primary" href="/admin/products/new">
@@ -33,6 +33,8 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
           description="Consulte e administre o catálogo de veículos."
           title="Veículos"
         />
+      </div>
+      <div className="admin-catalog-toolbar">
         <AdminProductFilters values={parsed.values} />
       </div>
 

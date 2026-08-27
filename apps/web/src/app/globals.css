@@ -79,7 +79,8 @@
   --app-topbar-height: 3.25rem;
   --admin-topbar-height: var(--app-topbar-height);
   --admin-page-header-height: 7.75rem;
-  --admin-catalog-sticky-height: 9.5rem;
+  --admin-catalog-page-header-height: 4.5rem;
+  --admin-catalog-toolbar-height: 5.5rem;
   --density-control-height: 2.25rem;
   --density-control-height-touch: 2.75rem;
   --density-table-row: 3rem;
@@ -114,17 +115,28 @@
     background: var(--color-surface-muted);
   }
 
-  .admin-catalog-sticky {
+  .admin-catalog-page-header {
     position: sticky;
     top: var(--admin-topbar-height);
     z-index: 30;
-    height: var(--admin-catalog-sticky-height);
+    height: var(--admin-catalog-page-header-height);
     background: var(--color-canvas);
   }
 
-  .admin-catalog-table-header {
+  .admin-catalog-toolbar {
     position: sticky;
-    top: calc(var(--admin-topbar-height) + var(--admin-catalog-sticky-height));
+    top: calc(var(--admin-topbar-height) + var(--admin-catalog-page-header-height));
+    z-index: 29;
+    height: var(--admin-catalog-toolbar-height);
+    background: var(--color-canvas);
+  }
+
+  .admin-catalog-table-header th {
+    position: sticky;
+    top: calc(
+      var(--admin-topbar-height) + var(--admin-catalog-page-header-height) +
+        var(--admin-catalog-toolbar-height)
+    );
     z-index: 20;
     background: var(--color-surface-muted);
   }

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-08-27 — Correção final do sticky e alinhamento de specs
+
+- separa page header e toolbar do catálogo em offsets próprios e fixa células do table header sem clipping;
+- reduz category headers de specs para section rows de 32px;
+- alinha todos os controles numa coluna previsível, reservando largura para unidades numéricas.
+
 ## 2026-08-27 — Sticky layout e densidade de especificações
 
 - centraliza o stack sticky administrativo e elimina offsets mágicos que cortavam o header do catálogo;

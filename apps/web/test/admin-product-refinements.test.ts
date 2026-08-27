@@ -118,13 +118,14 @@ describe('administrative product filters', () => {
 
     expect(shell).toContain('<ApplicationTopbar');
     expect(topbar).toContain('sticky top-0 z-40');
-    expect(page).toContain('admin-catalog-sticky');
+    expect(page).toContain('admin-catalog-page-header');
+    expect(page).toContain('admin-catalog-toolbar');
     expect(list).toContain('admin-catalog-table-header');
     expect(shell).toContain('lg:pt-0');
-    expect(css).toContain('--admin-catalog-sticky-height: 9.5rem');
-    expect(css).toContain(
-      'top: calc(var(--admin-topbar-height) + var(--admin-catalog-sticky-height))',
-    );
+    expect(css).toContain('--admin-catalog-page-header-height: 4.5rem');
+    expect(css).toContain('--admin-catalog-toolbar-height: 5.5rem');
+    expect(css).toContain('.admin-catalog-table-header th');
+    expect(css).toContain('var(--admin-catalog-page-header-height) +');
     expect(list).toContain('overflow-x-auto lg:overflow-visible');
     expect(list).not.toMatch(/overflow-y-(?:auto|scroll)/);
   });

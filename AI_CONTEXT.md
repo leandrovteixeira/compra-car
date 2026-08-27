@@ -1,5 +1,13 @@
 # Contexto para agentes de IA
 
+## Sticky QA e alinhamento — Sprint 14D.1b (2026-08-27)
+
+No catálogo, page header (72px) e toolbar (88px) possuem tokens e sticky próprios. O table header aplica
+sticky em cada `th`, não no `thead`, evitando clipping por ancestors de overflow horizontal. Specs usa
+section headers de 32px e uma control track uniforme de 18rem; numeric reserva 4rem para unidade e
+tri-state/select compartilham o mesmo eixo direito. Não reintroduza offsets locais ou sticky no grupo
+inteiro do header da tabela.
+
 ## Sticky layout e specs — Sprint 14D.1 (2026-08-27)
 
 O stack desktop é topbar → page header → toolbar opcional → table header. Offsets pertencem aos tokens

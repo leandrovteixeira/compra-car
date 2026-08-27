@@ -83,3 +83,9 @@ The specs editor targets approximately 44–48px for ordinary desktop rows. Cate
 labels and codes use compact line heights, controls align in an 18rem right column, and tri-state
 buttons use a 30px visual treatment on fine pointers while the shared coarse-pointer rule restores a
 44px hit height. Its search/progress/save toolbar remains sticky below the page header.
+
+Catalog sticky layers have independent measured tokens: 72px page header and 88px filter toolbar.
+Table stickiness belongs to each header cell (`th`), avoiding the browser clipping behavior of a sticky
+`thead` inside horizontal-overflow wrappers. Specs category summaries target 32–34px and render as
+flat section rows. Every detailed field uses the same 18rem control track; numeric rows reserve a 4rem
+unit slot so inputs, selects and tri-state controls share the same right edge.

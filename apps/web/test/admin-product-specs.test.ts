@@ -168,7 +168,10 @@ describe('admin product specs UI state', () => {
     expect(editor).toContain('admin-specs-toolbar');
     expect(editor).toContain('md:grid-cols-[minmax(0,1fr)_18rem]');
     expect(editor).toContain('ui-button ui-button--compact min-w-8');
-    expect(editor).toContain('min-h-10 cursor-pointer');
+    expect(editor).toContain('min-h-8 cursor-pointer');
+    expect(editor).toContain('flex w-full items-center gap-2');
+    expect(editor).toContain('w-16 shrink-0 text-xs text-text-muted');
+    expect(editor).toContain('flex w-full justify-end');
     expect(editor).toContain('<details');
     expect(editor).toContain('<option value="">-</option>');
     expect(editor).toContain('role="radiogroup"');
