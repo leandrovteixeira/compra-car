@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { filterComparisonCategories } from '@/application/comparison/comparison-filter';
+import { parseComparisonMode } from '@/application/comparison/comparison-view-model';
 import { ComparisonState } from '@/components/comparison-state';
 import { ComparisonTable } from '@/components/comparison-table';
 import { ComparisonToolbar } from '@/components/comparison-toolbar';
@@ -9,6 +10,7 @@ import { loadComparisonPage } from '@/server/comparison-service';
 interface ComparisonPageProps {
   readonly searchParams: Promise<{
     readonly vehicles?: string | readonly string[];
+    readonly mode?: string | readonly string[];
     readonly highlights?: string | readonly string[];
   }>;
 }
@@ -16,7 +18,7 @@ interface ComparisonPageProps {
 function BackToSelection() {
   return (
     <Link
-      className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/70 px-4 text-sm font-semibold text-slate-200 transition hover:border-slate-600 hover:bg-slate-800 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"
+      className="inline-flex min-h-11 items-center gap-2 rounded-md border border-border bg-surface px-4 text-sm font-semibold text-text-secondary transition hover:border-border-strong hover:bg-surface-muted hover:text-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
       href="/"
     >
       <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 16 16">
@@ -39,7 +41,7 @@ export default async function ComparisonPage({ searchParams }: ComparisonPagePro
 
   if (!result.ok) {
     return (
-      <main className="flex min-h-[calc(100dvh-4.5rem)] items-center justify-center bg-slate-950 px-4 py-8 text-slate-50">
+      <main className="flex min-h-[calc(100dvh-4.5rem)] items-center justify-center bg-background px-4 py-8 text-text-primary">
         <div className="w-full max-w-xl">
           <ComparisonState
             action={<BackToSelection />}
@@ -52,21 +54,19 @@ export default async function ComparisonPage({ searchParams }: ComparisonPagePro
     );
   }
 
-  const onlyHighlights = params.highlights === 'true';
-  const categories = filterComparisonCategories(result.data.categories, onlyHighlights);
+  const mode = parseComparisonMode(params.mode, params.highlights);
+  const categories = filterComparisonCategories(result.data.categories, mode);
 
   return (
-    <main className="min-h-[calc(100dvh-4.5rem)] bg-[radial-gradient(circle_at_top_left,rgba(8,145,178,0.08),transparent_30rem)] bg-slate-950 px-3 py-6 text-slate-50 sm:px-6 sm:py-10 lg:px-8">
+    <main className="min-h-[calc(100dvh-4.5rem)] overflow-x-hidden bg-background px-3 py-5 text-text-primary sm:px-6 sm:py-7 lg:px-8">
       <div className="mx-auto w-full max-w-[100rem]">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-400">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-interactive">
               Compra Car
             </p>
-            <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
-              Comparação de veículos
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+            <h1 className="mt-1.5 text-2xl font-semibold tracking-tight">Comparação de veículos</h1>
+            <p className="mt-1 max-w-2xl text-sm leading-5 text-text-muted">
               O primeiro veículo é a referência. Compare cada detalhe lado a lado.
             </p>
           </div>
@@ -75,15 +75,11 @@ export default async function ComparisonPage({ searchParams }: ComparisonPagePro
           </div>
         </div>
 
-        <div className="mt-6">
-          <ComparisonToolbar onlyHighlights={onlyHighlights} />
-        </div>
         <div className="mt-5">
-          <ComparisonTable
-            categories={categories}
-            onlyHighlights={onlyHighlights}
-            vehicles={result.data.vehicles}
-          />
+          <ComparisonToolbar mode={mode} />
+        </div>
+        <div className="mt-4">
+          <ComparisonTable categories={categories} mode={mode} vehicles={result.data.vehicles} />
         </div>
       </div>
     </main>

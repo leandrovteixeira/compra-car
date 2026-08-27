@@ -154,6 +154,11 @@ describe('parâmetros e URL do PDF de comparação', () => {
     const params = new URLSearchParams({ vehicles: '10,20' });
     expect(buildComparisonPdfUrl(params)).toBe('/comparar/pdf?vehicles=10%2C20');
   });
+
+  it('traduz o novo modo Vantagens para o highlights legado do PDF', () => {
+    const params = new URLSearchParams({ vehicles: '10,20', mode: 'advantages' });
+    expect(buildComparisonPdfUrl(params)).toBe('/comparar/pdf?vehicles=10%2C20&highlights=true');
+  });
 });
 
 describe('view model e documento PDF', () => {

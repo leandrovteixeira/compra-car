@@ -112,3 +112,26 @@ than aligning by its right edge. Numeric groups use a compact input plus a predi
 Below the desktop breakpoint the grid reflows to label/meta followed by control without global
 horizontal overflow. The search/progress/save toolbar keeps its current density and uses the same
 horizontal padding as category headers and field content.
+
+## Vehicle comparison
+
+The comparison has three URL-backed modes in one native-radio segmented control: **Completa** keeps
+every applicable row, **Diferenças** keeps only semantically different raw values without ranking
+them, and **Vantagens** keeps only rows for which the existing domain engine produced an objective
+advantage. Empty filtered categories are omitted; a completely empty result uses a small inline state.
+The active segment uses selection blue `#9ABCC8` with graphite text. It never uses orange.
+
+The table is a dense, flat light surface with discrete dividers. Its semantic header and first spec
+column remain sticky inside the same locally scrollable region, including horizontal mobile scroll.
+Vehicle identity follows **Brand Model · Version · production/model**. In Complete and Advantages,
+objective winners receive a small accessible check in attention orange `#EF7732`; rows and cells remain
+neutral, and Differences intentionally displays no advantage marker.
+
+Numeric presentation is centralized in `comparison-number-formatter.ts` and selected by stable spec
+code. `PW_0005` displacement (source unit `cc`) and `PW_0015` rotation max torque use grouped integers;
+`CO_0017` cluster size and `CO_0019` display size always use two decimals; consumption `OW_0002` through
+`OW_0005` always uses one decimal. Existing one-decimal rules are explicit for torque `PW_0012`,
+`PW_0023`, `PW_0026`, `PW_0033` and weight ratios `PW_0035`, `PW_0036`. Formatting uses pt-BR and the
+standard `Intl.NumberFormat` rounding; units remain separate inputs and no displacement conversion is
+performed. The PDF visual is deliberately unchanged in this sprint. Its legacy highlights mode still
+means reference-vehicle advantages, while the shared mapper/formatter keeps numeric output reusable.

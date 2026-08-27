@@ -40,7 +40,7 @@ describe('Sprint 14A.1 design-system foundation', () => {
 
   it('reserves attention orange for comparison advantage', () => {
     const comparison = source('../src/components/comparison-value-cell.tsx');
-    expect(comparison).toContain('bg-attention');
+    expect(comparison).toContain('text-attention');
     expect(comparison).toContain('aria-label="Vantagem"');
   });
 });

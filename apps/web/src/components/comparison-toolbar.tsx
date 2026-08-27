@@ -3,80 +3,78 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 import { buildComparisonPdfUrl } from '@/application/comparison/comparison-pdf-url';
+import type { ComparisonMode } from '@/application/comparison/comparison-view-model';
 import { ComparisonPdfActions } from '@/components/comparison-pdf-actions';
 
 interface ComparisonToolbarProps {
-  readonly onlyHighlights: boolean;
+  readonly mode: ComparisonMode;
 }
 
-export function ComparisonToolbar({ onlyHighlights }: ComparisonToolbarProps) {
+const modeOptions: readonly { value: ComparisonMode; label: string }[] = [
+  { value: 'complete', label: 'Completa' },
+  { value: 'differences', label: 'Diferenças' },
+  { value: 'advantages', label: 'Vantagens' },
+];
+
+const modeDescriptions: Record<ComparisonMode, string> = {
+  complete: 'Todos os equipamentos e especificações aplicáveis.',
+  differences: 'Somente valores semanticamente diferentes, sem julgamento.',
+  advantages: 'Somente vantagens objetivas determinadas pelo engine atual.',
+};
+
+export function ComparisonToolbar({ mode }: ComparisonToolbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const pdfUrl = buildComparisonPdfUrl(searchParams);
 
-  function toggleOnlyHighlights(checked: boolean) {
+  function selectMode(nextMode: ComparisonMode) {
     const params = new URLSearchParams(searchParams.toString());
-    if (checked) params.set('highlights', 'true');
-    else params.delete('highlights');
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    params.delete('highlights');
+    if (nextMode === 'complete') params.delete('mode');
+    else params.set('mode', nextMode);
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-2xl border border-slate-800/90 bg-slate-900/80 p-3 shadow-xl shadow-slate-950/20 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:p-4">
-      <div className="min-w-0 px-1">
-        <p className="text-sm font-semibold text-slate-100">Visão da comparação</p>
-        <p className="mt-0.5 text-xs leading-5 text-slate-500">
-          {onlyHighlights
-            ? 'Exibindo somente vantagens do veículo principal.'
-            : 'Exibindo todos os equipamentos e especificações.'}
+    <div className="flex flex-col gap-3 border-y border-border bg-surface py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+      <div className="min-w-0">
+        <fieldset>
+          <legend className="sr-only">Modo da comparação</legend>
+          <div
+            aria-label="Modo da comparação"
+            className="inline-grid min-h-11 grid-cols-3 overflow-hidden rounded-md border border-border bg-surface-muted p-0.5"
+            role="radiogroup"
+          >
+            {modeOptions.map((option) => (
+              <label
+                className={`flex min-h-10 cursor-pointer items-center justify-center rounded-[0.25rem] px-3 text-xs font-semibold transition-colors focus-within:outline-2 focus-within:outline-offset-[-2px] focus-within:outline-focus sm:min-h-9 sm:text-sm ${
+                  mode === option.value
+                    ? 'bg-selection-strong text-text-primary shadow-sm'
+                    : 'text-text-secondary hover:bg-selection'
+                }`}
+                key={option.value}
+              >
+                <input
+                  checked={mode === option.value}
+                  className="sr-only"
+                  name="comparison-mode"
+                  onChange={() => selectMode(option.value)}
+                  type="radio"
+                  value={option.value}
+                />
+                {option.label}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <p aria-live="polite" className="mt-1.5 text-xs text-text-muted">
+          {modeDescriptions[mode]}
         </p>
       </div>
-      <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+      <div className="shrink-0">
         <ComparisonPdfActions pdfUrl={pdfUrl} />
-        <label
-          className={`group flex min-h-11 shrink-0 cursor-pointer items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 text-sm font-semibold transition-all focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-cyan-300 sm:justify-start ${
-            onlyHighlights
-              ? 'border-cyan-300/30 bg-cyan-300/10 text-cyan-100 shadow-[0_0_24px_-14px_rgba(103,232,249,0.7)]'
-              : 'border-slate-700 bg-slate-950/60 text-slate-300 hover:border-slate-600 hover:bg-slate-800/70'
-          }`}
-        >
-          <input
-            checked={onlyHighlights}
-            className="peer sr-only"
-            onChange={(event) => toggleOnlyHighlights(event.target.checked)}
-            type="checkbox"
-          />
-          <span
-            aria-hidden="true"
-            className={`relative h-6 w-11 rounded-full border transition-colors ${
-              onlyHighlights ? 'border-cyan-300/30 bg-cyan-300/25' : 'border-slate-600 bg-slate-800'
-            }`}
-          >
-            <span
-              className={`absolute top-1/2 size-4 -translate-y-1/2 rounded-full shadow-sm transition-transform ${
-                onlyHighlights ? 'translate-x-[1.35rem] bg-cyan-200' : 'translate-x-1 bg-slate-400'
-              }`}
-            />
-          </span>
-          <span>Ver vantagens</span>
-          {onlyHighlights ? (
-            <svg
-              aria-hidden="true"
-              className="size-4 text-cyan-300"
-              fill="none"
-              viewBox="0 0 16 16"
-            >
-              <path
-                d="m4 8.25 2.4 2.4L12 5"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="1.8"
-              />
-            </svg>
-          ) : null}
-        </label>
       </div>
     </div>
   );

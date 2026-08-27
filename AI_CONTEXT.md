@@ -1,5 +1,26 @@
 # Contexto para agentes de IA
 
+## Modos e formatting da comparação — Sprint 14D.3 (2026-08-27)
+
+`/comparar` usa `mode=differences|advantages`; a ausência de `mode` é Completa. `highlights=true`
+continua aceito como alias legado de Vantagens. A view model interna da aplicação acrescenta
+`hasDifference` e `hasAnyAdvantage` sem alterar `@compra-car/contracts`: diferenças são calculadas no
+mapper com os valores brutos (número + unidade normalizada ou presença), antes da string pt-BR.
+`false` e `null` de presença continuam semanticamente ausentes, coerentes com a apresentação e o
+engine atuais. Categorias sem rows no modo filtrado são omitidas.
+
+Vantagens não recalcula superioridade: `hasReferenceAdvantage` e os `ComparisonOutcome` produzidos pelo
+core são a única fonte dos markers. Completa preserva esses markers; Diferenças os oculta para não
+misturar julgamento com divergência; Vantagens mostra somente rows que possuem marker objetivo.
+`#9ABCC8` identifica o modo ativo e `#EF7732` aparece apenas no pequeno check acessível.
+
+`comparison-number-formatter.ts` concentra número e composição com unidade em funções separadas. Regras
+por code: inteiros `PW_0005` (já armazenado em `cc`) e `PW_0015`; duas casas `CO_0017` e `CO_0019`; uma
+casa `OW_0002`–`OW_0005`, `PW_0012`, `PW_0023`, `PW_0026`, `PW_0033`, `PW_0035` e `PW_0036`. O
+arredondamento é o padrão de `Intl.NumberFormat('pt-BR')`. O PDF continua visualmente inalterado e seu
+modo histórico de highlights permanece focado nas vantagens da referência; o formatter central já é
+reutilizável pelo mapper que fornece dados à UI e ao PDF.
+
 ## Seller Search UX — Sprint 14D.2 (2026-08-27)
 
 A home do vendedor carrega o catálogo público/elegível uma vez por `getCatalogVehicles`, protegido por

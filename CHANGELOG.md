@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-08-27 — Modos e formatação da comparação
+
+- adiciona os modos URL-backed Completa, Diferenças e Vantagens num segmented control acessível;
+- decide Diferenças por valores semânticos brutos e mantém Vantagens estritamente apoiado nos outcomes
+  do engine existente, omitindo categorias vazias;
+- compacta a tabela light-first, preserva sticky/scroll horizontal local e usa laranja somente no
+  pequeno marcador acessível de vantagem;
+- centraliza apresentação numérica pt-BR por spec code, sem alterar armazenamento, unidade, contratos
+  ou o PDF visual.
+
 ## 2026-08-27 — Busca unificada de veículos do vendedor
 
 - substitui Marca → Modelo → Versão → Adicionar por busca tokenizada em marca, modelo e versão, com

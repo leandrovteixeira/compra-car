@@ -1,7 +1,7 @@
-import type {
-  ComparisonCategoryPresentationDto,
-  VehicleComparisonValue,
-} from '@compra-car/contracts';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+import type { VehicleComparisonValue } from '@compra-car/contracts';
 import { VehicleNotFoundError, createComparisonItemCode, createVehicleId } from '@compra-car/core';
 import { describe, expect, it } from 'vitest';
 
@@ -9,6 +9,7 @@ import { formatComparisonNumber } from '../src/application/comparison/comparison
 import { toPublicComparisonError } from '../src/application/comparison/comparison-errors';
 import { filterComparisonCategories } from '../src/application/comparison/comparison-filter';
 import {
+  areComparisonValuesSemanticallyEqual,
   PRESENCE_DISPLAY_VALUE,
   toComparisonCell,
 } from '../src/application/comparison/comparison-mapper';
@@ -19,6 +20,8 @@ import {
   getComparisonValuePresentation,
   shouldShowAdvantageCheck,
 } from '../src/application/comparison/comparison-value-presentation';
+import type { ComparisonCategoryViewModel } from '../src/application/comparison/comparison-view-model';
+import { parseComparisonMode } from '../src/application/comparison/comparison-view-model';
 
 describe('parâmetros públicos da comparação', () => {
   it('aceita dois IDs e preserva a ordem', () => {
@@ -65,6 +68,30 @@ describe('parâmetros públicos da comparação', () => {
       ok: false,
       error: { code: 'INVALID_VEHICLE_IDS' },
     });
+  });
+});
+
+describe('estrutura acessivel dos modos da comparacao', () => {
+  const source = (relativePath: string) => readFileSync(resolve(__dirname, relativePath), 'utf8');
+
+  it('usa radio group, azul de selecao e tres opcoes sem attention', () => {
+    const toolbar = source('../src/components/comparison-toolbar.tsx');
+    expect(toolbar).toContain('role="radiogroup"');
+    expect(toolbar).toContain('type="radio"');
+    expect(toolbar).toContain("label: 'Completa'");
+    expect(toolbar).toContain("label: 'Diferenças'");
+    expect(toolbar).toContain("label: 'Vantagens'");
+    expect(toolbar).toContain('bg-selection-strong');
+    expect(toolbar).not.toContain('bg-attention');
+  });
+
+  it('mantem o marcador pequeno, laranja e acessivel sem pintar a celula', () => {
+    const cell = source('../src/components/comparison-value-cell.tsx');
+    const table = source('../src/components/comparison-table.tsx');
+    expect(cell).toContain('aria-label="Vantagem"');
+    expect(cell).toContain('data-advantage-marker="true"');
+    expect(cell).toContain('text-attention');
+    expect(table).not.toContain('bg-attention');
   });
 });
 
@@ -143,34 +170,34 @@ describe('apresentação dos valores', () => {
 
 describe('formatação numérica da comparação', () => {
   it('formata displacement com milhar brasileiro sem alterar a escala', () => {
-    expect(
-      formatComparisonNumber(1500, 'cc', {
-        code: 'engine.displacement',
-        label: 'Displacement',
-      }),
-    ).toBe('1.500 cc');
+    expect(formatComparisonNumber(1500, 'cc', { code: 'PW_0005' })).toBe('1.500 cc');
   });
 
   it.each([
-    ['engine.torque', 'Torque', 40, 'kgfm', '40,0 kgfm'],
-    ['engine.power_weight', 'Power to weight', 118.666, 'cv/t', '118,7 cv/t'],
-    ['engine.torque_weight', 'Torque to weight', 20.24, 'kgfm/t', '20,2 kgfm/t'],
-  ] as const)('usa uma casa decimal em %s', (code, label, value, unit, expected) => {
-    expect(formatComparisonNumber(value, unit, { code, label })).toBe(expected);
+    ['PW_0012', 40, 'Nm', '40,0 Nm'],
+    ['PW_0035', 118.666, 'kg/cv', '118,7 kg/cv'],
+    ['PW_0036', 20.24, 'kg/Nm', '20,2 kg/Nm'],
+  ] as const)('usa uma casa decimal em %s', (code, value, unit, expected) => {
+    expect(formatComparisonNumber(value, unit, { code })).toBe(expected);
   });
 
   it.each([
-    [10, '10 pol'],
-    [10.5, '10,5 pol'],
-    [10.25, '10,25 pol'],
-    [10.256, '10,26 pol'],
-  ] as const)('limita telas a duas casas para %s', (value, expected) => {
-    expect(
-      formatComparisonNumber(value, 'pol', {
-        code: 'interior.screen_size',
-        label: 'Screen size',
-      }),
-    ).toBe(expected);
+    ['CO_0017', 5, '5,00 inch'],
+    ['CO_0019', 12.3, '12,30 inch'],
+  ] as const)('usa duas casas para %s', (code, value, expected) => {
+    expect(formatComparisonNumber(value, 'inch', { code })).toBe(expected);
+  });
+
+  it('formata rotation max torque como inteiro com arredondamento do Intl', () => {
+    expect(formatComparisonNumber(4500, 'RPM', { code: 'PW_0015' })).toBe('4.500 RPM');
+    expect(formatComparisonNumber(4500.5, 'RPM', { code: 'PW_0015' })).toBe('4.501 RPM');
+  });
+
+  it.each([
+    [12, '12,0 km/L'],
+    [12.46, '12,5 km/L'],
+  ] as const)('usa uma casa no consumo para %s', (value, expected) => {
+    expect(formatComparisonNumber(value, 'km/L', { code: 'OW_0002' })).toBe(expected);
   });
 
   it('omite unidade ausente, composta apenas por espaços ou placeholder unit', () => {
@@ -226,11 +253,12 @@ describe('representação visual das células', () => {
     expect(shouldShowAdvantageCheck(0, false, 'not-applicable')).toBe(false);
     expect(shouldShowAdvantageCheck(1, false, 'disadvantage')).toBe(true);
     expect(shouldShowAdvantageCheck(1, true, 'advantage')).toBe(false);
+    expect(shouldShowAdvantageCheck(1, false, 'tie')).toBe(false);
   });
 });
 
 describe('filtro e erros públicos', () => {
-  const categories: readonly ComparisonCategoryPresentationDto[] = [
+  const categories: readonly ComparisonCategoryViewModel[] = [
     {
       name: 'Segurança',
       rows: [
@@ -240,6 +268,8 @@ describe('filtro e erros públicos', () => {
           equipmentGroup: 'Grupo',
           specSet: 'Set',
           hasReferenceAdvantage: false,
+          hasDifference: false,
+          hasAnyAdvantage: false,
           values: [],
         },
         {
@@ -248,16 +278,73 @@ describe('filtro e erros públicos', () => {
           equipmentGroup: 'Grupo',
           specSet: 'Set',
           hasReferenceAdvantage: true,
+          hasDifference: true,
+          hasAnyAdvantage: true,
           values: [],
         },
       ],
     },
   ];
 
-  it('filtra somente vantagens do veículo principal já calculadas pelo domínio', () => {
-    const filtered = filterComparisonCategories(categories, true);
+  it('resolve os tres modos pela URL e preserva links antigos de highlights', () => {
+    expect(parseComparisonMode(undefined)).toBe('complete');
+    expect(parseComparisonMode('differences')).toBe('differences');
+    expect(parseComparisonMode('advantages')).toBe('advantages');
+    expect(parseComparisonMode(undefined, 'true')).toBe('advantages');
+    expect(parseComparisonMode('invalid')).toBe('complete');
+  });
+
+  it('remove iguais e mantem diferentes sem julgamento no modo Diferencas', () => {
+    const filtered = filterComparisonCategories(categories, 'differences');
     expect(filtered[0]?.rows.map((row) => row.code)).toEqual(['different']);
-    expect(filterComparisonCategories(categories, false)).toBe(categories);
+    expect(
+      filterComparisonCategories(
+        [{ ...categories[0]!, rows: [categories[0]!.rows[0]!] }],
+        'differences',
+      ),
+    ).toEqual([]);
+  });
+
+  it('filtra somente vantagens do veículo principal já calculadas pelo domínio', () => {
+    const filtered = filterComparisonCategories(categories, 'advantages');
+    expect(filtered[0]?.rows.map((row) => row.code)).toEqual(['different']);
+    expect(filterComparisonCategories(categories, 'complete')).toBe(categories);
+  });
+
+  it('compara valores brutos por semantica, nao pelas strings formatadas', () => {
+    const base = {
+      vehicleId: createVehicleId('1'),
+      itemCode: createComparisonItemCode('PW_0005'),
+      type: 'numeric' as const,
+      unit: 'cc',
+    };
+
+    expect(
+      areComparisonValuesSemanticallyEqual(
+        { ...base, value: 5 },
+        { ...base, vehicleId: createVehicleId('2'), value: 5.0, unit: ' CC ' },
+      ),
+    ).toBe(true);
+    expect(
+      areComparisonValuesSemanticallyEqual(
+        { ...base, value: null },
+        { ...base, vehicleId: createVehicleId('2'), value: 5 },
+      ),
+    ).toBe(false);
+  });
+
+  it('preserva a equivalencia existente entre false e ausencia para presenca', () => {
+    const base = {
+      itemCode: createComparisonItemCode('safety.abs'),
+      type: 'binary' as const,
+    };
+
+    expect(
+      areComparisonValuesSemanticallyEqual(
+        { ...base, vehicleId: createVehicleId('1'), present: false },
+        { ...base, vehicleId: createVehicleId('2'), present: null },
+      ),
+    ).toBe(true);
   });
 
   it('não vaza detalhes internos em erro inesperado', () => {

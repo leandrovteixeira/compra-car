@@ -10,7 +10,7 @@ export function buildComparisonPdfUrl(searchParams: ComparisonSearchParams): str
     pdfParams.append('vehicles', vehicles);
   }
 
-  if (searchParams.get('highlights') === 'true') {
+  if (searchParams.get('highlights') === 'true' || searchParams.get('mode') === 'advantages') {
     pdfParams.set('highlights', 'true');
   }
 

@@ -3,7 +3,7 @@ import type {
   ComparisonPageDataDto,
 } from '@compra-car/contracts';
 
-import { filterComparisonCategories } from '@/application/comparison/comparison-filter';
+import { filterComparisonHighlights } from '@/application/comparison/comparison-filter';
 import {
   getComparisonValuePresentation,
   shouldShowAdvantageCheck,
@@ -95,7 +95,7 @@ export function prepareComparisonPdf(
   data: ComparisonPageDataDto,
   onlyHighlights: boolean,
 ): PreparedComparisonPdf {
-  const categories = filterComparisonCategories(data.categories, onlyHighlights);
+  const categories = onlyHighlights ? filterComparisonHighlights(data.categories) : data.categories;
   const vehicles = data.vehicles.map((vehicle, index) => ({
     id: vehicle.id,
     name: [vehicle.brand, vehicle.model, vehicle.version].filter(Boolean).join(' '),
