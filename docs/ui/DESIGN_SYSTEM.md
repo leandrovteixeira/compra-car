@@ -72,20 +72,20 @@ longer part of the palette.
 
 ## Sticky stack and specs density
 
-Desktop administrative pages use one deterministic stack: application topbar, optional sticky page
-header, optional toolbar, then sticky table header. Shared height tokens and the
-`admin-catalog-sticky`, `admin-catalog-table-header`, `admin-page-header` and `admin-specs-toolbar`
-classes own the offsets; page components do not repeat calculated pixel positions. Sticky surfaces are
-opaque and separated with light borders. Primary actions use graphite `#1A1D21`; blue remains
+Desktop administrative pages use the application topbar as their global sticky layer. The vehicle
+catalog below it is a viewport-height grid with natural tracks for page header and filter toolbar,
+followed by a `minmax(0, 1fr)` results track. Only the semantic table viewport scrolls on desktop, on
+both axes, so page header and toolbar remain visible without accumulated height offsets. Each table
+header cell is sticky at `top: 0` inside that same viewport, with an opaque surface, divider and higher
+stacking level than rows. On mobile the document resumes vertical scrolling and the table retains its
+local horizontal overflow. Primary actions use graphite `#1A1D21`; blue remains
 informational/selection and orange remains attention-only.
 
-The specs editor targets approximately 44–48px for ordinary desktop rows. Category summaries are 40px,
-labels and codes use compact line heights, controls align in an 18rem right column, and tri-state
-buttons use a 30px visual treatment on fine pointers while the shared coarse-pointer rule restores a
-44px hit height. Its search/progress/save toolbar remains sticky below the page header.
-
-Catalog sticky layers have independent measured tokens: 72px page header and 88px filter toolbar.
-Table stickiness belongs to each header cell (`th`), avoiding the browser clipping behavior of a sticky
-`thead` inside horizontal-overflow wrappers. Specs category summaries target 32–34px and render as
-flat section rows. Every detailed field uses the same 18rem control track; numeric rows reserve a 4rem
-unit slot so inputs, selects and tri-state controls share the same right edge.
+The specs editor targets approximately 44–48px for ordinary desktop rows. Category summaries target
+32–34px and render as flat section rows; labels and codes use compact line heights. Detailed fields
+use a bounded 52rem internal grid: a flexible label track up to 28rem and a value track up to 22rem.
+Every numeric, select, scale and tri-state control starts at the left edge of that value track rather
+than aligning by its right edge. Numeric groups use a compact input plus a predictable 4rem unit slot.
+Below the desktop breakpoint the grid reflows to label/meta followed by control without global
+horizontal overflow. The search/progress/save toolbar keeps its current density and uses the same
+horizontal padding as category headers and field content.

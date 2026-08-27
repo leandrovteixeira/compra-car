@@ -166,12 +166,14 @@ describe('admin product specs UI state', () => {
     expect(editor).toContain('placeholder="Buscar especificações..."');
     expect(page).toContain('sticky');
     expect(editor).toContain('admin-specs-toolbar');
-    expect(editor).toContain('md:grid-cols-[minmax(0,1fr)_18rem]');
+    expect(editor).toContain('admin-specs-toolbar border-b border-border bg-surface px-3 py-2');
+    expect(editor).toContain('admin-specs-field-grid');
+    expect(editor.match(/admin-specs-value-column/g)).toHaveLength(3);
+    expect(editor).toContain('admin-specs-numeric-control');
     expect(editor).toContain('ui-button ui-button--compact min-w-8');
     expect(editor).toContain('min-h-8 cursor-pointer');
-    expect(editor).toContain('flex w-full items-center gap-2');
-    expect(editor).toContain('w-16 shrink-0 text-xs text-text-muted');
-    expect(editor).toContain('flex w-full justify-end');
+    expect(editor).toContain('w-16 text-xs text-text-muted');
+    expect(editor).toContain('flex justify-start');
     expect(editor).toContain('<details');
     expect(editor).toContain('<option value="">-</option>');
     expect(editor).toContain('role="radiogroup"');
@@ -181,6 +183,19 @@ describe('admin product specs UI state', () => {
     expect(list).toContain('href={`/admin/products/${product.id}/specs`}');
     expect(edit).toContain('href={`/admin/products/${id}/specs`}');
     expect(form).toContain('href={`/admin/products/${productId}/specs`}');
+  });
+
+  it('shares one bounded value-column origin across every editable control kind', () => {
+    const css = source('../src/app/globals.css');
+    const editor = source('../src/components/admin/admin-product-specs-editor.tsx');
+
+    expect(css).toContain('grid-template-columns: minmax(0, 28rem) minmax(0, 22rem)');
+    expect(css).toContain('max-width: 52rem');
+    expect(css).toMatch(/\.admin-specs-value-column\s*{[^}]*max-width: 22rem/s);
+    expect(css).toMatch(/\.admin-specs-value-column\s*{[^}]*justify-self: start/s);
+    expect(css).toContain('grid-template-columns: minmax(0, 9rem) 4rem');
+    expect(editor).not.toContain('justify-self-end');
+    expect(editor).toContain('min-h-8 cursor-pointer');
   });
 
   it('preserves local state on save failure and replaces it only on success', () => {

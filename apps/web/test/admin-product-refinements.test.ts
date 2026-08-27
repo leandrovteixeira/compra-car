@@ -109,7 +109,7 @@ describe('administrative product filters', () => {
     expect(form.match(/min-h-11 min-w-24 cursor-pointer/g)).toHaveLength(2);
   });
 
-  it('uses accumulated desktop sticky offsets without a competing vertical scroll', () => {
+  it('uses a structural desktop workspace with one table scrollport', () => {
     const shell = source('../src/components/admin/admin-shell.tsx');
     const topbar = source('../src/components/application-topbar.tsx');
     const css = source('../src/app/globals.css');
@@ -120,14 +120,22 @@ describe('administrative product filters', () => {
     expect(topbar).toContain('sticky top-0 z-40');
     expect(page).toContain('admin-catalog-page-header');
     expect(page).toContain('admin-catalog-toolbar');
+    expect(page).toContain('admin-catalog-workspace');
+    expect(page).toContain('admin-catalog-results');
     expect(list).toContain('admin-catalog-table-header');
+    expect(list).toContain('admin-catalog-table-frame');
+    expect(list).toContain('admin-catalog-table-scroll overflow-x-auto');
     expect(shell).toContain('lg:pt-0');
-    expect(css).toContain('--admin-catalog-page-header-height: 4.5rem');
-    expect(css).toContain('--admin-catalog-toolbar-height: 5.5rem');
+    expect(css).toContain('grid-template-rows: auto auto minmax(0, 1fr)');
+    expect(css).toContain('height: calc(100dvh - var(--admin-topbar-height))');
+    expect(css).toContain('.admin-catalog-table-scroll');
+    expect(css).toContain('overflow: auto');
+    expect(css).toContain('scrollbar-gutter: stable');
     expect(css).toContain('.admin-catalog-table-header th');
-    expect(css).toContain('var(--admin-catalog-page-header-height) +');
-    expect(list).toContain('overflow-x-auto lg:overflow-visible');
-    expect(list).not.toMatch(/overflow-y-(?:auto|scroll)/);
+    expect(css).toMatch(/\.admin-catalog-table-header th\s*{[^}]*top: 0/s);
+    expect(css).not.toContain('--admin-catalog-page-header-height');
+    expect(css).not.toContain('--admin-catalog-toolbar-height');
+    expect(list).not.toMatch(/admin-catalog-table-header[^\n]*top-/);
   });
 
   it('keeps every supplied row in the table mapping', () => {

@@ -74,7 +74,7 @@ export function AdminProductSpecsEditor({
 
   return (
     <section className="min-w-0">
-      <div className="admin-specs-toolbar border-b border-border bg-surface py-2">
+      <div className="admin-specs-toolbar border-b border-border bg-surface px-3 py-2">
         <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
           <label className="min-w-0 flex-1 lg:max-w-md">
             <span className="sr-only">Buscar especificações</span>
@@ -160,7 +160,7 @@ export function AdminProductSpecsEditor({
                           {field.equipmentGroup}
                         </h3>
                       ) : null}
-                      <div className="grid gap-2 md:min-h-7 md:grid-cols-[minmax(0,1fr)_18rem] md:items-center md:gap-4">
+                      <div className="admin-specs-field-grid md:min-h-7">
                         <div>
                           <p className="text-[0.8125rem] font-medium leading-4 text-text-primary">
                             {field.label}
@@ -177,10 +177,10 @@ export function AdminProductSpecsEditor({
                           </p>
                         </div>
                         {field.kind === 'numeric' ? (
-                          <div className="flex w-full items-center gap-2 md:justify-self-end">
+                          <div className="admin-specs-value-column admin-specs-numeric-control">
                             <input
                               aria-label={field.label}
-                              className="ui-field min-h-8 min-w-0 flex-1 text-right text-xs tabular-nums"
+                              className="ui-field min-h-8 min-w-0 text-right text-xs tabular-nums"
                               inputMode="decimal"
                               onChange={(event) =>
                                 update(field, { ...field, value: event.target.value })
@@ -190,7 +190,7 @@ export function AdminProductSpecsEditor({
                             {field.supportsTorqueUnit ? (
                               <select
                                 aria-label={`Unidade de ${field.label}`}
-                                className="ui-field min-h-8 w-16 shrink-0 text-xs"
+                                className="ui-field min-h-8 w-16 text-xs"
                                 onChange={(event) =>
                                   update(field, { ...field, inputUnit: event.target.value })
                                 }
@@ -200,15 +200,13 @@ export function AdminProductSpecsEditor({
                                 <option value="kgfm">kgfm</option>
                               </select>
                             ) : (
-                              <span className="w-16 shrink-0 text-xs text-text-muted">
-                                {field.unit}
-                              </span>
+                              <span className="w-16 text-xs text-text-muted">{field.unit}</span>
                             )}
                           </div>
                         ) : field.kind === 'binary' ? (
                           <div
                             aria-label={`Estado de ${field.label}`}
-                            className="flex w-full justify-end md:justify-self-end"
+                            className="admin-specs-value-column flex justify-start"
                             role="radiogroup"
                           >
                             {(
@@ -237,24 +235,26 @@ export function AdminProductSpecsEditor({
                             ))}
                           </div>
                         ) : (
-                          <select
-                            aria-label={field.label}
-                            className="ui-field min-h-8 w-full text-xs md:justify-self-end"
-                            onChange={(event) =>
-                              update(field, {
-                                ...field,
-                                selectedSpecId: event.target.value || null,
-                              })
-                            }
-                            value={field.selectedSpecId ?? ''}
-                          >
-                            <option value="">-</option>
-                            {field.options.map((option) => (
-                              <option key={option.specId} value={option.specId}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </select>
+                          <div className="admin-specs-value-column">
+                            <select
+                              aria-label={field.label}
+                              className="ui-field min-h-8 w-full text-xs"
+                              onChange={(event) =>
+                                update(field, {
+                                  ...field,
+                                  selectedSpecId: event.target.value || null,
+                                })
+                              }
+                              value={field.selectedSpecId ?? ''}
+                            >
+                              <option value="">-</option>
+                              {field.options.map((option) => (
+                                <option key={option.specId} value={option.specId}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
                         )}
                       </div>
                     </div>

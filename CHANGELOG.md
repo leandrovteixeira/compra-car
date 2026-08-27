@@ -1,10 +1,14 @@
 # Changelog
 
-## 2026-08-27 — Correção final do sticky e alinhamento de specs
+## 2026-08-27 — Sticky estrutural e grid de especificações
 
-- separa page header e toolbar do catálogo em offsets próprios e fixa células do table header sem clipping;
-- reduz category headers de specs para section rows de 32px;
-- alinha todos os controles numa coluna previsível, reservando largura para unidades numéricas.
+- substitui os offsets acumulados do catálogo por um workspace desktop com header e toolbar em trilhos
+  naturais e um único scrollport vertical/horizontal para a tabela;
+- mantém o header semântico sticky no scrollport da própria tabela, sem cópia visual ou recorte por um
+  ancestral de overflow concorrente;
+- limita a grid interna de specs a 52rem, compartilha a origem de uma value column de até 22rem e
+  reserva um slot consistente de 4rem para unidades numéricas;
+- alinha o padding da toolbar de specs com categories e fields, preservando a densidade vertical.
 
 ## 2026-08-27 — Sticky layout e densidade de especificações
 

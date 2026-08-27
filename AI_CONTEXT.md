@@ -1,12 +1,18 @@
 # Contexto para agentes de IA
 
-## Sticky QA e alinhamento — Sprint 14D.1b (2026-08-27)
+## Sticky estrutural e alinhamento — Sprint 14D.1c (2026-08-27)
 
-No catálogo, page header (72px) e toolbar (88px) possuem tokens e sticky próprios. O table header aplica
-sticky em cada `th`, não no `thead`, evitando clipping por ancestors de overflow horizontal. Specs usa
-section headers de 32px e uma control track uniforme de 18rem; numeric reserva 4rem para unidade e
-tri-state/select compartilham o mesmo eixo direito. Não reintroduza offsets locais ou sticky no grupo
-inteiro do header da tabela.
+No desktop, `/admin/products` é um workspace abaixo da topbar com três trilhos naturais: page header,
+toolbar e resultados `minmax(0, 1fr)`. O documento não é o scroll vertical do catálogo: o mesmo
+`admin-catalog-table-scroll` executa os scrolls vertical e horizontal, e cada `th` semântico fica sticky
+em `top: 0` dentro dele. Não reintroduza tokens de altura do header/toolbar, somas de offsets ou um
+wrapper horizontal diferente do scrollport vertical. No mobile, a página volta ao fluxo vertical e a
+tabela preserva overflow horizontal local.
+
+Specs mantém category headers de 32–34px e usa `admin-specs-field-grid`: label até 28rem, value até
+22rem, conjunto limitado a 52rem. Numeric, scale/select e tri-state começam no mesmo eixo esquerdo;
+numeric reserva 4rem para unidade. Abaixo de 64rem, label/meta e controle refluem em linhas. A toolbar
+usa `px-3`, alinhado ao conteúdo e aos category headers.
 
 ## Sticky layout e specs — Sprint 14D.1 (2026-08-27)
 

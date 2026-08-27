@@ -79,8 +79,6 @@
   --app-topbar-height: 3.25rem;
   --admin-topbar-height: var(--app-topbar-height);
   --admin-page-header-height: 7.75rem;
-  --admin-catalog-page-header-height: 4.5rem;
-  --admin-catalog-toolbar-height: 5.5rem;
   --density-control-height: 2.25rem;
   --density-control-height-touch: 2.75rem;
   --density-table-row: 3rem;
@@ -115,36 +113,79 @@
     background: var(--color-surface-muted);
   }
 
-  .admin-catalog-page-header {
+  .admin-catalog-workspace {
     position: sticky;
     top: var(--admin-topbar-height);
-    z-index: 30;
-    height: var(--admin-catalog-page-header-height);
+    display: grid;
+    height: calc(100dvh - var(--admin-topbar-height));
+    grid-template-rows: auto auto minmax(0, 1fr);
+  }
+
+  .admin-catalog-page-header,
+  .admin-catalog-toolbar {
     background: var(--color-canvas);
   }
 
-  .admin-catalog-toolbar {
-    position: sticky;
-    top: calc(var(--admin-topbar-height) + var(--admin-catalog-page-header-height));
-    z-index: 29;
-    height: var(--admin-catalog-toolbar-height);
-    background: var(--color-canvas);
+  .admin-catalog-results,
+  .admin-catalog-table-frame,
+  .admin-catalog-table-scroll {
+    min-height: 0;
+  }
+
+  .admin-catalog-table-frame {
+    display: grid;
+    height: 100%;
+    grid-template-rows: minmax(0, 1fr) auto;
+    overflow: hidden;
+  }
+
+  .admin-catalog-table-scroll {
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
   }
 
   .admin-catalog-table-header th {
     position: sticky;
-    top: calc(
-      var(--admin-topbar-height) + var(--admin-catalog-page-header-height) +
-        var(--admin-catalog-toolbar-height)
-    );
+    top: 0;
     z-index: 20;
     background: var(--color-surface-muted);
+    border-bottom: 1px solid var(--color-border);
   }
 
   .admin-specs-toolbar {
     position: sticky;
     top: calc(var(--admin-topbar-height) + var(--admin-page-header-height));
     z-index: 25;
+  }
+}
+
+.admin-specs-field-grid {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.admin-specs-value-column {
+  width: 100%;
+  max-width: 22rem;
+  min-width: 0;
+  justify-self: start;
+}
+
+.admin-specs-numeric-control {
+  display: grid;
+  width: min(100%, 13.5rem);
+  grid-template-columns: minmax(0, 9rem) 4rem;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+@media (min-width: 64rem) {
+  .admin-specs-field-grid {
+    max-width: 52rem;
+    grid-template-columns: minmax(0, 28rem) minmax(0, 22rem);
+    align-items: center;
+    gap: 1rem;
   }
 }
 

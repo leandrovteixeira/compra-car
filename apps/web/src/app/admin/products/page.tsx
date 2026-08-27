@@ -21,7 +21,7 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
   const result = await loadAdminProducts(parsed.filters, undefined, parsed.values.search);
 
   return (
-    <>
+    <section className="admin-catalog-workspace">
       <div className="admin-catalog-page-header">
         <PageHeader
           actions={
@@ -38,7 +38,7 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
         <AdminProductFilters values={parsed.values} />
       </div>
 
-      <div className="mt-8 lg:mt-0">
+      <div className="admin-catalog-results mt-8 lg:mt-0">
         {!result.ok ? (
           <AdminProductError />
         ) : result.data.length === 0 ? (
@@ -64,6 +64,6 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
           <AdminProductList products={result.data} />
         )}
       </div>
-    </>
+    </section>
   );
 }

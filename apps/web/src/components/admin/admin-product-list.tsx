@@ -27,8 +27,8 @@ function StatusBadge({
 
 export function AdminProductList({ products }: AdminProductListProps) {
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-surface lg:overflow-visible">
-      <div className="overflow-x-auto lg:overflow-visible">
+    <div className="admin-catalog-table-frame overflow-hidden rounded-lg border border-border bg-surface">
+      <div className="admin-catalog-table-scroll overflow-x-auto">
         <table className="ui-table min-w-[50rem] lg:min-w-0">
           <caption className="sr-only">Veículos cadastrados</caption>
           <thead className="admin-catalog-table-header bg-surface-muted">
