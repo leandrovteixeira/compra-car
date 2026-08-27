@@ -19,6 +19,12 @@
   --color-interactive-hover: #244b58;
   --color-action-primary: #1a1d21;
   --color-action-primary-hover: #2d333a;
+  --color-action-interactive: #9abcc8;
+  --color-action-interactive-hover: color-mix(
+    in srgb,
+    var(--color-action-interactive) 82%,
+    var(--color-interactive)
+  );
   --color-focus: #6f98a7;
   --color-attention: #ef7732;
   --color-status-success: #18794e;
@@ -259,6 +265,15 @@ textarea {
     border-color: var(--color-border);
     background: var(--color-surface);
     color: var(--color-text-primary);
+  }
+
+  .ui-button--interactive {
+    background: var(--color-action-interactive);
+    color: var(--color-text-primary);
+  }
+
+  .ui-button--interactive:hover:not(:disabled) {
+    background: var(--color-action-interactive-hover);
   }
 
   .ui-button--secondary:hover:not(:disabled),

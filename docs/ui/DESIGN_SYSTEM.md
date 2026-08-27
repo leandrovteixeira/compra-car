@@ -23,6 +23,12 @@ Slate/Sky/Cyan utilities are mapped centrally to the light palette during the in
 Orange identifies exceptional visual priority, currently the advantage check in vehicle comparison.
 Success remains green and is not interchangeable with comparison advantage.
 
+The complementary semantic rule is **Blue = Interaction / Identity** and **Graphite = Structure**.
+Official blue `#9ABCC8` may identify interactive buttons, active controls, selection and informational
+badges, always with graphite text when used as a background. Graphite continues to structure primary
+text, navigation and neutral actions. Predominantly neutral surfaces keep blue as rhythm and
+affordance rather than decoration.
+
 ## Density
 
 - desktop controls: 36px;
@@ -69,6 +75,23 @@ or `2026/2027`). Storage fields retain their original names and meaning. The ide
 `#9ABCC8`; `interactive` (`#315E6D`) and `interactive-hover` (`#244B58`) are darker semantic derivatives
 used only where white foreground contrast requires them. The former independent `#466F7D` value is no
 longer part of the palette.
+
+## Seller vehicle selection
+
+The seller starts with one mobile-first search over the complete public-eligible catalog returned by
+an authorized, cached Server Action. Brand, model and version share the normalized token matcher also
+used by the administrative catalog; diacritics, case and repeated whitespace do not prevent matches.
+An empty query renders a compact prompt rather than the catalog. Matching results stay directly below
+the input and one click/tap adds the vehicle, removes it from subsequent results, clears the query and
+returns focus to search.
+
+Selected vehicles render as a numbered ordered list. The first row carries a subtle blue `Principal`
+badge, every row has an accessible 44px removal target, and removing the first naturally promotes the
+next item without separate state. The selection surface accepts up to four vehicles, requires two to
+compare and preserves URL order. Search uses a 16px mobile font and 44px controls; results have a
+bounded vertical scroll while the page never introduces horizontal overflow. `ui-button--interactive`
+is the opt-in blue action variant; the graphite `primary` primitive remains unchanged for existing
+flows.
 
 ## Sticky stack and specs density
 

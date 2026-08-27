@@ -7,7 +7,7 @@ import type {
 } from '@compra-car/contracts';
 
 import { toAdministrativeVehicleFormValues } from '../application/admin/administrative-vehicle-form';
-import { matchesProductSearch } from '../application/admin/admin-product-search';
+import { matchesVehicleSearch } from '../application/catalog/vehicle-search';
 
 export interface AdminProductListItem {
   readonly brand: string;
@@ -64,7 +64,7 @@ export async function loadAdminProducts(
       data: vehicles
         .map(toAdminProductListItem)
         .filter((vehicle) =>
-          matchesProductSearch([vehicle.brand, vehicle.model, vehicle.version].join(' '), search),
+          matchesVehicleSearch([vehicle.brand, vehicle.model, vehicle.version].join(' '), search),
         )
         .sort(
           (left, right) =>

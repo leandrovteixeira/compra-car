@@ -1,4 +1,4 @@
-export type ButtonVariant = 'destructive' | 'ghost' | 'primary' | 'secondary';
+export type ButtonVariant = 'destructive' | 'ghost' | 'interactive' | 'primary' | 'secondary';
 
 export interface ButtonClassOptions {
   readonly compact?: boolean;

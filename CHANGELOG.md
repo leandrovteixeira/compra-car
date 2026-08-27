@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-08-27 — Busca unificada de veículos do vendedor
+
+- substitui Marca → Modelo → Versão → Adicionar por busca tokenizada em marca, modelo e versão, com
+  inclusão em um toque sobre o catálogo público/elegível autorizado e cacheado;
+- apresenta selecionados numa lista ordenada compacta, identifica o primeiro como Principal, preserva
+  produção/modelo e oferece remoção acessível com promoção implícita do próximo veículo;
+- consolida quatro veículos como limite da seleção, mantém mínimo de dois e preserva a ordem enviada à
+  comparação;
+- adiciona a variante compartilhada `interactive` em azul oficial com texto grafite, mantendo laranja
+  exclusivo para atenção e o primitive primary existente sem impacto global.
+
 ## 2026-08-27 — Sticky estrutural e grid de especificações
 
 - substitui os offsets acumulados do catálogo por um workspace desktop com header e toolbar em trilhos

@@ -12,6 +12,7 @@ describe('Sprint 14A.1 design-system foundation', () => {
     expect(css).toContain('--color-text-primary: #1a1d21');
     expect(css).toContain('--color-attention: #ef7732');
     expect(css).toContain('--color-selection-strong: #9abcc8');
+    expect(css).toContain('--color-action-interactive: #9abcc8');
     expect(css).not.toContain('#466f7d');
     expect(css).toMatch(/--font-sans:\s+Inter/);
     expect(css).toContain('--density-control-height: 2.25rem');
@@ -25,12 +26,16 @@ describe('Sprint 14A.1 design-system foundation', () => {
       css.indexOf('.ui-button--primary {'),
       css.indexOf('.ui-button--primary:hover'),
     );
-    expect(primitives).toContain("'destructive' | 'ghost' | 'primary' | 'secondary'");
+    expect(primitives).toContain(
+      "'destructive' | 'ghost' | 'interactive' | 'primary' | 'secondary'",
+    );
     expect(primitives).toContain("export const fieldClassName = 'ui-field'");
     expect(primitives).toContain("export const tableClassName = 'ui-table'");
     expect(primary).toContain('var(--color-action-primary)');
     expect(css).toContain('--color-action-primary: #1a1d21');
     expect(primary).not.toContain('var(--color-attention)');
+    expect(css).toMatch(/\.ui-button--interactive\s*{[^}]*var\(--color-action-interactive\)/s);
+    expect(css).toMatch(/\.ui-button--interactive\s*{[^}]*var\(--color-text-primary\)/s);
   });
 
   it('reserves attention orange for comparison advantage', () => {

@@ -5,10 +5,7 @@ import type { CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 
-import {
-  matchesProductSearch,
-  normalizeProductSearch,
-} from '@/application/admin/admin-product-search';
+import { matchesVehicleSearch, normalizeVehicleSearch } from '@/application/catalog/vehicle-search';
 
 interface AdminProductComboboxProps {
   readonly disabled?: boolean;
@@ -51,9 +48,9 @@ export function AdminProductCombobox({
   }, [selected]);
 
   const filtered = useMemo(() => {
-    if (!normalizeProductSearch(query) || (selected && query === optionLabel(selected)))
+    if (!normalizeVehicleSearch(query) || (selected && query === optionLabel(selected)))
       return options;
-    return options.filter((option) => matchesProductSearch(optionLabel(option), query));
+    return options.filter((option) => matchesVehicleSearch(optionLabel(option), query));
   }, [options, query, selected]);
 
   useEffect(() => {

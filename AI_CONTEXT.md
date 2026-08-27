@@ -1,5 +1,25 @@
 # Contexto para agentes de IA
 
+## Seller Search UX — Sprint 14D.2 (2026-08-27)
+
+A home do vendedor carrega o catálogo público/elegível uma vez por `getCatalogVehicles`, protegido por
+`requireRole('seller')` e pelo cache `getCachedCatalogVehicles`; a cadeia use case → repository →
+adapter permanece intacta. A busca é local e imediata sobre esse DTO, não consulta Supabase pelo
+browser e não mostra resultados quando vazia. `vehicle-search.ts` é o matcher único de tokens para
+marca/modelo/versão usado também pelo admin, com normalização de diacríticos, caixa e whitespace.
+
+Clique/toque no resultado adiciona diretamente, exclui o escolhido das opções, limpa a query e devolve
+foco ao input. `VehicleSelectionState` mantém somente a lista ordenada. O primeiro é Principal;
+remoção preserva ordem e promove implicitamente o próximo. A UX consolida máximo de quatro veículos e
+mínimo de dois para comparar, enviando IDs na ordem para `/comparar`. O limite de quatro foi recuperado
+da evolução que explicitamente passou a aceitar o quarto; ele continua localizado na seleção, sem
+alterar core ou engine de comparação.
+
+Paleta: **Blue = Interaction / Identity**, **Graphite = Structure**, **Orange = Attention**. A variante
+opt-in `ui-button--interactive` usa `--color-action-interactive: #9ABCC8`, texto grafite e hover derivado
+da família azul. O primary global grafite não mudou. Mobile usa fonte de 16px na busca, targets de 44px,
+resultados com scroll vertical limitado e nenhuma dependência de hover ou overflow horizontal.
+
 ## Sticky estrutural e alinhamento — Sprint 14D.1c (2026-08-27)
 
 No desktop, `/admin/products` é um workspace abaixo da topbar com três trilhos naturais: page header,

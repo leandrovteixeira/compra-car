@@ -51,3 +51,15 @@ export const getCachedVehicles = unstable_cache(
     tags: [CATALOG_CACHE_TAGS.all, CATALOG_CACHE_TAGS.vehicles],
   },
 );
+
+export const getCachedCatalogVehicles = unstable_cache(
+  async (): Promise<readonly CatalogVehicleDto[]> => {
+    const vehicles = await getCatalogCompositionRoot().listAvailableVehicles.execute();
+    return vehicles.map(toCatalogVehicle);
+  },
+  ['catalog-search-vehicles'],
+  {
+    revalidate: CACHE_REVALIDATE_SECONDS,
+    tags: [CATALOG_CACHE_TAGS.all, CATALOG_CACHE_TAGS.vehicles],
+  },
+);

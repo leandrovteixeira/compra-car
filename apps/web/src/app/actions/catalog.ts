@@ -7,7 +7,12 @@ import type {
   CatalogVehicleDto,
 } from '@compra-car/contracts';
 
-import { getCachedBrands, getCachedModels, getCachedVehicles } from '@/server/catalog-cache';
+import {
+  getCachedBrands,
+  getCachedCatalogVehicles,
+  getCachedModels,
+  getCachedVehicles,
+} from '@/server/catalog-cache';
 import { requireRole } from '@/auth/authorization';
 
 const INVALID_INPUT_ERROR = Object.freeze({
@@ -66,6 +71,18 @@ export async function getVehicles(
 
   try {
     return success(await getCachedVehicles(normalizedBrand, normalizedModel));
+  } catch {
+    return failure(CATALOG_UNAVAILABLE_ERROR);
+  }
+}
+
+export async function getCatalogVehicles(): Promise<
+  CatalogActionResultDto<readonly CatalogVehicleDto[]>
+> {
+  await requireRole('seller');
+
+  try {
+    return success(await getCachedCatalogVehicles());
   } catch {
     return failure(CATALOG_UNAVAILABLE_ERROR);
   }

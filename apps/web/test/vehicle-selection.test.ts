@@ -1,4 +1,6 @@
 import type { CatalogVehicleDto } from '@compra-car/contracts';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -8,129 +10,159 @@ import {
 } from '../src/application/catalog/vehicle-presentation';
 import {
   EMPTY_VEHICLE_SELECTION,
+  MAX_SELECTED_VEHICLES,
   addSelectedVehicle,
   canAddSelectedVehicle,
-  changeSelectedBrand,
-  changeSelectedModel,
-  changeSelectedVersion,
+  findAvailableVehicles,
+  removeSelectedVehicle,
   type VehicleSelectionState,
 } from '../src/application/catalog/vehicle-selection-state';
 
-function vehicle(id: string, version = `Versão ${id}`): CatalogVehicleDto {
+const source = (relativePath: string) => readFileSync(resolve(__dirname, relativePath), 'utf8');
+
+function vehicle(id: string, overrides: Partial<CatalogVehicleDto> = {}): CatalogVehicleDto {
   return {
     id,
     brand: 'BYD',
     model: 'Song Plus',
-    version,
+    version: `Versão ${id}`,
     modelYear: '2027',
     productionYear: '2026',
-    displayName: `BYD Song Plus ${version}`,
+    displayName: `BYD Song Plus Versão ${id}`,
+    ...overrides,
   };
 }
 
-function readyState(
-  selectedVehicles: readonly CatalogVehicleDto[] = [],
-  vehicleId = '1',
-): VehicleSelectionState {
-  return {
-    brand: 'BYD',
-    model: 'Song Plus',
-    vehicleId,
-    selectedVehicles,
-  };
+function state(selectedVehicles: readonly CatalogVehicleDto[] = []): VehicleSelectionState {
+  return { selectedVehicles };
 }
 
-describe('seleção explícita de veículos', () => {
-  it('selecionar uma versão não adiciona o veículo automaticamente', () => {
-    const selected = [vehicle('9')];
-    const next = changeSelectedVersion(readyState(selected, ''), '1');
+const catalog = [
+  vehicle('1', { model: 'Dolphin', version: 'GS EV' }),
+  vehicle('2', { model: 'Dolphin Mini', version: 'Comfort' }),
+  vehicle('3', { brand: 'GAC', model: 'GS4', version: 'Premium 2.0 HEV CVT' }),
+];
 
-    expect(next.vehicleId).toBe('1');
-    expect(next.selectedVehicles).toBe(selected);
+describe('busca unificada de veículos do vendedor', () => {
+  it.each([
+    ['BYD', ['1', '2']],
+    ['Dolphin', ['1', '2']],
+    ['GS EV', ['1']],
+    ['BYD Dolphin', ['1', '2']],
+    ['Dolphin GS', ['1']],
+    ['GS4', ['3']],
+  ])('busca marca/modelo/versão com tokens em %s', (query, expectedIds) => {
+    expect(findAvailableVehicles(catalog, query, []).map(({ id }) => id)).toEqual(expectedIds);
   });
 
-  it('mantém Adicionar desabilitado sem uma versão válida', () => {
-    expect(canAddSelectedVehicle(readyState([], ''), [vehicle('1')])).toBe(false);
-    expect(canAddSelectedVehicle(readyState([], 'inexistente'), [vehicle('1')])).toBe(false);
+  it('não mostra centenas no estado vazio e remove os já selecionados dos resultados', () => {
+    expect(findAvailableVehicles(catalog, '', [])).toEqual([]);
+    expect(findAvailableVehicles(catalog, 'BYD', [catalog[0]!])).toEqual([catalog[1]]);
+  });
+});
+
+describe('seleção direta e limites da comparação', () => {
+  it('adiciona em uma única ação, preserva a ordem e impede duplicidade', () => {
+    const first = addSelectedVehicle(state(), catalog[0]!);
+    const second = addSelectedVehicle(first, catalog[2]!);
+
+    expect(second.selectedVehicles.map(({ id }) => id)).toEqual(['1', '3']);
+    expect(addSelectedVehicle(second, catalog[0]!)).toBe(second);
   });
 
-  it('adiciona no comando explícito e limpa os três campos', () => {
-    const candidate = vehicle('1');
-    const next = addSelectedVehicle(readyState(), [candidate]);
+  it('aceita quatro veículos e impede a quinta seleção', () => {
+    const selected = Array.from({ length: MAX_SELECTED_VEHICLES }, (_, index) =>
+      vehicle(String(index + 1)),
+    );
+    const full = state(selected);
+    const fifth = vehicle('5');
 
-    expect(next.selectedVehicles).toEqual([candidate]);
-    expect(next).toMatchObject({ brand: '', model: '', vehicleId: '' });
+    expect(MAX_SELECTED_VEHICLES).toBe(4);
+    expect(canAddSelectedVehicle(full, fifth)).toBe(false);
+    expect(addSelectedVehicle(full, fifth)).toBe(full);
   });
 
-  it('preserva os veículos selecionados anteriormente', () => {
+  it('remove sem reordenar manualmente e promove implicitamente o próximo primeiro', () => {
     const first = vehicle('1');
     const second = vehicle('2');
+    const next = removeSelectedVehicle(state([first, second]), first.id);
 
-    expect(addSelectedVehicle(readyState([first], '2'), [second]).selectedVehicles).toEqual([
-      first,
-      second,
-    ]);
+    expect(next.selectedVehicles).toEqual([second]);
+    expect(next.selectedVehicles[0]).toBe(second);
   });
 
-  it('impede duplicidade antes da inclusão', () => {
-    const duplicate = vehicle('1');
-    const state = readyState([duplicate]);
+  it('mantém mínimo de dois e navega com IDs na ordem selecionada', () => {
+    const component = source('../src/components/vehicle-selection.tsx');
+    expect(component).toContain('selection.selectedVehicles.length >= 2');
+    expect(component).toContain(".map((vehicle) => vehicle.id).join(',')");
+    expect(component).toContain('router.push(`/comparar?vehicles=${ids}`)');
+    expect(component).toContain('disabled={!canCompare}');
+  });
+});
 
-    expect(canAddSelectedVehicle(state, [duplicate])).toBe(false);
-    expect(addSelectedVehicle(state, [duplicate])).toBe(state);
+describe('estrutura responsiva da experiência do vendedor', () => {
+  it('substitui selects e Adicionar por busca e clique direto no resultado', () => {
+    const component = source('../src/components/vehicle-selection.tsx');
+    expect(component).toContain('placeholder="Buscar veículo..."');
+    expect(component).toContain('onClick={() => selectVehicle(vehicle)}');
+    expect(component).toContain("setQuery('')");
+    expect(component).toContain('aria-label="Limpar busca"');
+    expect(component).not.toContain('<select');
+    expect(component).not.toContain('CatalogCombobox');
+    expect(component).not.toMatch(/>\s*Adicionar\s*</);
   });
 
-  it('permite adicionar um quarto veículo', () => {
-    const state = readyState([vehicle('1'), vehicle('2'), vehicle('3')], '4');
-
-    expect(canAddSelectedVehicle(state, [vehicle('4')])).toBe(true);
-    expect(addSelectedVehicle(state, [vehicle('4')]).selectedVehicles).toHaveLength(4);
+  it('renderiza selected list, Principal, remoção acessível e estados de limite', () => {
+    const component = source('../src/components/vehicle-selection.tsx');
+    expect(component).toContain('<ol');
+    expect(component).toContain('Ordem da comparação');
+    expect(component).toContain('Principal');
+    expect(component).toContain('aria-label={`Remover ${identity}`}');
+    expect(component).toContain('Limite de {MAX_SELECTED_VEHICLES} veículos atingido');
   });
 
-  it('mudar a marca limpa modelo e versão, preservando os selecionados', () => {
-    const selected = [vehicle('1')];
-    const next = changeSelectedBrand(readyState(selected), 'Honda');
-
-    expect(next).toMatchObject({ brand: 'Honda', model: '', vehicleId: '' });
-    expect(next.selectedVehicles).toBe(selected);
+  it('preserva fonte móvel, touch targets, largura limitada e ausência de overflow global', () => {
+    const component = source('../src/components/vehicle-selection.tsx');
+    expect(component).toContain('max-w-3xl');
+    expect(component).toContain('text-base');
+    expect(component).toContain('min-h-11');
+    expect(component).toContain('min-w-11');
+    expect(component).toContain('overflow-y-auto');
+    expect(component).not.toContain('overflow-x-auto');
   });
 
-  it('mudar o modelo limpa somente a versão da seleção progressiva', () => {
-    const next = changeSelectedModel(readyState(), 'Dolphin');
-
-    expect(next).toMatchObject({ brand: 'BYD', model: 'Dolphin', vehicleId: '' });
+  it('usa a action autorizada e cacheada para um catálogo público unificado', () => {
+    const component = source('../src/components/vehicle-selection.tsx');
+    const actions = source('../src/app/actions/catalog.ts');
+    const cache = source('../src/server/catalog-cache.ts');
+    expect(component).toContain('getCatalogVehicles()');
+    expect(actions).toContain('export async function getCatalogVehicles');
+    expect(actions).toContain("await requireRole('seller')");
+    expect(cache).toContain('getCachedCatalogVehicles');
+    expect(cache).toContain('listAvailableVehicles.execute()');
   });
 });
 
 describe('apresentação compacta de produção/modelo', () => {
-  it('formata produção 2026/modelo 2027 como 26/27', () => {
+  it('formata produção/modelo como 26/27 em resultados e selecionados', () => {
+    const sample = vehicle('1', { version: 'GS 1.5 TGDI PHEV DHT' });
+    const component = source('../src/components/vehicle-selection.tsx');
     expect(formatProductionModelYears('2026', '2027')).toBe('26/27');
-    expect(formatCompactVehicleName(vehicle('1', 'GS 1.5 TGDI PHEV DHT'))).toBe(
-      'BYD Song Plus GS 1.5 TGDI PHEV DHT · 26/27',
-    );
+    expect(formatCompactVehicleName(sample)).toBe('BYD Song Plus GS 1.5 TGDI PHEV DHT · 26/27');
+    expect(component).toContain('formatProductionModelYears');
   });
 
-  it('mantém zero à esquerda nos dois últimos dígitos', () => {
-    expect(formatProductionModelYears('2006', '2007')).toBe('06/07');
-  });
-
-  it('uma descrição longa não altera o valor real do veículo', () => {
+  it('mantém zero à esquerda e não altera uma descrição longa', () => {
     const longVersion = `Versão ${'muito longa '.repeat(20).trim()}`;
-    const original = vehicle('1', longVersion);
+    const original = vehicle('1', { version: longVersion });
     const before = structuredClone(original);
 
+    expect(formatProductionModelYears('2006', '2007')).toBe('06/07');
     expect(formatVehicleVersionOption(original)).toContain(longVersion);
-    expect(formatCompactVehicleName(original)).toContain(longVersion);
     expect(original).toEqual(before);
-    expect(original.version).toBe(longVersion);
   });
 
-  it('parte de um estado inicial sem versão e sem adição implícita', () => {
-    expect(EMPTY_VEHICLE_SELECTION).toEqual({
-      brand: '',
-      model: '',
-      vehicleId: '',
-      selectedVehicles: [],
-    });
+  it('parte somente da lista vazia de selecionados', () => {
+    expect(EMPTY_VEHICLE_SELECTION).toEqual({ selectedVehicles: [] });
   });
 });
