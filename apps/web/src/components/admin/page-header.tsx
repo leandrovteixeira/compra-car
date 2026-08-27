@@ -21,7 +21,7 @@ export function PageHeader({
     <header
       className={`flex flex-col gap-3 border-b border-border sm:flex-row sm:items-end sm:justify-between ${
         compact ? 'pb-3' : 'pb-5'
-      } ${sticky ? 'admin-page-header' : ''}`}
+      } ${sticky ? 'admin-page-header' : compact ? 'pt-2' : 'pt-6 lg:pt-8'}`}
     >
       <div>
         {eyebrow ? (

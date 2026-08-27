@@ -73,11 +73,11 @@ describe('commercial period workspace', () => {
     expect(css).toContain('--app-topbar-height: 3.25rem');
     expect(css).toContain('--admin-topbar-height: var(--app-topbar-height)');
     expect(css).toContain('--admin-page-header-height: 7.75rem');
-    expect(css).toContain('margin-top: -2rem');
+    expect(css).not.toContain('margin-top: -2rem');
     expect(css).toContain(
       'top: calc(var(--admin-topbar-height) + var(--admin-page-header-height))',
     );
-    expect(pageHeader).toContain("sticky ? 'admin-page-header' : ''");
+    expect(pageHeader).toContain("sticky ? 'admin-page-header'");
     expect(priceList).toContain('admin-table-header');
     expect(priceList).toContain('lg:overflow-visible');
   });

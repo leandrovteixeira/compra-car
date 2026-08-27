@@ -22,8 +22,13 @@ export default async function AdminProductSpecsPage({ params }: AdminProductSpec
 
   return (
     <>
-      <PageHeader description={identity} eyebrow="Catálogo" title="Especificações e equipamentos" />
-      <div className="mt-8">
+      <PageHeader
+        description={identity}
+        eyebrow="Catálogo"
+        sticky
+        title="Especificações e equipamentos"
+      />
+      <div>
         <AdminProductSpecsEditor
           initialModel={model}
           saveAction={saveAdminProductSpecsAction.bind(null, id)}

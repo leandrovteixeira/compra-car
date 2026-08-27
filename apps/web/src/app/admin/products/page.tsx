@@ -22,7 +22,7 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
 
   return (
     <>
-      <div className="bg-canvas lg:sticky lg:top-[var(--admin-topbar-height)] lg:z-30 lg:h-[9.5rem]">
+      <div className="admin-catalog-sticky">
         <PageHeader
           actions={
             <Link className="ui-button ui-button--primary" href="/admin/products/new">

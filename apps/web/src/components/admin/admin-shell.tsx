@@ -37,7 +37,7 @@ export function AdminShell({ children, displayName, profile }: AdminShellProps) 
           </p>
           <AdminNav />
         </aside>
-        <main className="mx-auto min-w-0 w-full max-w-7xl px-4 py-6 sm:px-5 lg:px-6 lg:py-8">
+        <main className="mx-auto min-w-0 w-full max-w-7xl px-4 py-6 sm:px-5 lg:px-6 lg:pb-8 lg:pt-0">
           {children}
         </main>
       </div>

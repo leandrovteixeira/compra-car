@@ -1,5 +1,14 @@
 # Contexto para agentes de IA
 
+## Sticky layout e specs — Sprint 14D.1 (2026-08-27)
+
+O stack desktop é topbar → page header → toolbar opcional → table header. Offsets pertencem aos tokens
+e classes globais; não introduza valores independentes nas páginas. O catálogo usa
+`admin-catalog-sticky`/`admin-catalog-table-header`, e specs usa `admin-page-header` seguido de
+`admin-specs-toolbar`. Primary action comum é graphite `#1A1D21`; azul é informação/seleção e laranja
+continua attention-only. Specs simples miram 44–48px, categorias 40px e controles ficam alinhados numa
+coluna direita de 18rem, preservando 44px em coarse pointers.
+
 ## Catálogo pesquisável — Sprint 14C (2026-08-27)
 
 `/admin/products` mantém filtros na URL, mas usa um único `search` com debounce de 275ms para marca,

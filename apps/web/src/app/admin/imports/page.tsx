@@ -18,10 +18,7 @@ export default async function AdminImportsPage({
     <>
       <PageHeader
         actions={
-          <Link
-            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-sky-500 px-4 text-sm font-bold text-slate-950"
-            href="/admin/imports/new"
-          >
+          <Link className="ui-button ui-button--primary" href="/admin/imports/new">
             Nova importação
           </Link>
         }

@@ -17,6 +17,8 @@
   --color-border-strong: #a3aab2;
   --color-interactive: #315e6d;
   --color-interactive-hover: #244b58;
+  --color-action-primary: #1a1d21;
+  --color-action-primary-hover: #2d333a;
   --color-focus: #6f98a7;
   --color-attention: #ef7732;
   --color-status-success: #18794e;
@@ -77,6 +79,7 @@
   --app-topbar-height: 3.25rem;
   --admin-topbar-height: var(--app-topbar-height);
   --admin-page-header-height: 7.75rem;
+  --admin-catalog-sticky-height: 9.5rem;
   --density-control-height: 2.25rem;
   --density-control-height-touch: 2.75rem;
   --density-table-row: 3rem;
@@ -94,9 +97,9 @@
     top: var(--admin-topbar-height);
     z-index: 30;
     height: var(--admin-page-header-height);
-    margin-top: -2rem;
     padding-block: 0.625rem;
-    background: var(--color-background);
+    background: var(--color-canvas);
+    border-bottom: 1px solid var(--color-border);
   }
 
   .admin-page-header > div:first-child > p:last-child {
@@ -109,6 +112,27 @@
     top: calc(var(--admin-topbar-height) + var(--admin-page-header-height));
     z-index: 20;
     background: var(--color-surface-muted);
+  }
+
+  .admin-catalog-sticky {
+    position: sticky;
+    top: var(--admin-topbar-height);
+    z-index: 30;
+    height: var(--admin-catalog-sticky-height);
+    background: var(--color-canvas);
+  }
+
+  .admin-catalog-table-header {
+    position: sticky;
+    top: calc(var(--admin-topbar-height) + var(--admin-catalog-sticky-height));
+    z-index: 20;
+    background: var(--color-surface-muted);
+  }
+
+  .admin-specs-toolbar {
+    position: sticky;
+    top: calc(var(--admin-topbar-height) + var(--admin-page-header-height));
+    z-index: 25;
   }
 }
 
@@ -170,12 +194,12 @@ textarea {
   }
 
   .ui-button--primary {
-    background: var(--color-interactive);
+    background: var(--color-action-primary);
     color: #ffffff;
   }
 
   .ui-button--primary:hover:not(:disabled) {
-    background: var(--color-interactive-hover);
+    background: var(--color-action-primary-hover);
   }
 
   .ui-button--secondary {

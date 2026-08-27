@@ -74,28 +74,28 @@ export function AdminProductSpecsEditor({
 
   return (
     <section className="min-w-0">
-      <div className="sticky top-[var(--admin-topbar-height)] z-30 rounded-lg border border-border bg-surface/95 p-4 shadow-sm backdrop-blur">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-          <label className="min-w-0 flex-1">
+      <div className="admin-specs-toolbar border-b border-border bg-surface py-2">
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
+          <label className="min-w-0 flex-1 lg:max-w-md">
             <span className="sr-only">Buscar especificações</span>
             <input
-              className="min-h-11 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 text-slate-100 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/25"
+              className="ui-field min-h-9 text-[0.8125rem]"
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Buscar especificações..."
               type="search"
               value={query}
             />
           </label>
-          <p className="text-sm text-slate-400">
+          <p className="whitespace-nowrap text-xs text-text-muted">
             {counts.filled} / {counts.total} preenchidos
           </p>
-          <p className="text-sm text-amber-300">
+          <p className="whitespace-nowrap text-xs text-status-warning">
             {changed
               ? `${changeCount} ${changeCount === 1 ? 'alteração não salva' : 'alterações não salvas'}`
               : 'Nenhuma alteração pendente'}
           </p>
           <button
-            className="min-h-11 rounded-xl border border-slate-700 px-4 font-semibold text-slate-200 disabled:opacity-50"
+            className="ui-button ui-button--ghost ui-button--compact"
             disabled={!changed || pending}
             onClick={() => {
               setModel(baseline);
@@ -106,7 +106,7 @@ export function AdminProductSpecsEditor({
             Descartar
           </button>
           <button
-            className="min-h-11 rounded-xl bg-sky-500 px-4 font-semibold text-slate-950 disabled:opacity-50"
+            className="ui-button ui-button--primary ui-button--compact"
             disabled={!changed || pending}
             onClick={save}
             type="button"
@@ -116,7 +116,7 @@ export function AdminProductSpecsEditor({
         </div>
         {feedback ? (
           <p
-            className={`mt-3 text-sm ${feedback.kind === 'error' ? 'text-rose-300' : 'text-emerald-300'}`}
+            className={`mt-1 text-xs ${feedback.kind === 'error' ? 'text-status-error' : 'text-status-success'}`}
             role={feedback.kind === 'error' ? 'alert' : 'status'}
           >
             {feedback.message}
@@ -124,23 +124,23 @@ export function AdminProductSpecsEditor({
         ) : null}
       </div>
 
-      <div className="mt-5 space-y-4">
+      <div className="mt-3 space-y-2">
         {groups.map((group) => {
           const groupCounts = counts.byGroup[group.name]!;
           let previousEquipment = '';
           return (
             <details
-              className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/50"
+              className="overflow-hidden rounded-lg border border-border bg-surface"
               key={group.name}
               open={query ? true : undefined}
             >
-              <summary className="flex min-h-12 cursor-pointer items-center justify-between gap-4 px-5 py-3 font-bold text-slate-100">
+              <summary className="flex min-h-10 cursor-pointer items-center justify-between gap-3 bg-surface-muted px-3 py-1.5 text-sm font-semibold text-text-primary">
                 {group.name}
-                <span className="text-xs font-normal text-slate-400">
+                <span className="text-xs font-normal text-text-muted">
                   {groupCounts.filled} / {groupCounts.total}
                 </span>
               </summary>
-              <div className="divide-y divide-slate-800 border-t border-slate-800">
+              <div className="divide-y divide-border border-t border-border">
                 {group.fields.map((field) => {
                   const showEquipment = field.equipmentGroup !== previousEquipment;
                   previousEquipment = field.equipmentGroup;
@@ -152,21 +152,25 @@ export function AdminProductSpecsEditor({
                         : !field.selectedSpecId;
                   return (
                     <div
-                      className={`px-5 py-4 ${empty ? 'bg-amber-950/10' : ''}`}
+                      className={`px-3 py-2 ${empty ? 'bg-amber-950/10' : ''}`}
                       key={field.kind === 'scale' ? field.key : field.specId}
                     >
                       {showEquipment ? (
-                        <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-sky-300">
+                        <h3 className="mb-1 text-[0.6875rem] font-semibold uppercase tracking-wide text-text-muted">
                           {field.equipmentGroup}
                         </h3>
                       ) : null}
-                      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(15rem,24rem)] md:items-center">
+                      <div className="grid gap-2 md:min-h-8 md:grid-cols-[minmax(0,1fr)_18rem] md:items-center md:gap-4">
                         <div>
-                          <p className="font-medium text-slate-100">{field.label}</p>
+                          <p className="text-[0.8125rem] font-medium leading-4 text-text-primary">
+                            {field.label}
+                          </p>
                           {field.specSet !== field.label ? (
-                            <p className="text-xs text-slate-500">{field.specSet}</p>
+                            <p className="text-[0.6875rem] leading-3 text-text-muted">
+                              {field.specSet}
+                            </p>
                           ) : null}
-                          <p className="text-[0.6875rem] text-slate-600">
+                          <p className="text-[0.625rem] leading-3 text-text-muted">
                             {field.kind === 'scale'
                               ? field.options.map((o) => o.code).join(' · ')
                               : field.code}
@@ -175,7 +179,8 @@ export function AdminProductSpecsEditor({
                         {field.kind === 'numeric' ? (
                           <div className="flex items-center gap-2">
                             <input
-                              className="min-h-11 min-w-0 flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 text-right tabular-nums"
+                              aria-label={field.label}
+                              className="ui-field min-h-8 min-w-0 flex-1 text-right text-xs tabular-nums"
                               inputMode="decimal"
                               onChange={(event) =>
                                 update(field, { ...field, value: event.target.value })
@@ -185,7 +190,7 @@ export function AdminProductSpecsEditor({
                             {field.supportsTorqueUnit ? (
                               <select
                                 aria-label={`Unidade de ${field.label}`}
-                                className="min-h-11 rounded-xl border border-slate-700 bg-slate-950 px-3"
+                                className="ui-field min-h-8 w-20 text-xs"
                                 onChange={(event) =>
                                   update(field, { ...field, inputUnit: event.target.value })
                                 }
@@ -195,7 +200,7 @@ export function AdminProductSpecsEditor({
                                 <option value="kgfm">kgfm</option>
                               </select>
                             ) : (
-                              <span className="w-16 text-sm text-slate-400">{field.unit}</span>
+                              <span className="w-14 text-xs text-text-muted">{field.unit}</span>
                             )}
                           </div>
                         ) : field.kind === 'binary' ? (
@@ -214,10 +219,10 @@ export function AdminProductSpecsEditor({
                               <button
                                 aria-checked={field.present === option.value}
                                 aria-label={`${field.label}: ${option.label}`}
-                                className={`min-h-11 min-w-11 border border-slate-700 text-base first:rounded-l-xl last:rounded-r-xl ${
+                                className={`ui-button ui-button--compact min-w-8 border-border px-2 text-sm first:rounded-l-md last:rounded-r-md ${
                                   field.present === option.value
-                                    ? 'bg-sky-500 font-bold text-slate-950'
-                                    : 'bg-slate-950 text-slate-300'
+                                    ? 'bg-selection-strong font-bold text-text-primary'
+                                    : 'bg-surface text-text-secondary'
                                 }`}
                                 key={option.label}
                                 onClick={() => update(field, { ...field, present: option.value })}
@@ -231,7 +236,8 @@ export function AdminProductSpecsEditor({
                           </div>
                         ) : (
                           <select
-                            className="min-h-11 w-full rounded-xl border border-slate-700 bg-slate-950 px-3"
+                            aria-label={field.label}
+                            className="ui-field min-h-8 w-full text-xs"
                             onChange={(event) =>
                               update(field, {
                                 ...field,
@@ -257,7 +263,7 @@ export function AdminProductSpecsEditor({
           );
         })}
         {groups.length === 0 ? (
-          <p className="rounded-2xl border border-slate-800 p-8 text-center text-slate-400">
+          <p className="border border-border p-5 text-center text-sm text-text-muted">
             Nenhuma especificação corresponde à busca.
           </p>
         ) : null}

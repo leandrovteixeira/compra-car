@@ -164,7 +164,11 @@ describe('admin product specs UI state', () => {
     expect(page).toContain('if (!vehicle) notFound()');
     expect(page).toContain('title="Especificações e equipamentos"');
     expect(editor).toContain('placeholder="Buscar especificações..."');
-    expect(editor).toContain('sticky top-[var(--admin-topbar-height)]');
+    expect(page).toContain('sticky');
+    expect(editor).toContain('admin-specs-toolbar');
+    expect(editor).toContain('md:grid-cols-[minmax(0,1fr)_18rem]');
+    expect(editor).toContain('ui-button ui-button--compact min-w-8');
+    expect(editor).toContain('min-h-10 cursor-pointer');
     expect(editor).toContain('<details');
     expect(editor).toContain('<option value="">-</option>');
     expect(editor).toContain('role="radiogroup"');

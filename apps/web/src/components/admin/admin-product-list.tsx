@@ -31,7 +31,7 @@ export function AdminProductList({ products }: AdminProductListProps) {
       <div className="overflow-x-auto lg:overflow-visible">
         <table className="ui-table min-w-[50rem] lg:min-w-0">
           <caption className="sr-only">Veículos cadastrados</caption>
-          <thead className="bg-surface-muted lg:sticky lg:top-[12.75rem] lg:z-20">
+          <thead className="admin-catalog-table-header bg-surface-muted">
             <tr>
               <th className="w-20" scope="col">
                 ID

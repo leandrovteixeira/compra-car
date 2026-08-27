@@ -112,14 +112,19 @@ describe('administrative product filters', () => {
   it('uses accumulated desktop sticky offsets without a competing vertical scroll', () => {
     const shell = source('../src/components/admin/admin-shell.tsx');
     const topbar = source('../src/components/application-topbar.tsx');
+    const css = source('../src/app/globals.css');
     const page = source('../src/app/admin/products/page.tsx');
     const list = source('../src/components/admin/admin-product-list.tsx');
 
     expect(shell).toContain('<ApplicationTopbar');
     expect(topbar).toContain('sticky top-0 z-40');
-    expect(page).toContain('lg:top-[var(--admin-topbar-height)]');
-    expect(page).toContain('lg:h-[9.5rem]');
-    expect(list).toContain('lg:top-[12.75rem]');
+    expect(page).toContain('admin-catalog-sticky');
+    expect(list).toContain('admin-catalog-table-header');
+    expect(shell).toContain('lg:pt-0');
+    expect(css).toContain('--admin-catalog-sticky-height: 9.5rem');
+    expect(css).toContain(
+      'top: calc(var(--admin-topbar-height) + var(--admin-catalog-sticky-height))',
+    );
     expect(list).toContain('overflow-x-auto lg:overflow-visible');
     expect(list).not.toMatch(/overflow-y-(?:auto|scroll)/);
   });

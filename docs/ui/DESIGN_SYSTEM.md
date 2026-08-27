@@ -69,3 +69,17 @@ or `2026/2027`). Storage fields retain their original names and meaning. The ide
 `#9ABCC8`; `interactive` (`#315E6D`) and `interactive-hover` (`#244B58`) are darker semantic derivatives
 used only where white foreground contrast requires them. The former independent `#466F7D` value is no
 longer part of the palette.
+
+## Sticky stack and specs density
+
+Desktop administrative pages use one deterministic stack: application topbar, optional sticky page
+header, optional toolbar, then sticky table header. Shared height tokens and the
+`admin-catalog-sticky`, `admin-catalog-table-header`, `admin-page-header` and `admin-specs-toolbar`
+classes own the offsets; page components do not repeat calculated pixel positions. Sticky surfaces are
+opaque and separated with light borders. Primary actions use graphite `#1A1D21`; blue remains
+informational/selection and orange remains attention-only.
+
+The specs editor targets approximately 44–48px for ordinary desktop rows. Category summaries are 40px,
+labels and codes use compact line heights, controls align in an 18rem right column, and tri-state
+buttons use a 30px visual treatment on fine pointers while the shared coarse-pointer rule restores a
+44px hit height. Its search/progress/save toolbar remains sticky below the page header.

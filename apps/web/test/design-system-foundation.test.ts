@@ -28,7 +28,8 @@ describe('Sprint 14A.1 design-system foundation', () => {
     expect(primitives).toContain("'destructive' | 'ghost' | 'primary' | 'secondary'");
     expect(primitives).toContain("export const fieldClassName = 'ui-field'");
     expect(primitives).toContain("export const tableClassName = 'ui-table'");
-    expect(primary).toContain('var(--color-interactive)');
+    expect(primary).toContain('var(--color-action-primary)');
+    expect(css).toContain('--color-action-primary: #1a1d21');
     expect(primary).not.toContain('var(--color-attention)');
   });
 

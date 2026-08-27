@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-08-27 — Sticky layout e densidade de especificações
+
+- centraliza o stack sticky administrativo e elimina offsets mágicos que cortavam o header do catálogo;
+- muda ações primary para graphite e preserva azul para informação/seleção;
+- compacta toolbar, categorias, linhas, controles e tri-state da entrada de especificações.
+
 ## 2026-08-27 — Busca e UX do catálogo de veículos
 
 - substitui Marca/Modelo/Versão por busca unificada automática com debounce e filtros booleanos imediatos;
