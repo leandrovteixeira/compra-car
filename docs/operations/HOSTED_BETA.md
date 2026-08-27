@@ -63,8 +63,15 @@ No painel Supabase, o template **Invite User** deve usar o callback SSR direto c
 
 Não use `{{ .ConfirmationURL }}` nesse fluxo. O link padrão devolve a sessão no fragmento da URL,
 que não é enviado ao callback server-side e não funciona de forma confiável quando o convite é aberto
-em outro navegador/dispositivo. O callback valida o hash com `verifyOtp`, grava a sessão nos cookies SSR
-e segue para `/auth/invite`.
+em outro navegador/dispositivo. O primeiro `GET` guarda o hash por até 15 minutos no cookie
+`cc-invite-attempt`, HttpOnly, `SameSite=Lax`, `Secure` em HTTPS e restrito a `/auth/invite`; ele não
+valida o OTP nem altera o profile. Depois do redirect sem token para `/auth/invite/confirm`, somente o
+clique explícito em **Aceitar convite** chama `verifyOtp(type='invite')`, estabelece a sessão SSR, remove
+o cookie temporário e segue para `/auth/invite`.
+
+Invite e recovery são, portanto, resistentes a scanners que apenas fazem GET/prefetch. A proteção não
+estende a validade do token: a configuração **Email OTP Expiration** do Supabase continua sendo aplicada
+independentemente, e tokens expirados ou já consumidos permanecem inválidos.
 
 ### Template obrigatório de Reset Password
 
@@ -142,6 +149,8 @@ Registre aprovado, falhou ou não executado. Nunca transforme “não executado�
 
 - [ ] Admin envia convite para e-mail real de teste.
 - [ ] E-mail chega e callback abre, inclusive em dispositivo diferente.
+- [ ] O primeiro GET de convite abre a confirmação sem consumir o OTP; somente **Aceitar convite** valida.
+- [ ] Convite direto e convite aprovado funcionam no ambiente corporativo com Safe Links/prefetch.
 - [ ] Senha altera `pending` para `active` e mantém a sessão.
 - [ ] Recovery troca a senha de usuário ativo.
 - [ ] O primeiro GET de recovery abre a confirmação sem consumir o OTP; somente **Continuar** valida.

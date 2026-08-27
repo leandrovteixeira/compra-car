@@ -1,7 +1,14 @@
 # Changelog
 
+## 2026-08-27 — Aceite de convite resistente a scanners
+
+- torna o GET inicial do convite não consumidor e exige confirmação explícita antes de `verifyOtp`;
+- guarda o hash por curto prazo em cookie HttpOnly separado e preserva o onboarding `pending → active`.
+
 ## 2026-08-25 — Hardening do ciclo de recuperação de senha
 
+- apresenta feedback controlado para rate limits do Supabase Auth também no envio de convites
+  administrativos, reutilizando a mesma taxonomia tipada do recovery;
 - torna o recovery resistente a scanners de e-mail: o primeiro GET apenas guarda o hash em cookie
   HttpOnly curto e a verificação do OTP ocorre somente após confirmação explícita por POST;
 - trata rate limits de envio do Supabase com mensagem administrativa controlada e preserva a resposta

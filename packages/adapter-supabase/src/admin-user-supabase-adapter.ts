@@ -8,20 +8,17 @@ import {
 import { createClient, type SupabaseClient, type User } from '@supabase/supabase-js';
 
 import {
+  AdminUserAdapterAuthRateLimitError,
   AdminUserAdapterConfigurationError,
   AdminUserAdapterMappingError,
   AdminUserAdapterInviteError,
   AdminUserAdapterProfileUpdateError,
   AdminUserAdapterQueryError,
   AdminUserAdapterRecoveryError,
-  AdminUserAdapterRecoveryRateLimitError,
 } from './errors';
 
 const AUTH_USERS_PER_PAGE = 200;
-const RECOVERY_RATE_LIMIT_CODES = new Set([
-  'over_email_send_rate_limit',
-  'over_request_rate_limit',
-]);
+const AUTH_RATE_LIMIT_CODES = new Set(['over_email_send_rate_limit', 'over_request_rate_limit']);
 
 function authErrorCode(error: unknown): string | null {
   if (!error || typeof error !== 'object' || !('code' in error)) return null;
@@ -194,6 +191,11 @@ export class AdminUserSupabaseAdapter {
       redirectTo: input.redirectTo,
     });
     if (error || !data.user) {
+      if (AUTH_RATE_LIMIT_CODES.has(authErrorCode(error) ?? '')) {
+        throw new AdminUserAdapterAuthRateLimitError('Auth e-mail rate limit reached.', {
+          cause: error,
+        });
+      }
       throw new AdminUserAdapterInviteError('Auth invitation failed.', { cause: error });
     }
 
@@ -251,8 +253,8 @@ export class AdminUserSupabaseAdapter {
   async requestPasswordRecovery(id: string, email: string, redirectTo: string): Promise<void> {
     const { error } = await this.client.auth.resetPasswordForEmail(email, { redirectTo });
     if (error) {
-      if (RECOVERY_RATE_LIMIT_CODES.has(authErrorCode(error) ?? '')) {
-        throw new AdminUserAdapterRecoveryRateLimitError('Password recovery rate limit reached.', {
+      if (AUTH_RATE_LIMIT_CODES.has(authErrorCode(error) ?? '')) {
+        throw new AdminUserAdapterAuthRateLimitError('Auth e-mail rate limit reached.', {
           cause: error,
         });
       }

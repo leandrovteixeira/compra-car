@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { APP_ROLES, type AdminUserDto, type AppRole } from '@compra-car/contracts';
-import { AdminUserAdapterRecoveryRateLimitError } from '@compra-car/adapter-supabase';
+import { AdminUserAdapterAuthRateLimitError } from '@compra-car/adapter-supabase';
 
 export type AdminUserActionState =
   | { readonly status: 'idle' }
@@ -84,6 +84,9 @@ export async function inviteAdminUser(
     return { status: 'success', message: 'Convite enviado.' };
   } catch (error) {
     console.error('Administrative user invitation failed.', { error });
+    if (error instanceof AdminUserAdapterAuthRateLimitError) {
+      return failed('Aguarde alguns instantes antes de enviar outro convite.');
+    }
     return failed(
       error instanceof Error && error.name === 'AdminUserAdapterProfileUpdateError'
         ? 'O convite foi enviado, mas o perfil não pôde ser configurado. Revise a inconsistência na lista.'
@@ -177,7 +180,7 @@ export async function sendAdminUserPasswordRecovery(
     return { status: 'success', message: 'E-mail de redefinição solicitado.' };
   } catch (error) {
     console.error('Administrative password recovery failed.', { error });
-    if (error instanceof AdminUserAdapterRecoveryRateLimitError) {
+    if (error instanceof AdminUserAdapterAuthRateLimitError) {
       return failed('Aguarde alguns instantes antes de solicitar um novo e-mail.');
     }
     return failed();

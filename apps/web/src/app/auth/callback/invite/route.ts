@@ -1,19 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { authFlowUsesSecureCookies, buildAuthFlowRedirect } from '@/auth/auth-flow-redirect';
-import { verifyInviteToken } from '@/auth/verify-invite-token';
+import {
+  authFlowUsesSecureCookies,
+  buildAuthFlowConfirmationRedirect,
+} from '@/auth/auth-flow-redirect';
+import {
+  INVITE_ATTEMPT_COOKIE,
+  INVITE_ATTEMPT_MAX_AGE,
+  validInviteAttempt,
+} from '@/auth/invite-attempt';
 
 export async function GET(request: NextRequest) {
-  const valid = await verifyInviteToken(
-    request.nextUrl.searchParams.get('token_hash'),
-    request.nextUrl.searchParams.get('type'),
-  );
-  const response = NextResponse.redirect(buildAuthFlowRedirect('invite', valid));
+  const tokenHash = request.nextUrl.searchParams.get('token_hash');
+  const valid = validInviteAttempt(tokenHash, request.nextUrl.searchParams.get('type'));
+  const response = NextResponse.redirect(buildAuthFlowConfirmationRedirect('invite', valid));
   if (valid)
-    response.cookies.set('cc-auth-flow', 'invite', {
+    response.cookies.set(INVITE_ATTEMPT_COOKIE, tokenHash!, {
       httpOnly: true,
-      maxAge: 900,
-      path: '/auth',
+      maxAge: INVITE_ATTEMPT_MAX_AGE,
+      path: '/auth/invite',
+      sameSite: 'lax',
+      secure: authFlowUsesSecureCookies('invite'),
+    });
+  else
+    response.cookies.set(INVITE_ATTEMPT_COOKIE, '', {
+      httpOnly: true,
+      maxAge: 0,
+      path: '/auth/invite',
       sameSite: 'lax',
       secure: authFlowUsesSecureCookies('invite'),
     });

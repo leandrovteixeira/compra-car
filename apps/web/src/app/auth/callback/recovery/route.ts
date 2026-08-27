@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import {
   authFlowUsesSecureCookies,
-  buildRecoveryConfirmationRedirect,
+  buildAuthFlowConfirmationRedirect,
 } from '@/auth/auth-flow-redirect';
 import {
   RECOVERY_ATTEMPT_COOKIE,
@@ -13,7 +13,7 @@ import {
 export async function GET(request: NextRequest) {
   const tokenHash = request.nextUrl.searchParams.get('token_hash');
   const valid = validRecoveryAttempt(tokenHash, request.nextUrl.searchParams.get('type'));
-  const response = NextResponse.redirect(buildRecoveryConfirmationRedirect(valid));
+  const response = NextResponse.redirect(buildAuthFlowConfirmationRedirect('recovery', valid));
   if (valid)
     response.cookies.set(RECOVERY_ATTEMPT_COOKIE, tokenHash!, {
       httpOnly: true,

@@ -16,9 +16,9 @@ export function buildAuthFlowRedirect(flow: AuthFlow, valid: boolean): URL {
   return destination;
 }
 
-export function buildRecoveryConfirmationRedirect(valid: boolean): URL {
-  const destination = configuredCallbackUrl('recovery');
-  destination.pathname = valid ? '/auth/recovery/confirm' : '/auth/recovery';
+export function buildAuthFlowConfirmationRedirect(flow: AuthFlow, valid: boolean): URL {
+  const destination = configuredCallbackUrl(flow);
+  destination.pathname = valid ? `/auth/${flow}/confirm` : `/auth/${flow}`;
   destination.search = valid ? '' : '?error=invalid';
   destination.hash = '';
   return destination;

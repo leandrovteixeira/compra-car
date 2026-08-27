@@ -1,5 +1,15 @@
 # Contexto para agentes de IA
 
+## Invite scanner-safe — Sprint 13 QA/Auth (2026-08-27)
+
+Invite usa o mesmo desenho em duas etapas do recovery, mas com estado e semântica próprios. O GET de
+`/auth/callback/invite` apenas valida a forma do `TokenHash`, grava `cc-invite-attempt` em cookie
+HttpOnly curto e segue para `/auth/invite/confirm`. Somente **Aceitar convite** executa
+`verifyOtp(type='invite')`, cria `cc-auth-flow=invite` e abre `/auth/invite`. Scanner GET, confirmação e
+verificação do OTP preservam `pending`; apenas a definição bem-sucedida da senha ativa o profile.
+Email OTP Expiration continua valendo independentemente. Validação hospedada com convite aprovado e
+e-mail corporativo permanece PENDENTE.
+
 ## Recovery SSR e tracking — Sprint 13 QA/Auth (2026-08-25)
 
 Recovery usa template Supabase com `RedirectTo + TokenHash + type=recovery`. O callback SSR faz um GET

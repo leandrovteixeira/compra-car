@@ -1,5 +1,5 @@
 import type { AdminUserDto } from '@compra-car/contracts';
-import { AdminUserAdapterRecoveryRateLimitError } from '@compra-car/adapter-supabase';
+import { AdminUserAdapterAuthRateLimitError } from '@compra-car/adapter-supabase';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -93,8 +93,29 @@ describe('admin user management rules', () => {
         form({ fullName: 'Maria', email: 'a@b.com', role: 'seller' }),
         dependencies,
       ),
-    ).toMatchObject({ status: 'error' });
+    ).toEqual({
+      status: 'error',
+      message: 'Não foi possível concluir a operação. Tente novamente.',
+    });
   });
+
+  it.each(['over_email_send_rate_limit', 'over_request_rate_limit'])(
+    'maps invitation %s to controlled wait feedback',
+    async () => {
+      vi.mocked(manager.inviteAdminUser).mockRejectedValue(
+        new AdminUserAdapterAuthRateLimitError('rate limited'),
+      );
+      await expect(
+        inviteAdminUser(
+          form({ fullName: 'Maria', email: 'a@b.com', role: 'seller' }),
+          dependencies,
+        ),
+      ).resolves.toEqual({
+        status: 'error',
+        message: 'Aguarde alguns instantes antes de enviar outro convite.',
+      });
+    },
+  );
 
   it('reports the explicit partial failure after Auth invitation', async () => {
     const error = new Error('profile failed');
@@ -198,7 +219,7 @@ describe('admin user management rules', () => {
 
   it('maps recovery rate limits to controlled administrative feedback', async () => {
     vi.mocked(manager.requestPasswordRecovery).mockRejectedValue(
-      new AdminUserAdapterRecoveryRateLimitError('rate limited'),
+      new AdminUserAdapterAuthRateLimitError('rate limited'),
     );
     await expect(
       sendAdminUserPasswordRecovery(form({ userId: 'target' }), dependencies),

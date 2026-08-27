@@ -7,9 +7,9 @@ import {
   mapAdminUser,
 } from '../src/admin-user-supabase-adapter';
 import {
+  AdminUserAdapterAuthRateLimitError,
   AdminUserAdapterConfigurationError,
   AdminUserAdapterQueryError,
-  AdminUserAdapterRecoveryRateLimitError,
 } from '../src/errors';
 
 function authUser(overrides: Partial<User> = {}): User {
@@ -188,6 +188,29 @@ describe('admin user Supabase adapter', () => {
     );
   });
 
+  it.each(['over_email_send_rate_limit', 'over_request_rate_limit'])(
+    'maps invitation %s without attempting a profile mutation',
+    async (code) => {
+      const inviteUserByEmail = vi.fn(async () => ({ data: { user: null }, error: { code } }));
+      const update = vi.fn();
+      const adapter = new AdminUserSupabaseAdapter({
+        auth: { admin: { inviteUserByEmail } },
+        from: vi.fn(() => ({ update })),
+      } as unknown as SupabaseClient);
+
+      await expect(
+        adapter.inviteAdminUser({
+          email: 'pessoa@example.com',
+          fullName: 'Pessoa Admin',
+          invitedBy: 'actor-id',
+          redirectTo: 'https://app.example.com/invite',
+          role: 'admin',
+        }),
+      ).rejects.toBeInstanceOf(AdminUserAdapterAuthRateLimitError);
+      expect(update).not.toHaveBeenCalled();
+    },
+  );
+
   it('solicita recovery e marca/limpa o tracking sem alterar status', async () => {
     const resetPasswordForEmail = vi
       .fn()
@@ -251,7 +274,7 @@ describe('admin user Supabase adapter', () => {
           'pessoa@example.com',
           'https://app.example.com/recovery',
         ),
-      ).rejects.toBeInstanceOf(AdminUserAdapterRecoveryRateLimitError);
+      ).rejects.toBeInstanceOf(AdminUserAdapterAuthRateLimitError);
       expect(update).not.toHaveBeenCalled();
     },
   );

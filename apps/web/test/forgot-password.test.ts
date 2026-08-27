@@ -1,5 +1,5 @@
 import type { AdminUserDto } from '@compra-car/contracts';
-import { AdminUserAdapterRecoveryRateLimitError } from '@compra-car/adapter-supabase';
+import { AdminUserAdapterAuthRateLimitError } from '@compra-car/adapter-supabase';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
@@ -119,7 +119,7 @@ describe('public forgot password', () => {
   it('keeps provider rate limits anti-enumeration safe', async () => {
     const setup = dependencies(knownUser);
     vi.mocked(setup.requester.requestPasswordRecovery).mockRejectedValue(
-      new AdminUserAdapterRecoveryRateLimitError('provider rate limit'),
+      new AdminUserAdapterAuthRateLimitError('provider rate limit'),
     );
     await expect(
       requestPasswordRecovery(form('pessoa@example.com'), setup.dependencies),
