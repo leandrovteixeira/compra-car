@@ -56,3 +56,16 @@ Canvas, elevated topbar, primary surface, muted surface and selection each have 
 Light blue is limited to focus and subtle active-selection hierarchy; orange remains excluded from
 shell navigation and controls. Low-priority icon buttons and row actions may use a 30–32px visual box,
 while coarse-pointer rules preserve the larger touch target where applicable.
+
+## Vehicle catalog
+
+The administrative catalog uses one URL-backed search field for brand, model and version. Text input
+is debounced by 275ms; Active and Public select changes update immediately, and Clear restores the
+unfiltered URL. Catalog rows target the shared 48px table density and use compact ghost/secondary row
+actions.
+
+Whenever production and model years appear as a pair, presentation is **production/model** (`26/27`
+or `2026/2027`). Storage fields retain their original names and meaning. The identity blue remains
+`#9ABCC8`; `interactive` (`#315E6D`) and `interactive-hover` (`#244B58`) are darker semantic derivatives
+used only where white foreground contrast requires them. The former independent `#466F7D` value is no
+longer part of the palette.

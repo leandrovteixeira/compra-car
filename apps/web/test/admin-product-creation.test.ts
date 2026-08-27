@@ -103,7 +103,7 @@ describe('administrative product creation orchestration', () => {
     expect(result).toEqual(
       expect.objectContaining({
         status: 'error',
-        message: 'Já existe um veículo Toyota Corolla cross Xrx 2026/2025 cadastrado.',
+        message: 'Já existe um veículo Toyota Corolla cross Xrx 2025/2026 cadastrado.',
       }),
     );
   });

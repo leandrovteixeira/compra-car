@@ -3,10 +3,10 @@ import { describe, expect, it } from 'vitest';
 import {
   matchesProductSearch,
   normalizeProductSearch,
-} from '../src/components/admin/admin-product-search';
+} from '../src/application/admin/admin-product-search';
 
 describe('admin product combobox search', () => {
-  const vehicle = 'BYD Song Plus GS 2026/2025';
+  const vehicle = 'BYD Song Plus GS 2025/2026';
 
   it.each([
     'BYD',

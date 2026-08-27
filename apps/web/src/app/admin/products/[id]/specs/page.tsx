@@ -18,7 +18,7 @@ export default async function AdminProductSpecsPage({ params }: AdminProductSpec
   const vehicle = await loadAdminProductForEditing(id);
   if (!vehicle) notFound();
   const model = await loadAdminProductSpecs(id);
-  const identity = `${vehicle.brand} ${vehicle.model} ${vehicle.version} ${vehicle.modelYear}/${vehicle.productionYear}`;
+  const identity = `${vehicle.brand} ${vehicle.model} ${vehicle.version} ${vehicle.productionYear}/${vehicle.modelYear}`;
 
   return (
     <>

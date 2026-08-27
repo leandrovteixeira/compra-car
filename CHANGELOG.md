@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-08-27 — Busca e UX do catálogo de veículos
+
+- substitui Marca/Modelo/Versão por busca unificada automática com debounce e filtros booleanos imediatos;
+- compacta toolbar, tabela, status e ações do catálogo, preservando rotas e autorização;
+- padroniza globalmente pares de ano como produção/modelo e remove `#466F7D` da paleta independente.
+
 ## 2026-08-27 — Shell e navegação da aplicação
 
 - consolida marca, troca de contexto autorizada e conta/logout em uma topbar compartilhada e compacta;

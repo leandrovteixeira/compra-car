@@ -106,5 +106,5 @@ export function formatAdministrativeVehicleName(
     readonly productionYear: string | number;
   },
 ): string {
-  return `${input.brand} ${input.model} ${input.version} ${input.modelYear}/${input.productionYear}`;
+  return `${input.brand} ${input.model} ${input.version} ${input.productionYear}/${input.modelYear}`;
 }

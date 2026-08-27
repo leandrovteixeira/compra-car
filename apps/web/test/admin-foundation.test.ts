@@ -64,7 +64,7 @@ describe('admin foundation', () => {
     const page = source('../src/app/admin/products/page.tsx');
 
     expect(page.indexOf("await requireRole('admin')")).toBeLessThan(
-      page.indexOf('await loadAdminProducts(parsed.filters)'),
+      page.indexOf('await loadAdminProducts(parsed.filters'),
     );
     expect(page).toContain('title="Veículos"');
     expect(page).toContain('Novo veículo');

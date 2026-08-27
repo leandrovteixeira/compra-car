@@ -83,10 +83,7 @@ export function ComparisonVehicleHeader({ vehicle, isReference }: ComparisonVehi
         {version}
       </p>
       <p className="mt-1 line-clamp-2 text-[0.5625rem] font-normal leading-3 text-slate-500 min-[769px]:text-[0.6875rem] min-[769px]:leading-normal">
-        Ano {modelYear}
-        {productionYear !== '—' && productionYear !== modelYear
-          ? ` · Produção ${productionYear}`
-          : ''}
+        Ano {productionYear !== '—' ? productionYear : modelYear}/{modelYear}
       </p>
     </div>
   );

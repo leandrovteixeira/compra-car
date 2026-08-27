@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   formatCompactVehicleName,
-  formatModelProductionYears,
+  formatProductionModelYears,
   formatVehicleVersionOption,
 } from '../src/application/catalog/vehicle-presentation';
 import {
@@ -102,16 +102,16 @@ describe('seleção explícita de veículos', () => {
   });
 });
 
-describe('apresentação compacta de MY/PY', () => {
-  it('formata MY2027/PY2026 como 27/26', () => {
-    expect(formatModelProductionYears('2027', '2026')).toBe('27/26');
+describe('apresentação compacta de produção/modelo', () => {
+  it('formata produção 2026/modelo 2027 como 26/27', () => {
+    expect(formatProductionModelYears('2026', '2027')).toBe('26/27');
     expect(formatCompactVehicleName(vehicle('1', 'GS 1.5 TGDI PHEV DHT'))).toBe(
-      'BYD Song Plus GS 1.5 TGDI PHEV DHT · 27/26',
+      'BYD Song Plus GS 1.5 TGDI PHEV DHT · 26/27',
     );
   });
 
   it('mantém zero à esquerda nos dois últimos dígitos', () => {
-    expect(formatModelProductionYears('2007', '2006')).toBe('07/06');
+    expect(formatProductionModelYears('2006', '2007')).toBe('06/07');
   });
 
   it('uma descrição longa não altera o valor real do veículo', () => {

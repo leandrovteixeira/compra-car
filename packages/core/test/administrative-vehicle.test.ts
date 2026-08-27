@@ -89,7 +89,7 @@ describe('UpdateAdministrativeVehicle', () => {
     ).resolves.toEqual({
       ok: false,
       code: 'DUPLICATE',
-      message: 'Já existe um veículo Toyota Corolla Cross XRX 2026/2025 cadastrado.',
+      message: 'Já existe um veículo Toyota Corolla Cross XRX 2025/2026 cadastrado.',
     });
     expect(target.updateAdministrativeVehicle).not.toHaveBeenCalled();
   });
@@ -206,7 +206,7 @@ describe('CreateAdministrativeVehicle', () => {
     expect(result).toEqual({
       ok: false,
       code: 'DUPLICATE',
-      message: 'Já existe um veículo Toyota Corolla Cross XRX 2026/2025 cadastrado.',
+      message: 'Já existe um veículo Toyota Corolla Cross XRX 2025/2026 cadastrado.',
     });
     expect(target.createAdministrativeVehicle).not.toHaveBeenCalled();
   });
@@ -231,7 +231,7 @@ describe('CreateAdministrativeVehicle', () => {
     await expect(new CreateAdministrativeVehicle(target).execute(validInput)).resolves.toEqual({
       ok: false,
       code: 'DUPLICATE',
-      message: 'Já existe um veículo Toyota Corolla Cross XRX 2026/2025 cadastrado.',
+      message: 'Já existe um veículo Toyota Corolla Cross XRX 2025/2026 cadastrado.',
     });
   });
 });

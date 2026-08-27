@@ -14,11 +14,11 @@ function StatusBadge({
 }) {
   return (
     <span
-      className={
+      className={`ui-badge ${
         positive
-          ? 'inline-flex rounded-full border border-emerald-800 bg-emerald-950/50 px-2.5 py-1 text-xs font-semibold text-emerald-300'
-          : 'inline-flex rounded-full border border-slate-700 bg-slate-900 px-2.5 py-1 text-xs font-semibold text-slate-400'
-      }
+          ? 'border-emerald-800 bg-emerald-950/50 text-emerald-300'
+          : 'border-border bg-surface-muted text-text-muted'
+      }`}
     >
       {children}
     </span>
@@ -27,73 +27,73 @@ function StatusBadge({
 
 export function AdminProductList({ products }: AdminProductListProps) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/50 lg:overflow-visible">
+    <div className="overflow-hidden rounded-lg border border-border bg-surface lg:overflow-visible">
       <div className="overflow-x-auto lg:overflow-visible">
-        <table className="w-full min-w-[52rem] border-collapse text-left text-sm lg:min-w-0">
+        <table className="ui-table min-w-[50rem] lg:min-w-0">
           <caption className="sr-only">Veículos cadastrados</caption>
-          <thead className="border-b border-slate-800 bg-slate-900 text-xs uppercase tracking-wide text-slate-400 lg:sticky lg:top-[15.75rem] lg:z-20">
+          <thead className="bg-surface-muted lg:sticky lg:top-[12.75rem] lg:z-20">
             <tr>
-              <th className="px-4 py-3 font-semibold" scope="col">
+              <th className="w-20" scope="col">
                 ID
               </th>
-              <th className="px-4 py-3 font-semibold" scope="col">
+              <th className="w-[18%]" scope="col">
                 Veículo
               </th>
-              <th className="px-4 py-3 font-semibold" scope="col">
+              <th className="w-[22%]" scope="col">
                 Versão
               </th>
-              <th className="px-4 py-3 font-semibold" scope="col">
+              <th className="w-24" scope="col">
                 Ano
               </th>
-              <th className="px-4 py-3 font-semibold" scope="col">
+              <th className="w-24" scope="col">
                 Atividade
               </th>
-              <th className="px-4 py-3 font-semibold" scope="col">
+              <th className="w-24" scope="col">
                 Publicação
               </th>
-              <th className="px-4 py-3 font-semibold" scope="col">
+              <th className="w-72" scope="col">
                 Ações
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800">
+          <tbody>
             {products.map((product) => (
-              <tr className="align-top transition hover:bg-slate-900/80" key={product.id}>
-                <td className="px-4 py-4 font-mono text-xs text-slate-500">{product.id}</td>
-                <td className="px-4 py-4">
-                  <p className="font-semibold text-slate-100">{product.model}</p>
-                  <p className="mt-1 text-slate-400">{product.brand}</p>
+              <tr className="align-middle transition hover:bg-surface-muted/60" key={product.id}>
+                <td className="font-mono text-[0.6875rem] text-text-muted">{product.id}</td>
+                <td>
+                  <p className="font-semibold leading-4 text-text-primary">{product.model}</p>
+                  <p className="text-xs leading-4 text-text-muted">{product.brand}</p>
                 </td>
-                <td className="max-w-xs px-4 py-4 text-slate-300">{product.version}</td>
-                <td className="whitespace-nowrap px-4 py-4 text-slate-300">
-                  {product.modelYear}/{product.productionYear}
+                <td className="max-w-xs text-text-secondary">{product.version}</td>
+                <td className="whitespace-nowrap text-text-secondary">
+                  {product.productionYear}/{product.modelYear}
                 </td>
-                <td className="px-4 py-4">
+                <td>
                   <StatusBadge positive={product.isActive}>
                     {product.isActive ? 'Ativo' : 'Inativo'}
                   </StatusBadge>
                 </td>
-                <td className="px-4 py-4">
+                <td>
                   <StatusBadge positive={product.isPublic}>
                     {product.isPublic ? 'Público' : 'Privado'}
                   </StatusBadge>
                 </td>
-                <td className="px-4 py-4">
-                  <div className="flex flex-wrap gap-2">
+                <td>
+                  <div className="flex flex-wrap gap-1">
                     <Link
-                      className="inline-flex min-h-11 items-center rounded-xl border border-slate-700 px-3 font-semibold text-sky-300 transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                      className="ui-button ui-button--ghost ui-button--compact"
                       href={`/admin/products/${product.id}/edit`}
                     >
                       Editar
                     </Link>
                     <Link
-                      className="inline-flex min-h-11 items-center rounded-xl border border-slate-700 px-3 font-semibold text-slate-200 transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                      className="ui-button ui-button--ghost ui-button--compact"
                       href={`/admin/products/${product.id}/duplicate`}
                     >
                       Duplicar
                     </Link>
                     <Link
-                      className="inline-flex min-h-11 items-center rounded-xl border border-slate-700 px-3 font-semibold text-emerald-300 transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                      className="ui-button ui-button--secondary ui-button--compact"
                       href={`/admin/products/${product.id}/specs`}
                     >
                       Especificações
@@ -105,7 +105,7 @@ export function AdminProductList({ products }: AdminProductListProps) {
           </tbody>
         </table>
       </div>
-      <p className="border-t border-slate-800 px-4 py-3 text-xs text-slate-500">
+      <p className="border-t border-border px-3 py-2 text-xs text-text-muted">
         {products.length} {products.length === 1 ? 'veículo encontrado' : 'veículos encontrados'}
       </p>
     </div>

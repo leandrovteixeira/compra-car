@@ -1,9 +1,7 @@
 import type { AdministrativeVehicleFilters } from '@compra-car/contracts';
 
 export interface AdminProductFilterValues {
-  readonly vehicle: string;
-  readonly brand: string;
-  readonly version: string;
+  readonly search: string;
   readonly active: '' | 'true' | 'false';
   readonly public: '' | 'true' | 'false';
 }
@@ -31,22 +29,17 @@ export function parseAdminProductFilters(searchParams: AdminProductSearchParams)
   readonly values: AdminProductFilterValues;
   readonly hasFilters: boolean;
 } {
-  const vehicle = firstValue(searchParams.vehicle);
-  const brand = firstValue(searchParams.brand);
-  const version = firstValue(searchParams.version);
+  const search = firstValue(searchParams.search);
   const active = booleanValue(firstValue(searchParams.active));
   const publicValue = booleanValue(firstValue(searchParams.public));
   const filters: AdministrativeVehicleFilters = {
-    ...(vehicle ? { model: vehicle } : {}),
-    ...(brand ? { brand } : {}),
-    ...(version ? { version } : {}),
     ...(active ? { isActive: booleanFilter(active) } : {}),
     ...(publicValue ? { isPublic: booleanFilter(publicValue) } : {}),
   };
 
   return {
     filters,
-    values: { vehicle, brand, version, active, public: publicValue },
-    hasFilters: Object.keys(filters).length > 0,
+    values: { search, active, public: publicValue },
+    hasFilters: Boolean(search) || Object.keys(filters).length > 0,
   };
 }

@@ -123,7 +123,7 @@ describe('administrative product duplication', () => {
     expect(result).toEqual(
       expect.objectContaining({
         status: 'error',
-        message: 'Já existe um veículo Toyota Corolla Cross XRX 2026/2025 cadastrado.',
+        message: 'Já existe um veículo Toyota Corolla Cross XRX 2025/2026 cadastrado.',
       }),
     );
     expect(target.createAdministrativeVehicle).not.toHaveBeenCalled();

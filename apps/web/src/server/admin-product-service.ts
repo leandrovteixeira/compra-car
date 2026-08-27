@@ -7,6 +7,7 @@ import type {
 } from '@compra-car/contracts';
 
 import { toAdministrativeVehicleFormValues } from '../application/admin/administrative-vehicle-form';
+import { matchesProductSearch } from '../application/admin/admin-product-search';
 
 export interface AdminProductListItem {
   readonly brand: string;
@@ -54,6 +55,7 @@ export async function loadAdminProductForEditing(
 export async function loadAdminProducts(
   filters: AdministrativeVehicleFilters = {},
   reader: AdminProductReader = new LegacySupabaseAdapter(),
+  search = '',
 ): Promise<AdminProductListResult> {
   try {
     const vehicles = await reader.listAdministrativeVehicles(filters);
@@ -61,6 +63,9 @@ export async function loadAdminProducts(
       ok: true,
       data: vehicles
         .map(toAdminProductListItem)
+        .filter((vehicle) =>
+          matchesProductSearch([vehicle.brand, vehicle.model, vehicle.version].join(' '), search),
+        )
         .sort(
           (left, right) =>
             left.brand.localeCompare(right.brand, 'pt-BR') ||

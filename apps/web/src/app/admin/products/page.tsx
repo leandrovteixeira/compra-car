@@ -18,17 +18,14 @@ interface AdminProductsPageProps {
 export default async function AdminProductsPage({ searchParams }: AdminProductsPageProps) {
   await requireRole('admin');
   const parsed = parseAdminProductFilters(await searchParams);
-  const result = await loadAdminProducts(parsed.filters);
+  const result = await loadAdminProducts(parsed.filters, undefined, parsed.values.search);
 
   return (
     <>
-      <div className="bg-background lg:sticky lg:top-[var(--admin-topbar-height)] lg:z-30 lg:h-[12.5rem]">
+      <div className="bg-canvas lg:sticky lg:top-[var(--admin-topbar-height)] lg:z-30 lg:h-[9.5rem]">
         <PageHeader
           actions={
-            <Link
-              className="flex min-h-11 items-center rounded-xl bg-sky-500 px-4 text-sm font-semibold text-slate-950 transition hover:bg-sky-400"
-              href="/admin/products/new"
-            >
+            <Link className="ui-button ui-button--primary" href="/admin/products/new">
               Novo veículo
             </Link>
           }
@@ -47,7 +44,7 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
             action={
               parsed.hasFilters ? (
                 <Link
-                  className="inline-flex min-h-11 items-center rounded-xl border border-slate-700 px-4 font-semibold text-slate-200 hover:bg-slate-800"
+                  className="ui-button ui-button--secondary ui-button--compact"
                   href="/admin/products"
                 >
                   Limpar filtros
@@ -56,10 +53,10 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
             }
             description={
               parsed.hasFilters
-                ? 'Nenhum veículo corresponde à combinação de filtros informada.'
+                ? 'Ajuste a busca ou limpe os filtros para visualizar o catálogo.'
                 : 'Nenhum veículo foi encontrado no catálogo. Use “Novo veículo” para fazer o primeiro cadastro.'
             }
-            title={parsed.hasFilters ? 'Nenhum resultado encontrado' : 'Nenhum veículo cadastrado'}
+            title={parsed.hasFilters ? 'Nenhum veículo encontrado.' : 'Nenhum veículo cadastrado'}
           />
         ) : (
           <AdminProductList products={result.data} />

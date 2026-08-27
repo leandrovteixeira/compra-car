@@ -11,6 +11,8 @@ describe('Sprint 14A.1 design-system foundation', () => {
     expect(css).toContain('--color-surface: #ffffff');
     expect(css).toContain('--color-text-primary: #1a1d21');
     expect(css).toContain('--color-attention: #ef7732');
+    expect(css).toContain('--color-selection-strong: #9abcc8');
+    expect(css).not.toContain('#466f7d');
     expect(css).toMatch(/--font-sans:\s+Inter/);
     expect(css).toContain('--density-control-height: 2.25rem');
     expect(css).toContain('--density-table-row: 3rem');

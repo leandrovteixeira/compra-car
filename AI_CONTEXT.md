@@ -1,5 +1,14 @@
 # Contexto para agentes de IA
 
+## Catálogo pesquisável — Sprint 14C (2026-08-27)
+
+`/admin/products` mantém filtros na URL, mas usa um único `search` com debounce de 275ms para marca,
+modelo e versão. Ativo/Público atualizam imediatamente e Limpar remove todos os parâmetros. O reader
+continua recebendo somente filtros booleanos; a busca tokenizada ocorre na aplicação, sem full-text ou
+mudança no adaptador. Pares de ano são sempre exibidos como **produção/modelo**, sem alterar campos ou
+validação. `#9ABCC8` segue como azul oficial; `#315E6D` e `#244B58` são derivados semânticos escuros para
+contraste de ação, e `#466F7D` foi removido.
+
 ## Application shell — Sprint 14B (2026-08-27)
 
 O shell autenticado concentra `BrandSlot`, `ContextSwitcher` e `UserMenu` em uma topbar compartilhada

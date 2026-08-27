@@ -45,7 +45,7 @@ export function createVehicle(input: CreateVehicleInput): Vehicle {
   const version = requiredText(input.version, 'version');
   const modelYear = requiredText(input.modelYear, 'modelYear');
   const productionYear = requiredText(input.productionYear, 'productionYear');
-  const derivedDisplayName = [brand, model, version, modelYear, productionYear].join(' ');
+  const derivedDisplayName = [brand, model, version, productionYear, modelYear].join(' ');
 
   return Object.freeze({
     id: createVehicleId(input.id),

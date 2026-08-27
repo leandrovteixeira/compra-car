@@ -11,8 +11,8 @@ function lastTwoDigits(year: string): string {
   return normalizedYear.slice(-2).padStart(2, '0');
 }
 
-export function formatModelProductionYears(modelYear: string, productionYear: string): string {
-  return `${lastTwoDigits(modelYear)}/${lastTwoDigits(productionYear)}`;
+export function formatProductionModelYears(productionYear: string, modelYear: string): string {
+  return `${lastTwoDigits(productionYear)}/${lastTwoDigits(modelYear)}`;
 }
 
 export function formatCompactVehicleName(vehicle: CatalogVehicleDto): string {
@@ -21,12 +21,12 @@ export function formatCompactVehicleName(vehicle: CatalogVehicleDto): string {
     .filter(Boolean)
     .join(' ');
 
-  return `${identity} · ${formatModelProductionYears(vehicle.modelYear, vehicle.productionYear)}`;
+  return `${identity} · ${formatProductionModelYears(vehicle.productionYear, vehicle.modelYear)}`;
 }
 
 export function formatVehicleVersionOption(vehicle: CatalogVehicleDto): string {
-  return `${vehicle.version} · ${formatModelProductionYears(
-    vehicle.modelYear,
+  return `${vehicle.version} · ${formatProductionModelYears(
     vehicle.productionYear,
+    vehicle.modelYear,
   )}`;
 }

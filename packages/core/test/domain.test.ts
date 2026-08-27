@@ -88,7 +88,7 @@ describe('Vehicle', () => {
     });
 
     expect(created.id).toBe('vehicle-1');
-    expect(created.displayName).toBe('Marca Modelo Versão 2026 2025');
+    expect(created.displayName).toBe('Marca Modelo Versão 2025 2026');
   });
 
   it('rejeita campos obrigatórios vazios', () => {

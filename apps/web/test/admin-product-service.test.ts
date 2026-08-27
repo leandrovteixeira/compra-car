@@ -104,4 +104,27 @@ describe('admin product service', () => {
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.data).toHaveLength(30);
   });
+
+  it.each([
+    ['BYD', 2],
+    ['Dolphin', 2],
+    ['GS EV', 1],
+    ['BYD Dolphin', 2],
+    ['Dolphin GS', 1],
+  ])('matches unified brand/model/version search %s', async (search, expected) => {
+    const source = reader([
+      vehicle({ brand: 'BYD', model: 'Dolphin', version: 'GS EV' }),
+      vehicle({
+        id: '2' as Vehicle['id'],
+        brand: 'BYD',
+        model: 'Dolphin Mini',
+        version: 'Comfort',
+      }),
+      vehicle({ id: '3' as Vehicle['id'], brand: 'Volvo', model: 'EX30', version: 'Plus' }),
+    ]);
+
+    const result = await loadAdminProducts({}, source, search);
+    expect(result.ok && result.data).toHaveLength(expected);
+    expect(source.listAdministrativeVehicles).toHaveBeenCalledWith({});
+  });
 });

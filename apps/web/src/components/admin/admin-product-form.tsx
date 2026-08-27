@@ -10,7 +10,7 @@ import { useActionState, useEffect, useRef, useState } from 'react';
 import {
   createModelYearOptions,
   createProductionYearOptions,
-  productionYearAfterModelYearChange,
+  modelYearAfterProductionYearChange,
 } from '@/application/admin/vehicle-year-options';
 
 const emptyValues: AdministrativeVehicleFormValuesDto = {
@@ -113,8 +113,8 @@ function ProductFields({ action, currentYear, mode, pending, state }: ProductFie
   const [isPublic, setIsPublic] = useState(state.values.isPublic);
   const [modelYear, setModelYear] = useState(state.values.modelYear);
   const [productionYear, setProductionYear] = useState(state.values.productionYear);
-  const modelYearOptions = createModelYearOptions(currentYear);
-  const productionYearOptions = createProductionYearOptions(modelYear);
+  const productionYearOptions = createProductionYearOptions(currentYear);
+  const modelYearOptions = createModelYearOptions(productionYear, currentYear);
 
   function changeActive(checked: boolean) {
     setIsActive(checked);
@@ -126,9 +126,9 @@ function ProductFields({ action, currentYear, mode, pending, state }: ProductFie
     if (checked) setIsActive(true);
   }
 
-  function changeModelYear(nextModelYear: string) {
-    setModelYear(nextModelYear);
-    setProductionYear(productionYearAfterModelYearChange(nextModelYear, productionYear));
+  function changeProductionYear(nextProductionYear: string) {
+    setProductionYear(nextProductionYear);
+    setModelYear(modelYearAfterProductionYearChange(nextProductionYear, modelYear, currentYear));
   }
 
   return (
@@ -201,28 +201,6 @@ function ProductFields({ action, currentYear, mode, pending, state }: ProductFie
 
         <div className="mt-5 grid items-start gap-y-5 sm:gap-x-5 lg:grid-cols-[1fr_1fr_auto_auto] lg:gap-x-4">
           <label className="block text-sm font-semibold text-slate-200">
-            Ano modelo
-            <select
-              aria-describedby={state.fieldErrors.modelYear ? 'model-year-error' : undefined}
-              aria-invalid={Boolean(state.fieldErrors.modelYear)}
-              className={inputClass}
-              name="modelYear"
-              onChange={(event) => changeModelYear(event.target.value)}
-              required
-              value={modelYear}
-            >
-              <option value="">Selecione</option>
-              {modelYearOptions.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
-            <span id="model-year-error">
-              <FieldError messages={state.fieldErrors.modelYear} />
-            </span>
-          </label>
-          <label className="block text-sm font-semibold text-slate-200">
             Ano produção
             <select
               aria-describedby={
@@ -230,9 +208,8 @@ function ProductFields({ action, currentYear, mode, pending, state }: ProductFie
               }
               aria-invalid={Boolean(state.fieldErrors.productionYear)}
               className={inputClass}
-              disabled={!modelYear}
               name="productionYear"
-              onChange={(event) => setProductionYear(event.target.value)}
+              onChange={(event) => changeProductionYear(event.target.value)}
               required
               value={productionYear}
             >
@@ -245,6 +222,29 @@ function ProductFields({ action, currentYear, mode, pending, state }: ProductFie
             </select>
             <span id="production-year-error">
               <FieldError messages={state.fieldErrors.productionYear} />
+            </span>
+          </label>
+          <label className="block text-sm font-semibold text-slate-200">
+            Ano modelo
+            <select
+              aria-describedby={state.fieldErrors.modelYear ? 'model-year-error' : undefined}
+              aria-invalid={Boolean(state.fieldErrors.modelYear)}
+              className={inputClass}
+              disabled={!productionYear}
+              name="modelYear"
+              onChange={(event) => setModelYear(event.target.value)}
+              required
+              value={modelYear}
+            >
+              <option value="">Selecione</option>
+              {modelYearOptions.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+            <span id="model-year-error">
+              <FieldError messages={state.fieldErrors.modelYear} />
             </span>
           </label>
 

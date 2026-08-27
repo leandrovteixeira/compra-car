@@ -8,7 +8,7 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
   matchesProductSearch,
   normalizeProductSearch,
-} from '@/components/admin/admin-product-search';
+} from '@/application/admin/admin-product-search';
 
 interface AdminProductComboboxProps {
   readonly disabled?: boolean;
