@@ -11,5 +11,9 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
   const { profile } = await requireRole('admin');
   const displayName = profile.fullName?.trim() || 'Administrador';
 
-  return <AdminShell displayName={displayName}>{children}</AdminShell>;
+  return (
+    <AdminShell displayName={displayName} profile={profile}>
+      {children}
+    </AdminShell>
+  );
 }

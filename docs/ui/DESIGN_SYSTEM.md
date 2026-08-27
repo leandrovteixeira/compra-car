@@ -42,3 +42,17 @@ remain in the web application and compose these primitives.
 Specialized pricing, import, product-spec and comparison grids retain local layout classes because
 their column geometry and responsive behavior are domain-specific. They inherit the centralized light
 palette now and can migrate incrementally to the shared density primitives without changing behavior.
+
+## Application shell
+
+The global shell uses a compact 52px topbar with a reusable brand slot, one authorization-aware
+context switcher and one user menu. The switcher exposes Administration only from the trusted admin
+profile; Seller is available to both current roles. Account identity, role and logout live exclusively
+in the user menu. On desktop, the admin sidebar contains only local navigation and fits below the
+topbar without its own vertical scroll. On mobile, local admin navigation moves to a keyboard-operable
+disclosure menu.
+
+Canvas, elevated topbar, primary surface, muted surface and selection each have semantic tokens.
+Light blue is limited to focus and subtle active-selection hierarchy; orange remains excluded from
+shell navigation and controls. Low-priority icon buttons and row actions may use a 30–32px visual box,
+while coarse-pointer rules preserve the larger touch target where applicable.

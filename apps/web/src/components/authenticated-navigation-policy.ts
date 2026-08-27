@@ -7,9 +7,22 @@ export interface NavigationLink {
   readonly label: string;
 }
 
+export interface NavigationContext extends NavigationLink {
+  readonly area: AuthenticatedArea;
+}
+
+export function getAvailableContexts(profile: AuthProfile): readonly NavigationContext[] {
+  return [
+    ...(profile.role === 'admin'
+      ? [{ area: 'admin' as const, href: '/admin', label: 'Administração' }]
+      : []),
+    { area: 'seller', href: '/', label: 'Vendedor' },
+  ];
+}
+
 export interface AuthenticatedNavigationModel {
   readonly areaLabel: string;
-  readonly links: readonly NavigationLink[];
+  readonly localLinks: readonly NavigationLink[];
   readonly roleLabel: string;
 }
 
@@ -20,17 +33,14 @@ export function getAuthenticatedNavigationModel(
   if (area === 'admin') {
     return {
       areaLabel: 'Área administrativa',
-      links: [{ href: '/', label: 'Área do vendedor' }],
+      localLinks: [],
       roleLabel: 'Administrador',
     };
   }
 
   return {
     areaLabel: 'Área do vendedor',
-    links: [
-      { href: '/invite-requests', label: 'Convidar alguém' },
-      ...(profile.role === 'admin' ? [{ href: '/admin', label: 'Administração' }] : []),
-    ],
+    localLinks: [{ href: '/invite-requests', label: 'Convidar alguém' }],
     roleLabel: profile.role === 'admin' ? 'Administrador' : 'Vendedor',
   };
 }

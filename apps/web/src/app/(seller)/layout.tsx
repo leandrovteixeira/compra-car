@@ -12,7 +12,7 @@ export default async function SellerLayout({ children }: SellerLayoutProps) {
   const displayName = profile.fullName ?? user.email ?? 'Usuário';
 
   return (
-    <div className="min-h-dvh bg-background text-text-primary">
+    <div className="min-h-dvh bg-canvas text-text-primary">
       <AppAuthenticatedNavigation area="seller" displayName={displayName} profile={profile} />
       {children}
     </div>

@@ -70,7 +70,8 @@ describe('commercial period workspace', () => {
     const css = source('../src/app/globals.css');
     const pageHeader = source('../src/components/admin/page-header.tsx');
     const priceList = source('../src/components/admin/admin-price-list.tsx');
-    expect(css).toContain('--admin-topbar-height: 3.75rem');
+    expect(css).toContain('--app-topbar-height: 3.25rem');
+    expect(css).toContain('--admin-topbar-height: var(--app-topbar-height)');
     expect(css).toContain('--admin-page-header-height: 7.75rem');
     expect(css).toContain('margin-top: -2rem');
     expect(css).toContain(

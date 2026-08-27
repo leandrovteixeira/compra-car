@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-08-27 — Shell e navegação da aplicação
+
+- consolida marca, troca de contexto autorizada e conta/logout em uma topbar compartilhada e compacta;
+- limita a sidebar administrativa à navegação local, com estado ativo discreto e menu móvel;
+- adiciona hierarquia semântica de canvas, surface elevada e seleção, além de microações mais densas.
+
 ## 2026-08-27 — Design system e densidade light-first
 
 - centraliza paleta semântica, tipografia Inter temporária, densidade, radius e estados visuais;

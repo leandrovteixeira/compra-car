@@ -3,7 +3,12 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import { getAuthenticatedNavigationModel } from '../src/components/authenticated-navigation-policy';
+import {
+  getAuthenticatedNavigationModel,
+  getAvailableContexts,
+} from '../src/components/authenticated-navigation-policy';
+
+const source = (path: string) => readFileSync(resolve(__dirname, path), 'utf8');
 
 const sellerProfile: AuthProfile = {
   id: 'seller-id',
@@ -25,16 +30,13 @@ describe('authenticated navigation', () => {
 
     expect(navigation.areaLabel).toBe('Área do vendedor');
     expect(navigation.roleLabel).toBe('Vendedor');
-    expect(navigation.links).toEqual([{ href: '/invite-requests', label: 'Convidar alguém' }]);
+    expect(navigation.localLinks).toEqual([{ href: '/invite-requests', label: 'Convidar alguém' }]);
   });
 
   it('shows the admin link in the seller area for an active admin', () => {
     const navigation = getAuthenticatedNavigationModel(adminProfile, 'seller');
 
-    expect(navigation.links).toEqual([
-      { href: '/invite-requests', label: 'Convidar alguém' },
-      { href: '/admin', label: 'Administração' },
-    ]);
+    expect(navigation.localLinks).toEqual([{ href: '/invite-requests', label: 'Convidar alguém' }]);
     expect(navigation.roleLabel).toBe('Administrador');
   });
 
@@ -42,7 +44,7 @@ describe('authenticated navigation', () => {
     const navigation = getAuthenticatedNavigationModel(adminProfile, 'admin');
 
     expect(navigation.areaLabel).toBe('Área administrativa');
-    expect(navigation.links).toEqual([{ href: '/', label: 'Área do vendedor' }]);
+    expect(navigation.localLinks).toEqual([]);
   });
 
   it('ignores user metadata when deciding whether to show the admin link', () => {
@@ -51,9 +53,9 @@ describe('authenticated navigation', () => {
       user_metadata: { role: 'admin' },
     };
 
-    expect(getAuthenticatedNavigationModel(profileWithUntrustedMetadata, 'seller').links).toEqual([
-      { href: '/invite-requests', label: 'Convidar alguém' },
-    ]);
+    expect(
+      getAuthenticatedNavigationModel(profileWithUntrustedMetadata, 'seller').localLinks,
+    ).toEqual([{ href: '/invite-requests', label: 'Convidar alguém' }]);
   });
 
   it('uses the shared component in both layouts and binds the existing logout action', () => {
@@ -80,6 +82,27 @@ describe('authenticated navigation', () => {
     expect(logoutControlSource).toContain('action={logout}');
     expect(logoutControlSource).toContain('Sair');
     expect(sellerLayoutSource).toContain('<AppAuthenticatedNavigation area="seller"');
-    expect(adminLayoutSource).toContain('<AdminShell displayName={displayName}>');
+    expect(adminLayoutSource).toContain('profile={profile}');
+  });
+
+  it('keeps context authorization in the trusted profile and exposes shared shell controls', () => {
+    const switcher = source('../src/components/context-switcher.tsx');
+    const topbar = source('../src/components/application-topbar.tsx');
+    const userMenu = source('../src/components/user-menu.tsx');
+
+    expect(getAvailableContexts(sellerProfile)).toEqual([
+      { area: 'seller', href: '/', label: 'Vendedor' },
+    ]);
+    expect(getAvailableContexts(adminProfile)).toEqual([
+      { area: 'admin', href: '/admin', label: 'Administração' },
+      { area: 'seller', href: '/', label: 'Vendedor' },
+    ]);
+    expect(switcher).toContain('getAvailableContexts(profile)');
+    expect(switcher).toContain("aria-current={context.area === area ? 'page' : undefined}");
+    expect(topbar).toContain('<BrandSlot');
+    expect(topbar).toContain('<ContextSwitcher');
+    expect(topbar).toContain('<UserMenu');
+    expect(userMenu).toContain('Menu do usuário');
+    expect(userMenu).toContain('<LogoutControl');
   });
 });

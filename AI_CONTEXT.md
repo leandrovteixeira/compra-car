@@ -1,5 +1,14 @@
 # Contexto para agentes de IA
 
+## Application shell — Sprint 14B (2026-08-27)
+
+O shell autenticado concentra `BrandSlot`, `ContextSwitcher` e `UserMenu` em uma topbar compartilhada
+de 52px. A role confiável do profile controla os contextos: seller vê apenas Vendedor; admin vê
+Administração e Vendedor. A sidebar administrativa é exclusivamente local, usa `usePathname` para o
+estado ativo e não possui scroll próprio no desktop. No mobile, a navegação local usa disclosure.
+Canvas, surface elevada e seleção possuem tokens semânticos; azul claro apoia seleção/foco e laranja
+continua proibido para ação ou navegação.
+
 ## Design system light-first — Sprint 14A.1 (2026-08-27)
 
 A UI usa tokens centralizados em `apps/web/src/app/globals.css` e primitives de classe em

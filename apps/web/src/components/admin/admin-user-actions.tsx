@@ -51,7 +51,7 @@ export function AdminUserActions({ user }: { readonly user: AdminUserDto }) {
     <details className="relative">
       <summary
         aria-label={`Ações para ${label}`}
-        className="inline-grid size-11 cursor-pointer list-none place-items-center rounded-xl border border-slate-700 text-xl"
+        className="inline-grid size-8 cursor-pointer list-none place-items-center rounded-md border border-border text-base text-text-secondary hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus"
       >
         ⋯
       </summary>

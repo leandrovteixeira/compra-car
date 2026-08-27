@@ -50,12 +50,14 @@ describe('admin foundation', () => {
     expect(page).not.toContain('auth.admin');
   });
 
-  it('keeps seller access and logout in the admin account controls', () => {
-    const account = source('../src/components/admin/admin-account.tsx');
+  it('keeps the sidebar contextual and moves account controls to the shared topbar', () => {
+    const shell = source('../src/components/admin/admin-shell.tsx');
 
-    expect(account).toContain('href="/"');
-    expect(account).toContain('Área do vendedor');
-    expect(account).toContain('<AppLogoutControl');
+    expect(shell).toContain('<ApplicationTopbar');
+    expect(shell).toContain('<AdminNav');
+    expect(shell).not.toContain('Painel administrativo');
+    expect(shell).not.toContain('AdminAccount');
+    expect(shell).not.toContain('overflow-y-auto');
   });
 
   it('loads products only after explicit admin authorization and links to creation', () => {

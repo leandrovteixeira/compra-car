@@ -1,5 +1,3 @@
-import Link from 'next/link';
-
 import { ModuleCard } from '@/components/admin/module-card';
 import { PageHeader } from '@/components/admin/page-header';
 
@@ -7,14 +5,6 @@ export default function AdminPage() {
   return (
     <>
       <PageHeader
-        actions={
-          <Link
-            className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-700 px-4 text-sm font-semibold text-slate-200 transition hover:border-slate-600 hover:bg-slate-800 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"
-            href="/"
-          >
-            Área do vendedor
-          </Link>
-        }
         description="O painel administrativo está em construção. Os módulos serão entregues de forma incremental, mantendo as regras de acesso e os contratos do projeto."
         eyebrow="Visão geral"
         title="Administração"

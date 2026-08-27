@@ -31,7 +31,7 @@ export function AdminProductList({ products }: AdminProductListProps) {
       <div className="overflow-x-auto lg:overflow-visible">
         <table className="w-full min-w-[52rem] border-collapse text-left text-sm lg:min-w-0">
           <caption className="sr-only">Veículos cadastrados</caption>
-          <thead className="border-b border-slate-800 bg-slate-900 text-xs uppercase tracking-wide text-slate-400 lg:sticky lg:top-[16.25rem] lg:z-20">
+          <thead className="border-b border-slate-800 bg-slate-900 text-xs uppercase tracking-wide text-slate-400 lg:sticky lg:top-[15.75rem] lg:z-20">
             <tr>
               <th className="px-4 py-3 font-semibold" scope="col">
                 ID
