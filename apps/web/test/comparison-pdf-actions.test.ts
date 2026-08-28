@@ -43,6 +43,13 @@ describe('URLs das ações do PDF', () => {
     expect(component).toContain('download={COMPARISON_PDF_FILENAME} href={pdfUrl}');
     expect(COMPARISON_PDF_FILENAME).toBe('comparacao-veiculos.pdf');
   });
+
+  it('usa a densidade compacta compartilhada sem perder o reflow mobile', () => {
+    const component = source('../src/components/comparison-pdf-actions.tsx');
+    expect(component).toContain('ui-button ui-button--secondary ui-button--compact');
+    expect(component).toContain('flex w-full min-w-0 gap-1.5 sm:w-auto');
+    expect(component).not.toContain('rounded-xl');
+  });
 });
 
 describe('compartilhamento nativo do PDF', () => {

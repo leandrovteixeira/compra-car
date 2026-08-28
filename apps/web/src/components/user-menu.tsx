@@ -11,12 +11,12 @@ export function UserMenu({
 }) {
   return (
     <details className="group relative shrink-0">
-      <summary className="flex min-h-8 max-w-48 cursor-pointer list-none items-center gap-2 rounded-md px-2 text-left text-xs font-semibold text-text-secondary hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
+      <summary className="flex min-h-8 max-w-48 cursor-pointer list-none items-center gap-1 rounded-md px-1 text-left text-xs font-semibold text-text-secondary hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus sm:gap-2 sm:px-2">
         <span className="grid size-6 shrink-0 place-items-center rounded-full bg-selection text-[0.6875rem] font-bold text-text-primary">
           {displayName.trim().charAt(0).toLocaleUpperCase('pt-BR') || 'U'}
         </span>
         <span className="hidden truncate sm:block">{displayName}</span>
-        <span aria-hidden="true" className="text-text-muted">
+        <span aria-hidden="true" className="hidden text-text-muted sm:inline">
           ⌄
         </span>
       </summary>

@@ -367,9 +367,14 @@ textarea {
   }
 }
 
+.comparison-mode-option {
+  min-height: 1.875rem;
+}
+
 @media (pointer: coarse) {
   .ui-button,
-  .ui-field {
+  .ui-field,
+  .comparison-mode-option {
     min-height: var(--density-control-height-touch);
   }
 }

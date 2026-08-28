@@ -38,18 +38,18 @@ export function ComparisonToolbar({ mode }: ComparisonToolbarProps) {
   }
 
   return (
-    <div className="flex flex-col gap-3 border-y border-border bg-surface py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+    <div className="flex flex-col gap-2 border-y border-border bg-surface px-2 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-3">
       <div className="min-w-0">
         <fieldset>
           <legend className="sr-only">Modo da comparação</legend>
           <div
             aria-label="Modo da comparação"
-            className="inline-grid min-h-11 grid-cols-3 overflow-hidden rounded-md border border-border bg-surface-muted p-0.5"
+            className="inline-grid grid-cols-3 overflow-hidden rounded border border-border bg-surface-muted p-0.5"
             role="radiogroup"
           >
             {modeOptions.map((option) => (
               <label
-                className={`flex min-h-10 cursor-pointer items-center justify-center rounded-[0.25rem] px-3 text-xs font-semibold transition-colors focus-within:outline-2 focus-within:outline-offset-[-2px] focus-within:outline-focus sm:min-h-9 sm:text-sm ${
+                className={`comparison-mode-option flex cursor-pointer items-center justify-center rounded-[0.1875rem] px-2 text-xs font-semibold transition-colors focus-within:outline-2 focus-within:outline-offset-[-2px] focus-within:outline-focus ${
                   mode === option.value
                     ? 'bg-selection-strong text-text-primary shadow-sm'
                     : 'text-text-secondary hover:bg-selection'
@@ -73,7 +73,7 @@ export function ComparisonToolbar({ mode }: ComparisonToolbarProps) {
           {modeDescriptions[mode]}
         </p>
       </div>
-      <div className="shrink-0">
+      <div className="min-w-0 shrink-0">
         <ComparisonPdfActions pdfUrl={pdfUrl} />
       </div>
     </div>

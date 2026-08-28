@@ -19,6 +19,7 @@ import {
   COMPARISON_CHECK_SLOT_CLASS,
   getComparisonValuePresentation,
   shouldShowAdvantageCheck,
+  shouldShowAdvantageCheckForMode,
 } from '../src/application/comparison/comparison-value-presentation';
 import type { ComparisonCategoryViewModel } from '../src/application/comparison/comparison-view-model';
 import { parseComparisonMode } from '../src/application/comparison/comparison-view-model';
@@ -92,6 +93,22 @@ describe('estrutura acessivel dos modos da comparacao', () => {
     expect(cell).toContain('data-advantage-marker="true"');
     expect(cell).toContain('text-attention');
     expect(table).not.toContain('bg-attention');
+  });
+
+  it('compacta o segmented control e preserva 44px em coarse pointers', () => {
+    const toolbar = source('../src/components/comparison-toolbar.tsx');
+    const page = source('../src/app/(seller)/comparar/page.tsx');
+    const css = source('../src/app/globals.css');
+
+    expect(toolbar).toContain('comparison-mode-option');
+    expect(toolbar).toContain('px-2 py-2');
+    expect(toolbar).toContain('sm:px-3');
+    expect(toolbar).not.toContain('min-h-11 grid-cols-3');
+    expect(page).toContain('ui-button ui-button--secondary ui-button--compact');
+    expect(css).toMatch(/\.comparison-mode-option\s*{[^}]*min-height: 1\.875rem/s);
+    expect(css).toMatch(
+      /@media \(pointer: coarse\)[\s\S]*\.comparison-mode-option[\s\S]*var\(--density-control-height-touch\)/,
+    );
   });
 });
 
@@ -269,18 +286,31 @@ describe('filtro e erros públicos', () => {
           specSet: 'Set',
           hasReferenceAdvantage: false,
           hasDifference: false,
-          hasAnyAdvantage: false,
           values: [],
         },
         {
-          code: 'different',
+          code: 'competitor-only',
+          label: 'Vantagem apenas do concorrente',
+          equipmentGroup: 'Grupo',
+          specSet: 'Set',
+          hasReferenceAdvantage: false,
+          hasDifference: true,
+          values: [
+            { type: 'numeric', displayValue: '26,6 kWh', comparison: 'not-applicable' },
+            { type: 'numeric', displayValue: '44,9 kWh', comparison: 'disadvantage' },
+          ],
+        },
+        {
+          code: 'reference-advantage',
           label: 'Diferente',
           equipmentGroup: 'Grupo',
           specSet: 'Set',
           hasReferenceAdvantage: true,
           hasDifference: true,
-          hasAnyAdvantage: true,
-          values: [],
+          values: [
+            { type: 'numeric', displayValue: '239 cv', comparison: 'not-applicable' },
+            { type: 'numeric', displayValue: '95 cv', comparison: 'advantage' },
+          ],
         },
       ],
     },
@@ -296,7 +326,10 @@ describe('filtro e erros públicos', () => {
 
   it('remove iguais e mantem diferentes sem julgamento no modo Diferencas', () => {
     const filtered = filterComparisonCategories(categories, 'differences');
-    expect(filtered[0]?.rows.map((row) => row.code)).toEqual(['different']);
+    expect(filtered[0]?.rows.map((row) => row.code)).toEqual([
+      'competitor-only',
+      'reference-advantage',
+    ]);
     expect(
       filterComparisonCategories(
         [{ ...categories[0]!, rows: [categories[0]!.rows[0]!] }],
@@ -307,8 +340,34 @@ describe('filtro e erros públicos', () => {
 
   it('filtra somente vantagens do veículo principal já calculadas pelo domínio', () => {
     const filtered = filterComparisonCategories(categories, 'advantages');
-    expect(filtered[0]?.rows.map((row) => row.code)).toEqual(['different']);
+    expect(filtered[0]?.rows.map((row) => row.code)).toEqual(['reference-advantage']);
     expect(filterComparisonCategories(categories, 'complete')).toBe(categories);
+  });
+
+  it('mantem a linha com 3+ veiculos quando a referencia vence ao menos um concorrente', () => {
+    const referenceWinsOne = {
+      ...categories[0]!.rows[2]!,
+      code: 'mixed-three-vehicles',
+      values: [
+        { type: 'numeric' as const, displayValue: '100 cv', comparison: 'not-applicable' as const },
+        { type: 'numeric' as const, displayValue: '90 cv', comparison: 'advantage' as const },
+        { type: 'numeric' as const, displayValue: '120 cv', comparison: 'disadvantage' as const },
+      ],
+    };
+
+    expect(
+      filterComparisonCategories([{ name: 'Potencia', rows: [referenceWinsOne] }], 'advantages')[0]
+        ?.rows,
+    ).toEqual([referenceWinsOne]);
+  });
+
+  it('no modo Vantagens marca somente o veiculo de referencia', () => {
+    expect(shouldShowAdvantageCheckForMode('advantages', 0, true, 'not-applicable')).toBe(true);
+    expect(shouldShowAdvantageCheckForMode('advantages', 1, true, 'advantage')).toBe(false);
+    expect(shouldShowAdvantageCheckForMode('advantages', 2, true, 'disadvantage')).toBe(false);
+    expect(shouldShowAdvantageCheckForMode('advantages', 0, false, 'not-applicable')).toBe(false);
+    expect(shouldShowAdvantageCheckForMode('differences', 0, true, 'not-applicable')).toBe(false);
+    expect(shouldShowAdvantageCheckForMode('complete', 1, false, 'disadvantage')).toBe(true);
   });
 
   it('compara valores brutos por semantica, nao pelas strings formatadas', () => {

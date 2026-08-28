@@ -104,9 +104,6 @@ export function toComparisonPageData(result: ComparisonResult): ComparisonPageVi
           specSet: row.item.specSet,
           hasReferenceAdvantage: row.hasReferenceAdvantage,
           hasDifference: rowHasDifference(rawValues),
-          hasAnyAdvantage:
-            row.hasReferenceAdvantage ||
-            values.some((value) => value.comparison === 'disadvantage'),
           values,
         });
       }),

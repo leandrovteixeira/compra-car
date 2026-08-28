@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-08-27 — Correção de Vantagens e refinamento responsivo
+
+- recupera a semântica histórica: Vantagens mostra somente vantagens objetivas do primeiro veículo,
+  usando `hasReferenceAdvantage` do engine existente, inclusive com 3 ou 4 veículos;
+- limita o check laranja à coluna da referência nesse modo, sem alterar Completa ou Diferenças;
+- reorganiza a topbar estreita com grid explícita, marca compacta e gatilho “Mais” responsivo;
+- compacta segmented control e ações da comparação para 30px no desktop, preservando 44px em
+  dispositivos coarse e adicionando padding horizontal discreto à toolbar.
+
 ## 2026-08-27 — Modos e formatação da comparação
 
 - adiciona os modos URL-backed Completa, Diferenças e Vantagens num segmented control acessível;

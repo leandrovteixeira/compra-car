@@ -18,7 +18,7 @@ interface ComparisonPageProps {
 function BackToSelection() {
   return (
     <Link
-      className="inline-flex min-h-11 items-center gap-2 rounded-md border border-border bg-surface px-4 text-sm font-semibold text-text-secondary transition hover:border-border-strong hover:bg-surface-muted hover:text-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+      className="ui-button ui-button--secondary ui-button--compact gap-1.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
       href="/"
     >
       <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 16 16">

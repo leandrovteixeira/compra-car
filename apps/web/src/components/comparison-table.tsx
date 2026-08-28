@@ -5,7 +5,7 @@ import type {
   ComparisonCategoryViewModel,
   ComparisonMode,
 } from '@/application/comparison/comparison-view-model';
-import { shouldShowAdvantageCheck } from '@/application/comparison/comparison-value-presentation';
+import { shouldShowAdvantageCheckForMode } from '@/application/comparison/comparison-value-presentation';
 import { ComparisonValueCell } from '@/components/comparison-value-cell';
 import { ComparisonVehicleHeader } from '@/components/comparison-vehicle-header';
 
@@ -44,8 +44,6 @@ export function ComparisonTable({ vehicles, categories, mode }: ComparisonTableP
   }
 
   const rowCount = categories.reduce((total, category) => total + category.rows.length, 0);
-  const showAdvantageMarkers = mode !== 'differences';
-
   return (
     <section aria-label="Tabela de comparação" className="min-w-0">
       <div className="mb-2 flex items-center justify-between gap-4 px-1 text-xs text-text-muted">
@@ -138,13 +136,12 @@ export function ComparisonTable({ vehicles, categories, mode }: ComparisonTableP
                         </span>
                       </th>
                       {row.values.map((value, index) => {
-                        const isAdvantage =
-                          showAdvantageMarkers &&
-                          shouldShowAdvantageCheck(
-                            index,
-                            row.hasReferenceAdvantage,
-                            value.comparison,
-                          );
+                        const isAdvantage = shouldShowAdvantageCheckForMode(
+                          mode,
+                          index,
+                          row.hasReferenceAdvantage,
+                          value.comparison,
+                        );
 
                         return (
                           <td

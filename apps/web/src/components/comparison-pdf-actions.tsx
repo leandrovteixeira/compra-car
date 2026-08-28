@@ -12,7 +12,7 @@ interface ComparisonPdfActionsProps {
 }
 
 const actionClassName =
-  'inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-950/60 px-3.5 text-sm font-semibold text-slate-200 transition hover:border-cyan-300/40 hover:text-cyan-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300 disabled:cursor-wait disabled:opacity-60 sm:flex-none';
+  'ui-button ui-button--secondary ui-button--compact flex-1 gap-1.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus sm:flex-none';
 
 export function triggerComparisonPdfDownload(pdfUrl: string): void {
   const anchor = document.createElement('a');
@@ -66,7 +66,7 @@ export function ComparisonPdfActions({ pdfUrl }: ComparisonPdfActionsProps) {
   }
 
   return (
-    <div className="flex min-w-0 gap-2 sm:contents">
+    <div className="flex w-full min-w-0 gap-1.5 sm:w-auto">
       <a className={actionClassName} download={COMPARISON_PDF_FILENAME} href={pdfUrl}>
         <DownloadIcon />
         <span>Baixar PDF</span>

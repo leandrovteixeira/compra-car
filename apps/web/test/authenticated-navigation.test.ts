@@ -105,4 +105,22 @@ describe('authenticated navigation', () => {
     expect(userMenu).toContain('Menu do usuário');
     expect(userMenu).toContain('<LogoutControl');
   });
+
+  it('uses an explicit narrow-width grid without positioning Mais over the context switcher', () => {
+    const topbar = source('../src/components/application-topbar.tsx');
+    const navigation = source('../src/components/authenticated-navigation.tsx');
+    const brand = source('../src/components/brand-slot.tsx');
+    const switcher = source('../src/components/context-switcher.tsx');
+
+    expect(topbar).toContain('grid-cols-[auto_minmax(0,1fr)_auto_auto]');
+    expect(topbar).toContain('min-[23rem]:gap-1.5');
+    expect(topbar).toContain('shrink-0 justify-self-end');
+    expect(brand).toContain('className="sm:hidden"');
+    expect(switcher).toContain('shrink-0');
+    expect(switcher).toContain('min-[23rem]:px-2');
+    expect(navigation).toContain('aria-label="Mais"');
+    expect(navigation).toContain('min-[28rem]:hidden');
+    expect(navigation).toContain('relative shrink-0 sm:hidden');
+    expect(navigation).not.toMatch(/<summary[^>]*absolute/s);
+  });
 });

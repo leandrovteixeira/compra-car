@@ -38,9 +38,22 @@ export function AuthenticatedNavigation({
       logoutAction={logoutAction}
       mobileNavigation={
         links.length ? (
-          <details className="relative sm:hidden">
-            <summary className="ui-button ui-button--ghost ui-button--compact cursor-pointer list-none">
-              Mais
+          <details className="relative shrink-0 sm:hidden">
+            <summary
+              aria-label="Mais"
+              className="ui-button ui-button--ghost ui-button--compact cursor-pointer list-none"
+            >
+              <span className="hidden min-[28rem]:inline">Mais</span>
+              <svg
+                aria-hidden="true"
+                className="size-4 min-[28rem]:hidden"
+                fill="none"
+                viewBox="0 0 16 16"
+              >
+                <circle cx="3" cy="8" fill="currentColor" r="1" />
+                <circle cx="8" cy="8" fill="currentColor" r="1" />
+                <circle cx="13" cy="8" fill="currentColor" r="1" />
+              </svg>
             </summary>
             <nav
               aria-label="Navegação da área do vendedor"

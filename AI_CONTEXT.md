@@ -1,17 +1,35 @@
 # Contexto para agentes de IA
 
+## Regression fix de Vantagens — Sprint 14D.3b (2026-08-27)
+
+**Vantagens = vantagens objetivas do veículo principal/referência.** O primeiro veículo continua sendo
+a referência. O filtro deve usar exclusivamente `row.hasReferenceAdvantage`, calculado pelo engine do
+core; não inclua rows cuja vantagem pertença somente a concorrentes e não recrie comparações na web.
+Com 3 ou 4 veículos, a row permanece se a referência vencer objetivamente ao menos um concorrente,
+que é a semântica histórica de `hasReferenceAdvantage`. Em Vantagens, somente a célula da referência
+recebe o check laranja. Completa preserva os markers históricos e Diferenças permanece sem julgamento
+ou marker.
+
+A regressão da 14D.3 foi causada por `hasAnyAdvantage`: o campo ampliou o filtro de
+`hasReferenceAdvantage` para qualquer `ComparisonOutcome === 'disadvantage'`, fazendo vitórias
+exclusivas de concorrentes aparecerem. O campo foi removido da view model interna. A topbar móvel usa
+quatro colunas explícitas, marca `CC`, contexto não encolhível e “Mais” iconizado abaixo de 28rem; isso
+preserva navegação em 320–400px sem sobreposição. Controles da comparação usam 30px no desktop e o
+media query coarse mantém 44px; a toolbar usa `px-2`/`sm:px-3`.
+
 ## Modos e formatting da comparação — Sprint 14D.3 (2026-08-27)
 
 `/comparar` usa `mode=differences|advantages`; a ausência de `mode` é Completa. `highlights=true`
 continua aceito como alias legado de Vantagens. A view model interna da aplicação acrescenta
-`hasDifference` e `hasAnyAdvantage` sem alterar `@compra-car/contracts`: diferenças são calculadas no
+`hasDifference` sem alterar `@compra-car/contracts`: diferenças são calculadas no
 mapper com os valores brutos (número + unidade normalizada ou presença), antes da string pt-BR.
 `false` e `null` de presença continuam semanticamente ausentes, coerentes com a apresentação e o
 engine atuais. Categorias sem rows no modo filtrado são omitidas.
 
 Vantagens não recalcula superioridade: `hasReferenceAdvantage` e os `ComparisonOutcome` produzidos pelo
 core são a única fonte dos markers. Completa preserva esses markers; Diferenças os oculta para não
-misturar julgamento com divergência; Vantagens mostra somente rows que possuem marker objetivo.
+misturar julgamento com divergência; Vantagens mostra somente rows com vantagem da referência e marca
+somente a célula dela.
 `#9ABCC8` identifica o modo ativo e `#EF7732` aparece apenas no pequeno check acessível.
 
 `comparison-number-formatter.ts` concentra número e composição com unidade em funções separadas. Regras

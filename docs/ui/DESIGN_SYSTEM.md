@@ -63,6 +63,12 @@ Light blue is limited to focus and subtle active-selection hierarchy; orange rem
 shell navigation and controls. Low-priority icon buttons and row actions may use a 30–32px visual box,
 while coarse-pointer rules preserve the larger touch target where applicable.
 
+At 320–400px the topbar uses four explicit columns for compact brand, context switcher, mobile
+secondary navigation and user menu. The brand remains `CC`, context labels stay non-shrinking and the
+“Mais” trigger becomes an accessible ellipsis below 28rem; its menu remains available. This reflow is
+in normal grid flow and must not be replaced by absolute positioning of the trigger over the context
+switcher.
+
 ## Vehicle catalog
 
 The administrative catalog uses one URL-backed search field for brand, model and version. Text input
@@ -118,14 +124,23 @@ horizontal padding as category headers and field content.
 The comparison has three URL-backed modes in one native-radio segmented control: **Completa** keeps
 every applicable row, **Diferenças** keeps only semantically different raw values without ranking
 them, and **Vantagens** keeps only rows for which the existing domain engine produced an objective
-advantage. Empty filtered categories are omitted; a completely empty result uses a small inline state.
+advantage for the first, reference vehicle. With multiple competitors, one recognized reference win
+is enough to keep the row because this is the historical `hasReferenceAdvantage` contract. A win that
+belongs exclusively to a competitor is omitted. Empty filtered categories are omitted; a completely
+empty result uses a small inline state.
 The active segment uses selection blue `#9ABCC8` with graphite text. It never uses orange.
 
 The table is a dense, flat light surface with discrete dividers. Its semantic header and first spec
 column remain sticky inside the same locally scrollable region, including horizontal mobile scroll.
-Vehicle identity follows **Brand Model · Version · production/model**. In Complete and Advantages,
-objective winners receive a small accessible check in attention orange `#EF7732`; rows and cells remain
-neutral, and Differences intentionally displays no advantage marker.
+Vehicle identity follows **Brand Model · Version · production/model**. Complete preserves the existing
+objective markers. In Advantages only the reference cell receives the small accessible check in
+attention orange `#EF7732`; competitor cells, rows and surfaces remain neutral. Differences
+intentionally displays no advantage marker.
+
+Comparison controls use the shared compact density: approximately 30px on desktop and 44px under a
+coarse pointer. The segmented control follows the same rule through `comparison-mode-option`; PDF,
+share and back actions use the compact secondary primitive. The toolbar uses 8px horizontal padding,
+increasing to 12px from `sm`, so controls retain breathing room without adding a card-like surface.
 
 Numeric presentation is centralized in `comparison-number-formatter.ts` and selected by stable spec
 code. `PW_0005` displacement (source unit `cc`) and `PW_0015` rotation max torque use grouped integers;

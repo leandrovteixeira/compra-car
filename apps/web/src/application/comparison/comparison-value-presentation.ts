@@ -1,6 +1,7 @@
 import type { ComparisonCellDto, ComparisonOutcome } from '@compra-car/contracts';
 
 import { PRESENCE_DISPLAY_VALUE } from './comparison-mapper';
+import type { ComparisonMode } from './comparison-view-model';
 
 export const COMPARISON_CELL_GRID_CLASS =
   'grid min-h-7 grid-cols-[minmax(0,1fr)_1.25rem] items-center gap-1.5';
@@ -19,6 +20,17 @@ export function shouldShowAdvantageCheck(
   comparison: ComparisonOutcome,
 ): boolean {
   return vehicleIndex === 0 ? hasReferenceAdvantage : comparison === 'disadvantage';
+}
+
+export function shouldShowAdvantageCheckForMode(
+  mode: ComparisonMode,
+  vehicleIndex: number,
+  hasReferenceAdvantage: boolean,
+  comparison: ComparisonOutcome,
+): boolean {
+  if (mode === 'differences') return false;
+  if (mode === 'advantages') return vehicleIndex === 0 && hasReferenceAdvantage;
+  return shouldShowAdvantageCheck(vehicleIndex, hasReferenceAdvantage, comparison);
 }
 
 export function getComparisonValuePresentation(

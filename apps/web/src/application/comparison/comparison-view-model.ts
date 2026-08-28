@@ -10,7 +10,6 @@ export type ComparisonMode = (typeof comparisonModes)[number];
 
 export interface ComparisonRowViewModel extends ComparisonRowPresentationDto {
   readonly hasDifference: boolean;
-  readonly hasAnyAdvantage: boolean;
 }
 
 export interface ComparisonCategoryViewModel extends ComparisonCategoryPresentationDto {

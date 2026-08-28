@@ -10,7 +10,7 @@ export function filterComparisonCategories(
 
   return categories.flatMap((category) => {
     const rows = category.rows.filter((row) =>
-      mode === 'differences' ? row.hasDifference : row.hasAnyAdvantage,
+      mode === 'differences' ? row.hasDifference : row.hasReferenceAdvantage,
     );
     return rows.length > 0 ? [{ ...category, rows }] : [];
   });

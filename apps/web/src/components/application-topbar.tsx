@@ -24,11 +24,11 @@ export function ApplicationTopbar({
 }: ApplicationTopbarProps) {
   return (
     <header className="sticky top-0 z-40 h-[var(--app-topbar-height)] border-b border-border bg-surface-elevated">
-      <div className="mx-auto flex h-full w-full max-w-[100rem] items-center gap-2 px-3 sm:gap-4 sm:px-5 lg:px-6">
+      <div className="mx-auto grid h-full w-full max-w-[100rem] grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-1 px-2 min-[23rem]:gap-1.5 min-[23rem]:px-3 sm:flex sm:gap-4 sm:px-5 lg:px-6">
         <BrandSlot href={area === 'admin' ? '/admin' : '/'} />
         <ContextSwitcher area={area} profile={profile} />
         <div className="ml-auto hidden items-center gap-2 sm:flex">{secondaryNavigation}</div>
-        <div className="ml-auto flex sm:ml-0">{mobileNavigation}</div>
+        <div className="flex shrink-0 justify-self-end sm:ml-0">{mobileNavigation}</div>
         <UserMenu
           displayName={displayName}
           logoutAction={logoutAction}
