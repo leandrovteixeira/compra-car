@@ -46,12 +46,15 @@ export const comparisonPdfStyles = StyleSheet.create({
   intro: { color: '#62676E', fontSize: 8.5, marginBottom: 7 },
   columnHeader: {
     backgroundColor: '#F1F3F4',
-    borderBottomColor: '#1A1D21',
-    borderBottomWidth: 1,
     borderTopColor: '#D8DCDF',
     borderTopWidth: 1,
     flexDirection: 'row',
     minHeight: 66,
+  },
+  columnHeaderBottomRule: {
+    backgroundColor: '#1A1D21',
+    height: 1.5,
+    width: '100%',
   },
   itemHeader: { justifyContent: 'center', paddingHorizontal: 9 },
   itemHeaderText: {
@@ -82,6 +85,8 @@ export const comparisonPdfStyles = StyleSheet.create({
   vehicleYears: { color: '#62676E', fontSize: 8, marginTop: 2 },
   category: {
     backgroundColor: '#1A1D21',
+    borderBottomColor: '#1A1D21',
+    borderBottomWidth: 1,
     height: 22,
     justifyContent: 'center',
     paddingHorizontal: 9,

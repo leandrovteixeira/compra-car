@@ -25,6 +25,7 @@ import {
   getComparisonPdfMode,
   prepareComparisonPdf,
 } from '../src/pdf/comparison/comparison-pdf-model';
+import { comparisonPdfStyles } from '../src/pdf/comparison/comparison-pdf-styles';
 import {
   COMPARISON_PDF_CATEGORY_PRESENCE_AHEAD,
   COMPARISON_PDF_ROW_WRAP,
@@ -201,24 +202,67 @@ describe('view model e documento PDF', () => {
     });
   });
 
-  it('aplica Diferenças com a mesma flag semântica usada na tela', () => {
+  it('em Diferenças mantém o filtro semântico e apresenta outcomes objetivos do engine', () => {
     const data = createComparisonData(2);
     const firstCategory = data.categories[0];
     if (firstCategory === undefined) throw new Error('Fixture inválida.');
-    const rows = firstCategory.rows.map((row, index) => ({
-      ...row,
-      hasDifference: index === 1,
-    }));
+    const referenceAdvantage = { ...firstCategory.rows[0]!, hasDifference: true };
+    const competitorAdvantage = { ...firstCategory.rows[1]!, hasDifference: true };
+    const noObjectiveAdvantage = {
+      ...firstCategory.rows[1]!,
+      code: 'safety.different-without-advantage',
+      hasDifference: true,
+      values: firstCategory.rows[1]!.values.map((value) => ({
+        ...value,
+        comparison: 'tie' as const,
+      })),
+    };
+    const equalWithPresentationFlag = {
+      ...firstCategory.rows[0]!,
+      code: 'safety.equal',
+      hasDifference: false,
+      hasReferenceAdvantage: true,
+    };
+    const rows = [
+      referenceAdvantage,
+      competitorAdvantage,
+      noObjectiveAdvantage,
+      equalWithPresentationFlag,
+    ];
     const prepared = prepareComparisonPdf(
       { ...data, categories: [{ ...firstCategory, rows }] },
       'differences',
     );
 
     expect(prepared.model.mode).toBe('Somente diferenças');
-    expect(prepared.categories[0]?.rows.map((row) => row.code)).toEqual(['safety.airbags']);
+    expect(prepared.categories[0]?.rows.map((row) => row.code)).toEqual([
+      'safety.abs',
+      'safety.airbags',
+      'safety.different-without-advantage',
+    ]);
     expect(
-      prepared.model.categories[0]?.rows[0]?.values.every((value) => !value.showAdvantageCheck),
-    ).toBe(true);
+      prepared.model.categories[0]?.rows[0]?.values.map((value) => value.showAdvantageCheck),
+    ).toEqual([true, false]);
+    expect(
+      prepared.model.categories[0]?.rows[1]?.values.map((value) => value.showAdvantageCheck),
+    ).toEqual([false, true]);
+    expect(
+      prepared.model.categories[0]?.rows[2]?.values.map((value) => value.showAdvantageCheck),
+    ).toEqual([false, false]);
+  });
+
+  it('fixa estruturalmente a regra graphite do header repetido e a faixa de categoria', () => {
+    expect(COMPARISON_PDF_HEADER_FIXED).toBe(true);
+    expect(comparisonPdfStyles.columnHeaderBottomRule).toMatchObject({
+      backgroundColor: '#1A1D21',
+      height: 1.5,
+      width: '100%',
+    });
+    expect(comparisonPdfStyles.category).toMatchObject({
+      backgroundColor: '#1A1D21',
+      borderBottomColor: '#1A1D21',
+      borderBottomWidth: 1,
+    });
   });
 
   it.each(['differences', 'advantages'] as const)(
@@ -321,8 +365,8 @@ describe('view model e documento PDF', () => {
     },
   );
 
-  it('pagina muitas rows sem dividir rows e protege a primeira row da categoria', async () => {
-    const model = prepareComparisonPdf(createManyRowsData(3), 'complete').model;
+  it('pagina Diferenças sem dividir rows e protege a primeira row da categoria', async () => {
+    const model = prepareComparisonPdf(createManyRowsData(3), 'differences').model;
     const buffer = await renderToBuffer(createComparisonPdfDocument(model));
     const pageCount = buffer.toString('latin1').match(/\/Type \/Page\b/g)?.length ?? 0;
 

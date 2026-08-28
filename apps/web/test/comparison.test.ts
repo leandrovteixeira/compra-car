@@ -187,7 +187,7 @@ describe('apresentação dos valores', () => {
 
 describe('formatação numérica da comparação', () => {
   it('formata displacement com milhar brasileiro sem alterar a escala', () => {
-    expect(formatComparisonNumber(1500, 'cc', { code: 'PW_0005' })).toBe('1.500 cc');
+    expect(formatComparisonNumber(2000, 'cc', { code: 'PW_0005' })).toBe('2.000 cc');
   });
 
   it.each([
@@ -361,12 +361,14 @@ describe('filtro e erros públicos', () => {
     ).toEqual([referenceWinsOne]);
   });
 
-  it('no modo Vantagens marca somente o veiculo de referencia', () => {
+  it('aplica markers por modo sem reimplementar o julgamento do engine', () => {
     expect(shouldShowAdvantageCheckForMode('advantages', 0, true, 'not-applicable')).toBe(true);
     expect(shouldShowAdvantageCheckForMode('advantages', 1, true, 'advantage')).toBe(false);
     expect(shouldShowAdvantageCheckForMode('advantages', 2, true, 'disadvantage')).toBe(false);
     expect(shouldShowAdvantageCheckForMode('advantages', 0, false, 'not-applicable')).toBe(false);
-    expect(shouldShowAdvantageCheckForMode('differences', 0, true, 'not-applicable')).toBe(false);
+    expect(shouldShowAdvantageCheckForMode('differences', 0, true, 'not-applicable')).toBe(true);
+    expect(shouldShowAdvantageCheckForMode('differences', 1, false, 'disadvantage')).toBe(true);
+    expect(shouldShowAdvantageCheckForMode('differences', 1, false, 'tie')).toBe(false);
     expect(shouldShowAdvantageCheckForMode('complete', 1, false, 'disadvantage')).toBe(true);
   });
 

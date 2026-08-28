@@ -29,6 +29,7 @@ export * from './value-objects/vehicle-id';
 export * from './value-objects/money';
 export * from './admin/administrative-vehicle';
 export * from './admin/administrative-product-specs';
+export * from './admin/canonical-numeric';
 export * from './admin/vehicle-text-normalization';
 export * from './admin/product-public-price';
 export * from './admin/commercial-policy';

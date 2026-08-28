@@ -1072,3 +1072,15 @@ evidências.
 
 Este guia é deliberadamente conservador: sua função não é maximizar extração, mas impedir que uma
 interpretação plausível se transforme em condição comercial incorreta.
+## Normalização numérica de specs
+
+Valores de specs seguem `source representation → parse/normalize → canonical number → storage →
+formatter → presentation`. Células de origem realmente numéricas devem permanecer `number`; não
+devem passar por formatação textual. Texto pt-BR usa ponto de milhar e vírgula decimal (`2.000`,
+`1.500,5`, `0,58`). Texto canônico usa ponto decimal (`12.3`, `0.58`) somente quando esse formato de
+origem é conhecido. Entradas ambíguas exigem locale/formato explícito e lixo ou parsing parcial deve
+ir para erro/revisão, nunca para persistência silenciosa.
+
+Parsing numérico e conversão de unidade são etapas distintas. `PW_0005` é canonicamente `cc`, então
+`2.000` pt-BR é armazenado como `2000` e apresentado como `2.000 cc`. Não se converte `2` para `2000`
+por magnitude; uma origem em litros precisaria declarar unidade e conversão explicitamente.

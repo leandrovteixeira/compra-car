@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   convertUnit,
   LoadAdministrativeProductSpecs,
+  parseCanonicalNumeric,
   parseAdministrativeNumeric,
   SaveAdministrativeProductSpecs,
   type AdministrativeProductSpecsBatch,
@@ -101,6 +102,55 @@ function repository(
 }
 
 describe('administrative product specs', () => {
+  it.each([
+    [2000, 2000],
+    [12.3, 12.3],
+    [0.58, 0.58],
+  ])('preserves a real numeric source cell %s', (input, expected) => {
+    expect(parseCanonicalNumeric(input)).toEqual({ ok: true, kind: 'value', value: expected });
+  });
+
+  it.each([
+    ['2.000', 2000],
+    ['20.000', 20000],
+    ['1.500,5', 1500.5],
+    ['12,3', 12.3],
+    ['12,30', 12.3],
+    ['0,58', 0.58],
+    ['1.200,00', 1200],
+    [' 2.000 ', 2000],
+  ])('normalizes pt-BR text %s to canonical number', (input, expected) => {
+    expect(parseCanonicalNumeric(input, 'pt-BR')).toEqual({
+      ok: true,
+      kind: 'value',
+      value: expected,
+    });
+  });
+
+  it.each([
+    ['12.30', 12.3],
+    ['0.58', 0.58],
+    ['299.8', 299.8],
+    ['15.6', 15.6],
+  ])('preserves canonical numeric text %s when the source format is known', (input, expected) => {
+    expect(parseCanonicalNumeric(input, 'canonical')).toEqual({
+      ok: true,
+      kind: 'value',
+      value: expected,
+    });
+  });
+
+  it('returns explicit empty, invalid and ambiguous-safe results without partial parsing', () => {
+    expect(parseCanonicalNumeric('')).toEqual({ ok: true, kind: 'empty', value: null });
+    expect(parseCanonicalNumeric('abc')).toMatchObject({ ok: false, kind: 'invalid' });
+    expect(parseCanonicalNumeric('12abc')).toMatchObject({ ok: false, kind: 'invalid' });
+    expect(parseCanonicalNumeric('2.000')).toMatchObject({ ok: false, kind: 'ambiguous' });
+    expect(parseCanonicalNumeric('1,234', 'canonical')).toMatchObject({
+      ok: false,
+      kind: 'invalid',
+    });
+  });
+
   it('loads every active spec, merges existing values and groups scale as one dropdown', async () => {
     const { target } = repository([
       { specId: '1', value: 4424, isPresent: null, inputUnit: 'mm' },
@@ -197,6 +247,30 @@ describe('administrative product specs', () => {
 
   it('rejects more than two decimal places', () => {
     expect(() => parseAdministrativeNumeric('18,421')).toThrow('duas casas');
+  });
+
+  it('stores PW_0005 text in pt-BR as canonical cc without magnitude conversion', async () => {
+    const source = repository();
+    vi.mocked(source.target.listActiveAdministrativeSpecs).mockResolvedValue([
+      {
+        id: '7',
+        code: 'PW_0005',
+        type: 'numeric',
+        groupName: 'Powertrain',
+        equipmentGroup: 'Engine',
+        specSet: 'Displacement',
+        detail: 'Displacement',
+        unit: 'cc',
+      },
+    ]);
+
+    await new SaveAdministrativeProductSpecs(source.target).execute('10', [
+      { kind: 'numeric', specId: '7', value: '2.000', inputUnit: 'cc' },
+    ]);
+
+    expect(source.saved()?.upserts).toEqual([
+      { specId: '7', value: 2000, isPresent: null, inputUnit: 'cc' },
+    ]);
   });
 
   it('converts from kgfm to canonical Nm using repository conversions', async () => {

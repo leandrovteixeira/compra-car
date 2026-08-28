@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-08-28 — Parsing numérico canônico de specs (Sprint 14F.2)
+
+- centraliza o parsing de números reais, texto pt-BR e texto canônico antes da persistência de specs;
+- corrige `PW_0005` em `cc`: `"2.000"` passa a ser armazenado como `2000`, permitindo apresentação
+  `2.000 cc`, sem conversão implícita por magnitude;
+- preserva células numéricas como numbers, rejeita lixo e parsing parcial e exige contexto explícito
+  quando ponto pode representar milhar pt-BR ou decimal canônico;
+- mantém `product_specs.value numeric(14,4)`, sem migration ou alteração dos dados atuais de staging.
+
+## 2026-08-28 — Markers em Diferenças e headers PDF (Sprint 14F.1)
+
+- restaura markers objetivos de referência e concorrentes nas linhas semanticamente diferentes,
+  onscreen e no PDF, reutilizando os outcomes e flags existentes sem alterar o filtro;
+- fixa uma regra graphite explícita no header repetido do PDF e fecha as faixas graphite de categoria,
+  evitando depender da renderização implícita de borders em quebras de página;
+- preserva Vantagens restrito à referência, Complete com todos os markers, fonte mínima, orientação,
+  paginação, sharing pipeline, formatters, domínio, Supabase, banco e `Legacy`.
+
 ## 2026-08-28 — Redesign visual do PDF de comparação (Sprint 14F)
 
 - alinha o PDF à identidade white/graphite/blue/orange, com brand slot substituível, hierarquia

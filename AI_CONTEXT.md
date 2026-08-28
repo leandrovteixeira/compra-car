@@ -1,5 +1,31 @@
 # Contexto para agentes de IA
 
+## Canonical numeric spec ingestion — Sprint 14F.2 (2026-08-28)
+
+O limite de escrita de specs normaliza a representação antes de `product_specs`: number finito é
+preservado diretamente; texto pt-BR aceita ponto de milhar e vírgula decimal; texto canônico aceita
+ponto decimal. `parseCanonicalNumeric` exige `pt-BR` ou `canonical` quando `2.000` seria ambíguo no
+modo automático e nunca aceita prefixos parciais como `12abc`. Vazio é resultado explícito separado.
+
+`parseAdministrativeNumeric` conhece o contexto do formulário: vírgula e agrupamento triplo são
+pt-BR; ponto com uma ou duas casas é canônico por compatibilidade do input existente. Numeric parsing
+e unit conversion continuam separados. `PW_0005` tem unidade canônica `cc`: `"2.000"` vira `2000`,
+sem regra `2 → 2000` por magnitude. O adapter envia number ao `numeric(14,4)` e o formatter apenas
+apresenta `2.000 cc`. Não houve migration nem correção de staging; uma recarga futura deve substituir
+valores históricos incorretos.
+
+## Differences markers e PDF header rule — Sprint 14F.1 (2026-08-28)
+
+Semântica final: Complete = todas as rows + todos os markers objetivos; Differences = somente rows
+semanticamente diferentes + todos os markers objetivos dessas rows; Advantages = somente rows com
+vantagem da referência + marker apenas na referência. `shouldShowAdvantageCheckForMode` faz Complete e
+Differences reutilizarem `shouldShowAdvantageCheck`; não derive superioridade a partir dos valores.
+
+O header fixo/repetido do PDF contém `columnHeaderBottomRule`, uma faixa própria de 1.5pt em graphite
+`#1A1D21`. Não a substitua por border implícita do container: o elemento explícito é a garantia entre
+page breaks. Category rows ocupam `geometry.tableWidth`, mantêm fill graphite sólido e borda inferior
+da mesma cor; `minPresenceAhead` e rows indivisíveis continuam responsáveis pela paginação.
+
 ## PDF comparison redesign — Sprint 14F (2026-08-28)
 
 `/comparar/pdf` recebe `mode=complete|differences|advantages`; `highlights=true` continua aceito apenas
@@ -72,8 +98,8 @@ a referência. O filtro deve usar exclusivamente `row.hasReferenceAdvantage`, ca
 core; não inclua rows cuja vantagem pertença somente a concorrentes e não recrie comparações na web.
 Com 3 ou 4 veículos, a row permanece se a referência vencer objetivamente ao menos um concorrente,
 que é a semântica histórica de `hasReferenceAdvantage`. Em Vantagens, somente a célula da referência
-recebe o check laranja. Completa preserva os markers históricos e Diferenças permanece sem julgamento
-ou marker.
+recebe o check laranja. Completa e Diferenças preservam os markers objetivos históricos; Diferenças
+continua sem julgamento próprio porque seus markers apenas apresentam outcomes já calculados.
 
 A regressão da 14D.3 foi causada por `hasAnyAdvantage`: o campo ampliou o filtro de
 `hasReferenceAdvantage` para qualquer `ComparisonOutcome === 'disadvantage'`, fazendo vitórias

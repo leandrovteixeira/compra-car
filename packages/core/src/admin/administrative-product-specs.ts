@@ -1,3 +1,5 @@
+import { parseCanonicalNumeric } from './canonical-numeric';
+
 export type AdministrativeSpecType = 'numeric' | 'binary' | 'scale';
 
 export interface AdministrativeSpecCatalogItem {
@@ -131,14 +133,20 @@ export function isFilledAdministrativeSpec(field: AdministrativeSpecField): bool
 }
 
 export function parseAdministrativeNumeric(value: string): number | null {
-  const normalized = value.trim().replace(',', '.');
-  if (normalized === '') return null;
-  if (!/^-?\d+(?:\.\d{1,2})?$/u.test(normalized)) {
+  const compact = value.trim();
+  const decimalPart = compact.includes(',')
+    ? compact.split(',')[1]
+    : /^-?\d+\.\d{1,2}$/u.test(compact)
+      ? compact.split('.')[1]
+      : undefined;
+  if (decimalPart !== undefined && decimalPart.length > 2) {
     throw new Error('Informe um número com no máximo duas casas decimais.');
   }
-  const parsed = Number(normalized);
-  if (!Number.isFinite(parsed)) throw new Error('Informe um número válido.');
-  return parsed;
+  const sourceFormat =
+    compact.includes(',') || /^-?\d{1,3}(?:\.\d{3})+$/u.test(compact) ? 'pt-BR' : 'canonical';
+  const parsed = parseCanonicalNumeric(value, sourceFormat);
+  if (!parsed.ok) throw new Error(parsed.message);
+  return parsed.value;
 }
 
 export function formatAdministrativeNumeric(value: number | null): string {

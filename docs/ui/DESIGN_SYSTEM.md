@@ -191,10 +191,11 @@ The active segment uses selection blue `#9ABCC8` with graphite text. It never us
 
 The table is a dense, flat light surface with discrete dividers. Its semantic header and first spec
 column remain sticky inside the same locally scrollable region, including horizontal mobile scroll.
-Vehicle identity follows **Brand Model · Version · production/model**. Complete preserves the existing
-objective markers. In Advantages only the reference cell receives the small accessible check in
-attention orange `#EF7732`; competitor cells, rows and surfaces remain neutral. Differences
-intentionally displays no advantage marker.
+Vehicle identity follows **Brand Model · Version · production/model**. Complete shows all applicable
+rows plus every objective advantage marker produced by the engine. Differences filters only
+semantically different rows and, within those rows, shows the same objective markers for reference or
+competitors; markers never determine this filter. Advantages keeps only reference-advantage rows and
+marks only the reference cell. The check remains small and uses attention orange `#EF7732`.
 
 Comparison controls use the shared compact density: approximately 30px on desktop and 44px under a
 coarse pointer. The segmented control follows the same rule through `comparison-mode-option`; PDF,
@@ -220,3 +221,6 @@ production/model year. The comparison header repeats on every page, categories s
 row where possible, rows do not split and every page has compact pagination. Filtered modes with no
 rows still generate a valid PDF with a useful in-document empty state. `createComparisonPdfBrandSlot`
 is the replaceable provisional wordmark boundary until a final logo asset is approved.
+Every repeated PDF table header ends with its own explicit 1.5pt graphite `#1A1D21` rule rather than
+depending on a container border across page breaks. Category bands keep a full-width graphite fill
+and an explicit same-color lower edge near pagination boundaries.

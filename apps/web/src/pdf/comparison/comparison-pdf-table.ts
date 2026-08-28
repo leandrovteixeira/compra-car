@@ -50,7 +50,7 @@ function createComparisonPdfCategory(
       View,
       {
         minPresenceAhead: COMPARISON_PDF_CATEGORY_PRESENCE_AHEAD,
-        style: styles.category,
+        style: [styles.category, { width: geometry.tableWidth }],
       },
       createElement(Text, { style: styles.categoryText }, category.name),
     ),

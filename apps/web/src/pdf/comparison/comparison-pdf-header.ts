@@ -70,5 +70,6 @@ export function createComparisonPdfHeader(model: ComparisonPdfViewModel): ReactE
       ),
       ...vehicleHeaders,
     ),
+    createElement(View, { style: styles.columnHeaderBottomRule }),
   );
 }

@@ -28,7 +28,6 @@ export function shouldShowAdvantageCheckForMode(
   hasReferenceAdvantage: boolean,
   comparison: ComparisonOutcome,
 ): boolean {
-  if (mode === 'differences') return false;
   if (mode === 'advantages') return vehicleIndex === 0 && hasReferenceAdvantage;
   return shouldShowAdvantageCheck(vehicleIndex, hasReferenceAdvantage, comparison);
 }
