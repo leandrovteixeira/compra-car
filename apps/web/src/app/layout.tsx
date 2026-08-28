@@ -1,25 +1,13 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 
+import { APP_METADATA, APP_VIEWPORT } from '@/config/app-metadata';
+
 import './globals.css';
 
-export const metadata: Metadata = {
-  applicationName: 'Compra Car',
-  description: 'Seleção mobile-first de veículos para comparação no Compra Car.',
-  icons: {
-    icon: '/icons/icon-192.svg',
-  },
-  manifest: '/manifest.webmanifest',
-  title: {
-    default: 'Compra Car',
-    template: '%s | Compra Car',
-  },
-};
+export const metadata: Metadata = APP_METADATA;
 
-export const viewport: Viewport = {
-  colorScheme: 'light',
-  themeColor: '#ffffff',
-};
+export const viewport: Viewport = APP_VIEWPORT;
 
 type RootLayoutProps = Readonly<{
   children: ReactNode;

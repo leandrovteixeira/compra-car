@@ -24,7 +24,7 @@ export function AdminNav() {
             {item.status === 'active' && item.href ? (
               <Link
                 aria-current={activeHref === item.href ? 'page' : undefined}
-                className={`relative flex min-h-8 items-center rounded-md px-2.5 text-[0.8125rem] transition focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus ${activeHref === item.href ? 'bg-selection font-semibold text-text-primary before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-selection-strong' : 'font-medium text-text-secondary hover:bg-surface-muted hover:text-text-primary'}`}
+                className={`touch-target relative flex min-h-8 items-center rounded-md px-2.5 text-[0.8125rem] transition focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus ${activeHref === item.href ? 'bg-selection font-semibold text-text-primary before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-selection-strong' : 'font-medium text-text-secondary hover:bg-surface-muted hover:text-text-primary'}`}
                 href={item.href}
               >
                 {item.label}

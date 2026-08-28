@@ -1,37 +1,45 @@
 import type { MetadataRoute } from 'next';
 
+import {
+  APP_BACKGROUND_COLOR,
+  APP_DESCRIPTION,
+  APP_ICON_PATHS,
+  APP_NAME,
+  APP_SHORT_NAME,
+  APP_THEME_COLOR,
+} from '@/config/app-identity';
+
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    background_color: '#020617',
-    description: 'Experiência mobile-first de apoio à comparação de veículos.',
+    background_color: APP_BACKGROUND_COLOR,
+    description: APP_DESCRIPTION,
     display: 'standalone',
     icons: [
       {
         purpose: 'any',
         sizes: '192x192',
-        src: '/icons/icon-192.svg',
-        type: 'image/svg+xml',
+        src: APP_ICON_PATHS.standard192,
+        type: 'image/png',
       },
       {
         purpose: 'any',
         sizes: '512x512',
-        src: '/icons/icon-512.svg',
-        type: 'image/svg+xml',
+        src: APP_ICON_PATHS.standard512,
+        type: 'image/png',
       },
       {
         purpose: 'maskable',
         sizes: '512x512',
-        src: '/icons/icon-512.svg',
-        type: 'image/svg+xml',
+        src: APP_ICON_PATHS.maskable512,
+        type: 'image/png',
       },
     ],
     id: '/',
     lang: 'pt-BR',
-    name: 'Compra Car',
-    orientation: 'portrait-primary',
+    name: APP_NAME,
     scope: '/',
-    short_name: 'Compra Car',
+    short_name: APP_SHORT_NAME,
     start_url: '/',
-    theme_color: '#0f172a',
+    theme_color: APP_THEME_COLOR,
   };
 }

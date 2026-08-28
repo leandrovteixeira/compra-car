@@ -14,6 +14,7 @@ import {
   findAvailableVehicles,
   removeSelectedVehicle,
 } from '@/application/catalog/vehicle-selection-state';
+import { APP_NAME } from '@/config/app-identity';
 
 const EMPTY_VEHICLES: readonly CatalogVehicleDto[] = [];
 
@@ -76,7 +77,7 @@ export function VehicleSelection() {
       <section className="mx-auto w-full max-w-3xl">
         <header className="border-b border-border pb-4">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-interactive">
-            Compra Car
+            {APP_NAME}
           </p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-text-primary">
             Escolha os veículos

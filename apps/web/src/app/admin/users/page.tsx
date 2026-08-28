@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/admin/empty-state';
 import { PageHeader } from '@/components/admin/page-header';
 import { loadAdminInviteRequests } from '@/server/invite-requests';
 import { AdminInviteRequestList } from '@/components/admin/admin-invite-request-list';
+import { APP_NAME } from '@/config/app-identity';
 
 export default async function AdminUsersPage() {
   let users;
@@ -24,7 +25,7 @@ export default async function AdminUsersPage() {
     <>
       <PageHeader
         actions={<AdminUserInvite />}
-        description="Gerencie os usuários com acesso ao Compra Car."
+        description={`Gerencie os usuários com acesso ao ${APP_NAME}.`}
         title="Usuários"
       />
 

@@ -10,6 +10,7 @@ import {
   type ComparisonMode,
   type ComparisonPageViewModel,
 } from '@/application/comparison/comparison-view-model';
+import { APP_NAME } from '@/config/app-identity';
 
 export const COMPARISON_PDF_ITEM_MAX_LINES = 2;
 export const COMPARISON_PDF_MIN_CONTENT_FONT_SIZE = 9;
@@ -55,7 +56,7 @@ export interface ComparisonPdfCategoryViewModel {
 }
 
 export interface ComparisonPdfViewModel {
-  readonly title: 'Compra Car';
+  readonly title: typeof APP_NAME;
   readonly heading: 'Comparação de veículos';
   readonly vehicleCount: number;
   readonly vehicleNames: readonly string[];
@@ -157,7 +158,7 @@ export function prepareComparisonPdf(
   return {
     categories,
     model: {
-      title: 'Compra Car',
+      title: APP_NAME,
       heading: 'Comparação de veículos',
       vehicleCount: vehicles.length,
       vehicleNames: vehicles.map((vehicle) =>

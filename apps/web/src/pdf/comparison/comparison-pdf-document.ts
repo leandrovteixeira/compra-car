@@ -1,6 +1,7 @@
 import { Document, Page, Text, type DocumentProps } from '@react-pdf/renderer';
 import { createElement, type ReactElement } from 'react';
 
+import { APP_NAME } from '@/config/app-identity';
 import { createComparisonPdfHeader } from './comparison-pdf-header';
 import type { ComparisonPdfViewModel } from './comparison-pdf-model';
 import { comparisonPdfStyles as styles } from './comparison-pdf-styles';
@@ -14,9 +15,9 @@ export function createComparisonPdfDocument(
   return createElement(
     Document,
     {
-      author: 'Compra Car',
+      author: APP_NAME,
       subject: 'Comparação de veículos',
-      title: 'Comparação de veículos — Compra Car',
+      title: `Comparação de veículos — ${APP_NAME}`,
     },
     createElement(
       Page,
@@ -30,7 +31,7 @@ export function createComparisonPdfDocument(
       createComparisonPdfTable(model.categories, model.geometry, model.emptyMessage),
       createElement(Text, {
         fixed: true,
-        render: ({ pageNumber, totalPages }) => `Compra Car · ${pageNumber}/${totalPages}`,
+        render: ({ pageNumber, totalPages }) => `${APP_NAME} · ${pageNumber}/${totalPages}`,
         style: [styles.footer, { width: model.geometry.tableWidth }],
       }),
     ),

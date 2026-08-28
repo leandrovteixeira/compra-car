@@ -1,5 +1,6 @@
 import type { AdminUserDto, UserStatus } from '@compra-car/contracts';
 
+import { APP_NAME } from '@/config/app-identity';
 import { AdminUserActions } from './admin-user-actions';
 import {
   adminUserProfileStateLabel,
@@ -43,7 +44,7 @@ export function AdminUserList({ users }: AdminUserListProps) {
   return (
     <section aria-labelledby="admin-user-list-title">
       <h2 className="sr-only" id="admin-user-list-title">
-        Usuários com acesso ao Compra Car
+        Usuários com acesso ao {APP_NAME}
       </h2>
 
       <div className="grid gap-3 md:hidden">

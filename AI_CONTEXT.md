@@ -1,5 +1,35 @@
 # Contexto para agentes de IA
 
+## Mobile e web app instalável — Sprint 14G (2026-08-28)
+
+A aplicação usa `/manifest.webmanifest` nativo do App Router, com `display: standalone`, `start_url`,
+`scope` e `id` em `/`. Nome provisório, nome curto, descrição, theme `#9ABCC8` e background `#FFFFFF`
+ficam centralizados em `apps/web/src/config/app-identity.ts`; não espalhe uma futura renomeação.
+Metadata Next inclui manifest, PNGs 192/512, Apple touch icon 180, `appleWebApp.capable` e theme color.
+
+Na Sprint 14G.1, o monograma inicial foi substituído pela composição aprovada e fornecida pelo
+usuário: carro frontal graphite sobre fundo uniforme `#9ABCC8`. A exportação
+`icone_temp.png`, fornecida fora do repositório, é a origem auditada;
+`apps/web/public/icons/app-icon-master.png` preserva seus 1134×1134 pixels byte a byte. Derivados
+standard 192/512, maskable 512, Apple 180 e `src/app/icon.png` reutilizam o canvas/safe area completos,
+sem crop, reposicionamento, cantos manuais ou geração por IA. Os paths runtime são centralizados em
+`APP_ICON_PATHS`. Trocar toda a família em conjunto quando a identidade definitiva for aprovada.
+Em favicon de 16/32px, detalhes finos do carro perdem legibilidade; a imagem aprovada continua sendo
+usada sem criar identidade simplificada paralela.
+
+Não existe service worker, cache offline, push, background sync ou install prompt próprio; o MVP
+continua online-only e a autenticação/sessão/redirects existentes permanecem únicos.
+
+QA responsivo referencia 1440/1280, 1024/768 e 430/390/360/320px, com 390px como mobile principal.
+Scroll horizontal pertence somente a tabelas/comparação locais. Sticky administrativo começa em
+64rem. `touch-target`/`touch-target-square` complementam os primitives para 44px em coarse pointers;
+inputs mobile usam 16px e dialogs ficam limitados ao dynamic viewport com scroll interno.
+
+**PENDENTE:** QA visual manual autenticado em todos os viewports e instalação real em Android/Chrome
+e iOS/Safari. A matriz estrutural está em `docs/ui/SPRINT_14G_QA_REPORT.md`. Permanecem também os
+aliases Slate/Sky/Cyan de compatibilidade e a pequena dívida visual já aceita do React-PDF 14F; nenhum
+deles deve receber replace/refinement global sem evidência visual ou regressão funcional.
+
 ## PDF vertical boundaries — Sprint 14F.5 (2026-08-28)
 
 O header repetido é absoluto e fixo: `header.height`, `header.top` e `page.paddingTop` formam uma

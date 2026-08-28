@@ -5,6 +5,7 @@ import { parseComparisonMode } from '@/application/comparison/comparison-view-mo
 import { ComparisonState } from '@/components/comparison-state';
 import { ComparisonTable } from '@/components/comparison-table';
 import { ComparisonToolbar } from '@/components/comparison-toolbar';
+import { APP_NAME } from '@/config/app-identity';
 import { loadComparisonPage } from '@/server/comparison-service';
 
 interface ComparisonPageProps {
@@ -63,7 +64,7 @@ export default async function ComparisonPage({ searchParams }: ComparisonPagePro
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-interactive">
-              Compra Car
+              {APP_NAME}
             </p>
             <h1 className="mt-1.5 text-2xl font-semibold tracking-tight">Comparação de veículos</h1>
             <p className="mt-1 max-w-2xl text-sm leading-5 text-text-muted">

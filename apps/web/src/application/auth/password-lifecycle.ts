@@ -1,5 +1,6 @@
 import 'server-only';
 import type { AuthProfile, AuthUser } from '@compra-car/adapter-supabase';
+import { APP_NAME } from '@/config/app-identity';
 export type PasswordLifecycleState =
   | { readonly status: 'idle' }
   | { readonly status: 'error'; readonly message: string }
@@ -35,7 +36,7 @@ export async function completeInvitedUserOnboarding(
   if (!identity.profile)
     return { status: 'error', message: 'Não foi possível localizar seu perfil de acesso.' };
   if (identity.profile.status === 'disabled')
-    return { status: 'error', message: 'Seu acesso ao Compra Car está desativado.' };
+    return { status: 'error', message: `Seu acesso ao ${APP_NAME} está desativado.` };
   if (identity.profile.status === 'active')
     return { status: 'success', message: 'Cadastro já concluído.', destination: '/' };
   if (!(await d.updatePassword(valid.password)))
@@ -80,7 +81,7 @@ export async function completePasswordRecovery(
   }
   const message =
     identity.profile.status === 'disabled'
-      ? 'Senha atualizada. Seu acesso ao Compra Car continua desativado.'
+      ? `Senha atualizada. Seu acesso ao ${APP_NAME} continua desativado.`
       : identity.profile.status === 'pending'
         ? 'Senha atualizada. Seu cadastro ainda aguarda conclusão.'
         : 'Senha atualizada com sucesso.';

@@ -173,6 +173,32 @@ Registre aprovado, falhou ou não executado. Nunca transforme “não executado�
 - [ ] Assets carregam sem dependência de localhost, `file://` ou caminho local.
 - [ ] Registre observações de primeira carga, login, comparação e `/admin/users`.
 
+### Web app instalável — Sprint 14G
+
+O suporte é somente de instalação nativa do browser. Não há service worker nem promessa offline.
+Antes do teste, confirme por DevTools que `/manifest.webmanifest` responde, que os quatro ícones
+retornam `200` e que `start_url`/`scope` são `/`.
+
+Android / Chrome:
+
+1. abra a URL HTTPS de QA;
+2. use **Instalar app** ou **Adicionar à tela inicial** no menu;
+3. confirme nome, ícone provisório do carro frontal e instalação;
+4. abra pelo ícone e confirme que a janela usa modo standalone;
+5. valide login, Seller, Admin, logout, reabertura, rotação e links internos.
+
+iOS / Safari:
+
+1. abra a URL HTTPS de QA;
+2. use **Compartilhar → Adicionar à Tela de Início**;
+3. confirme nome e Apple touch icon;
+4. abra pelo ícone e confirme a experiência standalone suportada pela versão do iOS;
+5. valide login, Seller, Admin, logout, reabertura, rotação e links internos.
+
+Registre plataforma, versão do sistema/browser e resultado. Ausência da opção de instalação, abertura
+fora do scope, perda de sessão ou asset ausente é falha; indisponibilidade de rede é comportamento
+esperado neste MVP e não deve ser apresentada como suporte offline.
+
 ## Limitação operacional
 
 Deploy, painel, inspeção remota e e-mail real exigem acesso autenticado aos provedores. Sem essas

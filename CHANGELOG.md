@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-08-28 — Ícone PWA fornecido pelo usuário (Sprint 14G.1)
+
+- substitui o monograma temporário pelo app icon aprovado: carro frontal graphite sobre fundo
+  uniforme `#9ABCC8`, sem texto, crop, reposicionamento ou cantos arredondados;
+- preserva a exportação aprovada `icone_temp.png` byte a byte como master 1134×1134 e gera por
+  resampling de alta qualidade os derivados 192, 512, maskable 512, Apple 180 e icon 512 do Next;
+- reutiliza a safe area original para maskable, centraliza os paths consumidos por manifest/metadata
+  e remove os três SVGs de monograma sem alterar comportamento PWA;
+- mantém manifest, standalone, scope, start URL, theme/background, auth, responsive, domínio,
+  Supabase, banco, PDF, Import Engine e `Legacy` inalterados.
+
+## 2026-08-28 — Mobile, responsive e web app instalável (Sprint 14G)
+
+- centraliza nome provisório, descrição e cores de instalação e substitui o manifest legado por uma
+  configuração full-scope `standalone`, com `start_url` neutra e metadata Apple/Next;
+- adiciona os assets PNG provisórios de 192px, 512px, maskable e Apple touch icon, derivados de um
+  monograma `CC` simples em azul/graphite e preparado para substituição;
+- amplia apenas em coarse pointers os alvos próprios de topbar, context switcher, menu de usuário e
+  navegação, mantém inputs mobile em 16px e confina dialogs ao viewport com scroll interno;
+- preserva scroll horizontal local em tabelas/comparação, sticky somente desktop, fluxos, auth,
+  domínio, banco, Supabase, Import Engine, PDF aprovado e `Legacy`;
+- documenta breakpoints, instalação Android/iOS, ausência deliberada de offline, dívida visual do PDF
+  e QA visual autenticado/dispositivo real ainda pendente.
+
 ## 2026-08-28 — Boundaries verticais do PDF (Sprint 14F.5)
 
 - reserva explicitamente a altura real do header fixo antes do conteúdo, eliminando a sobreposição

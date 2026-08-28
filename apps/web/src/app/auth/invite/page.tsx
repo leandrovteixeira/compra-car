@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { AuthPasswordForm } from '@/components/auth-password-form';
 import { AuthShell } from '@/components/auth-shell';
+import { APP_NAME } from '@/config/app-identity';
 import { loadPasswordFlowIdentity } from '@/server/password-lifecycle';
 import { completeInviteAction } from './actions';
 export default async function InvitePage({
@@ -16,12 +17,12 @@ export default async function InvitePage({
       : !identity.profile
         ? 'Não foi possível localizar seu perfil de acesso.'
         : identity.profile.status === 'disabled'
-          ? 'Seu acesso ao Compra Car está desativado.'
+          ? `Seu acesso ao ${APP_NAME} está desativado.`
           : null;
   return (
     <AuthShell
       title="Defina sua senha"
-      description="Crie uma senha para concluir seu acesso ao Compra Car."
+      description={`Crie uma senha para concluir seu acesso ao ${APP_NAME}.`}
     >
       {message ? (
         <>

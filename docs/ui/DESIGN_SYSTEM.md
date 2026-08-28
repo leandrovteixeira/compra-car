@@ -225,3 +225,39 @@ The repeated PDF vehicle header has no bottom rule or dark bar. Neutral and refe
 backgrounds, typography, spacing and subtle vertical dividers provide its hierarchy consistently
 across page breaks. Category bands fill the full table width with official blue `#9ABCC8` and use
 graphite `#1A1D21` text. Orange `#EF7732` remains exclusive to advantage attention.
+
+## Responsive and installable web app — Sprint 14G
+
+Responsive QA uses 1440px and 1280px for desktop, 1024px and 768px for intermediate layouts, and
+430px, 390px, 360px and 320px for mobile. The 390px viewport is the primary mobile reference; 320px
+may be denser but must remain functional. These are validation widths, not one-off CSS breakpoints.
+Components should reflow through the existing mobile-first `sm`/`lg` boundaries and intrinsic
+`minmax(0, 1fr)` sizing.
+
+The document must never own horizontal scrolling. Dense administrative tables and the comparison
+matrix may scroll horizontally only inside their semantic local scrollport. Desktop sticky workspaces
+start at `64rem`; below that boundary, pages return to normal document flow so desktop top offsets are
+not inherited by tablet and mobile layouts. Form grids stack before fields become too narrow, and
+specs preserve label-then-control flow below their desktop grid.
+
+Desktop visual density remains Action 32px, Commit 36px and Micro 30px. Shared primitives and custom
+shell/navigation targets marked with `touch-target` expand to at least 44px only for coarse pointers.
+Mobile text inputs, selects and textareas use a 16px computed font size to avoid browser auto-zoom,
+while desktop typography remains compact. Dialogs are bounded by the dynamic viewport, own vertical
+overflow and preserve a 16px outer gutter.
+
+The installable-web-app foundation uses the native Next.js App Router manifest and metadata APIs. App
+identity, description and install colors are centralized in `apps/web/src/config/app-identity.ts`.
+The manifest covers `/`, starts at `/` so existing session/role redirects remain authoritative, uses
+`display: standalone`, identity blue `#9ABCC8` and white `#FFFFFF`, and exposes 192px, 512px, maskable
+512px and 180px Apple assets. Sprint 14G.1 replaces the initial monogram with the user-supplied,
+approved front-facing graphite car. The original 1134px square canvas is the committed master; every
+runtime asset is a full-canvas resample with the car's position, mirrors and safe area unchanged.
+Corners remain square and the uniform outer background is exactly `#9ABCC8`. Replacement instructions
+live beside the assets in `apps/web/public/icons`.
+
+There is deliberately no service worker, offline cache, background sync, push notification or custom
+install prompt. The app remains online-only. The small accepted React-PDF boundary imperfection from
+Sprint 14F remains documented debt and was not reopened. Residual Slate/Sky/Cyan compatibility aliases
+also remain until each consumer can be migrated with visual evidence; blind global replacement is
+prohibited.

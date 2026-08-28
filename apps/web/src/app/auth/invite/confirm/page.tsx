@@ -4,6 +4,7 @@ import { buttonClassName } from '@compra-car/ui';
 
 import { INVITE_ATTEMPT_COOKIE } from '@/auth/invite-attempt';
 import { AuthShell } from '@/components/auth-shell';
+import { APP_NAME } from '@/config/app-identity';
 
 import { confirmInviteAction } from './actions';
 
@@ -15,7 +16,7 @@ export default async function InviteConfirmationPage() {
       {hasAttempt ? (
         <>
           <p className="mt-5 text-text-secondary">
-            Clique em continuar para confirmar seu convite para o Compra Car.
+            Clique em continuar para confirmar seu convite para o {APP_NAME}.
           </p>
           <form action={confirmInviteAction} className="mt-6">
             <button className={buttonClassName({ fullWidth: true })}>Aceitar convite</button>

@@ -250,6 +250,7 @@ html {
 
 body {
   margin: 0;
+  min-width: 0;
   background: var(--color-background);
   color: var(--color-text-primary);
   font-family: var(--font-sans);
@@ -463,10 +464,33 @@ textarea {
 }
 
 @media (pointer: coarse) {
+  button,
+  summary,
   .ui-button,
   .ui-field,
-  .comparison-mode-option {
+  .comparison-mode-option,
+  .touch-target {
     min-height: var(--density-control-height-touch);
+  }
+
+  .touch-target-square {
+    min-width: var(--density-control-height-touch);
+    min-height: var(--density-control-height-touch);
+  }
+}
+
+dialog {
+  max-width: calc(100vw - 2rem);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 39.999rem) {
+  input:not([type='checkbox']):not([type='radio']),
+  select,
+  textarea {
+    font-size: 1rem;
   }
 }
 

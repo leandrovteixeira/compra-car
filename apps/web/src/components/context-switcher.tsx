@@ -18,7 +18,7 @@ export function ContextSwitcher({
       {contexts.map((context) => (
         <Link
           aria-current={context.area === area ? 'page' : undefined}
-          className={`min-h-8 rounded px-1.5 py-1.5 text-xs font-semibold transition min-[23rem]:px-2 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus sm:px-2.5 ${context.area === area ? 'bg-surface text-text-primary shadow-sm' : 'text-text-muted hover:text-text-primary'}`}
+          className={`touch-target min-h-8 rounded px-1.5 py-1.5 text-xs font-semibold transition min-[23rem]:px-2 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus sm:px-2.5 ${context.area === area ? 'bg-surface text-text-primary shadow-sm' : 'text-text-muted hover:text-text-primary'}`}
           href={context.href}
           key={context.area}
         >

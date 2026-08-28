@@ -9,6 +9,7 @@ import {
   setAdminUserRoleAction,
   setAdminUserStatusAction,
 } from '@/app/admin/users/actions';
+import { APP_NAME } from '@/config/app-identity';
 import { adminUserRoleLabel } from './admin-user-presentation';
 
 const INITIAL: AdminUserActionState = { status: 'idle' };
@@ -51,7 +52,7 @@ export function AdminUserActions({ user }: { readonly user: AdminUserDto }) {
     <details className="relative">
       <summary
         aria-label={`Ações para ${label}`}
-        className="inline-grid size-8 cursor-pointer list-none place-items-center rounded-md border border-border text-base text-text-secondary hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus"
+        className="touch-target-square inline-grid size-8 cursor-pointer list-none place-items-center rounded-md border border-border text-base text-text-secondary hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus"
       >
         ⋯
       </summary>
@@ -111,7 +112,7 @@ export function AdminUserActions({ user }: { readonly user: AdminUserDto }) {
           Desativar acesso de {label}?
         </h2>
         <p className="mt-3 text-sm text-slate-300">
-          O usuário não poderá acessar o Compra Car enquanto estiver inativo.
+          O usuário não poderá acessar o {APP_NAME} enquanto estiver inativo.
         </p>
         <form action={statusAction} className="mt-6 flex justify-end gap-3">
           <input name="userId" type="hidden" value={user.id} />
