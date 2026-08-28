@@ -1,5 +1,16 @@
 # Contexto para agentes de IA
 
+## Pricing final alignment — Sprint 14E.2 (2026-08-28)
+
+`AdminProductCombobox` usa `ui-field` e `ui-label`; não reintroduza seu antigo `min-h-11`, radius ou
+focus locais. O botão de limpeza compõe `ui-button--ghost ui-button--compact`, acompanha a altura do
+campo e recebe 44px em coarse pointer pela regra compartilhada. Seus consumidores atuais são os grids
+administrativos de Pricing/Policies.
+
+A selection section de Criar políticas mantém `px-3 sm:px-4`, sem cards internos. No estado sem preço,
+o bloco Preço válido apresenta primeiro a ação compacta interativa e depois a mensagem auxiliar em
+12px. Modelo, Competência e Preço válido começam no mesmo eixo vertical.
+
 ## Pricing UX Fix — Sprint 14E.1 (2026-08-28)
 
 O ledger de `/admin/prices` não usa mais `admin-table-header`, cujo offset pertence ao scroll do

@@ -20,6 +20,7 @@ describe('commercial period workspace', () => {
     expect(workspace).toContain(
       'lg:grid-cols-[minmax(18rem,11fr)_minmax(14rem,5fr)_minmax(13rem,4fr)]',
     );
+    expect(workspace).toContain('bg-surface px-3 py-3 sm:px-4');
     expect(workspace).toContain('monthlyCompetenceOptions()');
     expect(workspace).toContain('aria-label="Competência mensal"');
     expect(workspace).toContain('className={`${fieldClassName} mt-1`}');
@@ -28,6 +29,10 @@ describe('commercial period workspace', () => {
     expect(workspace).toContain('Preço válido');
     expect(workspace).toContain('Nenhum preço público aplicável');
     expect(workspace).toContain('Adicionar preço');
+    expect(workspace).toContain("buttonClassName({ compact: true, variant: 'interactive' })");
+    expect(workspace.indexOf('Adicionar preço')).toBeLessThan(
+      workspace.indexOf('Nenhum preço público aplicável'),
+    );
     expect(workspace).toContain('<PriceDialog');
     expect(workspace).toContain('publishAction={props.publishPriceAction}');
     expect(workspace).toContain('offerSelectionOverrides');

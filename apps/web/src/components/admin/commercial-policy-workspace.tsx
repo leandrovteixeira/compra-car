@@ -273,7 +273,7 @@ export function CommercialPolicyWorkspace(props: {
     <div className="space-y-5">
       <section
         data-testid="monthly-operation-header"
-        className="grid items-start gap-3 border-y border-border bg-surface py-3 lg:grid-cols-[minmax(18rem,11fr)_minmax(14rem,5fr)_minmax(13rem,4fr)] lg:gap-4"
+        className="grid items-start gap-3 border-y border-border bg-surface px-3 py-3 sm:px-4 lg:grid-cols-[minmax(18rem,11fr)_minmax(14rem,5fr)_minmax(13rem,4fr)] lg:gap-4"
       >
         <div className="min-w-0">
           <AdminProductCombobox
@@ -316,29 +316,29 @@ export function CommercialPolicyWorkspace(props: {
           <span className={labelClassName}>Preço válido</span>
           {publicPrices.length === 1 ? (
             <div className="mt-1 flex min-h-9 items-center">
-              <strong className="text-base text-text-primary">
+              <span className="text-sm font-semibold text-text-primary">
                 {Number(publicPrices[0]!.amount).toLocaleString('pt-BR', {
                   style: 'currency',
                   currency: 'BRL',
                 })}
-              </strong>
+              </span>
             </div>
           ) : (
-            <div className="mt-1 text-status-warning">
-              <p>
-                {publicPrices.length
-                  ? 'Há mais de um preço público aplicável.'
-                  : 'Nenhum preço público aplicável'}
-              </p>
+            <div className="mt-1">
               {!publicPrices.length ? (
                 <button
-                  className={`${buttonClassName({ compact: true, variant: 'interactive' })} mt-1.5`}
+                  className={buttonClassName({ compact: true, variant: 'interactive' })}
                   onClick={() => setPriceDialogOpen(true)}
                   type="button"
                 >
                   Adicionar preço
                 </button>
               ) : null}
+              <p className={`${!publicPrices.length ? 'mt-1' : ''} text-xs text-status-warning`}>
+                {publicPrices.length
+                  ? 'Há mais de um preço público aplicável.'
+                  : 'Nenhum preço público aplicável'}
+              </p>
             </div>
           )}
         </aside>

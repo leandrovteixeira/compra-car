@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 
 import { matchesVehicleSearch, normalizeVehicleSearch } from '@/application/catalog/vehicle-search';
+import { buttonClassName, fieldClassName, labelClassName } from '@compra-car/ui';
 
 interface AdminProductComboboxProps {
   readonly disabled?: boolean;
@@ -82,10 +83,7 @@ export function AdminProductCombobox({
 
   return (
     <div className="relative">
-      <label
-        className={hideLabel ? 'sr-only' : 'text-xs font-semibold text-slate-400'}
-        htmlFor={`${listboxId}-input`}
-      >
+      <label className={hideLabel ? 'sr-only' : labelClassName} htmlFor={`${listboxId}-input`}>
         {label}
       </label>
       <div className={hideLabel ? 'relative' : 'relative mt-1'}>
@@ -98,7 +96,7 @@ export function AdminProductCombobox({
           aria-describedby={errorDescriptionId}
           aria-expanded={open}
           aria-invalid={error}
-          className="min-h-11 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 pr-10 text-sm text-slate-100 outline-none placeholder:text-slate-600 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/25 disabled:cursor-not-allowed disabled:opacity-60"
+          className={`${fieldClassName} pr-10 placeholder:text-text-muted disabled:cursor-not-allowed disabled:opacity-60`}
           disabled={disabled}
           id={`${listboxId}-input`}
           ref={inputRef}
@@ -134,7 +132,7 @@ export function AdminProductCombobox({
         {query ? (
           <button
             aria-label="Limpar veículo"
-            className="absolute right-1 top-1 min-h-9 min-w-9 rounded text-slate-400 hover:text-slate-100"
+            className={`${buttonClassName({ compact: true, variant: 'ghost' })} absolute inset-y-0 right-0 min-h-0 min-w-9 px-0 text-text-muted`}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => {
               onChange('');
@@ -150,7 +148,7 @@ export function AdminProductCombobox({
       {open && typeof document !== 'undefined'
         ? createPortal(
             <ul
-              className="fixed z-[1000] overflow-y-auto rounded-lg border border-slate-700 bg-slate-950 p-1 shadow-2xl"
+              className="fixed z-[1000] overflow-y-auto rounded-md border border-border bg-surface p-1 shadow-xl"
               id={listboxId}
               role="listbox"
               style={popupStyle}
@@ -159,7 +157,7 @@ export function AdminProductCombobox({
                 filtered.map((option, index) => (
                   <li
                     aria-selected={option.id === value}
-                    className={`cursor-pointer rounded-md px-3 py-2 text-sm ${index === activeIndex ? 'bg-sky-900 text-sky-100' : 'text-slate-200 hover:bg-slate-800'}`}
+                    className={`cursor-pointer rounded px-2.5 py-1.5 text-sm ${index === activeIndex ? 'bg-selection text-text-primary' : 'text-text-secondary hover:bg-surface-muted'}`}
                     key={option.id}
                     id={`${listboxId}-option-${index}`}
                     onMouseDown={(event) => event.preventDefault()}
@@ -171,7 +169,9 @@ export function AdminProductCombobox({
                   </li>
                 ))
               ) : (
-                <li className="px-3 py-2 text-sm text-slate-400">Nenhum veículo encontrado.</li>
+                <li className="px-2.5 py-1.5 text-sm text-text-muted">
+                  Nenhum veículo encontrado.
+                </li>
               )}
             </ul>,
             document.body,

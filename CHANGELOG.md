@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-08-28 — Alinhamento final de Pricing e Policies (Sprint 14E.2)
+
+- normaliza o combobox administrativo de veículo com `ui-field`, alinhando sua altura, tipografia,
+  border, radius e foco aos campos adjacentes de preços e competência;
+- adiciona padding horizontal à form section de Criar políticas sem reintroduzir card nesting;
+- compacta tipografia e ação de Preço válido e reorganiza o estado vazio para ação seguida de
+  mensagem auxiliar, preservando comportamento e touch targets coarse.
+
 ## 2026-08-28 — Correção visual de Pricing (Sprint 14E.1)
 
 - ancora o header do ledger de preços ao scrollport próprio, com `th` sticky em `top: 0`, reutilizando

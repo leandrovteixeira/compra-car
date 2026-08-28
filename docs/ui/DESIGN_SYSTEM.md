@@ -82,6 +82,12 @@ The Policies selection area is one divider-led form section with vehicle, compet
 columns. It must not regress to an outer card containing one card per column; responsive stacking is
 handled by the same grid without changing selection behavior.
 
+Administrative vehicle search composes the shared `ui-field` and `ui-label` primitives. Its clear
+action uses the compact ghost button primitive and follows the field height instead of imposing a
+legacy 44px desktop input. The global coarse-pointer rule still raises both field and action to the
+required touch size. In the Policies selection section, use `px-3 sm:px-4`; the empty valid-price
+state orders its compact interactive action before the 12px explanatory status.
+
 Specialized pricing, import, product-spec and comparison grids retain local layout classes because
 their column geometry and responsive behavior are domain-specific. They inherit the centralized light
 palette now and can migrate incrementally to the shared density primitives without changing behavior.
