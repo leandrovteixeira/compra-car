@@ -1,5 +1,16 @@
 # Contexto para agentes de IA
 
+## PDF vertical boundaries — Sprint 14F.5 (2026-08-28)
+
+O header repetido é absoluto e fixo: `header.height`, `header.top` e `page.paddingTop` formam uma
+reserva explícita com 1pt entre o fim do header e o início do conteúdo. Preserve essa relação ao
+alterar a geometria do header; o elemento fixo não participa do flow da página.
+
+A altura das rows é governada somente por `row.minHeight`. As value cells usam o stretch do eixo
+transversal e não declaram `height` ou `minHeight`, evitando arredondamento concorrente com a border
+da row e confinando backgrounds de vantagem à caixa do sibling correto. Category rows continuam no
+flow normal, sem offsets, margens negativas ou separadores artificiais.
+
 ## PDF section color e header simplification — Sprint 14F.4 (2026-08-28)
 
 O vehicle header repetido não possui bottom rule, border escura ou overlay. A hierarquia depende dos

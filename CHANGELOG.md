@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-08-28 — Boundaries verticais do PDF (Sprint 14F.5)
+
+- reserva explicitamente a altura real do header fixo antes do conteúdo, eliminando a sobreposição
+  sobre a primeira row ou categoria sem reintroduzir separadores;
+- faz a row governar a altura das células, que passam a se esticar dentro dela sem `minHeight`
+  concorrente, confinando o background de vantagem antes da categoria seguinte;
+- preserva palette, tipografia, densidade, markers, modos, orientação e regras de paginação.
+
 ## 2026-08-28 — Cor de seções e simplificação do header PDF (Sprint 14F.4)
 
 - remove completamente a bottom rule graphite do header repetido, sem substituir por outra barra;

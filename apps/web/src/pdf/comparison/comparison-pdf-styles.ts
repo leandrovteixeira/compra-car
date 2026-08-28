@@ -1,5 +1,9 @@
 import { StyleSheet } from '@react-pdf/renderer';
 
+export const COMPARISON_PDF_HEADER_TOP = 22;
+export const COMPARISON_PDF_HEADER_HEIGHT = 132;
+export const COMPARISON_PDF_CONTENT_TOP = 155;
+
 export const comparisonPdfStyles = StyleSheet.create({
   page: {
     backgroundColor: '#FFFFFF',
@@ -7,13 +11,14 @@ export const comparisonPdfStyles = StyleSheet.create({
     fontFamily: 'Helvetica',
     paddingBottom: 34,
     paddingHorizontal: 28,
-    paddingTop: 150,
+    paddingTop: COMPARISON_PDF_CONTENT_TOP,
   },
   header: {
     backgroundColor: '#FFFFFF',
     left: 28,
     position: 'absolute',
-    top: 22,
+    height: COMPARISON_PDF_HEADER_HEIGHT,
+    top: COMPARISON_PDF_HEADER_TOP,
     zIndex: 10,
   },
   headerTop: {
@@ -100,12 +105,12 @@ export const comparisonPdfStyles = StyleSheet.create({
   itemCell: { justifyContent: 'center', paddingHorizontal: 9, paddingVertical: 6 },
   itemLabel: { color: '#1A1D21', fontWeight: 400, lineHeight: 1.2 },
   valueCell: {
+    alignSelf: 'stretch',
     alignItems: 'center',
     borderLeftColor: '#E2E5E7',
     borderLeftWidth: 1,
     flexDirection: 'row',
     justifyContent: 'center',
-    minHeight: 31,
     paddingHorizontal: 7,
     position: 'relative',
   },

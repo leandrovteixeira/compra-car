@@ -25,7 +25,12 @@ import {
   getComparisonPdfMode,
   prepareComparisonPdf,
 } from '../src/pdf/comparison/comparison-pdf-model';
-import { comparisonPdfStyles } from '../src/pdf/comparison/comparison-pdf-styles';
+import {
+  COMPARISON_PDF_CONTENT_TOP,
+  COMPARISON_PDF_HEADER_HEIGHT,
+  COMPARISON_PDF_HEADER_TOP,
+  comparisonPdfStyles,
+} from '../src/pdf/comparison/comparison-pdf-styles';
 import {
   COMPARISON_PDF_CATEGORY_PRESENCE_AHEAD,
   COMPARISON_PDF_ROW_WRAP,
@@ -265,6 +270,26 @@ describe('view model e documento PDF', () => {
     expect(comparisonPdfStyles.categoryText).toMatchObject({ color: '#1A1D21' });
     expect(comparisonPdfStyles.advantageIcon).toMatchObject({ height: 11, width: 11 });
     expect(COMPARISON_PDF_ADVANTAGE_COLOR).toBe('#EF7732');
+  });
+
+  it('reserva o header fixo e confina backgrounds à altura governada pela row', () => {
+    expect(COMPARISON_PDF_CONTENT_TOP).toBeGreaterThan(
+      COMPARISON_PDF_HEADER_TOP + COMPARISON_PDF_HEADER_HEIGHT,
+    );
+    expect(comparisonPdfStyles.header).toMatchObject({
+      height: COMPARISON_PDF_HEADER_HEIGHT,
+      top: COMPARISON_PDF_HEADER_TOP,
+    });
+    expect(comparisonPdfStyles.page).toMatchObject({ paddingTop: COMPARISON_PDF_CONTENT_TOP });
+    expect(comparisonPdfStyles.row).toMatchObject({ minHeight: 31 });
+    expect(comparisonPdfStyles.valueCell).toMatchObject({ alignSelf: 'stretch' });
+    expect(comparisonPdfStyles.valueCell).not.toHaveProperty('height');
+    expect(comparisonPdfStyles.valueCell).not.toHaveProperty('minHeight');
+
+    for (const style of Object.values(comparisonPdfStyles)) {
+      if ('marginTop' in style) expect(style.marginTop).toBeGreaterThanOrEqual(0);
+      if ('marginBottom' in style) expect(style.marginBottom).toBeGreaterThanOrEqual(0);
+    }
   });
 
   it.each(['differences', 'advantages'] as const)(
