@@ -6,18 +6,25 @@ import type { PasswordLifecycleState } from '@/application/auth/password-lifecyc
 export function AuthPasswordForm({
   action,
   mode,
+  onSuccess,
 }: {
   readonly action: (
     state: PasswordLifecycleState,
     data: FormData,
   ) => Promise<PasswordLifecycleState>;
   readonly mode: 'invite' | 'recovery';
+  readonly onSuccess?: (completion: {
+    readonly destination: string;
+    readonly message: string;
+  }) => void;
 }) {
   const router = useRouter();
   const [state, formAction, pending] = useActionState(action, { status: 'idle' });
   useEffect(() => {
-    if (state.status === 'success' && state.destination) router.replace(state.destination);
-  }, [router, state]);
+    if (state.status !== 'success' || !state.destination) return;
+    if (onSuccess) onSuccess({ destination: state.destination, message: state.message });
+    else router.replace(state.destination);
+  }, [onSuccess, router, state]);
   return (
     <form action={formAction} className="mt-5 grid gap-4">
       <label className={labelClassName}>

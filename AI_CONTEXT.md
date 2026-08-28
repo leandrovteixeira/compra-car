@@ -1,5 +1,39 @@
 # Contexto para agentes de IA
 
+## Instalação pelo User Menu — Sprint 14G.3 (2026-08-28)
+
+Há dois entry points de instalação: a oferta opcional pós-convite e “Instalar aplicativo” no
+`UserMenu`, antes de “Sair”. Ambos consomem o mesmo `usePwaInstall`; não crie outro listener para
+`beforeinstallprompt`, outra detecção standalone/plataforma ou textos manuais paralelos.
+
+`canOfferPwaInstall` restringe a ação a prompt nativo, iOS/iPadOS manual ou fallback mobile útil.
+Standalone (`display-mode` ou `navigator.standalone`), estado inicial e desktop sem suporte não
+mostram a opção. Prompt aceito oculta a ação como instalado; prompt dispensado consome o evento e
+reclassifica o ambiente sem bloquear o uso. As instruções ficam em `PwaInstallInstructions`,
+compartilhado também por `PostInviteInstallStep`.
+
+O menu continua compacto (`w-60`), keyboard-operable e touch-friendly. Não persista recusas: “Agora
+não” afeta somente a oferta pós-convite, e o User Menu permanece o caminho posterior quando a
+plataforma ainda admite instalação.
+
+## Oferta de instalação pós-convite — Sprint 14G.2 (2026-08-28)
+
+O fluxo novo é: convite scanner-safe → criação e ativação da senha concluídas → oferta opcional de
+instalação → destino autenticado normal. `InviteOnboarding` monta `usePwaInstall` durante o formulário
+para capturar `beforeinstallprompt`, mas só renderiza `PostInviteInstallStep` após o resultado novo
+`Cadastro concluído.`; o retorno idempotente de conta já ativa segue diretamente para a aplicação.
+
+O helper único classifica prompt nativo, iOS/iPadOS manual, fallback mobile, standalone e desktop sem
+oferta útil. Prompt aceito ou dispensado e “Agora não” liberam imediatamente o destino. iOS orienta
+Compartilhar → Adicionar à Tela de Início → Adicionar; mobile sem prompt aponta para o menu do
+navegador. Não há persistência da recusa nem nova oferta em logins futuros. A opção nativa continua
+disponível posteriormente no menu do navegador.
+
+Não mover essa decisão para callbacks, confirmação do token ou lifecycle server-side: token hash,
+`verifyOtp`, cookies HttpOnly, expiry, redirects, idempotência e disabled-user checks permanecem
+isolados. Manifest, metadata, ícones e service worker/offline não foram alterados; a Sprint 14G.3
+posterior conectou o mesmo helper ao `UserMenu` sem modificar este onboarding.
+
 ## Mobile e web app instalável — Sprint 14G (2026-08-28)
 
 A aplicação usa `/manifest.webmanifest` nativo do App Router, com `display: standalone`, `start_url`,
@@ -17,8 +51,9 @@ sem crop, reposicionamento, cantos manuais ou geração por IA. Os paths runtime
 Em favicon de 16/32px, detalhes finos do carro perdem legibilidade; a imagem aprovada continua sendo
 usada sem criar identidade simplificada paralela.
 
-Não existe service worker, cache offline, push, background sync ou install prompt próprio; o MVP
-continua online-only e a autenticação/sessão/redirects existentes permanecem únicos.
+Na entrega 14G ainda não existia install prompt próprio; as Sprints 14G.2/14G.3 posteriores
+adicionaram os dois entry points descritos acima. Continua sem service worker, cache offline, push ou
+background sync; o MVP permanece online-only e a autenticação/sessão/redirects existentes são únicos.
 
 QA responsivo referencia 1440/1280, 1024/768 e 430/390/360/320px, com 390px como mobile principal.
 Scroll horizontal pertence somente a tabelas/comparação locais. Sticky administrativo começa em

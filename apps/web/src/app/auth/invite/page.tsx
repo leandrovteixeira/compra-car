@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { AuthPasswordForm } from '@/components/auth-password-form';
 import { AuthShell } from '@/components/auth-shell';
+import { InviteOnboarding } from '@/components/invite-onboarding';
 import { APP_NAME } from '@/config/app-identity';
 import { loadPasswordFlowIdentity } from '@/server/password-lifecycle';
 import { completeInviteAction } from './actions';
@@ -19,23 +19,19 @@ export default async function InvitePage({
         : identity.profile.status === 'disabled'
           ? `Seu acesso ao ${APP_NAME} está desativado.`
           : null;
+  if (!message) return <InviteOnboarding action={completeInviteAction} />;
+
   return (
     <AuthShell
       title="Defina sua senha"
       description={`Crie uma senha para concluir seu acesso ao ${APP_NAME}.`}
     >
-      {message ? (
-        <>
-          <p className="mt-5 text-rose-300" role="alert">
-            {message}
-          </p>
-          <Link className="mt-6 inline-flex font-semibold text-interactive" href="/login">
-            Voltar ao login
-          </Link>
-        </>
-      ) : (
-        <AuthPasswordForm action={completeInviteAction} mode="invite" />
-      )}
+      <p className="mt-5 text-rose-300" role="alert">
+        {message}
+      </p>
+      <Link className="mt-6 inline-flex font-semibold text-interactive" href="/login">
+        Voltar ao login
+      </Link>
     </AuthShell>
   );
 }

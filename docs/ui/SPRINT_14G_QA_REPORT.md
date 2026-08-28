@@ -1,5 +1,31 @@
 # Sprint 14G — relatório de QA responsive e instalável
 
+## Complemento 14G.3 — instalação pelo User Menu
+
+O menu do usuário oferece “Instalar aplicativo” antes de “Sair” quando `usePwaInstall` classifica o
+ambiente como prompt nativo, iOS/iPadOS manual ou fallback mobile. A opção fica oculta em standalone,
+durante detecção e em desktop sem suporte. Chromium abre o prompt nativo; aceite/dispensa fecha e
+atualiza o menu. iOS e fallback reutilizam `PwaInstallInstructions` em disclosure compacto, com
+`aria-expanded`, foco visível e operação por teclado.
+
+Os dois entry points são pós-convite e User Menu. Ambos compartilham helper e instruções, sem
+persistência de recusa. A largura existente `w-60`, os alvos `touch-target` e a ancoragem à direita
+mantêm acesso estrutural em 430, 390, 360 e 320px. **PENDENTE:** QA visual e instalação real nos
+browsers/dispositivos da matriz.
+
+## Complemento 14G.2 — instalação após convite
+
+Após a criação e ativação bem-sucedidas da senha, o onboarding pode oferecer instalação antes do
+destino autenticado. A etapa reutiliza o `AuthShell` (`max-w-sm`, padding lateral fluido), botão
+full-width e `touch-target`, cobrindo estruturalmente 430, 390, 360 e 320px sem largura fixa ou
+overflow. Standalone e desktop sem prompt seguem direto; Android/Chromium usa `beforeinstallprompt`;
+iOS/iPadOS recebe instruções de Compartilhar; mobile sem prompt recebe fallback pelo menu do
+navegador. “Agora não” e a conclusão/dispensa do prompt nunca bloqueiam a entrada na aplicação.
+
+O teste automatizado cobre classificação de plataforma, standalone, disponibilidade do prompt,
+continuidade, identidade central e isolamento do invite scanner-safe. **PENDENTE:** validação visual
+e funcional em Android/Chrome e iPhone/iPad/Safari reais.
+
 ## Escopo e evidência
 
 A auditoria percorreu estruturalmente as rotas Auth, Seller e Admin solicitadas, seus shells,

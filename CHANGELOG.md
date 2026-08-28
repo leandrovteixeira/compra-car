@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-08-28 — Instalação pelo menu da aplicação (Sprint 14G.3)
+
+- adiciona “Instalar aplicativo” antes de “Sair” no menu do usuário somente quando há prompt nativo
+  ou orientação manual útil, mantendo a densidade e os touch targets existentes;
+- reutiliza `usePwaInstall` para prompt Chromium, detecção standalone/iOS/iPadOS e fallback mobile,
+  sem duplicar listeners ou estado de instalação;
+- extrai as instruções compactas compartilhadas pelos entry points pós-convite e User Menu e oculta
+  a ação em standalone ou desktop sem suporte;
+- preserva onboarding 14G.2, logout, manifest, metadata, ícones, auth, Supabase, banco, offline,
+  comparação, PDF, pricing, Import Engine e `Legacy`.
+
+## 2026-08-28 — Oferta de instalação pós-convite (Sprint 14G.2)
+
+- insere uma etapa opcional no `AuthShell` somente depois da criação e ativação bem-sucedidas da
+  senha de um novo convidado, antes do destino autenticado normal;
+- dispara o prompt nativo quando disponibilizado pelo navegador, apresenta instruções manuais no
+  iOS e em mobile sem prompt, e segue direto em standalone ou desktop sem mecanismo útil;
+- mantém “Agora não” como saída imediata e deixa a instalação posterior a cargo da opção já
+  disponível no menu do navegador, sem persistência adicional;
+- preserva manifest, ícones, metadata, menu da aplicação, lifecycle de senha, scanner-safe invite,
+  Supabase, banco, roles, comparação, PDF, pricing, Import Engine e `Legacy`.
+
 ## 2026-08-28 — Ícone PWA fornecido pelo usuário (Sprint 14G.1)
 
 - substitui o monograma temporário pelo app icon aprovado: carro frontal graphite sobre fundo
