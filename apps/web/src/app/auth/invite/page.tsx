@@ -28,7 +28,7 @@ export default async function InvitePage({
           <p className="mt-5 text-rose-300" role="alert">
             {message}
           </p>
-          <Link className="mt-6 inline-flex text-cyan-300" href="/login">
+          <Link className="mt-6 inline-flex font-semibold text-interactive" href="/login">
             Voltar ao login
           </Link>
         </>

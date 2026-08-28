@@ -38,7 +38,7 @@ export default async function AddImportDocumentsPage({
         eyebrow="Import Engine"
         title="Adicionar documentos"
       />
-      <div className="mt-7 rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+      <div className="mt-5">
         <AdminImportDocumentsForm
           action={addImportDocumentsAction}
           initialState={initialState}

@@ -45,14 +45,19 @@ export function AuthPasswordForm({
       {state.status !== 'idle' ? (
         <p
           className={
-            state.status === 'error' ? 'text-sm text-rose-300' : 'text-sm text-emerald-300'
+            state.status === 'error'
+              ? 'rounded-md border border-status-error/30 bg-rose-950/10 p-2.5 text-sm text-status-error'
+              : 'rounded-md border border-status-success/30 bg-emerald-950/10 p-2.5 text-sm text-status-success'
           }
           role={state.status === 'error' ? 'alert' : 'status'}
         >
           {state.message}
         </p>
       ) : null}
-      <button className={buttonClassName()} disabled={pending}>
+      <button
+        className={buttonClassName({ fullWidth: true, variant: 'interactive' })}
+        disabled={pending}
+      >
         {pending ? 'Salvando…' : mode === 'invite' ? 'Concluir cadastro' : 'Salvar nova senha'}
       </button>
     </form>

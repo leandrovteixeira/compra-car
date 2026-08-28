@@ -31,6 +31,10 @@ describe('Sprint 14A.1 design-system foundation', () => {
     );
     expect(primitives).toContain("export const fieldClassName = 'ui-field'");
     expect(primitives).toContain("export const tableClassName = 'ui-table'");
+    expect(primitives).toContain("export const formGridClassName = 'ui-form-grid'");
+    expect(primitives).toContain("export const tableFrameClassName = 'ui-table-frame'");
+    expect(css).toContain('.ui-badge--info');
+    expect(css).toContain('@media (pointer: coarse)');
     expect(primary).toContain('var(--color-action-primary)');
     expect(css).toContain('--color-action-primary: #1a1d21');
     expect(primary).not.toContain('var(--color-attention)');

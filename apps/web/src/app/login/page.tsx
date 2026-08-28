@@ -66,7 +66,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         </button>
       </form>
       <Link
-        className="mt-5 inline-flex text-sm font-semibold text-cyan-300 hover:text-cyan-200"
+        className="mt-5 inline-flex text-sm font-semibold text-interactive hover:text-interactive-hover"
         href="/forgot-password"
       >
         Esqueci minha senha

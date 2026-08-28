@@ -92,12 +92,10 @@ describe('admin user UX', () => {
   it('keeps desktop action menus unclipped and centers row content vertically', () => {
     const list = source('../src/components/admin/admin-user-list.tsx');
 
-    expect(list).toContain('hidden overflow-x-clip overflow-y-visible rounded-2xl');
-    expect(list).not.toContain('hidden overflow-hidden rounded-2xl');
-    expect(list).toContain('className="align-middle transition hover:bg-slate-900/80"');
-    expect(list).not.toContain('className="align-top transition hover:bg-slate-900/80"');
-    expect(list).toContain('[&_th:first-child]:rounded-tl-2xl');
-    expect(list).toContain('[&_th:last-child]:rounded-tr-2xl');
+    expect(list).toContain('ui-table-frame hidden overflow-x-clip overflow-y-visible');
+    expect(list).not.toContain('hidden overflow-hidden');
+    expect(list).toContain('className="align-middle transition hover:bg-surface-muted"');
+    expect(list).not.toContain('className="align-top');
   });
 
   it('exposes invitation and state-aware actions without browser-side privileged access', () => {

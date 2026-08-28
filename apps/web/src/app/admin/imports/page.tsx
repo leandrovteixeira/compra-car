@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { buttonClassName, fieldClassName } from '@compra-car/ui';
 
 import { parseAdminImportQuery, type AdminImportQuery } from '@/application/admin/import-query';
 import { requireRole } from '@/auth/authorization';
@@ -18,7 +19,7 @@ export default async function AdminImportsPage({
     <>
       <PageHeader
         actions={
-          <Link className="ui-button ui-button--primary" href="/admin/imports/new">
+          <Link className={buttonClassName({ variant: 'interactive' })} href="/admin/imports/new">
             Nova importação
           </Link>
         }
@@ -26,18 +27,14 @@ export default async function AdminImportsPage({
         eyebrow="Import Engine"
         title="Importações"
       />
-      <form className="mt-6 grid gap-3 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 sm:grid-cols-4">
+      <form className="mt-5 grid gap-2 border-b border-border pb-4 sm:grid-cols-4">
         <input
-          className="min-h-11 rounded-xl border border-slate-700 bg-slate-950 px-3 text-white sm:col-span-2"
+          className={`${fieldClassName} sm:col-span-2`}
           defaultValue={query.text}
           name="q"
           placeholder="Buscar dossiê"
         />
-        <select
-          className="min-h-11 rounded-xl border border-slate-700 bg-slate-950 px-3 text-white"
-          defaultValue={query.status ?? ''}
-          name="status"
-        >
+        <select className={fieldClassName} defaultValue={query.status ?? ''} name="status">
           <option value="">Todos os status</option>
           <option value="uploaded">Uploaded</option>
           <option value="ready">Ready</option>
@@ -45,14 +42,11 @@ export default async function AdminImportsPage({
           <option value="rejected">Rejected</option>
           <option value="archived">Archived</option>
         </select>
-        <button
-          className="min-h-11 rounded-xl border border-sky-700 px-4 text-sm font-bold text-sky-200"
-          type="submit"
-        >
+        <button className={buttonClassName({ variant: 'secondary' })} type="submit">
           Filtrar
         </button>
       </form>
-      <div className="mt-6">
+      <div className="mt-4">
         <AdminImportList items={page.items} />
       </div>
     </>

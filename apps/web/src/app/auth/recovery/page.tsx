@@ -17,7 +17,7 @@ export default async function RecoveryPage({
           <p className="mt-5 text-rose-300" role="alert">
             Este link de recuperação não é mais válido. Solicite uma nova redefinição de senha.
           </p>
-          <Link className="mt-6 inline-flex text-cyan-300" href="/login">
+          <Link className="mt-6 inline-flex font-semibold text-interactive" href="/login">
             Voltar ao login
           </Link>
         </>

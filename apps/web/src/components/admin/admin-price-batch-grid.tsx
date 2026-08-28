@@ -11,6 +11,7 @@ import { useActionState, useEffect, useRef, useState } from 'react';
 
 import { EMPTY_MANUAL_PRICE_BATCH_ROW } from '@/application/admin/manual-price-batch';
 import { AdminProductCombobox } from '@/components/admin/admin-product-combobox';
+import { buttonClassName, fieldClassName } from '@compra-car/ui';
 
 type BatchAction = (
   state: ManualPriceBatchActionStateDto,
@@ -68,8 +69,7 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
   }, [state]);
 
   const filledCount = rows.filter((row) => !isOperationallyEmpty(row)).length;
-  const inputClass =
-    'min-h-11 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 text-sm text-slate-100 outline-none placeholder:text-slate-600 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/25 disabled:cursor-not-allowed disabled:opacity-60';
+  const inputClass = `${fieldClassName} disabled:cursor-not-allowed disabled:opacity-60`;
 
   function updateRow(clientRowId: string, change: Partial<ManualPriceBatchGridRowDto>) {
     setRows((current) => {
@@ -127,8 +127,8 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
         </div>
       ) : null}
 
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/50">
-        <div className="admin-table-header hidden grid-cols-[minmax(18rem,2fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_3rem] gap-3 border-b border-slate-800 bg-slate-900 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400 md:grid">
+      <div className="ui-table-frame">
+        <div className="admin-table-header hidden grid-cols-[minmax(18rem,2fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_3rem] gap-3 border-b border-border bg-surface-muted px-3 py-2 text-[0.6875rem] font-semibold uppercase tracking-wider text-text-muted md:grid">
           <span>Veículo</span>
           <span>Preço público</span>
           <span>Início</span>
@@ -146,7 +146,7 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
 
             return (
               <div
-                className="grid gap-4 border-b border-slate-800 px-4 py-5 last:border-b-0 md:grid-cols-[minmax(18rem,2fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_3rem] md:gap-3 md:py-4"
+                className="grid gap-3 border-b border-border px-3 py-3 last:border-b-0 md:grid-cols-[minmax(18rem,2fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_3rem] md:py-2"
                 key={row.clientRowId}
               >
                 <div>
@@ -168,7 +168,7 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
                   />
                 </div>
 
-                <label className="block text-xs font-semibold text-slate-400">
+                <label className="block text-xs font-semibold text-text-secondary">
                   <span className="md:sr-only">Preço público</span>
                   <input
                     aria-describedby={errors.amount ? `${prefix}-amount-error` : undefined}
@@ -184,7 +184,7 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
                   <FieldError id={`${prefix}-amount-error`} messages={errors.amount} />
                 </label>
 
-                <label className="block text-xs font-semibold text-slate-400">
+                <label className="block text-xs font-semibold text-text-secondary">
                   <span className="md:sr-only">Início da vigência</span>
                   <input
                     aria-describedby={errors.startsOn ? `${prefix}-start-error` : undefined}
@@ -200,7 +200,7 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
                   <FieldError id={`${prefix}-start-error`} messages={errors.startsOn} />
                 </label>
 
-                <label className="block text-xs font-semibold text-slate-400">
+                <label className="block text-xs font-semibold text-text-secondary">
                   <span className="md:sr-only">Fim da vigência (opcional)</span>
                   <input
                     aria-describedby={errors.endsOn ? `${prefix}-end-error` : undefined}
@@ -216,7 +216,7 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
 
                 <button
                   aria-label={`Remover linha ${index + 1}`}
-                  className="min-h-11 rounded-lg border border-slate-700 px-3 text-sm font-semibold text-slate-300 transition hover:border-rose-700 hover:text-rose-300 disabled:cursor-not-allowed disabled:opacity-40 md:px-0"
+                  className={`${buttonClassName({ compact: true, variant: 'ghost' })} text-status-error disabled:cursor-not-allowed disabled:opacity-40 md:px-0`}
                   disabled={isLastEmpty}
                   onClick={() => removeRow(row.clientRowId)}
                   type="button"
@@ -231,11 +231,11 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-text-muted">
           {filledCount}/100 linhas preenchidas. O salvamento é atômico e cria preços em rascunho.
         </p>
         <button
-          className="inline-flex min-h-11 items-center justify-center rounded-xl bg-sky-500 px-5 text-sm font-bold text-slate-950 transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-60"
+          className={buttonClassName({ variant: 'interactive' })}
           disabled={pending || filledCount === 0}
           type="submit"
         >

@@ -13,6 +13,7 @@ import {
 import { importDocumentRoleFieldName } from '@/application/admin/import-document-submission';
 
 import { AdminImportFileInput } from './admin-import-file-input';
+import { buttonClassName, fieldClassName } from '@compra-car/ui';
 import {
   appendImportFiles,
   removeImportFile,
@@ -38,7 +39,7 @@ function SubmitButton() {
   const { pending } = useFormStatus();
   return (
     <button
-      className="min-h-11 rounded-xl bg-sky-500 px-5 text-sm font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+      className={buttonClassName({ variant: 'interactive' })}
       disabled={pending}
       type="submit"
     >
@@ -89,18 +90,18 @@ export function AdminImportDocumentsForm({
   };
 
   return (
-    <form action={formAction} className="grid gap-5">
+    <form action={formAction} className="grid gap-4">
       <input name="batchId" type="hidden" value={state.values.batchId} />
       <input name="expectedLockVersion" type="hidden" value={state.values.expectedLockVersion} />
       <input name="operationId" type="hidden" value={state.values.operationId} />
       <div
-        className="grid min-h-36 place-items-center rounded-2xl border border-dashed border-sky-700 bg-sky-950/20 p-5 text-center"
+        className="grid min-h-24 place-items-center rounded-md border border-dashed border-selection-strong bg-selection p-4 text-center"
         onDragOver={(event) => event.preventDefault()}
         onDrop={onDrop}
       >
-        <label className="cursor-pointer text-sm font-semibold text-sky-200">
+        <label className="cursor-pointer text-sm font-semibold text-interactive">
           Selecione PDFs ou arraste-os para esta Ã¡rea
-          <span className="mt-1 block font-normal text-slate-400">
+          <span className="mt-1 block font-normal text-text-secondary">
             AtÃ© {maximumFiles} arquivo(s), {formatBytes(IMPORT_ENGINE_MAX_PDF_BYTES)} por PDF.
           </span>
           <input
@@ -125,13 +126,13 @@ export function AdminImportDocumentsForm({
       <ul className="grid gap-3">
         {selection.map((item, index) => (
           <li
-            className="grid gap-3 rounded-xl border border-slate-800 bg-slate-950 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(11rem,auto)_auto] sm:items-center"
+            className="grid gap-3 border-t border-border py-3 sm:grid-cols-[minmax(0,1fr)_minmax(11rem,auto)_auto] sm:items-center"
             key={item.id}
           >
             <AdminImportFileInput item={item} rehydrationToken={state} />
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-white">{item.file.name}</p>
-              <p className="text-xs text-slate-500">{formatBytes(item.file.size)}</p>
+              <p className="text-xs text-text-muted">{formatBytes(item.file.size)}</p>
               {state.fieldErrors[`document.${index}`]?.map((error) => (
                 <p className="text-xs text-rose-300" key={error}>
                   {error}
@@ -140,7 +141,7 @@ export function AdminImportDocumentsForm({
             </div>
             <select
               aria-label={`Papel de ${item.file.name}`}
-              className="min-h-11 rounded-xl border border-slate-700 bg-slate-900 px-3 text-sm text-white"
+              className={fieldClassName}
               name={importDocumentRoleFieldName(item.id)}
               onChange={(event) =>
                 setSelection((current) =>
@@ -160,7 +161,7 @@ export function AdminImportDocumentsForm({
               ))}
             </select>
             <button
-              className="min-h-11 rounded-xl border border-slate-700 px-3 text-sm text-slate-200"
+              className={buttonClassName({ compact: true, variant: 'ghost' })}
               onClick={() => {
                 setSelection((current) => removeImportFile(current, index));
                 setSelectionNotice(null);

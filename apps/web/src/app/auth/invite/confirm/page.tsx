@@ -14,7 +14,7 @@ export default async function InviteConfirmationPage() {
     <AuthShell title="Aceitar convite">
       {hasAttempt ? (
         <>
-          <p className="mt-5 text-slate-300">
+          <p className="mt-5 text-text-secondary">
             Clique em continuar para confirmar seu convite para o Compra Car.
           </p>
           <form action={confirmInviteAction} className="mt-6">
@@ -26,7 +26,7 @@ export default async function InviteConfirmationPage() {
           <p className="mt-5 text-rose-300" role="alert">
             Este convite não é mais válido. Solicite um novo convite a um administrador.
           </p>
-          <Link className="mt-6 inline-flex text-cyan-300" href="/login">
+          <Link className="mt-6 inline-flex font-semibold text-interactive" href="/login">
             Voltar ao login
           </Link>
         </>

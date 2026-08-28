@@ -31,9 +31,7 @@ function ProfileBadges({ user }: { readonly user: AdminUserDto }) {
 
   return (
     <div className="flex flex-wrap gap-2">
-      <span className="ui-badge border-sky-800 bg-sky-950/50 text-sky-300">
-        {adminUserRoleLabel(user.role)}
-      </span>
+      <span className="ui-badge ui-badge--info">{adminUserRoleLabel(user.role)}</span>
       <span className={`ui-badge ${badgeClass(user.status)}`}>
         {adminUserStatusLabel(user.status)}
       </span>
@@ -48,19 +46,16 @@ export function AdminUserList({ users }: AdminUserListProps) {
         Usuários com acesso ao Compra Car
       </h2>
 
-      <div className="grid gap-4 md:hidden">
+      <div className="grid gap-3 md:hidden">
         {users.map((user) => (
-          <article
-            className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/50 p-4"
-            key={user.id}
-          >
+          <article className="min-w-0 rounded-lg border border-border bg-surface p-4" key={user.id}>
             <h3
-              className="truncate font-semibold text-slate-100"
+              className="truncate font-semibold text-text-primary"
               title={user.fullName ?? undefined}
             >
               {user.fullName || '—'}
             </h3>
-            <p className="mt-1 break-all text-sm text-slate-400">{user.email || '—'}</p>
+            <p className="mt-1 break-all text-sm text-text-secondary">{user.email || '—'}</p>
             <div className="mt-4">
               <ProfileBadges user={user} />
             </div>
@@ -100,10 +95,10 @@ export function AdminUserList({ users }: AdminUserListProps) {
         ))}
       </div>
 
-      <div className="hidden overflow-x-clip overflow-y-visible rounded-2xl border border-slate-800 bg-slate-900/50 md:block">
+      <div className="ui-table-frame hidden overflow-x-clip overflow-y-visible md:block">
         <table className="ui-table">
           <caption className="sr-only">Usuários cadastrados no Supabase Auth</caption>
-          <thead className="border-b border-slate-800 bg-slate-900 text-xs uppercase tracking-wide text-slate-400 [&_th:first-child]:rounded-tl-2xl [&_th:last-child]:rounded-tr-2xl">
+          <thead>
             <tr>
               {[
                 'Nome',
@@ -120,15 +115,15 @@ export function AdminUserList({ users }: AdminUserListProps) {
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800">
+          <tbody>
             {users.map((user) => (
-              <tr className="align-middle transition hover:bg-slate-900/80" key={user.id}>
-                <td className="max-w-48 font-semibold text-slate-100">
+              <tr className="align-middle transition hover:bg-surface-muted" key={user.id}>
+                <td className="max-w-48 font-semibold text-text-primary">
                   <span className="block truncate" title={user.fullName ?? undefined}>
                     {user.fullName || '—'}
                   </span>
                 </td>
-                <td className="max-w-64 text-slate-300">
+                <td className="max-w-64 text-text-secondary">
                   <span className="block break-all">{user.email || '—'}</span>
                 </td>
                 <td>
@@ -159,7 +154,7 @@ export function AdminUserList({ users }: AdminUserListProps) {
             ))}
           </tbody>
         </table>
-        <p className="border-t border-slate-800 px-4 py-3 text-xs text-slate-500">
+        <p className="border-t border-border px-3 py-2 text-xs text-text-muted">
           {users.length} {users.length === 1 ? 'usuário encontrado' : 'usuários encontrados'}
         </p>
       </div>

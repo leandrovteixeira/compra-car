@@ -1,5 +1,19 @@
 # Contexto para agentes de IA
 
+## Remaining Screens UX — Sprint 14E (2026-08-28)
+
+O audit classificou Veículos, Specs, seleção do vendedor e Comparação como referência A. Usuários e
+Auth estavam B; Preços públicos, entrada de Preços, criação/workspace de Políticas e Importações
+estavam C por geometria antiga, cards grandes e utilities Slate/Sky locais. Dashboard ficou intacto
+por exclusão explícita do escopo. A Sprint 14E alterou apenas apresentação: domínio, contratos,
+Supabase, banco, autorização, lifecycle, cálculos, formatters, PDF e `Legacy` não foram tocados.
+
+Primitives recorrentes: `ui-form-grid`, `ui-form-section`, `ui-table-frame` e `ui-badge--info`.
+Blue `#9ABCC8` comunica interação/identidade; graphite `#1A1D21` comunica estrutura; orange `#EF7732`
+continua atenção rara, nunca CTA genérico. As telas migradas devem preferir tokens semânticos e
+controles desktop de 30–36px; `@media (pointer: coarse)` preserva 44px. Aliases Slate/Sky/Cyan ainda
+existem para migração incremental de superfícies fora da rodada e não devem ser removidos globalmente.
+
 ## Regression fix de Vantagens — Sprint 14D.3b (2026-08-27)
 
 **Vantagens = vantagens objetivas do veículo principal/referência.** O primeiro veículo continua sendo

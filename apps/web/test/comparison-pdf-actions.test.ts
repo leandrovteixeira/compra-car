@@ -148,7 +148,7 @@ describe('compartilhamento nativo do PDF', () => {
     const component = source('../src/components/comparison-pdf-actions.tsx');
     expect(component).toContain('disabled={isSharing}');
     expect(component).toContain("isSharing ? 'Preparando...' : 'Compartilhar'");
-    expect(component).toContain('finally {\n      setIsSharing(false);\n    }');
+    expect(component).toMatch(/finally \{\r?\n\s+setIsSharing\(false\);\r?\n\s+\}/u);
     expect(component).toContain('if (isSharing) return;');
   });
 });

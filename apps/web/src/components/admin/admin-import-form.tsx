@@ -24,6 +24,7 @@ import {
   type SelectedImportFile,
 } from './admin-import-file-selection';
 import { AdminImportFileInput } from './admin-import-file-input';
+import { buttonClassName, fieldClassName, formGridClassName, labelClassName } from '@compra-car/ui';
 
 const ROLE_LABELS: Readonly<Record<string, string>> = {
   primary: 'Carta principal',
@@ -45,7 +46,7 @@ function SubmitButton() {
   const { pending } = useFormStatus();
   return (
     <button
-      className="inline-flex min-h-11 items-center justify-center rounded-xl bg-sky-500 px-5 text-sm font-bold text-slate-950 transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-60"
+      className={buttonClassName({ variant: 'interactive' })}
       disabled={pending}
       type="submit"
     >
@@ -98,26 +99,26 @@ export function AdminImportForm({ action, initialState }: AdminImportFormProps) 
   };
 
   return (
-    <form action={formAction} className="grid gap-6">
+    <form action={formAction} className="grid gap-5">
       <input name="idempotencyKey" type="hidden" value={state.values.idempotencyKey} />
-      <div className="grid gap-5 rounded-2xl border border-slate-800 bg-slate-900/70 p-5 md:grid-cols-2">
-        <label className="grid gap-2 text-sm font-semibold text-slate-200">
+      <div className={formGridClassName}>
+        <label className={`${labelClassName} grid gap-1.5`}>
           Plugin
           <input
-            className="min-h-11 rounded-xl border border-slate-800 bg-slate-900 px-3 text-slate-400"
+            className={`${fieldClassName} bg-surface-muted text-text-muted`}
             disabled
             value="Cartas Comerciais"
           />
         </label>
-        <label className="grid gap-2 text-sm font-semibold text-slate-200">
-          Competência, se conhecida <span className="font-normal text-slate-500">(opcional)</span>
+        <label className={`${labelClassName} grid gap-1.5`}>
+          Competência, se conhecida <span className="font-normal text-text-muted">(opcional)</span>
           <input
-            className="min-h-11 rounded-xl border border-slate-700 bg-slate-950 px-3 text-white"
+            className={fieldClassName}
             defaultValue={state.values.competence}
             name="competence"
             type="month"
           />
-          <span className="text-xs font-normal text-slate-500">
+          <span className="text-xs font-normal text-text-muted">
             Futuramente ela poderá ser identificada a partir do conteúdo dos documentos.
           </span>
           {state.fieldErrors.competence?.map((error) => (
@@ -126,10 +127,10 @@ export function AdminImportForm({ action, initialState }: AdminImportFormProps) 
             </span>
           ))}
         </label>
-        <label className="grid gap-2 text-sm font-semibold text-slate-200 md:col-span-2">
-          Observação <span className="font-normal text-slate-500">(opcional)</span>
+        <label className={`${labelClassName} grid gap-1.5 sm:col-span-2`}>
+          Observação <span className="font-normal text-text-muted">(opcional)</span>
           <textarea
-            className="min-h-24 rounded-xl border border-slate-700 bg-slate-950 p-3 text-white"
+            className={`${fieldClassName} min-h-20 py-2`}
             defaultValue={state.values.notes}
             maxLength={2000}
             name="notes"
@@ -137,20 +138,20 @@ export function AdminImportForm({ action, initialState }: AdminImportFormProps) 
         </label>
       </div>
 
-      <div className="grid gap-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+      <div className="ui-form-section grid gap-3">
         <div>
-          <h2 className="text-lg font-bold text-white">Documentos</h2>
-          <p className="mt-1 text-sm text-slate-400">
+          <h2 className="text-base font-semibold text-text-primary">Documentos</h2>
+          <p className="mt-0.5 text-sm text-text-secondary">
             Até {IMPORT_ENGINE_MAX_DOCUMENTS} PDFs de no máximo{' '}
             {formatBytes(IMPORT_ENGINE_MAX_PDF_BYTES)} cada.
           </p>
         </div>
         <div
-          className="grid min-h-32 place-items-center rounded-2xl border border-dashed border-sky-700 bg-sky-950/20 p-5 text-center"
+          className="grid min-h-24 place-items-center rounded-md border border-dashed border-selection-strong bg-selection p-4 text-center"
           onDragOver={(event) => event.preventDefault()}
           onDrop={onDrop}
         >
-          <label className="cursor-pointer text-sm font-semibold text-sky-200">
+          <label className="cursor-pointer text-sm font-semibold text-interactive">
             Selecione PDFs ou arraste-os para esta área
             <input
               accept="application/pdf,.pdf"
@@ -174,13 +175,13 @@ export function AdminImportForm({ action, initialState }: AdminImportFormProps) 
         <ul className="grid gap-3">
           {selection.map((item, index) => (
             <li
-              className="grid gap-3 rounded-xl border border-slate-800 bg-slate-950 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(11rem,auto)_auto] sm:items-center"
+              className="grid gap-3 border-t border-border py-3 sm:grid-cols-[minmax(0,1fr)_minmax(11rem,auto)_auto] sm:items-center"
               key={item.id}
             >
               <AdminImportFileInput item={item} rehydrationToken={state} />
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-white">{item.file.name}</p>
-                <p className="text-xs text-slate-500">{formatBytes(item.file.size)}</p>
+                <p className="truncate text-sm font-semibold text-text-primary">{item.file.name}</p>
+                <p className="text-xs text-text-muted">{formatBytes(item.file.size)}</p>
                 {state.fieldErrors[`document.${index}`]?.map((error) => (
                   <p className="text-xs text-rose-300" key={error}>
                     {error}
@@ -189,7 +190,7 @@ export function AdminImportForm({ action, initialState }: AdminImportFormProps) 
               </div>
               <select
                 aria-label={`Papel de ${item.file.name}`}
-                className="min-h-11 rounded-xl border border-slate-700 bg-slate-900 px-3 text-sm text-white"
+                className={fieldClassName}
                 name={importDocumentRoleFieldName(item.id)}
                 onChange={(event) =>
                   setSelection((current) =>
@@ -209,7 +210,7 @@ export function AdminImportForm({ action, initialState }: AdminImportFormProps) 
                 ))}
               </select>
               <button
-                className="min-h-11 rounded-xl border border-slate-700 px-3 text-sm text-slate-200"
+                className={buttonClassName({ compact: true, variant: 'ghost' })}
                 onClick={() => removeFile(index)}
                 type="button"
               >

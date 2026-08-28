@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-08-28 — Consolidação visual das telas restantes (Sprint 14E)
+
+- compacta listas e grids de Preços e Políticas sem alterar cálculo, lifecycle ou persistência;
+- transforma Importações em uma superfície administrativa densa, reduz cards aninhados e alinha
+  filtros, upload, documentos, status e ações aos primitives compartilhados;
+- faz cleanup conservador em Usuários e consolida o dialog de convite, preservando ações e estados;
+- reforça a identidade azul em Auth, ações interativas, uploads e badges informativos, mantendo
+  grafite estrutural, laranja raro e cores semânticas de status;
+- adiciona primitives genéricos de form grid/section, table frame e informational badge; banco,
+  Supabase, contratos, domínio, autorização, dashboard, PDF e `Legacy` permanecem inalterados.
+
 ## 2026-08-27 — Correção de Vantagens e refinamento responsivo
 
 - recupera a semântica histórica: Vantagens mostra somente vantagens objetivas do primeiro veículo,

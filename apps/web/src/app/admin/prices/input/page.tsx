@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { buttonClassName } from '@compra-car/ui';
 
 import { requireRole } from '@/auth/authorization';
 import { AdminPriceBatchGrid } from '@/components/admin/admin-price-batch-grid';
@@ -17,10 +18,7 @@ export default async function AdminPriceInputPage() {
       <PageHeader
         sticky
         actions={
-          <Link
-            className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-700 px-4 text-sm font-semibold text-slate-200 transition hover:border-sky-600 hover:text-sky-300"
-            href="/admin/prices"
-          >
+          <Link className={buttonClassName({ variant: 'secondary' })} href="/admin/prices">
             Voltar para preços
           </Link>
         }
@@ -28,16 +26,16 @@ export default async function AdminPriceInputPage() {
         eyebrow="Pricing"
         title="Entrada de preços em lote"
       />
-      <section className="mt-8" aria-label="Lote manual de preços públicos">
+      <section className="mt-5" aria-label="Lote manual de preços públicos">
         {!products.ok ? (
           <div
-            className="rounded-2xl border border-rose-900/70 bg-rose-950/20 px-5 py-10 text-center"
+            className="rounded-lg border border-status-error/40 bg-rose-950/10 px-5 py-8 text-center"
             role="alert"
           >
             <h2 className="text-lg font-semibold text-rose-200">
               Não foi possível carregar os veículos
             </h2>
-            <p className="mt-3 text-sm text-slate-400">
+            <p className="mt-2 text-sm text-text-secondary">
               Recarregue a página antes de iniciar o lote.
             </p>
           </div>

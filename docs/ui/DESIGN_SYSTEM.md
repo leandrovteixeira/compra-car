@@ -45,6 +45,27 @@ affordance rather than decoration.
 compact buttons, plus fields, labels, helpers, surfaces, badges and dense tables. Business components
 remain in the web application and compose these primitives.
 
+Sprint 14E adds only recurring geometry primitives: `ui-form-grid` for predictable two-column
+administrative forms, `ui-form-section` for divider-led grouping, `ui-table-frame` for the single
+border around dense tables and `ui-badge--info` for blue informational state. These are deliberately
+generic; domain-specific grids keep their local column definitions.
+
+## Remaining-screen consolidation
+
+Pricing, Policies, Imports, Users and Auth now follow the same compact light-first vocabulary.
+Toolbars are divider-led instead of card-led, desktop fields target 36px, table actions may target
+30px, and coarse pointers still receive 44px through the shared media rule. Import lists use dense
+semantic tables on desktop with local horizontal scrolling rather than one large card per record.
+
+Blue `#9ABCC8` is intentionally visible on creation/submission actions, selected/informational badges,
+upload targets and the Auth identity rule. Graphite remains the structural/strong action color.
+Orange remains attention-only and is not a default CTA or common metadata badge. Success, warning,
+error and destructive states retain their independent semantic colors.
+
+Legacy Slate/Sky/Cyan aliases remain transitional for screens not migrated in 14E and for semantic
+status styling that still needs a dedicated component pass. Do not remove those aliases globally;
+replace page-local uses only while touching and visually validating that surface.
+
 Specialized pricing, import, product-spec and comparison grids retain local layout classes because
 their column geometry and responsive behavior are domain-specific. They inherit the centralized light
 palette now and can migrate incrementally to the shared density primitives without changing behavior.

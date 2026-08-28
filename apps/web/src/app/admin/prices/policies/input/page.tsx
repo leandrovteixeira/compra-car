@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { buttonClassName } from '@compra-car/ui';
 import { requireRole } from '@/auth/authorization';
 import { CommercialPolicyWorkspace } from '@/components/admin/commercial-policy-workspace';
 import { PageHeader } from '@/components/admin/page-header';
@@ -64,15 +65,12 @@ export default async function AdminPolicyInputPage({ searchParams }: AdminPolicy
         title="Criar políticas"
         description="Workspace comercial unificado por veículo para políticas e combinações."
         actions={
-          <Link
-            className="inline-flex min-h-11 items-center rounded-xl border border-slate-700 px-4 text-sm font-semibold text-slate-200"
-            href="/admin/prices"
-          >
+          <Link className={buttonClassName({ variant: 'secondary' })} href="/admin/prices">
             Voltar para preços
           </Link>
         }
       />
-      <section className="mt-8">
+      <section className="mt-5">
         <CommercialPolicyWorkspace
           key={`${competence}:${commercialPeriod.kind}:${commercialPeriod.start}:${commercialPeriod.end}`}
           policyAction={createManualPolicyBatchAction}

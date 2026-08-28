@@ -14,7 +14,7 @@ export default async function RecoveryConfirmationPage() {
     <AuthShell title="Redefinir senha">
       {hasAttempt ? (
         <>
-          <p className="mt-5 text-slate-300">
+          <p className="mt-5 text-text-secondary">
             Clique em continuar para validar este pedido de redefinição.
           </p>
           <form action={confirmRecoveryAction} className="mt-6">
@@ -26,7 +26,7 @@ export default async function RecoveryConfirmationPage() {
           <p className="mt-5 text-rose-300" role="alert">
             Este link de recuperação não é mais válido. Solicite uma nova redefinição de senha.
           </p>
-          <Link className="mt-6 inline-flex text-cyan-300" href="/forgot-password">
+          <Link className="mt-6 inline-flex font-semibold text-interactive" href="/forgot-password">
             Solicitar nova redefinição
           </Link>
         </>

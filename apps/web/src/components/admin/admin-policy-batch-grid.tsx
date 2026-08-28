@@ -26,6 +26,7 @@ import {
   resolveManualPolicyPredecessor,
 } from '@/application/admin/manual-policy-batch';
 import { AdminProductCombobox } from '@/components/admin/admin-product-combobox';
+import { buttonClassName, fieldClassName } from '@compra-car/ui';
 
 const TYPES = Object.entries(MANUAL_POLICY_DISPLAY_LABELS);
 const FIXED = new Set([
@@ -59,8 +60,7 @@ const gridWithProduct =
   'grid gap-3 lg:grid-cols-[minmax(12rem,2fr)_minmax(8rem,1fr)_4.25rem_4.75rem_4.5rem_minmax(7.5rem,1fr)_minmax(7.5rem,1fr)_5.5rem]';
 const workspaceGrid =
   'grid gap-3 lg:grid-cols-[minmax(10rem,2fr)_4.25rem_4.75rem_4.5rem_minmax(8rem,1.2fr)_minmax(8rem,1.2fr)_5.5rem]';
-const input =
-  'min-h-11 w-full rounded-lg border border-slate-700 bg-slate-950 px-2.5 text-sm text-slate-100 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/25';
+const input = fieldClassName;
 
 function brl(value: string): string {
   const [integer, fraction = '00'] = value.split('.');
@@ -69,7 +69,9 @@ function brl(value: string): string {
 
 function CellLabel({ children }: { readonly children: React.ReactNode }) {
   return (
-    <span className="mb-1 block text-xs font-semibold text-slate-400 lg:sr-only">{children}</span>
+    <span className="mb-1 block text-xs font-semibold text-text-secondary lg:sr-only">
+      {children}
+    </span>
   );
 }
 
@@ -93,7 +95,7 @@ function DescriptionDialog({
   return (
     <dialog
       aria-labelledby="policy-description-title"
-      className="m-auto w-[min(92vw,36rem)] rounded-2xl border border-slate-700 bg-slate-900 p-6 text-slate-100 shadow-2xl backdrop:bg-slate-950/85"
+      className="m-auto w-[min(92vw,36rem)] rounded-lg border border-border bg-surface p-5 text-text-primary shadow-xl backdrop:bg-text-primary/50"
       onCancel={onClose}
       onClose={onClose}
       ref={ref}
@@ -111,7 +113,7 @@ function DescriptionDialog({
       />
       <div className="mt-5 flex justify-end">
         <button
-          className="min-h-11 rounded-xl bg-sky-500 px-5 font-semibold text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300"
+          className={buttonClassName({ variant: 'interactive' })}
           onClick={() => ref.current?.close()}
           type="button"
         >
@@ -290,14 +292,14 @@ export function AdminPolicyBatchGrid({
       ) : null}
 
       {copiedFromPrevious && initialRows.length ? (
-        <p className="rounded-xl border border-sky-900 bg-sky-950/30 px-4 py-3 text-sm text-sky-200">
+        <p className="rounded-md border border-selection-strong bg-selection px-3 py-2 text-sm text-interactive">
           Valores copiados do período anterior. Revise antes de salvar; nada foi persistido.
         </p>
       ) : null}
 
-      <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/50 lg:overflow-x-visible">
+      <div className="ui-table-frame overflow-x-auto lg:overflow-x-visible">
         <div
-          className={`${grid} admin-table-header hidden border-b border-slate-800 bg-slate-900 px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-400 lg:grid`}
+          className={`${grid} admin-table-header hidden border-b border-border bg-surface-muted px-3 py-2 text-[0.6875rem] font-semibold uppercase tracking-wide text-text-muted lg:grid`}
         >
           {productId === undefined ? <span>Veículo</span> : null}
           <span>Tipo</span>
@@ -322,7 +324,7 @@ export function AdminPolicyBatchGrid({
             const messages = Object.values(errors).flat().filter(Boolean);
             return (
               <div
-                className="relative border-b border-slate-800 p-4 last:border-b-0"
+                className="relative border-b border-border p-3 last:border-b-0"
                 key={row.clientRowId}
               >
                 <div className={grid}>
@@ -444,15 +446,15 @@ export function AdminPolicyBatchGrid({
                         value={row.amount}
                       />
                     ) : calculated && preview?.customerBenefitAmount ? (
-                      <output className="flex min-h-11 items-center text-sm font-semibold text-sky-200">
+                      <output className="flex min-h-9 items-center text-sm font-semibold text-interactive">
                         {brl(preview.customerBenefitAmount)}
                       </output>
                     ) : calculated ? (
-                      <span className="flex min-h-11 items-center text-xs text-slate-500">
+                      <span className="flex min-h-9 items-center text-xs text-text-muted">
                         aguardando
                       </span>
                     ) : (
-                      <span className="block min-h-11" />
+                      <span className="block min-h-9" />
                     )}
                   </div>
 
@@ -532,7 +534,7 @@ export function AdminPolicyBatchGrid({
         </fieldset>
       </div>
       <div className="flex items-center justify-between gap-4">
-        <div className="text-sm text-slate-400">
+        <div className="text-sm text-text-muted">
           <p>{filled}/10 políticas</p>
           {rolloverCount ? (
             <p className="mt-1 text-amber-300">
@@ -547,7 +549,7 @@ export function AdminPolicyBatchGrid({
           ) : null}
         </div>
         <button
-          className="min-h-11 rounded-xl bg-sky-500 px-5 font-bold text-slate-950 disabled:opacity-50"
+          className={buttonClassName({ variant: 'interactive' })}
           disabled={
             pending ||
             filled === 0 ||

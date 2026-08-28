@@ -1,5 +1,11 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import {
+  buttonClassName,
+  fieldClassName,
+  infoBadgeClassName,
+  labelClassName,
+} from '@compra-car/ui';
 
 import { IMPORT_DOCUMENT_ROLES, IMPORT_ENGINE_MAX_DOCUMENTS } from '@compra-car/core';
 import { requireRole } from '@/auth/authorization';
@@ -44,34 +50,34 @@ export default async function AdminImportDetailsPage({
         eyebrow="Import Engine"
         title={`Importação: ${batch.title}`}
       />
-      <section className="mt-6 grid gap-3 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 sm:grid-cols-2 lg:grid-cols-5">
+      <section className="mt-5 grid gap-3 border-b border-border pb-4 sm:grid-cols-2 lg:grid-cols-5">
         <div>
-          <p className="text-xs text-slate-500">Plugin</p>
-          <p className="text-sm text-white">Cartas Comerciais</p>
+          <p className={labelClassName}>Plugin</p>
+          <p className="text-sm text-text-primary">Cartas Comerciais</p>
         </div>
         <div>
-          <p className="text-xs text-slate-500">Competência</p>
-          <p className="text-sm text-white">{batch.competence ?? 'Não informada'}</p>
+          <p className={labelClassName}>Competência</p>
+          <p className="text-sm text-text-primary">{batch.competence ?? 'Não informada'}</p>
         </div>
         <div>
-          <p className="text-xs text-slate-500">Status</p>
-          <p className="text-sm font-bold text-emerald-300">{batch.status}</p>
+          <p className={labelClassName}>Status</p>
+          <span className={infoBadgeClassName}>{batch.status}</span>
         </div>
         <div>
-          <p className="text-xs text-slate-500">Criado por</p>
-          <p className="text-sm text-white">{batch.createdByName ?? 'Usuário removido'}</p>
+          <p className={labelClassName}>Criado por</p>
+          <p className="text-sm text-text-primary">{batch.createdByName ?? 'Usuário removido'}</p>
         </div>
         <div>
-          <p className="text-xs text-slate-500">Documentos</p>
-          <p className="text-sm text-white">{batch.documentCount}</p>
+          <p className={labelClassName}>Documentos</p>
+          <p className="text-sm text-text-primary">{batch.documentCount}</p>
         </div>
       </section>
 
-      <section className="mt-7">
+      <section className="mt-5">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-xl font-bold text-white">Documentos</h2>
-            <p className="text-sm text-slate-500">
+            <h2 className="text-lg font-semibold text-text-primary">Documentos</h2>
+            <p className="text-sm text-text-muted">
               Acesso somente por URL assinada de curta duração.
             </p>
           </div>
@@ -84,7 +90,7 @@ export default async function AdminImportDetailsPage({
         <div className="grid gap-3">
           {batch.documents.map((document) => (
             <article
-              className="grid gap-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 xl:grid-cols-[minmax(0,2fr)_11rem_6rem_8rem_minmax(9rem,1fr)_auto] xl:items-center"
+              className="grid gap-3 border-t border-border py-3 xl:grid-cols-[minmax(0,2fr)_11rem_6rem_8rem_minmax(9rem,1fr)_auto] xl:items-center"
               key={document.id}
             >
               <div className="min-w-0">
@@ -99,7 +105,7 @@ export default async function AdminImportDetailsPage({
                 <input name="lockVersion" type="hidden" value={document.lockVersion} />
                 <label className="text-xs text-slate-500">Papel</label>
                 <select
-                  className="min-h-11 rounded-xl border border-slate-700 bg-slate-950 px-2 text-sm text-white"
+                  className={fieldClassName}
                   defaultValue={document.documentRole}
                   disabled={!editable}
                   name="documentRole"
@@ -111,7 +117,10 @@ export default async function AdminImportDetailsPage({
                   ))}
                 </select>
                 {editable ? (
-                  <button className="text-left text-xs font-semibold text-sky-300" type="submit">
+                  <button
+                    className="text-left text-xs font-semibold text-interactive"
+                    type="submit"
+                  >
                     Salvar papel
                   </button>
                 ) : null}
@@ -132,7 +141,7 @@ export default async function AdminImportDetailsPage({
                 <form action={openImportDocumentAction}>
                   <input name="documentId" type="hidden" value={document.id} />
                   <button
-                    className="min-h-11 rounded-xl border border-sky-700 px-3 text-sm font-bold text-sky-200"
+                    className={buttonClassName({ compact: true, variant: 'secondary' })}
                     type="submit"
                   >
                     Visualizar
@@ -145,13 +154,13 @@ export default async function AdminImportDetailsPage({
                     <input name="lockVersion" type="hidden" value={document.lockVersion} />
                     <input
                       aria-label={`Motivo para rejeitar ${document.originalFileName}`}
-                      className="min-h-11 w-36 rounded-xl border border-slate-700 bg-slate-950 px-2 text-sm text-white"
+                      className={`${fieldClassName} w-36`}
                       name="reason"
                       placeholder="Motivo"
                       required
                     />
                     <button
-                      className="min-h-11 rounded-xl border border-rose-800 px-3 text-sm font-bold text-rose-300"
+                      className={buttonClassName({ compact: true, variant: 'destructive' })}
                       type="submit"
                     >
                       Rejeitar
@@ -189,21 +198,18 @@ export default async function AdminImportDetailsPage({
       {editable ? (
         <form
           action={archiveImportBatchAction}
-          className="mt-7 flex flex-wrap justify-end gap-2 border-t border-slate-800 pt-5"
+          className="mt-5 flex flex-wrap justify-end gap-2 border-t border-border pt-4"
         >
           <input name="batchId" type="hidden" value={batch.id} />
           <input name="lockVersion" type="hidden" value={batch.lockVersion} />
           <input
             aria-label="Motivo do arquivamento"
-            className="min-h-11 rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm text-white"
+            className={fieldClassName}
             name="reason"
             placeholder="Motivo do arquivamento"
             required
           />
-          <button
-            className="min-h-11 rounded-xl border border-slate-700 px-4 text-sm font-bold text-slate-200"
-            type="submit"
-          >
+          <button className={buttonClassName({ variant: 'secondary' })} type="submit">
             Arquivar dossiê
           </button>
         </form>
