@@ -127,6 +127,50 @@
     grid-template-rows: auto auto minmax(0, 1fr);
   }
 
+  .admin-pricing-workspace {
+    position: sticky;
+    top: var(--admin-topbar-height);
+    display: grid;
+    height: calc(100dvh - var(--admin-topbar-height));
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .admin-pricing-page-header {
+    background: var(--color-canvas);
+  }
+
+  .admin-pricing-results,
+  .admin-pricing-manager,
+  .admin-pricing-table-frame,
+  .admin-pricing-table-scroll {
+    min-height: 0;
+  }
+
+  .admin-pricing-manager {
+    display: grid;
+    height: 100%;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .admin-pricing-table-frame {
+    display: grid;
+    height: 100%;
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  .admin-pricing-table-scroll {
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+
+  .admin-pricing-table-header th {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface-muted);
+  }
+
   .admin-catalog-page-header,
   .admin-catalog-toolbar {
     background: var(--color-canvas);

@@ -66,6 +66,22 @@ Legacy Slate/Sky/Cyan aliases remain transitional for screens not migrated in 14
 status styling that still needs a dedicated component pass. Do not remove those aliases globally;
 replace page-local uses only while touching and visually validating that surface.
 
+### Pricing ledger and intensive-entry grids
+
+The public-price ledger follows the catalog workspace architecture: the desktop page is a bounded
+viewport grid and the results table owns both horizontal and vertical scrolling. Sticky behavior is
+applied to each semantic `th` at `top: 0` inside that scrollport; the ledger must not use the global
+stacked `admin-table-header` offset. The table frame keeps pagination outside the scroll track.
+
+Headers for intensive-entry grids remain in normal layout flow unless the grid explicitly owns a
+bounded vertical scrollport. Reusing a document-level sticky class on a local grid header causes the
+first input row to overlap and is prohibited. Pricing and policy inputs keep 36px shared fields,
+approximately 32px column headers and the coarse-pointer 44px override.
+
+The Policies selection area is one divider-led form section with vehicle, competence and valid-price
+columns. It must not regress to an outer card containing one card per column; responsive stacking is
+handled by the same grid without changing selection behavior.
+
 Specialized pricing, import, product-spec and comparison grids retain local layout classes because
 their column geometry and responsive behavior are domain-specific. They inherit the centralized light
 palette now and can migrate incrementally to the shared density primitives without changing behavior.

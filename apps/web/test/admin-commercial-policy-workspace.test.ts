@@ -18,12 +18,12 @@ describe('commercial period workspace', () => {
     expect(workspace).toContain('<CommercialOfferBuilder');
     expect(workspace).toContain('data-testid="monthly-operation-header"');
     expect(workspace).toContain(
-      'lg:grid-cols-[minmax(0,11fr)_minmax(16rem,5fr)_minmax(13rem,4fr)]',
+      'lg:grid-cols-[minmax(18rem,11fr)_minmax(14rem,5fr)_minmax(13rem,4fr)]',
     );
     expect(workspace).toContain('monthlyCompetenceOptions()');
     expect(workspace).toContain('aria-label="Competência mensal"');
-    expect(workspace).toContain('className="mt-1 min-h-11 w-full');
-    expect(workspace).toContain('className="mt-2 flex min-h-7 items-center');
+    expect(workspace).toContain('className={`${fieldClassName} mt-1`}');
+    expect(workspace).toContain('mt-1.5 flex min-h-6 items-center');
     expect(workspace).toContain('Período especial');
     expect(workspace).toContain('Preço válido');
     expect(workspace).toContain('Nenhum preço público aplicável');
@@ -66,20 +66,16 @@ describe('commercial period workspace', () => {
     expect(workspace).toContain('MANUAL_POLICY_DISPLAY_LABELS[policy.policyType]');
   });
 
-  it('uses shared stacked sticky offsets for pricing headers', () => {
+  it('anchors the pricing ledger header to its own results scrollport', () => {
     const css = source('../src/app/globals.css');
-    const pageHeader = source('../src/components/admin/page-header.tsx');
+    const page = source('../src/app/admin/prices/page.tsx');
     const priceList = source('../src/components/admin/admin-price-list.tsx');
-    expect(css).toContain('--app-topbar-height: 3.25rem');
-    expect(css).toContain('--admin-topbar-height: var(--app-topbar-height)');
-    expect(css).toContain('--admin-page-header-height: 7.75rem');
-    expect(css).not.toContain('margin-top: -2rem');
-    expect(css).toContain(
-      'top: calc(var(--admin-topbar-height) + var(--admin-page-header-height))',
-    );
-    expect(pageHeader).toContain("sticky ? 'admin-page-header'");
-    expect(priceList).toContain('admin-table-header');
-    expect(priceList).toContain('lg:overflow-visible');
+    expect(page).toContain('className="admin-pricing-workspace"');
+    expect(priceList).toContain('admin-pricing-table-scroll overflow-auto');
+    expect(priceList).toContain('admin-pricing-table-header');
+    expect(priceList).not.toContain('admin-table-header');
+    expect(css).toMatch(/\.admin-pricing-table-header th \{[^}]*top: 0;/su);
+    expect(css).toContain('scrollbar-gutter: stable');
   });
 
   it('connects the four administrative RPCs through server-only actions', () => {

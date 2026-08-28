@@ -31,24 +31,26 @@ export default async function AdminPricesPage({ searchParams }: AdminPricesPageP
   );
 
   return (
-    <>
-      <PageHeader
-        sticky
-        actions={
-          <div className="flex flex-wrap gap-3">
-            <Link className="ui-button ui-button--primary" href="/admin/prices/input">
-              Criar preços
-            </Link>
-            <Link className="ui-button ui-button--secondary" href="/admin/prices/policies/input">
-              Criar políticas
-            </Link>
-          </div>
-        }
-        description="Cadastre e edite rascunhos de preços públicos dos veículos."
-        eyebrow="Pricing"
-        title="Preços públicos"
-      />
-      <div className="mt-8">
+    <section className="admin-pricing-workspace">
+      <div className="admin-pricing-page-header">
+        <PageHeader
+          compact
+          actions={
+            <div className="flex flex-wrap gap-3">
+              <Link className="ui-button ui-button--primary" href="/admin/prices/input">
+                Criar preços
+              </Link>
+              <Link className="ui-button ui-button--secondary" href="/admin/prices/policies/input">
+                Criar políticas
+              </Link>
+            </div>
+          }
+          description="Cadastre e edite rascunhos de preços públicos dos veículos."
+          eyebrow="Pricing"
+          title="Preços públicos"
+        />
+      </div>
+      <div className="admin-pricing-results mt-5 lg:mt-0">
         {!result.ok || !productsResult.ok ? (
           <AdminPriceError />
         ) : (
@@ -63,6 +65,6 @@ export default async function AdminPricesPage({ searchParams }: AdminPricesPageP
           />
         )}
       </div>
-    </>
+    </section>
   );
 }

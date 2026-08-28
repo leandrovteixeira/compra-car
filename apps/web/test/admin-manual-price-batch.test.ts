@@ -158,6 +158,8 @@ describe('admin manual price batch', () => {
     expect(grid).toContain('disabled={isLastEmpty}');
     expect(grid).toContain('disabled={pending || filledCount === 0}');
     expect(grid).toContain('md:grid-cols-');
+    expect(grid).toContain('hidden min-h-8 grid-cols-');
+    expect(grid).not.toContain('admin-table-header');
     expect(grid).toContain('aria-live="polite"');
     expect(grid).toContain('Salvar preços');
     expect(action).toContain('JSON.parse(JSON.stringify(result))');

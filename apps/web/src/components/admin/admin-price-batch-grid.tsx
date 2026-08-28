@@ -128,7 +128,7 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
       ) : null}
 
       <div className="ui-table-frame">
-        <div className="admin-table-header hidden grid-cols-[minmax(18rem,2fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_3rem] gap-3 border-b border-border bg-surface-muted px-3 py-2 text-[0.6875rem] font-semibold uppercase tracking-wider text-text-muted md:grid">
+        <div className="hidden min-h-8 grid-cols-[minmax(18rem,2fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_3rem] items-center gap-3 border-b border-border bg-surface-muted px-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-text-muted md:grid">
           <span>Veículo</span>
           <span>Preço público</span>
           <span>Início</span>

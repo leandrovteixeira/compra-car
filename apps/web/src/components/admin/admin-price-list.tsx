@@ -62,11 +62,11 @@ function SortHeader({
 export function AdminPriceList({ page, onEdit, publishAction, onPublished }: AdminPriceListProps) {
   const operationalDate = operationalDateInSaoPaulo();
   return (
-    <div className={tableFrameClassName}>
-      <div className="overflow-x-auto lg:overflow-visible">
+    <div className={`${tableFrameClassName} admin-pricing-table-frame`}>
+      <div className="admin-pricing-table-scroll overflow-auto">
         <table className={`${tableClassName} min-w-[64rem]`}>
           <caption className="sr-only">Preços públicos cadastrados</caption>
-          <thead className="admin-table-header">
+          <thead className="admin-pricing-table-header">
             <tr>
               <SortHeader page={page} field="vehicle">
                 Veículo

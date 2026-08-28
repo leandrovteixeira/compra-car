@@ -24,6 +24,7 @@ import {
 } from '@compra-car/core';
 import { monthlyCompetenceOptions } from '@/application/admin/monthly-pricing-context';
 import { buildInitialManualPolicyRows } from '@/application/admin/manual-policy-batch';
+import { buttonClassName, fieldClassName, labelClassName } from '@compra-car/ui';
 
 const POLICY_STATUS_LABELS = {
   draft: 'Rascunho',
@@ -269,12 +270,12 @@ export function CommercialPolicyWorkspace(props: {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <section
         data-testid="monthly-operation-header"
-        className="grid items-stretch gap-3 rounded-2xl border border-slate-800 bg-slate-900/50 p-4 lg:grid-cols-[minmax(0,11fr)_minmax(16rem,5fr)_minmax(13rem,4fr)]"
+        className="grid items-start gap-3 border-y border-border bg-surface py-3 lg:grid-cols-[minmax(18rem,11fr)_minmax(14rem,5fr)_minmax(13rem,4fr)] lg:gap-4"
       >
-        <div className="h-full min-w-0 rounded-xl border border-slate-800 bg-slate-950/30 p-3">
+        <div className="min-w-0">
           <AdminProductCombobox
             label="Modelo / versão"
             onChange={select}
@@ -282,11 +283,11 @@ export function CommercialPolicyWorkspace(props: {
             value={productId}
           />
         </div>
-        <div className="h-full rounded-xl border border-slate-800 bg-slate-950/30 p-3">
-          <span className="block text-xs font-semibold text-slate-400">Competência</span>
+        <div>
+          <span className={labelClassName}>Competência</span>
           <select
             aria-label="Competência mensal"
-            className="mt-1 min-h-11 w-full rounded border border-slate-700 bg-slate-950 px-3 text-sm"
+            className={`${fieldClassName} mt-1`}
             value={props.competence}
             onChange={(event) => changeCompetence(event.target.value)}
           >
@@ -296,26 +297,26 @@ export function CommercialPolicyWorkspace(props: {
               </option>
             ))}
           </select>
-          <label className="mt-2 flex min-h-7 items-center gap-2 text-sm text-slate-300">
+          <label className="mt-1.5 flex min-h-6 items-center gap-2 text-xs text-text-secondary">
             <input
               type="checkbox"
               checked={period.kind === 'special'}
               onChange={(event) => changeSpecialMode(event.target.checked)}
-              className="h-4 w-4 accent-sky-500"
+              className="h-4 w-4 accent-selection-strong"
             />
             Período especial
           </label>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-0.5 text-xs text-text-muted">
             {period.kind === 'special'
               ? `${props.competenceLabel} · Especial ${period.start.slice(8, 10)}–${period.end.slice(8, 10)}/${period.end.slice(5, 7)}`
               : `${period.start} — ${period.end}`}
           </p>
         </div>
-        <aside className="h-full rounded-xl border border-slate-800 bg-slate-950/30 p-3 text-sm">
-          <span className="block text-xs font-semibold text-slate-400">Preço válido</span>
+        <aside className="border-t border-border pt-3 text-sm lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0">
+          <span className={labelClassName}>Preço válido</span>
           {publicPrices.length === 1 ? (
-            <div className="mt-1 flex min-h-11 items-center">
-              <strong className="text-base text-slate-100">
+            <div className="mt-1 flex min-h-9 items-center">
+              <strong className="text-base text-text-primary">
                 {Number(publicPrices[0]!.amount).toLocaleString('pt-BR', {
                   style: 'currency',
                   currency: 'BRL',
@@ -323,7 +324,7 @@ export function CommercialPolicyWorkspace(props: {
               </strong>
             </div>
           ) : (
-            <div className="mt-1 text-amber-300">
+            <div className="mt-1 text-status-warning">
               <p>
                 {publicPrices.length
                   ? 'Há mais de um preço público aplicável.'
@@ -331,7 +332,7 @@ export function CommercialPolicyWorkspace(props: {
               </p>
               {!publicPrices.length ? (
                 <button
-                  className="mt-2 min-h-9 rounded-lg border border-sky-700 px-3 text-sm font-semibold text-sky-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300"
+                  className={`${buttonClassName({ compact: true, variant: 'interactive' })} mt-1.5`}
                   onClick={() => setPriceDialogOpen(true)}
                   type="button"
                 >
@@ -376,7 +377,7 @@ export function CommercialPolicyWorkspace(props: {
         </p>
       ) : null}
       {!productId ? (
-        <p className="rounded-2xl border border-dashed border-slate-700 p-8 text-center text-slate-400">
+        <p className="border-y border-dashed border-border py-5 text-center text-text-muted">
           Selecione um veículo para carregar o workspace comercial.
         </p>
       ) : (

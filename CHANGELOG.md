@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-08-28 — Correção visual de Pricing (Sprint 14E.1)
+
+- ancora o header do ledger de preços ao scrollport próprio, com `th` sticky em `top: 0`, reutilizando
+  a arquitetura já validada no catálogo de Veículos;
+- remove o sticky global indevido do header da Entrada de preços, mantendo header e linhas no mesmo
+  fluxo compacto e eliminando o recorte da primeira linha;
+- transforma Modelo/versão, Competência e Preço válido em uma única form section horizontal,
+  removendo o card nesting e reduzindo substancialmente a altura inicial de Criar políticas;
+- preserva sorting, paginação, ações, status, regras de pricing, contratos, autorização, Supabase,
+  Import Engine, Auth, PDF e `Legacy`.
+
 ## 2026-08-28 — Consolidação visual das telas restantes (Sprint 14E)
 
 - compacta listas e grids de Preços e Políticas sem alterar cálculo, lifecycle ou persistência;

@@ -1,5 +1,20 @@
 # Contexto para agentes de IA
 
+## Pricing UX Fix — Sprint 14E.1 (2026-08-28)
+
+O ledger de `/admin/prices` não usa mais `admin-table-header`, cujo offset pertence ao scroll do
+documento. Ele replica a arquitetura do catálogo: `admin-pricing-workspace` limita o viewport,
+`admin-pricing-table-scroll` é o único scrollport bidirecional e `admin-pricing-table-header th` fica
+sticky em `top: 0`. Paginação permanece fora do trilho rolável. Não reintroduza offsets locais.
+
+O header da Entrada de preços permanece em fluxo normal. A causa do overlap era aplicar a classe
+sticky global a uma `div` sem viewport vertical próprio. Se futuramente 100 linhas exigirem scroll
+local, crie primeiro um scrollport limitado e só então use sticky em `top: 0` relativo a ele.
+
+Em Criar políticas, a seleção de Modelo/versão, Competência e Preço válido é uma única section com
+dividers e três colunas responsivas, sem card dentro de card. Campos usam `ui-field`, o CTA de preço
+usa `interactive`, e o empty state é divider-led e compacto. Toda lógica comercial foi preservada.
+
 ## Remaining Screens UX — Sprint 14E (2026-08-28)
 
 O audit classificou Veículos, Specs, seleção do vendedor e Comparação como referência A. Usuários e

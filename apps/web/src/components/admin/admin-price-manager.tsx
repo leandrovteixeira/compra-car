@@ -337,8 +337,8 @@ export function AdminPriceManager({
   }
 
   return (
-    <>
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="admin-pricing-manager">
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         {feedback ? (
           <p
             className="rounded-xl border border-emerald-800 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-200"
@@ -380,6 +380,6 @@ export function AdminPriceManager({
           products={products}
         />
       ) : null}
-    </>
+    </div>
   );
 }

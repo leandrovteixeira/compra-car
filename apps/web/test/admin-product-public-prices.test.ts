@@ -189,6 +189,11 @@ describe('admin ProductPublicPrice read slice', () => {
     expect(list).toContain('Publicar');
     expect(list).toContain('aria-sort=');
     expect(list).toContain('field="updatedAt"');
+    expect(page).toContain('admin-pricing-workspace');
+    expect(manager).toContain('admin-pricing-manager');
+    expect(list).toContain('admin-pricing-table-frame');
+    expect(list).toContain('admin-pricing-table-scroll overflow-auto');
+    expect(list).toContain('<thead className="admin-pricing-table-header">');
     expect(manager).toContain('Salvar rascunho');
     expect(manager).toContain('Publicar agora');
     expect(manager).toContain('formatPtBrMoneyInput');
