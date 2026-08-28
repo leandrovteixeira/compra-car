@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-08-28 — Cor de seções e simplificação do header PDF (Sprint 14F.4)
+
+- remove completamente a bottom rule graphite do header repetido, sem substituir por outra barra;
+- mantém o destaque azul suave da referência e a hierarquia por fundos, tipografia, spacing e
+  divisores verticais sutis;
+- troca category headers para azul oficial `#9ABCC8` com texto graphite `#1A1D21`, preservando
+  densidade, largura, paginação e checks de vantagem em laranja `#EF7732`.
+
 ## 2026-08-28 — Helper de busca e regra contínua do PDF (Sprint 14F.3)
 
 - remove a superfície visual do helper vazio da busca do vendedor, mantendo a superfície apenas para

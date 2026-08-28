@@ -16,7 +16,6 @@ import {
 import {
   COMPARISON_PDF_HEADER_FIXED,
   createComparisonPdfHeader,
-  getComparisonPdfHeaderRuleStyle,
 } from '../src/pdf/comparison/comparison-pdf-header';
 import {
   COMPARISON_PDF_ITEM_MAX_LINES,
@@ -31,6 +30,7 @@ import {
   COMPARISON_PDF_CATEGORY_PRESENCE_AHEAD,
   COMPARISON_PDF_ROW_WRAP,
 } from '../src/pdf/comparison/comparison-pdf-table';
+import { COMPARISON_PDF_ADVANTAGE_COLOR } from '../src/pdf/comparison/comparison-pdf-value';
 import { handleComparisonPdfRequest } from '../src/server/comparison-pdf-route';
 
 function createComparisonData(vehicleCount: 2 | 3 | 4): ComparisonPageViewModel {
@@ -252,28 +252,19 @@ describe('view model e documento PDF', () => {
     ).toEqual([false, false]);
   });
 
-  it('fixa estruturalmente a regra graphite do header repetido e a faixa de categoria', () => {
+  it('usa header repetido sem bottom rule e categorias no azul oficial', () => {
     expect(COMPARISON_PDF_HEADER_FIXED).toBe(true);
-    expect(comparisonPdfStyles.columnHeaderBottomRule).toMatchObject({
-      backgroundColor: '#1A1D21',
-      bottom: 0,
-      height: 2,
-      left: 0,
-      position: 'absolute',
-      zIndex: 20,
-    });
-    expect(comparisonPdfStyles.columnHeader).toMatchObject({ position: 'relative' });
-    expect(comparisonPdfStyles.columnHeaderBottomRule).not.toHaveProperty('borderBottomWidth');
+    expect(comparisonPdfStyles).not.toHaveProperty('columnHeaderBottomRule');
+    expect(comparisonPdfStyles.columnHeader).not.toHaveProperty('borderBottomWidth');
+    expect(comparisonPdfStyles.columnHeader).not.toHaveProperty('position');
     expect(comparisonPdfStyles.referenceVehicle).toEqual({ backgroundColor: '#E9F1F4' });
-    expect(getComparisonPdfHeaderRuleStyle(539.28)).toEqual([
-      comparisonPdfStyles.columnHeaderBottomRule,
-      { width: 539.28 },
-    ]);
     expect(comparisonPdfStyles.category).toMatchObject({
-      backgroundColor: '#1A1D21',
-      borderBottomColor: '#1A1D21',
-      borderBottomWidth: 1,
+      backgroundColor: '#9ABCC8',
     });
+    expect(comparisonPdfStyles.category).not.toHaveProperty('borderBottomColor');
+    expect(comparisonPdfStyles.categoryText).toMatchObject({ color: '#1A1D21' });
+    expect(comparisonPdfStyles.advantageIcon).toMatchObject({ height: 11, width: 11 });
+    expect(COMPARISON_PDF_ADVANTAGE_COLOR).toBe('#EF7732');
   });
 
   it.each(['differences', 'advantages'] as const)(

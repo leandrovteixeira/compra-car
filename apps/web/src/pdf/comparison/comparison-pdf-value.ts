@@ -4,11 +4,13 @@ import { createElement, type ReactElement } from 'react';
 import type { ComparisonPdfValueViewModel } from './comparison-pdf-model';
 import { comparisonPdfStyles as styles } from './comparison-pdf-styles';
 
+export const COMPARISON_PDF_ADVANTAGE_COLOR = '#EF7732';
+
 function createAdvantageIcon(): ReactElement {
   return createElement(
     Svg,
     { style: styles.advantageIcon, viewBox: '0 0 12 12' },
-    createElement(Circle, { cx: 6, cy: 6, fill: '#EF7732', r: 5 }),
+    createElement(Circle, { cx: 6, cy: 6, fill: COMPARISON_PDF_ADVANTAGE_COLOR, r: 5 }),
     createElement(Path, {
       d: 'M3.2 6.1 5.1 8 8.9 4.1',
       fill: 'none',

@@ -6,10 +6,6 @@ import { comparisonPdfStyles as styles } from './comparison-pdf-styles';
 
 export const COMPARISON_PDF_HEADER_FIXED = true;
 
-export function getComparisonPdfHeaderRuleStyle(tableWidth: number) {
-  return [styles.columnHeaderBottomRule, { width: tableWidth }];
-}
-
 export function createComparisonPdfBrandSlot(model: ComparisonPdfViewModel): ReactElement {
   return createElement(
     View,
@@ -73,9 +69,6 @@ export function createComparisonPdfHeader(model: ComparisonPdfViewModel): ReactE
         createElement(Text, { style: styles.itemHeaderText }, 'Item comparado'),
       ),
       ...vehicleHeaders,
-      createElement(View, {
-        style: getComparisonPdfHeaderRuleStyle(model.geometry.tableWidth),
-      }),
     ),
   );
 }

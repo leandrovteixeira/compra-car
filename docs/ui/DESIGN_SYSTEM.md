@@ -221,6 +221,7 @@ production/model year. The comparison header repeats on every page, categories s
 row where possible, rows do not split and every page has compact pagination. Filtered modes with no
 rows still generate a valid PDF with a useful in-document empty state. `createComparisonPdfBrandSlot`
 is the replaceable provisional wordmark boundary until a final logo asset is approved.
-Every repeated PDF table header ends with its own explicit 1.5pt graphite `#1A1D21` rule rather than
-depending on a container border across page breaks. Category bands keep a full-width graphite fill
-and an explicit same-color lower edge near pagination boundaries.
+The repeated PDF vehicle header has no bottom rule or dark bar. Neutral and reference-blue
+backgrounds, typography, spacing and subtle vertical dividers provide its hierarchy consistently
+across page breaks. Category bands fill the full table width with official blue `#9ABCC8` and use
+graphite `#1A1D21` text. Orange `#EF7732` remains exclusive to advantage attention.

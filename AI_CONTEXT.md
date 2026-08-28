@@ -1,15 +1,25 @@
 # Contexto para agentes de IA
 
+## PDF section color e header simplification — Sprint 14F.4 (2026-08-28)
+
+O vehicle header repetido não possui bottom rule, border escura ou overlay. A hierarquia depende dos
+fundos neutros, do azul suave da referência, da tipografia e dos divisores verticais existentes. Não
+reintroduza `columnHeaderBottomRule`: o React-PDF mostrou inconsistência visual sob a célula azul em
+quebras multipágina, mesmo com overlay estrutural.
+
+Category rows mantêm altura, padding e largura da tabela, mas usam background oficial `#9ABCC8` e
+texto graphite `#1A1D21`, sem borda graphite residual. Graphite segue como texto/estrutura e orange
+`#EF7732` continua exclusivo dos markers de vantagem.
+
 ## Search helper e PDF header overlay — Sprint 14F.3 (2026-08-28)
 
 Na seleção do vendedor, query vazia renderiza apenas helper `text-xs` muted; o frame com border,
 background e radius existe somente para estados operacionais e resultados. Não reúna novamente os
 dois branches no mesmo container visual.
 
-No React-PDF, `columnHeaderBottomRule` é filho absoluto da própria `columnHeader` fixa/repetida. Sua
-largura numérica vem de `geometry.tableWidth`, a altura é 2pt e `zIndex: 20` mantém graphite contínuo
-sobre todos os backgrounds, inclusive a referência azul. Não volte a usar percentual em sibling de
-fluxo nem borders individuais nas células.
+Historicamente, `columnHeaderBottomRule` foi tentado como filho absoluto da `columnHeader`, mas ainda
+apresentou inconsistência no renderer multipágina. A Sprint 14F.4 removeu a regra; consulte o marco
+mais recente acima e não restaure essa estratégia.
 
 ## Canonical numeric spec ingestion — Sprint 14F.2 (2026-08-28)
 
@@ -32,10 +42,9 @@ semanticamente diferentes + todos os markers objetivos dessas rows; Advantages =
 vantagem da referência + marker apenas na referência. `shouldShowAdvantageCheckForMode` faz Complete e
 Differences reutilizarem `shouldShowAdvantageCheck`; não derive superioridade a partir dos valores.
 
-O header fixo/repetido do PDF contém `columnHeaderBottomRule`, uma faixa própria de 1.5pt em graphite
-`#1A1D21`. Não a substitua por border implícita do container: o elemento explícito é a garantia entre
-page breaks. Category rows ocupam `geometry.tableWidth`, mantêm fill graphite sólido e borda inferior
-da mesma cor; `minPresenceAhead` e rows indivisíveis continuam responsáveis pela paginação.
+O header fixo/repetido do PDF não depende mais de borda inferior; essa tentativa histórica foi
+removida na Sprint 14F.4. Category rows ocupam `geometry.tableWidth` e usam azul oficial sólido;
+`minPresenceAhead` e rows indivisíveis continuam responsáveis pela paginação.
 
 ## PDF comparison redesign — Sprint 14F (2026-08-28)
 
