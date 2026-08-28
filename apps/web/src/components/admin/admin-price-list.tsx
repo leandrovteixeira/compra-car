@@ -134,7 +134,7 @@ export function AdminPriceList({ page, onEdit, publishAction, onPublished }: Adm
                   <div className="flex gap-2">
                     {isProductPublicPriceEditable(price.status) ? (
                       <button
-                        className={buttonClassName({ compact: true, variant: 'secondary' })}
+                        className={buttonClassName({ size: 'action', variant: 'secondary' })}
                         onClick={(event) => onEdit(price.id, event.currentTarget)}
                         type="button"
                       >
@@ -159,7 +159,7 @@ export function AdminPriceList({ page, onEdit, publishAction, onPublished }: Adm
                         <input type="hidden" name="id" value={price.id} />
                         <input type="hidden" name="lockVersion" value={price.lockVersion} />
                         <button
-                          className={buttonClassName({ compact: true, variant: 'interactive' })}
+                          className={buttonClassName({ size: 'commit', variant: 'interactive' })}
                           type="submit"
                         >
                           Publicar
@@ -181,7 +181,7 @@ export function AdminPriceList({ page, onEdit, publishAction, onPublished }: Adm
           <nav aria-label="Paginação de preços públicos" className="flex items-center gap-2">
             {page.page > 1 ? (
               <Link
-                className={buttonClassName({ compact: true, variant: 'secondary' })}
+                className={buttonClassName({ size: 'action', variant: 'secondary' })}
                 href={`/admin/prices?page=${page.page - 1}`}
               >
                 Anterior
@@ -192,7 +192,7 @@ export function AdminPriceList({ page, onEdit, publishAction, onPublished }: Adm
             </span>
             {page.page < page.pageCount ? (
               <Link
-                className={buttonClassName({ compact: true, variant: 'secondary' })}
+                className={buttonClassName({ size: 'action', variant: 'secondary' })}
                 href={`/admin/prices?page=${page.page + 1}`}
               >
                 Próxima

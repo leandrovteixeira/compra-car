@@ -234,7 +234,7 @@ export function VehicleSelection() {
               : 'Selecione pelo menos 2 veículos.'}
           </p>
           <button
-            className="ui-button ui-button--interactive min-h-11 w-full sm:w-auto"
+            className="ui-button ui-button--interactive ui-button--commit w-full sm:w-auto"
             disabled={!canCompare}
             onClick={goToComparison}
             type="button"

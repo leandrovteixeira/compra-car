@@ -37,10 +37,16 @@ export default async function AdminPricesPage({ searchParams }: AdminPricesPageP
           compact
           actions={
             <div className="flex flex-wrap gap-3">
-              <Link className="ui-button ui-button--primary" href="/admin/prices/input">
+              <Link
+                className="ui-button ui-button--primary ui-button--action"
+                href="/admin/prices/input"
+              >
                 Criar preços
               </Link>
-              <Link className="ui-button ui-button--secondary" href="/admin/prices/policies/input">
+              <Link
+                className="ui-button ui-button--secondary ui-button--action"
+                href="/admin/prices/policies/input"
+              >
                 Criar políticas
               </Link>
             </div>

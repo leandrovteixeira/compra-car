@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-08-28 — Hierarquia semântica de botões (Sprint 14E.3)
+
+- separa tamanho funcional (`action`, `commit`, `micro`) de variante visual no primitive compartilhado;
+- consolida Action em 32px/semibold, Commit em 36px/medium e Micro em 30px/semibold no desktop,
+  preservando mínimo de 44px em coarse pointers;
+- alinha Nova importação e Novo usuário em `action + interactive` e migra ações representativas de
+  Veículos, Pricing, Policies, Specs, Seller Selection e tabelas sem vincular tamanho à cor;
+- mantém `compact` como alias transitório de Micro e preserva laranja exclusivamente para atenção.
+
 ## 2026-08-28 — Alinhamento final de Pricing e Policies (Sprint 14E.2)
 
 - normaliza o combobox administrativo de veículo com `ui-field`, alinhando sua altura, tipografia,

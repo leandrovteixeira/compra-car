@@ -19,7 +19,10 @@ export default async function AdminImportsPage({
     <>
       <PageHeader
         actions={
-          <Link className={buttonClassName({ variant: 'interactive' })} href="/admin/imports/new">
+          <Link
+            className={buttonClassName({ size: 'action', variant: 'interactive' })}
+            href="/admin/imports/new"
+          >
             Nova importação
           </Link>
         }
@@ -42,7 +45,7 @@ export default async function AdminImportsPage({
           <option value="rejected">Rejected</option>
           <option value="archived">Archived</option>
         </select>
-        <button className={buttonClassName({ variant: 'secondary' })} type="submit">
+        <button className={buttonClassName({ size: 'action', variant: 'secondary' })} type="submit">
           Filtrar
         </button>
       </form>

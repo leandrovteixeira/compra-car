@@ -54,7 +54,7 @@ export function AdminImportList({ items }: { readonly items: readonly ImportBatc
               <td className="whitespace-nowrap">{date(item.updatedAt)}</td>
               <td>
                 <Link
-                  className={buttonClassName({ compact: true, variant: 'secondary' })}
+                  className={buttonClassName({ size: 'action', variant: 'secondary' })}
                   href={`/admin/imports/${item.id}`}
                 >
                   Abrir

@@ -20,7 +20,7 @@ export function AdminUserInvite() {
   return (
     <>
       <button
-        className={buttonClassName({ variant: 'interactive' })}
+        className={buttonClassName({ size: 'action', variant: 'interactive' })}
         onClick={() => dialog.current?.showModal()}
         type="button"
       >
@@ -86,7 +86,7 @@ export function AdminUserInvite() {
           </div>
           <div className="mt-5 flex justify-end gap-2 border-t border-border pt-4">
             <button
-              className={buttonClassName({ variant: 'secondary' })}
+              className={buttonClassName({ size: 'action', variant: 'secondary' })}
               onClick={() => dialog.current?.close()}
               type="button"
             >

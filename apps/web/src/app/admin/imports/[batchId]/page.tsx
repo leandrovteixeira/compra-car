@@ -82,7 +82,10 @@ export default async function AdminImportDetailsPage({
             </p>
           </div>
           {editable && batch.documentCount < IMPORT_ENGINE_MAX_DOCUMENTS ? (
-            <Link className="ui-button ui-button--primary" href={`/admin/imports/${batch.id}/add`}>
+            <Link
+              className="ui-button ui-button--primary ui-button--action"
+              href={`/admin/imports/${batch.id}/add`}
+            >
               Adicionar documento
             </Link>
           ) : null}

@@ -132,7 +132,7 @@ export function AdminProductCombobox({
         {query ? (
           <button
             aria-label="Limpar veículo"
-            className={`${buttonClassName({ compact: true, variant: 'ghost' })} absolute inset-y-0 right-0 min-h-0 min-w-9 px-0 text-text-muted`}
+            className={`${buttonClassName({ size: 'micro', variant: 'ghost' })} absolute inset-y-0 right-0 min-h-0 min-w-9 px-0 text-text-muted`}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => {
               onChange('');

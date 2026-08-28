@@ -282,13 +282,35 @@ textarea {
     border: 1px solid transparent;
     border-radius: var(--radius-control);
     padding-inline: 0.75rem;
-    font-size: 0.8125rem;
-    font-weight: 600;
+    font-size: 0.875rem;
+    font-weight: 500;
     line-height: 1.25rem;
     transition:
       border-color 150ms,
       background-color 150ms,
       color 150ms;
+  }
+
+  .ui-button--action {
+    min-height: 2rem;
+    padding-inline: 0.625rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+  }
+
+  .ui-button--commit {
+    min-height: var(--density-control-height);
+    padding-inline: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .ui-button--micro,
+  .ui-button--compact {
+    min-height: 1.875rem;
+    padding-inline: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
   }
 
   .ui-button:disabled {
@@ -333,12 +355,6 @@ textarea {
   .ui-button--destructive {
     background: var(--color-status-error);
     color: #ffffff;
-  }
-
-  .ui-button--compact {
-    min-height: 1.875rem;
-    padding-inline: 0.5rem;
-    font-size: 0.75rem;
   }
 
   .ui-field {

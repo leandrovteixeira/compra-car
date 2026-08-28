@@ -47,4 +47,26 @@ describe('Sprint 14A.1 design-system foundation', () => {
     expect(comparison).toContain('text-attention');
     expect(comparison).toContain('aria-label="Vantagem"');
   });
+
+  it('separates semantic button density from color variants', () => {
+    const css = source('../src/app/globals.css');
+    const primitives = source('../../../packages/ui/src/primitives.ts');
+    const imports = source('../src/app/admin/imports/page.tsx');
+    const users = source('../src/components/admin/admin-user-invite.tsx');
+
+    expect(primitives).toContain("export type ButtonSize = 'action' | 'commit' | 'micro'");
+    expect(primitives).toContain("size = 'commit'");
+    expect(css).toMatch(
+      /\.ui-button--action\s*\{[^}]*min-height: 2rem;[^}]*font-size: 0\.8125rem;[^}]*font-weight: 600;/su,
+    );
+    expect(css).toMatch(
+      /\.ui-button--commit\s*\{[^}]*min-height: var\(--density-control-height\);[^}]*font-size: 0\.875rem;[^}]*font-weight: 500;/su,
+    );
+    expect(css).toMatch(/\.ui-button--micro,[^{]*\{[^}]*min-height: 1\.875rem;/su);
+    expect(css).toMatch(/@media \(pointer: coarse\)[^{]*\{[^}]*\.ui-button,/su);
+    expect(imports).toContain("size: 'action', variant: 'interactive'");
+    expect(users).toContain("size: 'action', variant: 'interactive'");
+    expect(primitives).toContain('`ui-button--${variant}`');
+    expect(primitives).toContain('`ui-button--${resolvedSize}`');
+  });
 });

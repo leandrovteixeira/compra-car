@@ -106,7 +106,7 @@ export function AdminProductSpecsEditor({
             Descartar
           </button>
           <button
-            className="ui-button ui-button--primary ui-button--compact"
+            className="ui-button ui-button--primary ui-button--commit"
             disabled={!changed || pending}
             onClick={save}
             type="button"

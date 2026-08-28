@@ -29,7 +29,7 @@ describe('commercial period workspace', () => {
     expect(workspace).toContain('Preço válido');
     expect(workspace).toContain('Nenhum preço público aplicável');
     expect(workspace).toContain('Adicionar preço');
-    expect(workspace).toContain("buttonClassName({ compact: true, variant: 'interactive' })");
+    expect(workspace).toContain("buttonClassName({ size: 'action', variant: 'interactive' })");
     expect(workspace.indexOf('Adicionar preço')).toBeLessThan(
       workspace.indexOf('Nenhum preço público aplicável'),
     );

@@ -65,7 +65,10 @@ export default async function AdminPolicyInputPage({ searchParams }: AdminPolicy
         title="Criar políticas"
         description="Workspace comercial unificado por veículo para políticas e combinações."
         actions={
-          <Link className={buttonClassName({ variant: 'secondary' })} href="/admin/prices">
+          <Link
+            className={buttonClassName({ size: 'action', variant: 'secondary' })}
+            href="/admin/prices"
+          >
             Voltar para preços
           </Link>
         }

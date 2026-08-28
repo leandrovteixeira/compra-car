@@ -25,7 +25,10 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
       <div className="admin-catalog-page-header">
         <PageHeader
           actions={
-            <Link className="ui-button ui-button--primary" href="/admin/products/new">
+            <Link
+              className="ui-button ui-button--primary ui-button--action"
+              href="/admin/products/new"
+            >
               Novo veículo
             </Link>
           }

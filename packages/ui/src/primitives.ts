@@ -1,20 +1,24 @@
 export type ButtonVariant = 'destructive' | 'ghost' | 'interactive' | 'primary' | 'secondary';
+export type ButtonSize = 'action' | 'commit' | 'micro';
 
 export interface ButtonClassOptions {
   readonly compact?: boolean;
   readonly fullWidth?: boolean;
+  readonly size?: ButtonSize;
   readonly variant?: ButtonVariant;
 }
 
 export function buttonClassName({
   compact = false,
   fullWidth = false,
+  size = 'commit',
   variant = 'primary',
 }: ButtonClassOptions = {}): string {
+  const resolvedSize = compact ? 'micro' : size;
   return [
     'ui-button',
     `ui-button--${variant}`,
-    compact ? 'ui-button--compact' : '',
+    `ui-button--${resolvedSize}`,
     fullWidth ? 'w-full' : '',
   ]
     .filter(Boolean)

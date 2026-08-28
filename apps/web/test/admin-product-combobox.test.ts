@@ -39,7 +39,7 @@ describe('admin product combobox search', () => {
     );
 
     expect(component).toContain('`${fieldClassName} pr-10');
-    expect(component).toContain("buttonClassName({ compact: true, variant: 'ghost' })");
+    expect(component).toContain("buttonClassName({ size: 'micro', variant: 'ghost' })");
     expect(component).not.toContain('min-h-11 w-full rounded-lg');
   });
 });

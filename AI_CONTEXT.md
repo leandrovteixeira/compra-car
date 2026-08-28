@@ -1,5 +1,16 @@
 # Contexto para agentes de IA
 
+## Button hierarchy — Sprint 14E.3 (2026-08-28)
+
+`buttonClassName` separa `size: 'action' | 'commit' | 'micro'` de `variant`. Action inicia, abre ou
+navega e usa 32px/13px/600 no desktop. Commit confirma ou persiste e é o default da API, com
+36px/14px/500. Micro atende ícones e ações mínimas, com 30px/12px/600; `compact` permanece somente como
+alias compatível de Micro. Em coarse pointers, `.ui-button` continua com mínimo de 44px.
+
+Cor não determina tamanho: blue/interactive comunica interação, graphite/primary estrutura,
+secondary e ghost reduzem hierarquia, destructive mantém semântica própria. Orange não é variante de
+botão. Nova importação e Novo usuário são a referência explícita de `action + interactive`.
+
 ## Pricing final alignment — Sprint 14E.2 (2026-08-28)
 
 `AdminProductCombobox` usa `ui-field` e `ui-label`; não reintroduza seu antigo `min-h-11`, radius ou

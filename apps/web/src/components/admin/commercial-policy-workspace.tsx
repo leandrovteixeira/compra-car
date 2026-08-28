@@ -327,7 +327,7 @@ export function CommercialPolicyWorkspace(props: {
             <div className="mt-1">
               {!publicPrices.length ? (
                 <button
-                  className={buttonClassName({ compact: true, variant: 'interactive' })}
+                  className={buttonClassName({ size: 'action', variant: 'interactive' })}
                   onClick={() => setPriceDialogOpen(true)}
                   type="button"
                 >

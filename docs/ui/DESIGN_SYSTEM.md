@@ -45,6 +45,22 @@ affordance rather than decoration.
 compact buttons, plus fields, labels, helpers, surfaces, badges and dense tables. Business components
 remain in the web application and compose these primitives.
 
+### Button hierarchy
+
+Button density describes function and is independent from the color variant:
+
+- **Action** (`size: 'action'`): starts, opens or navigates to an operation; 32px desktop, 13px,
+  semibold and compact horizontal padding. Examples include New, Edit, Specs, Back, Open and Add.
+- **Commit** (`size: 'commit'`, the API default): confirms or persists a decision; 36px desktop,
+  14px and medium weight. Examples include Save, Publish, Import, Compare and Sign in.
+- **Micro** (`size: 'micro'`): icon buttons and very small row actions; 30px desktop, 12px and
+  semibold. The former `compact` option remains a compatibility alias for Micro.
+
+Color remains a separate choice through `variant`: interactive blue, structural graphite, secondary,
+ghost or destructive. Neither `primary` nor `interactive` implies a size. Orange remains attention,
+never a generic button variant. The coarse-pointer rule raises all button sizes to a 44px minimum
+touch target without changing desktop visual density.
+
 Sprint 14E adds only recurring geometry primitives: `ui-form-grid` for predictable two-column
 administrative forms, `ui-form-section` for divider-led grouping, `ui-table-frame` for the single
 border around dense tables and `ui-badge--info` for blue informational state. These are deliberately
