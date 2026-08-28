@@ -11,6 +11,10 @@ transversal e não declaram `height` ou `minHeight`, evitando arredondamento con
 da row e confinando backgrounds de vantagem à caixa do sibling correto. Category rows continuam no
 flow normal, sem offsets, margens negativas ou separadores artificiais.
 
+O PDF atual é aceitável para o MVP. Permanece uma pequena imperfeição visual de boundary/encaixe em
+algumas transições do React-PDF; ela não bloqueia o MVP e não deve ser perseguida novamente durante a
+Sprint 14, salvo regressão funcional.
+
 ## PDF section color e header simplification — Sprint 14F.4 (2026-08-28)
 
 O vehicle header repetido não possui bottom rule, border escura ou overlay. A hierarquia depende dos
