@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-08-28 — Redesign visual do PDF de comparação (Sprint 14F)
+
+- alinha o PDF à identidade white/graphite/blue/orange, com brand slot substituível, hierarquia
+  editorial compacta, data de geração, cabeçalho repetido e paginação;
+- preserva legibilidade em A4 retrato para 2 veículos e A4 paisagem para 3–4, mantendo labels e
+  valores principais em 9pt e separando marca/modelo, versão e ano produção/modelo;
+- transporta Completa, Diferenças e Vantagens até a rota e filtra pelo mesmo view model da tela,
+  inclusive no download e compartilhamento, com compatibilidade para `highlights=true`;
+- mantém vazios filtrados como PDFs válidos e preserva engine, formatters, pipeline server-side,
+  filename, autenticação, contratos, Supabase, banco e `Legacy`.
+
 ## 2026-08-28 — Hierarquia semântica de botões (Sprint 14E.3)
 
 - separa tamanho funcional (`action`, `commit`, `micro`) de variante visual no primitive compartilhado;

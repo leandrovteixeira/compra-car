@@ -8,6 +8,7 @@ import { isValidElement, type ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { buildComparisonPdfUrl } from '../src/application/comparison/comparison-pdf-url';
+import type { ComparisonPageViewModel } from '../src/application/comparison/comparison-view-model';
 import {
   COMPARISON_PDF_PAGE_SIZE,
   createComparisonPdfDocument,
@@ -18,9 +19,10 @@ import {
 } from '../src/pdf/comparison/comparison-pdf-header';
 import {
   COMPARISON_PDF_ITEM_MAX_LINES,
+  COMPARISON_PDF_MIN_CONTENT_FONT_SIZE,
   getComparisonPdfColumnGeometry,
   getComparisonPdfItemFontSize,
-  isComparisonHighlightsMode,
+  getComparisonPdfMode,
   prepareComparisonPdf,
 } from '../src/pdf/comparison/comparison-pdf-model';
 import {
@@ -29,7 +31,7 @@ import {
 } from '../src/pdf/comparison/comparison-pdf-table';
 import { handleComparisonPdfRequest } from '../src/server/comparison-pdf-route';
 
-function createComparisonData(vehicleCount: 2 | 3): ComparisonPageDataDto {
+function createComparisonData(vehicleCount: 2 | 3 | 4): ComparisonPageViewModel {
   const binaryValues = (referencePresent: boolean) =>
     Array.from({ length: vehicleCount }, (_, index) => ({
       type: 'binary' as const,
@@ -66,6 +68,7 @@ function createComparisonData(vehicleCount: 2 | 3): ComparisonPageDataDto {
             equipmentGroup: 'Segurança',
             specSet: 'equipment',
             hasReferenceAdvantage: true,
+            hasDifference: true,
             values: binaryValues(true),
           },
           {
@@ -74,6 +77,7 @@ function createComparisonData(vehicleCount: 2 | 3): ComparisonPageDataDto {
             equipmentGroup: 'Segurança',
             specSet: 'equipment',
             hasReferenceAdvantage: false,
+            hasDifference: true,
             values: binaryValues(false),
           },
         ],
@@ -87,6 +91,7 @@ function createComparisonData(vehicleCount: 2 | 3): ComparisonPageDataDto {
             equipmentGroup: 'Conforto',
             specSet: 'equipment',
             hasReferenceAdvantage: false,
+            hasDifference: true,
             values: numericValues,
           },
         ],
@@ -110,7 +115,7 @@ function collectText(node: ReactNode): string {
   return '';
 }
 
-function createManyRowsData(vehicleCount: 2 | 3, rowCount = 90): ComparisonPageDataDto {
+function createManyRowsData(vehicleCount: 2 | 3 | 4, rowCount = 90): ComparisonPageViewModel {
   const base = createComparisonData(vehicleCount);
   const template = base.categories[0]?.rows[0];
   if (template === undefined) throw new Error('Fixture de comparação inválida.');
@@ -130,10 +135,11 @@ function createManyRowsData(vehicleCount: 2 | 3, rowCount = 90): ComparisonPageD
 }
 
 describe('parâmetros e URL do PDF de comparação', () => {
-  it('ativa vantagens somente para highlights=true', () => {
-    expect(isComparisonHighlightsMode('true')).toBe(true);
-    expect(isComparisonHighlightsMode(null)).toBe(false);
-    expect(isComparisonHighlightsMode('false')).toBe(false);
+  it('interpreta os três modos e mantém compatibilidade com highlights', () => {
+    expect(getComparisonPdfMode('complete')).toBe('complete');
+    expect(getComparisonPdfMode('differences')).toBe('differences');
+    expect(getComparisonPdfMode('advantages')).toBe('advantages');
+    expect(getComparisonPdfMode(null, 'true')).toBe('advantages');
   });
 
   it('preserva todos os valores de vehicles e o estado ativo', () => {
@@ -146,31 +152,33 @@ describe('parâmetros e URL do PDF de comparação', () => {
     const url = new URL(buildComparisonPdfUrl(params), 'https://compra-car.test');
     expect(url.pathname).toBe('/comparar/pdf');
     expect(url.searchParams.getAll('vehicles')).toEqual(['10,20', '30,40']);
-    expect(url.searchParams.get('highlights')).toBe('true');
+    expect(url.searchParams.get('mode')).toBe('advantages');
     expect(url.searchParams.has('unrelated')).toBe(false);
   });
 
-  it('omite highlights quando o modo não está ativo', () => {
+  it('omite modo quando nenhum estado está ativo', () => {
     const params = new URLSearchParams({ vehicles: '10,20' });
     expect(buildComparisonPdfUrl(params)).toBe('/comparar/pdf?vehicles=10%2C20');
   });
 
-  it('traduz o novo modo Vantagens para o highlights legado do PDF', () => {
+  it('transporta o modo Vantagens sem conversão semântica', () => {
     const params = new URLSearchParams({ vehicles: '10,20', mode: 'advantages' });
-    expect(buildComparisonPdfUrl(params)).toBe('/comparar/pdf?vehicles=10%2C20&highlights=true');
+    expect(buildComparisonPdfUrl(params)).toBe('/comparar/pdf?vehicles=10%2C20&mode=advantages');
   });
 });
 
 describe('view model e documento PDF', () => {
-  it.each([2, 3] as const)('gera modelo e PDF válido com %s veículos', async (vehicleCount) => {
-    const prepared = prepareComparisonPdf(createComparisonData(vehicleCount), false);
+  it.each([2, 3, 4] as const)('gera modelo e PDF válido com %s veículos', async (vehicleCount) => {
+    const prepared = prepareComparisonPdf(createComparisonData(vehicleCount), 'complete');
 
     expect(prepared.model).toMatchObject({
       vehicleCount,
       vehicleNames:
         vehicleCount === 2
           ? ['Volvo XC40 Plus', 'Audi Q3 Plus']
-          : ['Volvo XC40 Plus', 'Audi Q3 Plus', 'BMW X1 Plus'],
+          : vehicleCount === 3
+            ? ['Volvo XC40 Plus', 'Audi Q3 Plus', 'BMW X1 Plus']
+            : ['Volvo XC40 Plus', 'Audi Q3 Plus', 'BMW X1 Plus', 'BMW X1 Plus'],
       mode: 'Comparação completa',
       categoryCount: 2,
       rowCount: 3,
@@ -182,36 +190,71 @@ describe('view model e documento PDF', () => {
   });
 
   it('aplica o filtro compartilhado antes de calcular o conteúdo do PDF', () => {
-    const prepared = prepareComparisonPdf(createComparisonData(2), true);
+    const prepared = prepareComparisonPdf(createComparisonData(2), 'advantages');
 
     expect(prepared.categories).toHaveLength(1);
     expect(prepared.categories[0]?.rows.map((row) => row.code)).toEqual(['safety.abs']);
     expect(prepared.model).toMatchObject({
-      mode: 'Ver vantagens',
+      mode: 'Vantagens da referência',
       categoryCount: 1,
       rowCount: 1,
     });
   });
 
-  it('usa as geometrias aprovadas para dois e três veículos', () => {
-    expect(getComparisonPdfColumnGeometry(2)).toEqual({
-      tableWidth: 460,
-      itemColumnWidth: 220,
-      vehicleColumnWidth: 120,
-    });
-    expect(getComparisonPdfColumnGeometry(3)).toEqual({
-      tableWidth: 460,
-      itemColumnWidth: 220,
-      vehicleColumnWidth: 80,
-    });
+  it('aplica Diferenças com a mesma flag semântica usada na tela', () => {
+    const data = createComparisonData(2);
+    const firstCategory = data.categories[0];
+    if (firstCategory === undefined) throw new Error('Fixture inválida.');
+    const rows = firstCategory.rows.map((row, index) => ({
+      ...row,
+      hasDifference: index === 1,
+    }));
+    const prepared = prepareComparisonPdf(
+      { ...data, categories: [{ ...firstCategory, rows }] },
+      'differences',
+    );
+
+    expect(prepared.model.mode).toBe('Somente diferenças');
+    expect(prepared.categories[0]?.rows.map((row) => row.code)).toEqual(['safety.airbags']);
+    expect(
+      prepared.model.categories[0]?.rows[0]?.values.every((value) => !value.showAdvantageCheck),
+    ).toBe(true);
   });
 
-  it('usa a página mobile vertical aprovada', () => {
-    expect(COMPARISON_PDF_PAGE_SIZE).toEqual({ width: 480, height: 853 });
+  it.each(['differences', 'advantages'] as const)(
+    'gera PDF válido e mensagem útil quando %s não tem linhas',
+    async (mode) => {
+      const data = createComparisonData(2);
+      const categories = data.categories.map((category) => ({
+        ...category,
+        rows: category.rows.map((row) => ({
+          ...row,
+          hasDifference: false,
+          hasReferenceAdvantage: false,
+        })),
+      }));
+      const model = prepareComparisonPdf({ ...data, categories }, mode).model;
+      const buffer = await renderToBuffer(createComparisonPdfDocument(model));
+
+      expect(model.rowCount).toBe(0);
+      expect(model.emptyMessage).toMatch(/Nenhuma/u);
+      expect(buffer.subarray(0, 5).toString()).toBe('%PDF-');
+    },
+  );
+
+  it('usa retrato para dois e paisagem para três ou quatro veículos', () => {
+    expect(getComparisonPdfColumnGeometry(2)).toMatchObject({ orientation: 'portrait' });
+    expect(getComparisonPdfColumnGeometry(3)).toMatchObject({ orientation: 'landscape' });
+    expect(getComparisonPdfColumnGeometry(4)).toMatchObject({ orientation: 'landscape' });
+    expect(getComparisonPdfColumnGeometry(4).vehicleColumnWidth).toBeGreaterThan(130);
+  });
+
+  it('usa A4 com orientação adaptada à quantidade', () => {
+    expect(COMPARISON_PDF_PAGE_SIZE).toBe('A4');
   });
 
   it('preserva ordem, referência e nomes no header fixo', () => {
-    const model = prepareComparisonPdf(createComparisonData(3), false).model;
+    const model = prepareComparisonPdf(createComparisonData(3), 'complete').model;
     const headerText = collectText(createComparisonPdfHeader(model));
 
     expect(model.vehicles.map((vehicle) => vehicle.id)).toEqual(['1', '2', '3']);
@@ -220,10 +263,11 @@ describe('view model e documento PDF', () => {
     expect(headerText.indexOf('Volvo XC40 Plus')).toBeLessThan(headerText.indexOf('Audi Q3 Plus'));
     expect(headerText.indexOf('Audi Q3 Plus')).toBeLessThan(headerText.indexOf('BMW X1 Plus'));
     expect(headerText).toContain('Referência');
+    expect(headerText).toContain('2025/2026');
   });
 
   it('mantém valores por veículo e reutiliza a regra existente de vantagem', () => {
-    const model = prepareComparisonPdf(createComparisonData(3), false).model;
+    const model = prepareComparisonPdf(createComparisonData(3), 'complete').model;
     const referenceAdvantage = model.categories[0]?.rows[0];
     const comparedAdvantage = model.categories[0]?.rows[1];
 
@@ -244,32 +288,31 @@ describe('view model e documento PDF', () => {
     });
   });
 
-  it('reduz a fonte por comprimento e mantém o label em uma linha', () => {
+  it('mantém fonte legível independentemente do comprimento', () => {
     const sizes = [
-      getComparisonPdfItemFontSize('Label curto'),
-      getComparisonPdfItemFontSize('M'.repeat(50)),
-      getComparisonPdfItemFontSize('L'.repeat(70)),
-      getComparisonPdfItemFontSize('X'.repeat(100)),
+      getComparisonPdfItemFontSize(),
+      getComparisonPdfItemFontSize(),
+      getComparisonPdfItemFontSize(),
+      getComparisonPdfItemFontSize(),
     ];
 
-    expect(sizes).toEqual([8.5, 8, 8, 7.5]);
-    expect(sizes).toEqual([...sizes].sort((left, right) => right - left));
-    expect(Math.min(...sizes)).toBeGreaterThan(6.25);
+    expect(sizes).toEqual([9, 9, 9, 9]);
+    expect(Math.min(...sizes)).toBe(COMPARISON_PDF_MIN_CONTENT_FONT_SIZE);
     expect(COMPARISON_PDF_ITEM_MAX_LINES).toBe(2);
     expect(
-      prepareComparisonPdf(createComparisonData(2), false).model.categories[0]?.rows[0],
+      prepareComparisonPdf(createComparisonData(2), 'complete').model.categories[0]?.rows[0],
     ).toHaveProperty('labelMaxLines', 2);
   });
 
   it.each([
-    [2, false, 2, 3],
-    [2, true, 1, 1],
-    [3, false, 2, 3],
-    [3, true, 1, 1],
+    [2, 'complete', 2, 3],
+    [2, 'advantages', 1, 1],
+    [3, 'differences', 2, 3],
+    [4, 'advantages', 1, 1],
   ] as const)(
-    'renderiza o cenário manual %s veículos / highlights=%s',
-    async (vehicleCount, onlyHighlights, categoryCount, rowCount) => {
-      const model = prepareComparisonPdf(createComparisonData(vehicleCount), onlyHighlights).model;
+    'renderiza o cenário %s veículos / modo=%s',
+    async (vehicleCount, mode, categoryCount, rowCount) => {
+      const model = prepareComparisonPdf(createComparisonData(vehicleCount), mode).model;
       const buffer = await renderToBuffer(createComparisonPdfDocument(model));
 
       expect(model).toMatchObject({ vehicleCount, categoryCount, rowCount });
@@ -279,7 +322,7 @@ describe('view model e documento PDF', () => {
   );
 
   it('pagina muitas rows sem dividir rows e protege a primeira row da categoria', async () => {
-    const model = prepareComparisonPdf(createManyRowsData(3), false).model;
+    const model = prepareComparisonPdf(createManyRowsData(3), 'complete').model;
     const buffer = await renderToBuffer(createComparisonPdfDocument(model));
     const pageCount = buffer.toString('latin1').match(/\/Type \/Page\b/g)?.length ?? 0;
 
@@ -296,12 +339,14 @@ describe('resposta HTTP do PDF', () => {
     const renderPdf = vi.fn(async () => new TextEncoder().encode('%PDF-foundation'));
 
     const response = await handleComparisonPdfRequest(
-      new Request('https://compra-car.test/comparar/pdf?vehicles=10%2C20&highlights=true'),
+      new Request('https://compra-car.test/comparar/pdf?vehicles=10%2C20&mode=advantages'),
       { loadComparison, renderPdf },
     );
 
     expect(loadComparison).toHaveBeenCalledWith('10,20');
-    expect(renderPdf).toHaveBeenCalledWith(expect.objectContaining({ mode: 'Ver vantagens' }));
+    expect(renderPdf).toHaveBeenCalledWith(
+      expect.objectContaining({ mode: 'Vantagens da referência' }),
+    );
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toBe('application/pdf');
     expect(response.headers.get('content-disposition')).toContain('comparacao-veiculos.pdf');

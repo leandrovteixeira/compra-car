@@ -3,7 +3,7 @@ import { renderToBuffer } from '@react-pdf/renderer';
 
 import { createComparisonPdfDocument } from '@/pdf/comparison/comparison-pdf-document';
 import {
-  isComparisonHighlightsMode,
+  getComparisonPdfMode,
   prepareComparisonPdf,
   type ComparisonPdfViewModel,
 } from '@/pdf/comparison/comparison-pdf-model';
@@ -51,8 +51,8 @@ export async function handleComparisonPdfRequest(
     );
   }
 
-  const onlyHighlights = isComparisonHighlightsMode(searchParams.get('highlights'));
-  const { model } = prepareComparisonPdf(result.data, onlyHighlights);
+  const mode = getComparisonPdfMode(searchParams.get('mode'), searchParams.get('highlights'));
+  const { model } = prepareComparisonPdf(result.data, mode);
 
   try {
     const pdf = await dependencies.renderPdf(model);

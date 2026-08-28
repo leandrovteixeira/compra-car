@@ -21,14 +21,20 @@ afterEach(() => {
 });
 
 describe('URLs das ações do PDF', () => {
-  it('preserva múltiplos vehicles e highlights=true', () => {
+  it('preserva múltiplos vehicles e converte highlights legado', () => {
     const params = new URLSearchParams();
     params.append('vehicles', '10,20');
     params.append('vehicles', '30');
     params.set('highlights', 'true');
 
     expect(buildComparisonPdfUrl(params)).toBe(
-      '/comparar/pdf?vehicles=10%2C20&vehicles=30&highlights=true',
+      '/comparar/pdf?vehicles=10%2C20&vehicles=30&mode=advantages',
+    );
+  });
+
+  it.each(['complete', 'differences', 'advantages'])('preserva o modo %s', (mode) => {
+    expect(buildComparisonPdfUrl(new URLSearchParams({ vehicles: '10,20', mode }))).toBe(
+      `/comparar/pdf?vehicles=10%2C20&mode=${mode}`,
     );
   });
 

@@ -1,5 +1,19 @@
 # Contexto para agentes de IA
 
+## PDF comparison redesign — Sprint 14F (2026-08-28)
+
+`/comparar/pdf` recebe `mode=complete|differences|advantages`; `highlights=true` continua aceito apenas
+como alias legado de `advantages`. `buildComparisonPdfUrl` preserva o modo atual, portanto Baixar PDF
+e Compartilhar usam exatamente a mesma filtragem da tela. O PDF chama `filterComparisonCategories`
+e `shouldShowAdvantageCheckForMode` sobre a view model já montada pelo mapper: não recrie regras de
+diferença, vantagem ou formatting dentro de `src/pdf`.
+
+O documento usa A4 portrait com 2 veículos e landscape com 3–4, sempre com conteúdo principal em no
+mínimo 9pt. Header e colunas repetem, rows não quebram, categorias usam `minPresenceAhead`, e o footer
+mostra página/total. O brand slot provisional está isolado em `createComparisonPdfBrandSlot` para
+troca futura sem refazer layout. Estados sem Diferenças/Vantagens geram PDF válido com mensagem, não
+erro. Pipeline React-PDF server-side, headers HTTP, filename e compartilhamento nativo permanecem.
+
 ## Button hierarchy — Sprint 14E.3 (2026-08-28)
 
 `buttonClassName` separa `size: 'action' | 'commit' | 'micro'` de `variant`. Action inicia, abre ou

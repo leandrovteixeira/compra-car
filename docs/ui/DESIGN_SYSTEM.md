@@ -207,5 +207,16 @@ code. `PW_0005` displacement (source unit `cc`) and `PW_0015` rotation max torqu
 `OW_0005` always uses one decimal. Existing one-decimal rules are explicit for torque `PW_0012`,
 `PW_0023`, `PW_0026`, `PW_0033` and weight ratios `PW_0035`, `PW_0036`. Formatting uses pt-BR and the
 standard `Intl.NumberFormat` rounding; units remain separate inputs and no displacement conversion is
-performed. The PDF visual is deliberately unchanged in this sprint. Its legacy highlights mode still
-means reference-vehicle advantages, while the shared mapper/formatter keeps numeric output reusable.
+performed.
+
+The comparison PDF follows the same three semantic modes and filtered view model as the screen.
+Download and native share transport `mode`; `highlights=true` remains only a backwards-compatible
+input alias for Advantages. The document uses a white editorial canvas, graphite structure,
+restrained identity blue and orange only for the small advantage marker.
+
+PDF layout is explicitly A4 portrait for two vehicles and A4 landscape for three or four. Main table
+labels and values never shrink below 9pt; vehicle headers separate brand/model, version and
+production/model year. The comparison header repeats on every page, categories stay with the next
+row where possible, rows do not split and every page has compact pagination. Filtered modes with no
+rows still generate a valid PDF with a useful in-document empty state. `createComparisonPdfBrandSlot`
+is the replaceable provisional wordmark boundary until a final logo asset is approved.

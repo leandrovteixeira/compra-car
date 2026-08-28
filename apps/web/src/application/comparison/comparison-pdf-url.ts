@@ -10,9 +10,10 @@ export function buildComparisonPdfUrl(searchParams: ComparisonSearchParams): str
     pdfParams.append('vehicles', vehicles);
   }
 
-  if (searchParams.get('highlights') === 'true' || searchParams.get('mode') === 'advantages') {
-    pdfParams.set('highlights', 'true');
-  }
+  const mode = searchParams.get('mode');
+  if (mode === 'complete' || mode === 'differences' || mode === 'advantages') {
+    pdfParams.set('mode', mode);
+  } else if (searchParams.get('highlights') === 'true') pdfParams.set('mode', 'advantages');
 
   const query = pdfParams.toString();
   return query.length > 0 ? `/comparar/pdf?${query}` : '/comparar/pdf';

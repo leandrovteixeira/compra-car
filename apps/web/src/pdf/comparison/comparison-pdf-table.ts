@@ -61,7 +61,17 @@ function createComparisonPdfCategory(
 export function createComparisonPdfTable(
   categories: readonly ComparisonPdfCategoryViewModel[],
   geometry: ComparisonPdfColumnGeometry,
+  emptyMessage: string | null,
 ): ReactElement {
+  if (emptyMessage !== null) {
+    return createElement(
+      View,
+      { style: styles.emptyState },
+      createElement(Text, { style: styles.emptyTitle }, 'Comparação sem itens neste modo'),
+      createElement(Text, { style: styles.emptyText }, emptyMessage),
+    );
+  }
+
   return createElement(
     Fragment,
     null,

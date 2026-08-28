@@ -8,11 +8,11 @@ function createAdvantageIcon(): ReactElement {
   return createElement(
     Svg,
     { style: styles.advantageIcon, viewBox: '0 0 12 12' },
-    createElement(Circle, { cx: 6, cy: 6, fill: '#67e8f9', r: 5 }),
+    createElement(Circle, { cx: 6, cy: 6, fill: '#EF7732', r: 5 }),
     createElement(Path, {
       d: 'M3.2 6.1 5.1 8 8.9 4.1',
       fill: 'none',
-      stroke: '#083344',
+      stroke: '#FFFFFF',
       strokeLinecap: 'round',
       strokeLinejoin: 'round',
       strokeWidth: 1.4,
@@ -41,7 +41,7 @@ export function createComparisonPdfValue(
         styles.valueCell,
         { width },
         value.showAdvantageCheck ? styles.advantageCell : {},
-        isLastColumn ? styles.lastColumn : {},
+        isLastColumn ? { borderRightWidth: 0 } : {},
       ],
     },
     content,
