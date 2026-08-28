@@ -16,6 +16,7 @@ import {
 import {
   COMPARISON_PDF_HEADER_FIXED,
   createComparisonPdfHeader,
+  getComparisonPdfHeaderRuleStyle,
 } from '../src/pdf/comparison/comparison-pdf-header';
 import {
   COMPARISON_PDF_ITEM_MAX_LINES,
@@ -255,9 +256,19 @@ describe('view model e documento PDF', () => {
     expect(COMPARISON_PDF_HEADER_FIXED).toBe(true);
     expect(comparisonPdfStyles.columnHeaderBottomRule).toMatchObject({
       backgroundColor: '#1A1D21',
-      height: 1.5,
-      width: '100%',
+      bottom: 0,
+      height: 2,
+      left: 0,
+      position: 'absolute',
+      zIndex: 20,
     });
+    expect(comparisonPdfStyles.columnHeader).toMatchObject({ position: 'relative' });
+    expect(comparisonPdfStyles.columnHeaderBottomRule).not.toHaveProperty('borderBottomWidth');
+    expect(comparisonPdfStyles.referenceVehicle).toEqual({ backgroundColor: '#E9F1F4' });
+    expect(getComparisonPdfHeaderRuleStyle(539.28)).toEqual([
+      comparisonPdfStyles.columnHeaderBottomRule,
+      { width: 539.28 },
+    ]);
     expect(comparisonPdfStyles.category).toMatchObject({
       backgroundColor: '#1A1D21',
       borderBottomColor: '#1A1D21',

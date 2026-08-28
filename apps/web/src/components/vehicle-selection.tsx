@@ -126,49 +126,56 @@ export function VehicleSelection() {
             ) : null}
           </div>
 
-          <div
-            aria-live="polite"
-            className="mt-2 overflow-hidden rounded-md border border-border bg-surface"
-            id="vehicle-search-results"
-          >
-            {loading ? (
-              <p className="px-3 py-3 text-sm text-text-muted">Carregando catálogo…</p>
-            ) : error ? (
-              <p className="px-3 py-3 text-sm text-status-error" role="alert">
-                {error}
-              </p>
-            ) : limitReached ? (
-              <p className="px-3 py-3 text-sm text-text-muted">
-                Limite de {MAX_SELECTED_VEHICLES} veículos atingido. Remova um para escolher outro.
-              </p>
-            ) : !query.trim() ? (
-              <p className="px-3 py-3 text-sm text-text-muted">
-                Busque por marca, modelo ou versão.
-              </p>
-            ) : results.length === 0 ? (
-              <p className="px-3 py-3 text-sm text-text-muted">Nenhum veículo encontrado.</p>
-            ) : (
-              <ul className="max-h-[min(42dvh,22rem)] divide-y divide-border overflow-y-auto overscroll-contain">
-                {results.map((vehicle) => (
-                  <li key={vehicle.id}>
-                    <button
-                      className="min-h-14 w-full px-3 py-2.5 text-left transition hover:bg-selection focus-visible:bg-selection focus-visible:outline-2 focus-visible:outline-focus"
-                      onClick={() => selectVehicle(vehicle)}
-                      type="button"
-                    >
-                      <span className="block text-sm font-semibold text-text-primary">
-                        {vehicle.model} · {vehicle.version}
-                      </span>
-                      <span className="mt-0.5 block text-xs text-text-muted">
-                        {vehicle.brand} ·{' '}
-                        {formatProductionModelYears(vehicle.productionYear, vehicle.modelYear)}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          {!loading && !error && !limitReached && !query.trim() ? (
+            <p
+              aria-live="polite"
+              className="mt-2 text-xs leading-5 text-text-muted"
+              id="vehicle-search-results"
+            >
+              Busque por marca, modelo ou versão.
+            </p>
+          ) : (
+            <div
+              aria-live="polite"
+              className="mt-2 overflow-hidden rounded-md border border-border bg-surface"
+              id="vehicle-search-results"
+            >
+              {loading ? (
+                <p className="px-3 py-3 text-sm text-text-muted">Carregando catálogo…</p>
+              ) : error ? (
+                <p className="px-3 py-3 text-sm text-status-error" role="alert">
+                  {error}
+                </p>
+              ) : limitReached ? (
+                <p className="px-3 py-3 text-sm text-text-muted">
+                  Limite de {MAX_SELECTED_VEHICLES} veículos atingido. Remova um para escolher
+                  outro.
+                </p>
+              ) : results.length === 0 ? (
+                <p className="px-3 py-3 text-sm text-text-muted">Nenhum veículo encontrado.</p>
+              ) : (
+                <ul className="max-h-[min(42dvh,22rem)] divide-y divide-border overflow-y-auto overscroll-contain">
+                  {results.map((vehicle) => (
+                    <li key={vehicle.id}>
+                      <button
+                        className="min-h-14 w-full px-3 py-2.5 text-left transition hover:bg-selection focus-visible:bg-selection focus-visible:outline-2 focus-visible:outline-focus"
+                        onClick={() => selectVehicle(vehicle)}
+                        type="button"
+                      >
+                        <span className="block text-sm font-semibold text-text-primary">
+                          {vehicle.model} · {vehicle.version}
+                        </span>
+                        <span className="mt-0.5 block text-xs text-text-muted">
+                          {vehicle.brand} ·{' '}
+                          {formatProductionModelYears(vehicle.productionYear, vehicle.modelYear)}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
         </section>
 
         <section aria-labelledby="selected-title" className="mt-6">

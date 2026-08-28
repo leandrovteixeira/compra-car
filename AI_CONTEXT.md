@@ -1,5 +1,16 @@
 # Contexto para agentes de IA
 
+## Search helper e PDF header overlay — Sprint 14F.3 (2026-08-28)
+
+Na seleção do vendedor, query vazia renderiza apenas helper `text-xs` muted; o frame com border,
+background e radius existe somente para estados operacionais e resultados. Não reúna novamente os
+dois branches no mesmo container visual.
+
+No React-PDF, `columnHeaderBottomRule` é filho absoluto da própria `columnHeader` fixa/repetida. Sua
+largura numérica vem de `geometry.tableWidth`, a altura é 2pt e `zIndex: 20` mantém graphite contínuo
+sobre todos os backgrounds, inclusive a referência azul. Não volte a usar percentual em sibling de
+fluxo nem borders individuais nas células.
+
 ## Canonical numeric spec ingestion — Sprint 14F.2 (2026-08-28)
 
 O limite de escrita de specs normaliza a representação antes de `product_specs`: number finito é

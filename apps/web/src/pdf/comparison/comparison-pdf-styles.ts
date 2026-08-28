@@ -50,11 +50,15 @@ export const comparisonPdfStyles = StyleSheet.create({
     borderTopWidth: 1,
     flexDirection: 'row',
     minHeight: 66,
+    position: 'relative',
   },
   columnHeaderBottomRule: {
     backgroundColor: '#1A1D21',
-    height: 1.5,
-    width: '100%',
+    bottom: 0,
+    height: 2,
+    left: 0,
+    position: 'absolute',
+    zIndex: 20,
   },
   itemHeader: { justifyContent: 'center', paddingHorizontal: 9 },
   itemHeaderText: {

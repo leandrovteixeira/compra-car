@@ -112,6 +112,19 @@ describe('estrutura responsiva da experiência do vendedor', () => {
     expect(component).not.toMatch(/>\s*Adicionar\s*</);
   });
 
+  it('mostra helper vazio sem superfície e mantém superfície para resultados com query', () => {
+    const component = source('../src/components/vehicle-selection.tsx');
+    expect(component).toContain('!loading && !error && !limitReached && !query.trim()');
+    expect(component).toContain('className="mt-2 text-xs leading-5 text-text-muted"');
+    expect(component).toContain('Busque por marca, modelo ou versão.');
+    expect(component).toContain(
+      'className="mt-2 overflow-hidden rounded-md border border-border bg-surface"',
+    );
+    expect(component).not.toContain(
+      'className="px-3 py-3 text-sm text-text-muted">\n                Busque por marca',
+    );
+  });
+
   it('renderiza selected list, Principal, remoção acessível e estados de limite', () => {
     const component = source('../src/components/vehicle-selection.tsx');
     expect(component).toContain('<ol');

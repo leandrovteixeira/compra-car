@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-08-28 — Helper de busca e regra contínua do PDF (Sprint 14F.3)
+
+- remove a superfície visual do helper vazio da busca do vendedor, mantendo a superfície apenas para
+  loading, erro, limite e resultados de uma query;
+- ancora uma única regra graphite absoluta dentro da row fixa do header PDF, com largura numérica da
+  tabela e camada acima do destaque azul da referência;
+- preserva busca, seleção, markers de Diferenças, categorias, orientação, fonte e paginação.
+
 ## 2026-08-28 — Parsing numérico canônico de specs (Sprint 14F.2)
 
 - centraliza o parsing de números reais, texto pt-BR e texto canônico antes da persistência de specs;
