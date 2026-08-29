@@ -10,7 +10,7 @@ describe('Sprint 14G.3 in-app install option', () => {
   it('shows an install action only for native or useful manual installation paths', () => {
     expect(canOfferPwaInstall('native')).toBe(true);
     expect(canOfferPwaInstall('ios-manual')).toBe(true);
-    expect(canOfferPwaInstall('mobile-manual')).toBe(true);
+    expect(canOfferPwaInstall('browser-manual')).toBe(true);
     expect(canOfferPwaInstall('checking')).toBe(false);
     expect(canOfferPwaInstall('installed')).toBe(false);
     expect(canOfferPwaInstall('unavailable')).toBe(false);
@@ -19,7 +19,7 @@ describe('Sprint 14G.3 in-app install option', () => {
   it('reuses the shared hook in UserMenu and invokes the native prompt path', () => {
     const menu = source('../src/components/user-menu.tsx');
 
-    expect(menu).toContain('usePwaInstall()');
+    expect(menu).toContain('usePwaInstall({ desktopManual: true })');
     expect(menu).toContain('canOfferPwaInstall(availability)');
     expect(menu).toContain('await requestNativeInstall()');
     expect(menu).toContain('Instalar aplicativo');

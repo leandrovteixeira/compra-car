@@ -10,9 +10,9 @@ const source = (path: string) => readFileSync(resolve(__dirname, path), 'utf8');
 const environment = (
   overrides: Partial<Parameters<typeof classifyPwaInstallAvailability>[0]> = {},
 ) => ({
+  browserManual: true,
   displayModeStandalone: false,
   ios: false,
-  mobile: true,
   nativePrompt: false,
   navigatorStandalone: false,
   ...overrides,
@@ -22,8 +22,10 @@ describe('Sprint 14G.2 post-invite install offer', () => {
   it('classifies native, iOS, mobile fallback, desktop and installed environments', () => {
     expect(classifyPwaInstallAvailability(environment({ nativePrompt: true }))).toBe('native');
     expect(classifyPwaInstallAvailability(environment({ ios: true }))).toBe('ios-manual');
-    expect(classifyPwaInstallAvailability(environment())).toBe('mobile-manual');
-    expect(classifyPwaInstallAvailability(environment({ mobile: false }))).toBe('unavailable');
+    expect(classifyPwaInstallAvailability(environment())).toBe('browser-manual');
+    expect(classifyPwaInstallAvailability(environment({ browserManual: false }))).toBe(
+      'unavailable',
+    );
     expect(
       classifyPwaInstallAvailability(
         environment({ displayModeStandalone: true, nativePrompt: true }),

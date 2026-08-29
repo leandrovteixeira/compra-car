@@ -1,5 +1,21 @@
 # Contexto para agentes de IA
 
+## Reinstalação após remoção — Sprint 14G.4 (2026-08-28)
+
+A disponibilidade no `UserMenu` descreve o contexto de execução atual, não um histórico permanente:
+`display-mode: standalone` ou `navigator.standalone` oculta a ação; no navegador normal, prompt
+nativo tem prioridade e, sem ele, Android/mobile, iOS/iPadOS e Chromium desktop recebem instrução
+manual útil. O onboarding continua com sua política mobile anterior.
+
+`appinstalled` pode marcar a aba atual como instalada, mas nada é salvo em storage, cookie, banco ou
+cache. O helper reavalia standalone/prompt/fallback em `pageshow` e quando a página volta a ficar
+visível. Assim, depois de remover a PWA e retornar ao site no navegador, “Instalar aplicativo” volta
+a aparecer e usa um novo `beforeinstallprompt`, se emitido, ou `PwaInstallInstructions`.
+
+A instalação real já foi validada em dispositivo. Permanece recomendável repetir o cenário completo
+de remoção/reinstalação em Android/Chromium real porque não existe evento web padronizado de uninstall;
+a restauração depende deliberadamente da reavaliação do contexto ao retornar ao browser.
+
 ## Instalação pelo User Menu — Sprint 14G.3 (2026-08-28)
 
 Há dois entry points de instalação: a oferta opcional pós-convite e “Instalar aplicativo” no

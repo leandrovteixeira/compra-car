@@ -13,7 +13,10 @@ export function PostInviteInstallStep({
   continueToApp,
   requestNativeInstall,
 }: {
-  readonly availability: Extract<PwaInstallAvailability, 'ios-manual' | 'mobile-manual' | 'native'>;
+  readonly availability: Extract<
+    PwaInstallAvailability,
+    'browser-manual' | 'ios-manual' | 'native'
+  >;
   readonly continueToApp: () => void;
   readonly requestNativeInstall: () => Promise<'completed' | 'manual'>;
 }) {

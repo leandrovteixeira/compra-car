@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-08-28 — Reinstalação PWA após remoção (Sprint 14G.4)
+
+- mantém “Instalar aplicativo” oculto somente durante execução standalone e restaura a ação quando o
+  site volta a ser aberto no navegador após a remoção da PWA;
+- reavalia a estratégia de instalação em `pageshow` e no retorno de visibilidade, sem gravar estado
+  permanente de instalação ou recusa;
+- preserva o prompt nativo quando `beforeinstallprompt` existe e usa as instruções compartilhadas no
+  Android/Chromium, iOS/iPadOS e Chromium desktop quando o evento não está disponível;
+- mantém onboarding pós-convite, posição/densidade/acessibilidade do User Menu, manifest, metadata,
+  ícones, standalone, auth, Supabase, banco e demais domínios inalterados.
+
 ## 2026-08-28 — Instalação pelo menu da aplicação (Sprint 14G.3)
 
 - adiciona “Instalar aplicativo” antes de “Sair” no menu do usuário somente quando há prompt nativo

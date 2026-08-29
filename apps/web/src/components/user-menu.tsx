@@ -16,11 +16,11 @@ export function UserMenu({
   readonly roleLabel: string;
 }) {
   const menu = useRef<HTMLDetailsElement>(null);
-  const { availability, requestNativeInstall } = usePwaInstall();
+  const { availability, requestNativeInstall } = usePwaInstall({ desktopManual: true });
   const [requestingInstall, setRequestingInstall] = useState(false);
   const [showInstallInstructions, setShowInstallInstructions] = useState(false);
   const canInstall = canOfferPwaInstall(availability);
-  const manualInstall = availability === 'ios-manual' || availability === 'mobile-manual';
+  const manualInstall = availability === 'ios-manual' || availability === 'browser-manual';
   const instructionsId = 'user-menu-install-instructions';
 
   const install = async () => {

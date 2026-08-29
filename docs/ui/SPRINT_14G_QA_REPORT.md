@@ -1,5 +1,19 @@
 # Sprint 14G — relatório de QA responsive e instalável
 
+## Complemento 14G.4 — reinstalação após remoção
+
+Regra final do User Menu: standalone detectado por `display-mode` ou `navigator.standalone` oculta a
+ação. Browser normal apresenta “Instalar aplicativo” quando há prompt nativo ou estratégia manual
+útil; Android/Chromium usa o menu do navegador, iOS/iPadOS usa Compartilhar e Chromium desktop pode
+usar o menu de instalação. As instruções continuam centralizadas em `PwaInstallInstructions`.
+
+`appinstalled` atualiza apenas a sessão em memória. `pageshow` e retorno de visibilidade recalculam o
+modo atual sem storage/cookie, de modo que abrir novamente o site no navegador após remover a PWA
+restaura a ação. Testes automatizados cobrem standalone, prompt nativo, fallback, retorno ao browser,
+ausência de persistência e instrução iOS. A instalação inicial foi validada com sucesso em dispositivo
+real. **PENDENTE:** repetir manualmente a sequência instalar → standalone → remover → browser →
+reinstalar em Android/Chromium real.
+
 ## Complemento 14G.3 — instalação pelo User Menu
 
 O menu do usuário oferece “Instalar aplicativo” antes de “Sair” quando `usePwaInstall` classifica o
