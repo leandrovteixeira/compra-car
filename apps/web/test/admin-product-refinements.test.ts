@@ -102,11 +102,46 @@ describe('administrative product filters', () => {
     expect(list).toContain('Duplicar');
   });
 
-  it('keeps the boolean controls close without reducing their interaction area', () => {
+  it('uses the shared compact form geometry for new and edit screens', () => {
     const form = source('../src/components/admin/admin-product-form.tsx');
-    expect(form).toContain('lg:grid-cols-[1fr_1fr_auto_auto]');
+    const newPage = source('../src/app/admin/products/new/page.tsx');
+    const editPage = source('../src/app/admin/products/[id]/edit/page.tsx');
+
+    expect(form).toContain('ui-surface w-full max-w-5xl');
+    expect(form).toContain(
+      'ui-form-grid sm:grid-cols-2 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)_minmax(0,1.35fr)]',
+    );
+    expect(form).toContain('ui-field mt-1 min-h-9 text-base sm:text-[0.8125rem]');
+    expect(form.indexOf('name="brand"')).toBeLessThan(form.indexOf('name="model"'));
+    expect(form.indexOf('name="model"')).toBeLessThan(form.indexOf('name="version"'));
+    expect(form.indexOf('name="productionYear"')).toBeLessThan(form.indexOf('name="modelYear"'));
+    expect(form.indexOf('name="isActive"')).toBeLessThan(form.indexOf('name="isPublic"'));
+    expect(newPage).toContain('<AdminProductForm');
+    expect(editPage).toContain('<AdminProductForm');
+    expect(newPage).toContain('compact');
+    expect(editPage).toContain('compact');
+    expect(newPage).toContain('<div className="mt-5">');
+    expect(editPage).toContain('<div className="mt-5">');
+  });
+
+  it('keeps responsive boolean controls compact and touch-friendly', () => {
+    const form = source('../src/components/admin/admin-product-form.tsx');
+    expect(form).toContain(
+      'sm:grid-cols-2 lg:grid-cols-[minmax(8.5rem,0.75fr)_minmax(8.5rem,0.75fr)_auto_auto]',
+    );
     expect(form).toContain('lg:gap-x-4');
-    expect(form.match(/min-h-11 min-w-24 cursor-pointer/g)).toHaveLength(2);
+    expect(form.match(/touch-target flex min-h-9 cursor-pointer/g)).toHaveLength(2);
+    expect(form).toContain('size-4 accent-selection-strong');
+  });
+
+  it('applies the consolidated action and commit hierarchy', () => {
+    const form = source('../src/components/admin/admin-product-form.tsx');
+    const editPage = source('../src/app/admin/products/[id]/edit/page.tsx');
+    expect(form).toContain('ui-button ui-button--ghost ui-button--action');
+    expect(form).toContain('ui-button ui-button--primary ui-button--commit');
+    expect(form).toContain("'Criar veículo'");
+    expect(form).toContain("'Salvar alterações'");
+    expect(editPage).toContain('ui-button ui-button--secondary ui-button--action');
   });
 
   it('uses a structural desktop workspace with one table scrollport', () => {

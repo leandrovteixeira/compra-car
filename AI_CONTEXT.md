@@ -1,5 +1,19 @@
 # Contexto para agentes de IA
 
+## Formulários Novo/Editar Veículo — Sprint 14H (2026-08-30)
+
+Novo e Editar Veículo continuam consumindo o mesmo `AdminProductForm`. A geometria consolidada usa
+uma única `ui-surface` limitada a `max-w-5xl`, `ui-form-grid`, `ui-label`, `ui-field` e botões com
+densidades action/commit. Em desktop a identidade segue Marca → Modelo → Versão; a linha seguinte
+segue Ano produção → Ano modelo → Ativo → Público. Em mobile os campos partem de uma coluna, passam
+a duas em `sm` e mantêm fonte de 16px nos inputs até esse breakpoint, com touch targets ampliados
+para coarse pointers.
+
+A Sprint 14H é somente de apresentação. Preserve `createModelYearOptions`, o acoplamento que ativa
+Ativo ao publicar e desativa Público ao inativar, a normalização/duplicidade e a validação de domínio
+que aceita produção igual ao modelo ou exatamente um ano anterior. Não crie formulários separados
+para Novo e Editar nem reintroduza surfaces locais, cards para booleanos ou estilos Slate/Sky locais.
+
 ## Master PWA atualizado pelo usuário (2026-08-30)
 
 `apps/web/public/icons/app-icon-master.png` foi substituído manualmente pelo usuário e é a única fonte

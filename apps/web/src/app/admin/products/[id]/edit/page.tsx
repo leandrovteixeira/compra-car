@@ -23,17 +23,18 @@ export default async function EditAdminProductPage({ params }: EditAdminProductP
       <PageHeader
         actions={
           <Link
-            className="flex min-h-11 items-center rounded-xl border border-slate-700 px-4 text-sm font-semibold text-emerald-300 hover:bg-slate-800"
+            className="ui-button ui-button--secondary ui-button--action"
             href={`/admin/products/${id}/specs`}
           >
             Especificações e equipamentos
           </Link>
         }
+        compact
         description="Atualize os dados principais do veículo."
         eyebrow="Catálogo"
         title="Editar veículo"
       />
-      <div className="mt-8">
+      <div className="mt-5">
         <AdminProductForm
           action={updateAdminProductAction.bind(null, id)}
           currentYear={new Date().getFullYear()}

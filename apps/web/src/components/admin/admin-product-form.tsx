@@ -32,11 +32,10 @@ export type AdminProductFormMode = 'create' | 'duplicate' | 'edit';
 
 function FieldError({ messages }: { readonly messages?: readonly string[] }) {
   if (!messages?.length) return null;
-  return <p className="mt-1 text-sm text-rose-300">{messages[0]}</p>;
+  return <p className="mt-1 text-xs text-status-error">{messages[0]}</p>;
 }
 
-const inputClass =
-  'mt-2 min-h-11 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 text-slate-100 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/25';
+const inputClass = 'ui-field mt-1 min-h-9 text-base sm:text-[0.8125rem]';
 
 function SuccessDialog({
   mode,
@@ -132,14 +131,11 @@ function ProductFields({ action, currentYear, mode, pending, state }: ProductFie
   }
 
   return (
-    <form
-      action={action}
-      className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 sm:p-7"
-    >
+    <form action={action} className="ui-surface w-full max-w-5xl p-4 sm:p-5">
       <fieldset disabled={pending || (mode !== 'edit' && state.status === 'success')}>
         {state.status === 'error' && state.message ? (
           <div
-            className="mb-6 rounded-xl border border-rose-800 bg-rose-950/40 p-4 text-sm text-rose-200"
+            className="mb-4 rounded-md border border-rose-800 bg-rose-950/40 px-3 py-2 text-xs text-status-error"
             role="alert"
           >
             {state.message}
@@ -147,15 +143,15 @@ function ProductFields({ action, currentYear, mode, pending, state }: ProductFie
         ) : null}
         {mode === 'edit' && state.status === 'success' ? (
           <div
-            className="mb-6 rounded-xl border border-emerald-800 bg-emerald-950/40 p-4 text-sm text-emerald-200"
+            className="mb-4 rounded-md border border-emerald-800 bg-emerald-950/40 px-3 py-2 text-xs text-status-success"
             role="status"
           >
             {state.message}
           </div>
         ) : null}
 
-        <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr_1.4fr]">
-          <label className="block text-sm font-semibold text-slate-200">
+        <div className="ui-form-grid sm:grid-cols-2 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)_minmax(0,1.35fr)]">
+          <label className="ui-label block min-w-0">
             Marca
             <input
               aria-describedby={state.fieldErrors.brand ? 'brand-error' : undefined}
@@ -169,7 +165,7 @@ function ProductFields({ action, currentYear, mode, pending, state }: ProductFie
               <FieldError messages={state.fieldErrors.brand} />
             </span>
           </label>
-          <label className="block text-sm font-semibold text-slate-200">
+          <label className="ui-label block min-w-0">
             Modelo
             <input
               aria-describedby={state.fieldErrors.model ? 'model-error' : undefined}
@@ -183,7 +179,7 @@ function ProductFields({ action, currentYear, mode, pending, state }: ProductFie
               <FieldError messages={state.fieldErrors.model} />
             </span>
           </label>
-          <label className="block text-sm font-semibold text-slate-200">
+          <label className="ui-label block min-w-0">
             Versão
             <input
               aria-describedby={state.fieldErrors.version ? 'version-error' : undefined}
@@ -199,8 +195,8 @@ function ProductFields({ action, currentYear, mode, pending, state }: ProductFie
           </label>
         </div>
 
-        <div className="mt-5 grid items-start gap-y-5 sm:gap-x-5 lg:grid-cols-[1fr_1fr_auto_auto] lg:gap-x-4">
-          <label className="block text-sm font-semibold text-slate-200">
+        <div className="mt-4 grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(8.5rem,0.75fr)_minmax(8.5rem,0.75fr)_auto_auto] lg:gap-x-4">
+          <label className="ui-label block min-w-0">
             Ano produção
             <select
               aria-describedby={
@@ -224,7 +220,7 @@ function ProductFields({ action, currentYear, mode, pending, state }: ProductFie
               <FieldError messages={state.fieldErrors.productionYear} />
             </span>
           </label>
-          <label className="block text-sm font-semibold text-slate-200">
+          <label className="ui-label block min-w-0">
             Ano modelo
             <select
               aria-describedby={state.fieldErrors.modelYear ? 'model-year-error' : undefined}
@@ -248,20 +244,20 @@ function ProductFields({ action, currentYear, mode, pending, state }: ProductFie
             </span>
           </label>
 
-          <label className="flex min-h-11 min-w-24 cursor-pointer items-center gap-3 text-sm font-semibold text-slate-200 lg:mt-7">
+          <label className="touch-target flex min-h-9 cursor-pointer items-center gap-2 px-1 text-[0.8125rem] font-medium text-text-secondary lg:mt-5 lg:min-w-20">
             <input
               checked={isActive}
-              className="size-5 accent-sky-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300"
+              className="size-4 accent-selection-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
               onChange={(event) => changeActive(event.target.checked)}
               type="checkbox"
             />
             Ativo
             <input name="isActive" type="hidden" value={String(isActive)} />
           </label>
-          <label className="flex min-h-11 min-w-24 cursor-pointer items-center gap-3 text-sm font-semibold text-slate-200 lg:mt-7">
+          <label className="touch-target flex min-h-9 cursor-pointer items-center gap-2 px-1 text-[0.8125rem] font-medium text-text-secondary lg:mt-5 lg:min-w-20">
             <input
               checked={isPublic}
-              className="size-5 accent-sky-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300"
+              className="size-4 accent-selection-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
               onChange={(event) => changePublic(event.target.checked)}
               type="checkbox"
             />
@@ -271,15 +267,12 @@ function ProductFields({ action, currentYear, mode, pending, state }: ProductFie
         </div>
         <FieldError messages={state.fieldErrors.isPublic} />
 
-        <div className="mt-8 flex flex-col-reverse gap-3 border-t border-slate-800 pt-6 sm:flex-row sm:justify-end">
-          <Link
-            className="flex min-h-11 items-center justify-center rounded-xl border border-slate-700 px-5 font-semibold text-slate-200 transition hover:bg-slate-800"
-            href="/admin/products"
-          >
+        <div className="mt-5 flex flex-col-reverse gap-2 border-t border-border pt-4 sm:flex-row sm:justify-end">
+          <Link className="ui-button ui-button--ghost ui-button--action" href="/admin/products">
             Cancelar
           </Link>
           <button
-            className="min-h-11 rounded-xl bg-sky-500 px-5 font-semibold text-slate-950 transition hover:bg-sky-400 disabled:cursor-wait disabled:opacity-60"
+            className="ui-button ui-button--primary ui-button--commit"
             disabled={pending}
             type="submit"
           >
@@ -289,7 +282,7 @@ function ProductFields({ action, currentYear, mode, pending, state }: ProductFie
                 ? 'Salvar alterações'
                 : mode === 'duplicate'
                   ? 'Criar veículo'
-                  : 'Salvar'}
+                  : 'Criar veículo'}
           </button>
         </div>
       </fieldset>

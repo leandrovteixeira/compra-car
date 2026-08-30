@@ -9,11 +9,12 @@ export default async function NewAdminProductPage() {
   return (
     <>
       <PageHeader
+        compact
         description="Cadastre os dados principais do veículo. Equipamentos, preços e imagens serão tratados em etapas futuras."
         eyebrow="Catálogo"
         title="Novo veículo"
       />
-      <div className="mt-8">
+      <div className="mt-5">
         <AdminProductForm
           action={createAdminProductAction}
           currentYear={new Date().getFullYear()}

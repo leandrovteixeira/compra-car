@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-08-30 — Refinamento dos formulários de veículo (Sprint 14H)
+
+- alinha Novo e Editar Veículo à surface, campos, labels e hierarquia de ações do design system
+  consolidado, mantendo um único formulário compartilhado e largura máxima adequada;
+- organiza Marca, Modelo e Versão na primeira linha desktop e Ano produção, Ano modelo, Ativo e
+  Público na segunda, com controles compactos e reflow seguro em 390, 360 e 320px;
+- preserva normalização, duplicidade, acoplamento Ativo/Público, validação produção/modelo, ações,
+  autorização, domínio, banco, Supabase e demais fluxos funcionais;
+- adiciona cobertura estrutural para geometria compartilhada, ordem dos campos, densidade responsiva
+  e hierarquia action/commit.
+
 ## 2026-08-30 — Nova regeneração dos ícones PWA pelo master do usuário
 
 - preserva byte a byte o novo `app-icon-master.png` 1134×1134, SHA-256
