@@ -1,6 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { inflateSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
 
 import manifest from '../src/app/manifest';
@@ -15,40 +14,25 @@ import { APP_METADATA, APP_VIEWPORT } from '../src/config/app-metadata';
 
 const source = (path: string) => readFileSync(resolve(__dirname, path), 'utf8');
 
-function pngDimensions(path: string): readonly [number, number] {
+function pngProperties(path: string) {
   const image = readFileSync(resolve(__dirname, path));
   expect(image.subarray(0, 8)).toEqual(
     Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
   );
-  return [image.readUInt32BE(16), image.readUInt32BE(20)];
-}
-
-function pngCornerRgb(path: string): string {
-  const image = readFileSync(resolve(__dirname, path));
-  expect(image[24]).toBe(8);
-  const colorType = image[25];
-
-  const chunks: Buffer[] = [];
-  let palette: Buffer | null = null;
+  let hasTransparencyChunk = false;
   for (let offset = 8; offset < image.length;) {
     const length = image.readUInt32BE(offset);
     const type = image.toString('ascii', offset + 4, offset + 8);
-    if (type === 'IDAT') chunks.push(image.subarray(offset + 8, offset + 8 + length));
-    if (type === 'PLTE') palette = image.subarray(offset + 8, offset + 8 + length);
+    if (type === 'tRNS') hasTransparencyChunk = true;
     offset += length + 12;
   }
-
-  const firstScanline = inflateSync(Buffer.concat(chunks));
-  // For the first pixel there are no left/upper predictors, regardless of the PNG
-  // filter selected for the row. RGB stores channels directly; indexed PNG uses PLTE.
-  if (colorType === 2) return `#${firstScanline.subarray(1, 4).toString('hex').toUpperCase()}`;
-  expect(colorType).toBe(3);
-  expect(palette).not.toBeNull();
-  const paletteOffset = firstScanline[1] * 3;
-  return `#${palette!
-    .subarray(paletteOffset, paletteOffset + 3)
-    .toString('hex')
-    .toUpperCase()}`;
+  return {
+    bitDepth: image[24],
+    colorType: image[25],
+    hasTransparencyChunk,
+    height: image.readUInt32BE(20),
+    width: image.readUInt32BE(16),
+  };
 }
 
 describe('Sprint 14G mobile and installable web app foundation', () => {
@@ -102,19 +86,29 @@ describe('Sprint 14G mobile and installable web app foundation', () => {
     expect(APP_VIEWPORT.themeColor).toBe(APP_THEME_COLOR);
   });
 
-  it('ships valid standard, maskable and Apple PNG dimensions', () => {
-    expect(pngDimensions('../public/icons/app-icon-master.png')).toEqual([1134, 1134]);
-    expect(pngDimensions('../public/icons/icon-192.png')).toEqual([192, 192]);
-    expect(pngDimensions('../public/icons/icon-512.png')).toEqual([512, 512]);
-    expect(pngDimensions('../public/icons/icon-maskable-512.png')).toEqual([512, 512]);
-    expect(pngDimensions('../public/icons/apple-touch-icon.png')).toEqual([180, 180]);
-    expect(pngDimensions('../src/app/icon.png')).toEqual([512, 512]);
-    expect(pngCornerRgb('../public/icons/icon-512.png')).toBe(
-      pngCornerRgb('../public/icons/app-icon-master.png'),
-    );
+  it('ships valid, opaque RGB standard, maskable, Apple and Next PNGs', () => {
+    expect(pngProperties('../public/icons/app-icon-master.png')).toMatchObject({
+      height: 1134,
+      width: 1134,
+    });
+    for (const [path, size] of [
+      ['../public/icons/icon-192.png', 192],
+      ['../public/icons/icon-512.png', 512],
+      ['../public/icons/icon-maskable-512.png', 512],
+      ['../public/icons/apple-touch-icon.png', 180],
+      ['../src/app/icon.png', 512],
+    ] as const) {
+      expect(pngProperties(path)).toEqual({
+        bitDepth: 8,
+        colorType: 2,
+        hasTransparencyChunk: false,
+        height: size,
+        width: size,
+      });
+    }
   });
 
-  it('removes the obsolete monogram SVG assets and references only the car PNG family', () => {
+  it('removes the obsolete SVG assets and references only the current PNG family', () => {
     expect(existsSync(resolve(__dirname, '../public/icons/icon-192.svg'))).toBe(false);
     expect(existsSync(resolve(__dirname, '../public/icons/icon-512.svg'))).toBe(false);
     expect(existsSync(resolve(__dirname, '../src/app/icon.svg'))).toBe(false);

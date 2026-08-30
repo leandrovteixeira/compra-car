@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-08-30 — Nova regeneração dos ícones PWA pelo master do usuário
+
+- preserva byte a byte o novo `app-icon-master.png` 1134×1134, SHA-256
+  `2FCA372E70FA47C6602FE6D89C987ABA3083B4193EB8B549E74AD95D811E407D`, após remoção deliberada dos
+  derivados anteriores pelo usuário;
+- recria os PNGs 192, 512, maskable 512, Apple 180 e icon 512 do Next exclusivamente por Lanczos3,
+  com canvas integral, RGB opaco e sem crop, zoom, reposicionamento, sharpening ou IA;
+- neutraliza README e teste para não dependerem de cor ou conteúdo visual de masters anteriores,
+  preservando validações estruturais de formato, dimensões, alpha, paths e maskable;
+- mantém manifest, metadata, filenames, comportamento PWA, auth, banco, Supabase e `Legacy`
+  inalterados.
+
 ## 2026-08-29 — Derivados do master PWA atualizado pelo usuário
 
 - preserva byte a byte o novo `app-icon-master.png` 1134×1134 fornecido pelo usuário, SHA-256

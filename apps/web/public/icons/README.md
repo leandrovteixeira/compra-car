@@ -1,4 +1,4 @@
-# User-supplied temporary app icon
+# User-supplied app icon
 
 `app-icon-master.png` is the user-maintained source of truth for the installed application icon.
 The current 1134px master is intentionally retained byte for byte at its original resolution,
@@ -12,10 +12,10 @@ The browser-facing files are full-canvas, high-quality resamples of that master:
 - `apple-touch-icon.png` — 180px iOS icon;
 - `src/app/icon.png` — Next.js file-based favicon/app icon.
 
-Do not crop, enlarge or reposition the car. Replace this small asset family together
-when the definitive name and visual identity are approved. Do not add a service worker
-or imply offline support as part of an icon replacement.
+Regenerate every derivative directly from the master with full-canvas Lanczos resampling.
+Do not crop, enlarge, reposition, sharpen, add transparency or create a separate maskable
+composition. Keep the output family in opaque RGB PNG and replace it as one unit.
 
-Known limitation: browser tabs may reduce `src/app/icon.png` to 16px or 32px, where the
-car's fine detail becomes less legible. Keep the same approved image for now; do not
-invent a parallel monogram or simplified identity without approval.
+Do not add a service worker or imply offline support as part of an icon replacement.
+Browser tabs may reduce `src/app/icon.png` to 16px or 32px; keep the same user-supplied
+composition rather than inventing a parallel simplified identity.
