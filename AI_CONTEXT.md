@@ -1,5 +1,18 @@
 # Contexto para agentes de IA
 
+## Master PWA atualizado pelo usuário (2026-08-29)
+
+`apps/web/public/icons/app-icon-master.png` foi substituído manualmente pelo usuário e é a única fonte
+vigente para a família PWA. O master atual tem 1134×1134, PNG sRGB sem alpha e SHA-256
+`77D3AFEF1A8AC2D34332934D1C92E64D7233F203E926F15A62118A944E69351F`. Não o redesenhe, normalize ou
+regenere. A descrição visual histórica da Sprint 14G.1 abaixo não descreve mais o asset vigente.
+
+Os arquivos 192, 512, maskable 512, Apple 180 e `src/app/icon.png` são resamples full-canvas Lanczos3,
+sem crop, reposicionamento, ampliação especial do maskable, cantos adicionados, sharpening ou IA. Os
+filenames em `APP_ICON_PATHS`, manifest e metadata continuam estáveis. Ao substituir novamente o
+master, regenere toda a família em conjunto e valide o background do derivado contra o master, não
+contra `APP_THEME_COLOR`.
+
 ## Reinstalação após remoção — Sprint 14G.4 (2026-08-28)
 
 A disponibilidade no `UserMenu` descreve o contexto de execução atual, não um histórico permanente:

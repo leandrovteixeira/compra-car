@@ -82,7 +82,7 @@ Legenda:
 | --- | --- | --- |
 | Manifest parseável e full-scope | PASS (A) | App Router, `/`, `standalone`, cores oficiais. |
 | Nome e short name centralizados | PASS (A) | `src/config/app-identity.ts`. |
-| Ícones 192/512/maskable/Apple | PASS (A) | Carro aprovado; PNG, dimensões e `#9ABCC8` validados; safe zone inspecionada. |
+| Ícones 192/512/maskable/Apple | PASS (A) | Master vigente fornecido pelo usuário; PNGs RGB, dimensões e background derivados validados. |
 | Metadata Next/Apple | PASS (A) | Manifest, icons, `appleWebApp` e theme color cobertos. |
 | Instalação Android/Chrome | KNOWN LIMITATION | PENDENTE em URL HTTPS e dispositivo real. |
 | Add to Home Screen iOS/Safari | KNOWN LIMITATION | PENDENTE em iPhone/iPad real. |

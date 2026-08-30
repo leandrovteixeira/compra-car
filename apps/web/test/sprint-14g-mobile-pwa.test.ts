@@ -27,20 +27,28 @@ function pngCornerRgb(path: string): string {
   const image = readFileSync(resolve(__dirname, path));
   expect(image[24]).toBe(8);
   const colorType = image[25];
-  expect(colorType).toBe(2);
 
   const chunks: Buffer[] = [];
+  let palette: Buffer | null = null;
   for (let offset = 8; offset < image.length;) {
     const length = image.readUInt32BE(offset);
     const type = image.toString('ascii', offset + 4, offset + 8);
     if (type === 'IDAT') chunks.push(image.subarray(offset + 8, offset + 8 + length));
+    if (type === 'PLTE') palette = image.subarray(offset + 8, offset + 8 + length);
     offset += length + 12;
   }
 
   const firstScanline = inflateSync(Buffer.concat(chunks));
   // For the first pixel there are no left/upper predictors, regardless of the PNG
-  // filter selected for the row, so bytes 1–3 are its reconstructed RGB channels.
-  return `#${firstScanline.subarray(1, 4).toString('hex').toUpperCase()}`;
+  // filter selected for the row. RGB stores channels directly; indexed PNG uses PLTE.
+  if (colorType === 2) return `#${firstScanline.subarray(1, 4).toString('hex').toUpperCase()}`;
+  expect(colorType).toBe(3);
+  expect(palette).not.toBeNull();
+  const paletteOffset = firstScanline[1] * 3;
+  return `#${palette!
+    .subarray(paletteOffset, paletteOffset + 3)
+    .toString('hex')
+    .toUpperCase()}`;
 }
 
 describe('Sprint 14G mobile and installable web app foundation', () => {
@@ -101,7 +109,9 @@ describe('Sprint 14G mobile and installable web app foundation', () => {
     expect(pngDimensions('../public/icons/icon-maskable-512.png')).toEqual([512, 512]);
     expect(pngDimensions('../public/icons/apple-touch-icon.png')).toEqual([180, 180]);
     expect(pngDimensions('../src/app/icon.png')).toEqual([512, 512]);
-    expect(pngCornerRgb('../public/icons/icon-512.png')).toBe(APP_THEME_COLOR);
+    expect(pngCornerRgb('../public/icons/icon-512.png')).toBe(
+      pngCornerRgb('../public/icons/app-icon-master.png'),
+    );
   });
 
   it('removes the obsolete monogram SVG assets and references only the car PNG family', () => {

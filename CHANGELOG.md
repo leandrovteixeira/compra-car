@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-08-29 — Derivados do master PWA atualizado pelo usuário
+
+- preserva byte a byte o novo `app-icon-master.png` 1134×1134 fornecido pelo usuário, SHA-256
+  `77D3AFEF1A8AC2D34332934D1C92E64D7233F203E926F15A62118A944E69351F`;
+- regenera exclusivamente por Lanczos3, sem crop, reposicionamento, padding, sharpening ou IA, os
+  derivados 192, 512, maskable 512, Apple 180 e icon 512 do Next;
+- mantém todos os derivados em PNG sRGB de três canais, sem transparência, preservando canvas,
+  proporções, background e safe area integrais do master;
+- mantém filenames, manifest, metadata, identidade, comportamento PWA, auth, banco, Supabase e
+  `Legacy` inalterados.
+
 ## 2026-08-28 — Reinstalação PWA após remoção (Sprint 14G.4)
 
 - mantém “Instalar aplicativo” oculto somente durante execução standalone e restaura a ação quando o
