@@ -29,6 +29,34 @@ interface MutableUnit {
   sortPage: number;
 }
 
+export interface CommercialExtractionUnitContextLimitReasonDiagnostic {
+  readonly reason: CommercialExtractionUnitOverlap['reason'];
+  readonly contextPageNumbers: readonly number[];
+  readonly contextBlockCount: number;
+  readonly overlapCount: number;
+}
+
+export interface CommercialExtractionUnitContextLimitDiagnostic {
+  readonly unitType: CommercialExtractionUnitType;
+  readonly documentOrdinal: number;
+  readonly primaryPageNumbers: readonly number[];
+  readonly contextPageNumbers: readonly number[];
+  readonly contextPageCount: number;
+  readonly sectionCount: number;
+  readonly tableCount: number;
+  readonly noteCount: number;
+  readonly reasons: readonly CommercialExtractionUnitContextLimitReasonDiagnostic[];
+}
+
+export class CommercialExtractionUnitContextLimitError extends Error {
+  readonly code = 'COMMERCIAL_EXTRACTION_UNIT_CONTEXT_LIMIT_EXCEEDED';
+
+  constructor(readonly diagnostic: CommercialExtractionUnitContextLimitDiagnostic) {
+    super('COMMERCIAL_EXTRACTION_UNIT_CONTEXT_LIMIT_EXCEEDED');
+    this.name = 'CommercialExtractionUnitContextLimitError';
+  }
+}
+
 const unique = <T>(values: readonly T[]): T[] => [...new Set(values)];
 const sortedUnique = (values: readonly string[]): string[] => unique(values).sort();
 const chunks = <T>(values: readonly T[], size: number): T[][] => {
@@ -272,7 +300,11 @@ export function createCommercialExtractionUnitPlan(
   ): void => {
     if (
       !unit.overlaps.some(
-        (item) => item.refType === refType && item.refId === refId && item.usage === 'CONTEXT_ONLY',
+        (item) =>
+          item.refType === refType &&
+          item.refId === refId &&
+          item.usage === 'CONTEXT_ONLY' &&
+          item.reason === reason,
       )
     )
       unit.overlaps.push({ refType, refId, usage: 'CONTEXT_ONLY', reason });
@@ -300,7 +332,25 @@ export function createCommercialExtractionUnitPlan(
     if (!note || note.documentId !== unit.documentId) return;
     unit.noteIds.push(noteId);
     addOverlap(unit, 'NOTE', noteId, reason);
-    note.sourceBlockIds.forEach((blockId) => addContextBlock(unit, blockId, reason));
+    const sourceBlockIds =
+      reason === 'DOCUMENT_RULE'
+        ? (() => {
+            const onCanonicalPage = note.sourceBlockIds.filter(
+              (blockId) => blocks.get(blockId)?.pageId === note.pageId,
+            );
+            if (onCanonicalPage.length) return onCanonicalPage;
+            return orderedPageIds(
+              note.sourceBlockIds
+                .map((blockId) => blocks.get(blockId)?.pageId)
+                .filter((pageId): pageId is string => pageId !== undefined),
+            )
+              .slice(0, 1)
+              .flatMap((pageId) =>
+                note.sourceBlockIds.filter((blockId) => blocks.get(blockId)?.pageId === pageId),
+              );
+          })()
+        : note.sourceBlockIds;
+    sourceBlockIds.forEach((blockId) => addContextBlock(unit, blockId, reason));
   };
   const matches = (unit: MutableUnit, ref: CommercialDocumentMapRef): boolean => {
     if (ref.refType === 'PAGE') return unit.primaryPageIds.includes(ref.refId);
@@ -314,18 +364,33 @@ export function createCommercialExtractionUnitPlan(
       unit.contextPageIds.push(ref.refId);
       addOverlap(unit, 'PAGE', ref.refId, 'CONTEXT_EDGE');
     } else if (ref.refType === 'CONTENT_BLOCK') addContextBlock(unit, ref.refId, 'CONTEXT_EDGE');
-    else if (ref.refType === 'NOTE') addNote(unit, ref.refId, 'CONTEXT_EDGE');
+    else if (ref.refType === 'NOTE')
+      addNote(
+        unit,
+        ref.refId,
+        notes.get(ref.refId)?.noteKind === 'DOCUMENT_WIDE' ? 'DOCUMENT_RULE' : 'CONTEXT_EDGE',
+      );
+  };
+  const noteMatchesStructuralScope = (
+    unit: MutableUnit,
+    note: CommercialDocumentMapV1['notes'][number],
+  ): boolean => {
+    if (note.noteKind === 'DOCUMENT_WIDE') return true;
+    if (note.tableIds.length)
+      return note.tableIds.some((tableId) => unit.tableIds.includes(tableId));
+    if (note.sectionIds.length)
+      return note.sectionIds.every((sectionId) => unit.sectionIds.includes(sectionId));
+    return note.sourceBlockIds.some((blockId) => unit.primaryContentBlockIds.includes(blockId));
   };
 
   for (const unit of units) {
-    const directNotes = map.notes.filter(
-      (note) =>
-        note.documentId === unit.documentId &&
-        (note.noteKind === 'DOCUMENT_WIDE' ||
-          note.sectionIds.some((sectionId) => unit.sectionIds.includes(sectionId)) ||
-          note.tableIds.some((tableId) => unit.tableIds.includes(tableId)) ||
-          note.sourceBlockIds.some((blockId) => unit.primaryContentBlockIds.includes(blockId))),
-    );
+    const directNotes = map.notes.filter((note) => {
+      if (note.documentId !== unit.documentId) return false;
+      if (note.noteKind === 'DOCUMENT_WIDE') return true;
+      if (note.sourceBlockIds.some((blockId) => unit.primaryContentBlockIds.includes(blockId)))
+        return true;
+      return noteMatchesStructuralScope(unit, note);
+    });
     directNotes.forEach((note) =>
       addNote(
         unit,
@@ -350,7 +415,12 @@ export function createCommercialExtractionUnitPlan(
         edge.relation === 'NOTE_GOVERNS_TABLE' ||
         edge.relation === 'NOTE_GOVERNS_DOCUMENT'
       ) {
-        if (matches(unit, edge.to)) addRefContext(unit, edge.from);
+        if (matches(unit, edge.to)) {
+          const governingNote =
+            edge.from.refType === 'NOTE' ? notes.get(edge.from.refId) : undefined;
+          if (!governingNote || noteMatchesStructuralScope(unit, governingNote))
+            addRefContext(unit, edge.from);
+        }
       } else {
         if (matches(unit, edge.from)) addRefContext(unit, edge.to);
         if (matches(unit, edge.to)) addRefContext(unit, edge.from);
@@ -361,8 +431,6 @@ export function createCommercialExtractionUnitPlan(
     unit.contextPageIds = orderedPageIds(
       unit.contextPageIds.filter((pageId) => !unit.primaryPageIds.includes(pageId)),
     );
-    if (unit.contextPageIds.length > COMMERCIAL_EXTRACTION_UNIT_LIMITS.maxContextPagesPerUnit)
-      throw new Error('COMMERCIAL_EXTRACTION_UNIT_CONTEXT_LIMIT_EXCEEDED');
     unit.sectionIds = sortedUnique(unit.sectionIds);
     unit.tableIds = sortedUnique(unit.tableIds);
     unit.entityHintIds = sortedUnique(unit.entityHintIds);
@@ -376,6 +444,36 @@ export function createCommercialExtractionUnitPlan(
             item.reason === overlap.reason,
         ) === index,
     );
+    if (unit.contextPageIds.length > COMMERCIAL_EXTRACTION_UNIT_LIMITS.maxContextPagesPerUnit) {
+      const reasons = unique(unit.overlaps.map((overlap) => overlap.reason))
+        .sort()
+        .map((reason) => {
+          const overlaps = unit.overlaps.filter((overlap) => overlap.reason === reason);
+          return {
+            reason,
+            contextPageNumbers: unique(
+              overlaps
+                .filter((overlap) => overlap.refType === 'PAGE')
+                .map((overlap) => pages.get(overlap.refId)?.pageNumber)
+                .filter((pageNumber): pageNumber is number => pageNumber !== undefined),
+            ).sort((left, right) => left - right),
+            contextBlockCount: overlaps.filter((overlap) => overlap.refType === 'CONTENT_BLOCK')
+              .length,
+            overlapCount: overlaps.length,
+          };
+        });
+      throw new CommercialExtractionUnitContextLimitError({
+        unitType: unit.unitType,
+        documentOrdinal: documentOrdinal.get(unit.documentId) ?? 0,
+        primaryPageNumbers: unit.primaryPageIds.map(pageOrder),
+        contextPageNumbers: unit.contextPageIds.map(pageOrder),
+        contextPageCount: unit.contextPageIds.length,
+        sectionCount: unit.sectionIds.length,
+        tableCount: unit.tableIds.length,
+        noteCount: unit.noteIds.length,
+        reasons,
+      });
+    }
   }
 
   units.sort((left, right) => {

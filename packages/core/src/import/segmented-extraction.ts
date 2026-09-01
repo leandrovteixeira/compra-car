@@ -5,7 +5,7 @@ import type {
   CommercialExtractionUnitPlanV1,
 } from './commercial-document-map';
 
-export const SEGMENTED_EXTRACTION_PROMPT_VERSION = '8' as const;
+export const SEGMENTED_EXTRACTION_PROMPT_VERSION = '10' as const;
 export const SEGMENTED_EXTRACTION_SCHEMA_VERSION = 'CommercialDocumentExtraction/1' as const;
 
 export const SEGMENTED_EXTRACTION_LIMITS = Object.freeze({

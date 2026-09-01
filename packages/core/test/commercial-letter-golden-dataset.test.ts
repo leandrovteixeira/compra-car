@@ -38,6 +38,7 @@ describe('commercial letter golden corpus', () => {
     expect(jeep.find((fact) => fact.id === 'jeep-vd-reference')?.value).toBe('174990');
     expect(jeep.find((fact) => fact.id === 'jeep-vd-promo')?.value).toBe('147990');
     expect(jeep.find((fact) => fact.id === 'jeep-vd-discount')?.value).toBe('15.5');
+    expect(jeep.find((fact) => fact.id === 'jeep-vd-tradein-pack-tech')?.value).toBe('9000');
   });
 
   it('keeps offer composition references closed over the fact corpus', () => {

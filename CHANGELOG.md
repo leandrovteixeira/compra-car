@@ -1,5 +1,63 @@
 # Changelog
 
+## 2026-08-30 — Par atômico de anos na Unit Extraction (Sprint 10R.4)
+
+- adiciona diagnóstico opt-in e read-only de anos por unit nos estados raw, reconstructed,
+  pre-canonical e canonical validation, limitado a contexto estrutural, identidade comercial, anos,
+  página de evidência e flags de confiança;
+- comprova em execução Jeep v9 que pares parciais já vinham do provider e atravessavam reconstruction e
+  canonicalization sem alteração, sendo corretamente rejeitados pelo validator `incompleteYearPair`;
+- versiona somente a instruction de Unit Extraction para v10: PY/MY são um par atômico, expressões
+  inequívocas `26/27` e `26/26` geram ambos os anos, lados isolados preservam `rawYearText` sem par
+  estruturado e com review, e header explícito pode governar rows com provenance;
+- preserva o validator e o canonicalizer fail-closed, sem inferência automotiva, reparo ou preenchimento
+  silencioso do ano ausente;
+- na única tentativa real pós-correção, 17 Unit Extractions concluíram canonical validation, sem pares
+  parciais; o pipeline parou no novo blocker `UNIT_EXTRACTION_ORCHESTRATION_TIMEOUT`, antes de Merge,
+  Semantic Reconciliation, benchmark, Domain Mapping ou persistência.
+- registra o warning local conhecido: o checkpoint roda em Node `v24.18.0`, enquanto o monorepo exige
+  Node `22.x`; o pnpm reporta `Unsupported engine` sem invalidar os gates concluídos.
+
+## 2026-08-30 — Referential closure de metadata do Document Map (Sprint 10R.3)
+
+- adiciona preflight diagnóstico read-only para `titleHints`, `issuerHints`, `competenceHints` e
+  `validityHints` nos estados raw, reconstructed, pre-canonical e canonicalized;
+- registra somente contagens, paths, fingerprints SHA-256 truncados e existência da definição, sem
+  valores comerciais, IDs brutos, excerpts, PDF bytes ou secrets;
+- reforça no Document Map prompt v5 que todo ID local referenciado precisa de definição correspondente
+  no mesmo artifact, sem exigir IDs canônicos do provider;
+- preserva canonicalizer e validators fail-closed: referências órfãs continuam causando failure e não
+  são filtradas, substituídas ou reparadas;
+- confirma em execução real que o blocker de metadata foi superado e registra o novo primeiro blocker
+  em Unit Extraction: seis veículos da `unit-0002-table` com par de anos incompleto.
+
+## 2026-08-30 — Correção do fan-out de contexto Jeep (Sprint 10R.2)
+
+- adiciona diagnóstico estrutural seguro ao limite de páginas contextuais, com tipo da unit, páginas,
+  contagens e origens agrupadas, sem conteúdo comercial ou secrets;
+- corrige a propagação de notas para respeitar escopo de tabela e o conjunto completo de sections,
+  evitando que co-membership ampla transforme notas locais em regras de todas as units;
+- representa notas `DOCUMENT_WIDE` multipágina por source blocks reais de uma página canônica, mantendo
+  o `noteId` e a provenance integral no Document Map sem fan-out de todas as páginas;
+- mantém `maxContextPagesPerUnit = 4`, regras globais, footnotes, headers herdados e edges direcionais;
+- valida o mapa Jeep real com 37 units e registra que a segunda tentativa parou em um novo blocker de
+  canonicalização do Document Map, antes de Unit Plan ou qualquer escrita externa.
+
+## 2026-08-30 — Golden benchmark documental e diagnóstico Jeep (Sprint 10R.1)
+
+- transforma o corpus golden existente em benchmark determinístico de
+  `CommercialDocumentExtraction/1`, com matching semântico por documento, página, canal, veículo,
+  tipo, valor e unidade, além de proveniência e composição AND/OR;
+- exige recall crítico, precisão, composição e proveniência em 100% para `PASS`, com relatório JSON,
+  resumo legível e diagnósticos explícitos para fatos ausentes, incorretos ou inesperados;
+- reforça minimamente o prompt de Unit Extraction para separar preço público/referência de
+  promocional/cliente, preservar canal e composição e preferir ambiguidade a inferência;
+- adiciona harness Jeep local, opt-in e somente em memória, que interrompe antes do Domain Mapping e
+  não acessa staging ou Supabase;
+- registra a única execução real: Document Map concluído e Unit Plan interrompido por
+  `COMMERCIAL_EXTRACTION_UNIT_CONTEXT_LIMIT_EXCEEDED`; não houve retry, extração de unidade, merge,
+  reconciliação semântica, score golden ou persistência comercial.
+
 ## 2026-08-30 — Refinamento dos formulários de veículo (Sprint 14H)
 
 - alinha Novo e Editar Veículo à surface, campos, labels e hierarquia de ações do design system

@@ -54,6 +54,7 @@ export * from './use-cases/create-commercial-offer-draft';
 export * from './use-cases/list-import-batches';
 export * from './use-cases/get-import-batch';
 export * from './import/commercial-document-extraction';
+export * from './import/commercial-document-golden-benchmark';
 export * from './import/commercial-document-map';
 export * from './import/segmented-extraction';
 export * from './import/segmented-artifact-lifecycle';

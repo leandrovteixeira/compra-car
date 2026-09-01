@@ -1,5 +1,111 @@
 # Contexto para agentes de IA
 
+## Par atômico production/model year — Sprint 10R.4 (2026-08-30)
+
+O prompt de Unit Extraction está na versão 10. `productionYear` e `modelYear` são atômicos: ambos só
+podem ser emitidos quando a fonte torna os dois inequívocos. `26/27` significa 2026/2027 e `26/26`
+significa 2026/2026. Uma expressão unilateral como `MY27` ou `PY26` deve preservar `rawYearText`, omitir
+os dois campos estruturados e marcar `confidence.requiresReview=true`; nunca complete o outro lado por
+convenção automotiva. PY/MY pode ser herdado de header de tabela/seção somente quando o escopo visual é
+explícito, com provenance do contexto governante.
+
+O diagnóstico opt-in `observeUnitExtractionYears` acompanha raw structured output, reconstructed,
+pre-canonicalization e canonical validation. Ele registra somente páginas primárias/contextuais,
+table/section IDs, brand/model/version, presença/valor de PY/MY/rawYearText, páginas de evidência e flags
+de confiança. Não contém o PDF integral, secrets ou reparo. O canonicalizer continua apenas remapeando
+IDs; o validator continua rejeitando qualquer `incompleteYearPair`.
+
+A captura real pré-correção v9 materializou a tabela da página 10 como `unit-0004-table`/`table-0004`.
+Quatro rows Renegade — Altitude T270, Longitude T270 MHEV, Sahara T270 MHEV e Willys T270 4X4 — vieram
+do provider com `rawYearText="MY26/27"`, somente `modelYear=2027` e sem review, já no raw. Os mesmos
+quatro pares permaneceram idênticos no reconstructed e pre-canonical; canonical validation os rejeitou.
+A falha histórica 10R.3 tinha seis identities em `unit-0002-table`, mas seu raw/map não foi retido;
+devido à materialização estocástica do mapa, nomes/página daqueles seis não podem ser reconstruídos com
+segurança e permanecem **PENDENTE** em vez de serem inventados.
+
+Na única tentativa pós-correção, 17 units (`unit-0001-table` a `unit-0017-table`) concluíram canonical
+validation, zero pares parciais foram observados, `26/27` foi emitido como 2026/2027 e `MY26` foi
+preservado sem par e com review. O pipeline parou em `UNIT_EXTRACTION_ORCHESTRATION_TIMEOUT` após
+570.448 ms. O uso publicado antes da extração foi 90.156 input, 11.245 output e 101.401 total; o uso das
+Unit Extractions não foi exposto pelo caminho de failure e custo não está disponível. Merge, Semantic
+Reconciliation, benchmark, Domain Mapping, matching, staging e Supabase não ocorreram. Não faça retry
+automático nem aumente limites sem uma proposta arquitetural específica.
+
+O ambiente local do checkpoint usa Node `v24.18.0`, enquanto o monorepo declara Node `22.x`; o pnpm
+emite `Unsupported engine`. É um warning conhecido do runtime local, não uma falha funcional validada.
+
+## Metadata hint referential closure — Sprint 10R.3 (2026-08-30)
+
+O runtime pode observar metadata refs do Document Map em quatro estados sem registrar conteúdo:
+`raw_structured_output`, `reconstructed`, `pre_canonicalization` e `canonicalized`. Cada observação
+contém contagens de definitions, coleção/hint index, path, fingerprint SHA-256 truncado e booleano de
+existência. O preflight nunca altera o artifact. `canonicalizeCommercialDocumentMapIds` continua sendo
+a autoridade fail-closed e deve rejeitar qualquer `unknown_reference`.
+
+A falha 10R.2 não teve seu raw preservado, mas reconstruction é estruturalmente transparente para
+essas definições/referências e os testes acompanham o mesmo fingerprint órfão do raw até o
+pre-canonical state. Portanto o órfão nasceu na resposta estocástica do provider, não em projection,
+reconstruction ou canonicalization. Uma amostra Map-only posterior teve zero órfãos em todos os estados
+e preservou os fingerprints até canonicalization. O prompt do Document Map foi versionado para 5 com
+um self-check explícito de referential closure para metadata, pages, sections, tables, notes, entity
+hints e context edges. Não transforme esse self-check em reparo server-side.
+
+Na execução Map-only diagnóstica: 83.659 ms; 90.083 input units, 13.000 output e 103.083 total. Na única
+execução real pós-correção, Document Map/canonicalization e Unit Plan passaram; `unit-0002-table`
+falhou em Unit Extraction com seis violações `incompleteYearPair`. O tempo foi 119.533 ms. O uso
+observado nos artifacts concluídos foi 90.156 input, 11.738 output e 101.894 total, sem incluir com
+garantia a chamada de Unit Extraction que falhou antes da publicação. Merge, Semantic Reconciliation,
+benchmark, Domain Mapping e persistência não ocorreram. Não houve retry.
+
+## Fan-out de contexto Jeep — Sprint 10R.2 (2026-08-30)
+
+O limite `maxContextPagesPerUnit = 4` permanece inalterado. O erro Jeep original vinha da unit TABLE
+da página 10: contexto `[4, 5, 11, 12, 13, 14, 27]`. Páginas 11–14 eram notas vinculadas a outras
+tabelas da mesma section; páginas 4–5 pertenciam simultaneamente a outra section/canal; página 27 era
+a única regra `DOCUMENT_WIDE`. A causa foi o matcher de notas usar qualquer section coincidente antes
+de respeitar o escopo mais específico.
+
+O planner agora aplica nota com `tableIds` apenas às tabelas declaradas e nota sem tabela somente
+quando a unit contém todas as `sectionIds` declaradas. Edges `NOTE_GOVERNS_*` continuam direcionais e
+respeitam a mesma restrição. Notas globais multipágina continuam alcançáveis por `noteId`, mas levam
+para cada unit apenas source blocks reais da `note.pageId` (ou da primeira página-fonte válida como
+fallback); o Document Map conserva todos os sourceBlockIds de provenance. Não trunque contexto nem
+volte a um matcher de `some(section)`.
+
+O Document Map-only real usado no diagnóstico consumiu 90.083 unidades de entrada, 12.787 de saída,
+102.870 no total e levou 102.504 ms. Com a correção, esse mesmo mapa gera 37 units; a TABLE da página
+10 mantém somente a página 27 como contexto. Na única segunda tentativa real, após 58.955 ms, uma nova
+resposta de Document Map falhou na canonicalização porque `documents[0].issuerHints[0].sourceBlockIds[0]`
+referenciava um bloco inexistente. Nada foi publicado nem chegou ao Unit Plan. Não houve retry, tuning,
+staging, Supabase ou Domain Mapping. O próximo diagnóstico deve tratar esse blocker de referência no
+Document Map sem desfazer a correção do planner.
+
+## Golden benchmark documental — Sprint 10R.1 (2026-08-30)
+
+O corpus vigente continua único em
+`packages/core/test/fixtures/commercial-letter-golden-dataset.ts`. O runner
+`commercial-document-golden-benchmark.ts` compara `CommercialDocumentExtraction/1` por documento,
+página, canal, modelo/versão/PY/MY, tipo, valor normalizado e unidade; também valida evidência ligada
+a blocos e a composição exata de alternativas/cumulativos. `PASS` exige simultaneamente recall dos
+fatos críticos, precisão, composição e proveniência iguais a 1. Não reduza essa regra nem crie um
+segundo corpus. A página 6 da Jeep inclui preço público 174990, cliente 147990, desconto 15,5%,
+Trade-In 3000, total Pack Tech 9000 e financiamento 0%/60%/24 meses, preservando a alternativa OR.
+
+Na Sprint 10R.1 o prompt de Unit Extraction foi versionado para 9 para explicitar a separação de canal
+e papéis de preço, a preservação de AND/OR, evidência obrigatória e preferência por
+desconhecido/ambíguo em vez de inferência; a versão vigente é 10 conforme a seção 10R.4. O harness
+`jeep-golden-benchmark.test.ts` é opt-in, lê o PDF local, usa artefatos somente
+em memória e pede ao runtime para parar após reconciliação semântica. Ele não autoriza Domain Mapping,
+matching, staging, Supabase ou publicação.
+
+Na única execução real de 2026-08-30, com OpenAI e `gpt-5.6-terra`, o Document Map foi produzido, mas
+o Unit Plan falhou com `COMMERCIAL_EXTRACTION_UNIT_CONTEXT_LIMIT_EXCEEDED` após cerca de 87 segundos.
+Unit Extraction, Merge, Semantic Reconciliation e benchmark não foram alcançados; portanto não há
+score, lista de divergências golden, uso de tokens confiável nem custo a reportar. Não houve retry.
+Classifique o achado como limite A na fronteira Document Map → Unit Plan. Antes de uma nova execução
+real autorizada, inspecione o fan-out/overlap de páginas do mapa e proponha a menor correção no
+planner/map; não ajuste o prompt de Unit Extraction com base nesse erro.
+
 ## Formulários Novo/Editar Veículo — Sprint 14H (2026-08-30)
 
 Novo e Editar Veículo continuam consumindo o mesmo `AdminProductForm`. A geometria consolidada usa

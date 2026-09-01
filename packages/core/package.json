@@ -14,6 +14,7 @@
     "./commercial-document-extraction-canonicalizer": "./src/import/commercial-document-extraction-canonicalizer.ts",
     "./commercial-document-extraction-schema": "./src/import/commercial-document-extraction-schema.ts",
     "./commercial-document-extraction-validator": "./src/import/commercial-document-extraction-validator.ts",
+    "./commercial-document-golden-benchmark": "./src/import/commercial-document-golden-benchmark.ts",
     "./commercial-document-reconciliation": "./src/import/commercial-document-reconciliation.ts",
     "./commercial-document-semantic-reconciliation": "./src/import/commercial-document-semantic-reconciliation.ts",
     "./commercial-document-domain-mapping": "./src/import/commercial-document-domain-mapping.ts",

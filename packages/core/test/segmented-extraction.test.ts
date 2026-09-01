@@ -12,6 +12,7 @@ import {
   buildSegmentedExtractionUnitInstructions,
   executeSegmentedExtraction,
   selectPrimarySegmentedExtractionFailure,
+  type SegmentedExtractionUnitYearDiagnosticObservation,
 } from '../src/import/segmented-extraction-orchestrator';
 import { commercialDocumentExtractionSchemaV1 } from '../src/import/commercial-document-extraction-schema';
 import { createCommercialExtractionUnitPlan } from '../src/import/commercial-document-map-planner';
@@ -300,9 +301,118 @@ describe('Sprint 10C.3C segmented extraction', () => {
     expect(instructions).toContain('never use optimistic complete');
     expect(instructions).toContain('Use partial for known missing or incomplete');
     expect(instructions).toContain('Use ambiguous when unresolved interpretation');
+    expect(instructions).toContain('productionYear and modelYear form an atomic pair');
+    expect(instructions).toContain(
+      'If only one side is known, omit both structured fields, preserve the documentary year expression in rawYearText',
+    );
+    expect(instructions).toContain('Never infer the missing year from automotive convention');
+    expect(instructions).toContain('An explicit 26/27 means productionYear=2026, modelYear=2027');
+    expect(instructions).toContain('an explicit 26/26 means both structured years are 2026');
+    expect(instructions).toContain('MY27 alone emits neither structured year');
+    expect(instructions).toContain('PY26 alone emits neither structured year');
+    expect(instructions).toContain(
+      'PY/MY may be inherited from a table or section header when the source scope is explicit',
+    );
     expect(buildSegmentedExtractionUnitInstructions.toString()).not.toMatch(
       /Geely|GWM|Fiat|Volvo|Volkswagen/iu,
     );
+  });
+
+  it.each([
+    ['26/27', 2026, 2027],
+    ['26/26', 2026, 2026],
+    ['PY2025 MY2026', 2025, 2026],
+  ] as const)(
+    'preserves the complete documentary year pair %s',
+    (rawYearText, productionYear, modelYear) => {
+      const artifact = structuredClone(geelyLikeCommercialDocumentExtractionFixture);
+      const vehicle = artifact.vehicleIdentities[0]! as {
+        productionYear?: number;
+        modelYear?: number;
+        rawYearText?: string;
+      };
+      vehicle.productionYear = productionYear;
+      vehicle.modelYear = modelYear;
+      vehicle.rawYearText = rawYearText;
+
+      expect(() => validateCommercialDocumentExtraction(artifact)).not.toThrow();
+    },
+  );
+
+  it.each(['MY27', 'PY26'] as const)(
+    'keeps the one-sided expression %s but emits no structured year pair and requires review',
+    (rawYearText) => {
+      const artifact = structuredClone(geelyLikeCommercialDocumentExtractionFixture);
+      const vehicle = artifact.vehicleIdentities[0]! as {
+        productionYear?: number;
+        modelYear?: number;
+        rawYearText?: string;
+        confidence: { requiresReview: boolean };
+      };
+      delete vehicle.productionYear;
+      delete vehicle.modelYear;
+      vehicle.rawYearText = rawYearText;
+      vehicle.confidence.requiresReview = true;
+
+      expect(() => validateCommercialDocumentExtraction(artifact)).not.toThrow();
+      const canonical = canonicalizeCommercialDocumentExtractionUnit(artifact, 1);
+      expect(canonical.vehicleIdentities[0]).toMatchObject({
+        rawYearText,
+        confidence: { requiresReview: true },
+      });
+      expect(canonical.vehicleIdentities[0]).not.toHaveProperty('productionYear');
+      expect(canonical.vehicleIdentities[0]).not.toHaveProperty('modelYear');
+    },
+  );
+
+  it('preserves a complete pair inherited unambiguously from one governing header across rows', () => {
+    const artifact = structuredClone(geelyLikeCommercialDocumentExtractionFixture);
+    const headerBlockId = artifact.blocks[0]!.blockId;
+    for (const vehicle of artifact.vehicleIdentities.slice(0, 2) as unknown as Array<{
+      productionYear?: number;
+      modelYear?: number;
+      rawYearText?: string;
+      evidence: { blockIds: string[] };
+    }>) {
+      vehicle.productionYear = 2026;
+      vehicle.modelYear = 2027;
+      vehicle.rawYearText = '26/27';
+      vehicle.evidence.blockIds = [headerBlockId];
+    }
+
+    const canonical = canonicalizeCommercialDocumentExtractionUnit(artifact, 1);
+    expect(() => validateCommercialDocumentExtraction(canonical)).not.toThrow();
+    expect(canonical.vehicleIdentities.slice(0, 2)).toHaveLength(2);
+    for (const vehicle of canonical.vehicleIdentities.slice(0, 2))
+      expect(vehicle).toMatchObject({
+        productionYear: 2026,
+        modelYear: 2027,
+        rawYearText: '26/27',
+        evidence: { blockIds: ['block-u0001-0001'] },
+      });
+  });
+
+  it('keeps both years absent when the source has no year and rejects every partial pair', () => {
+    const noYear = structuredClone(geelyLikeCommercialDocumentExtractionFixture);
+    const noYearVehicle = noYear.vehicleIdentities[0]! as {
+      productionYear?: number;
+      modelYear?: number;
+      rawYearText?: string;
+    };
+    delete noYearVehicle.productionYear;
+    delete noYearVehicle.modelYear;
+    delete noYearVehicle.rawYearText;
+    expect(() => validateCommercialDocumentExtraction(noYear)).not.toThrow();
+
+    for (const side of ['productionYear', 'modelYear'] as const) {
+      const partial = structuredClone(noYear);
+      (partial.vehicleIdentities[0]! as Record<typeof side, number>)[side] = 2026;
+      expect(() => validateCommercialDocumentExtraction(partial)).toThrowError(
+        expect.objectContaining<Partial<CommercialDocumentExtractionValidationError>>({
+          keywordCounts: { incompleteYearPair: 1 },
+        }),
+      );
+    }
   });
 
   it('carries inherited headers, context-only footnotes and later general rules into instructions', () => {
@@ -914,6 +1024,60 @@ describe('Sprint 10C.3C segmented extraction', () => {
     expect(JSON.stringify(observations)).not.toContain(secret);
   });
 
+  it('traces partial vehicle years through raw, reconstructed, pre-canonical and validation', async () => {
+    const output = structuredClone(geelyLikeCommercialDocumentExtractionFixture);
+    const vehicle = output.vehicleIdentities[0]! as {
+      productionYear?: number;
+      modelYear?: number;
+      rawYearText?: string;
+      confidence: { requiresReview: boolean };
+    };
+    vehicle.productionYear = 2026;
+    delete vehicle.modelYear;
+    vehicle.rawYearText = '26';
+    vehicle.confidence.requiresReview = true;
+    const observations: SegmentedExtractionUnitYearDiagnosticObservation[] = [];
+    const fake = providerFrom(async () => ({
+      output,
+      providerRunId: 'run-year-diagnostic',
+      usage,
+    }));
+
+    const diagnosticInput = inputFor(geelyLikeCommercialDocumentMapFixture);
+    const result = await executeSegmentedExtraction(diagnosticInput, {
+      provider: fake.provider,
+      schema: commercialDocumentExtractionSchemaV1,
+      unitIds: [diagnosticInput.unitPlan.units[0]!.unitId],
+      diagnostics: true,
+      observeUnitYearDiagnostic: (observation) => observations.push(observation),
+    });
+
+    expect(result.unitResults[0]).toMatchObject({ code: 'CANONICAL_VALIDATION_FAILED' });
+    expect(observations.map((observation) => observation.stage)).toEqual([
+      'raw_structured_output',
+      'reconstructed',
+      'pre_canonicalization',
+      'canonical_validation',
+    ]);
+    for (const observation of observations) {
+      expect(observation.vehicleIdentities[0]).toMatchObject({
+        productionYear: { present: true, value: 2026 },
+        modelYear: { present: false },
+        rawYearText: { present: true, value: '26' },
+        confidence: { requiresReview: true },
+      });
+    }
+    expect(observations.at(-1)).toMatchObject({
+      validation: {
+        status: 'failed',
+        totalViolations: 1,
+        categories: { incompleteYearPair: 1 },
+      },
+    });
+    expect(output.vehicleIdentities[0]).toHaveProperty('productionYear', 2026);
+    expect(output.vehicleIdentities[0]).not.toHaveProperty('modelYear');
+  });
+
   it('distinguishes provider/unit timeout from total orchestration timeout', async () => {
     const waitingProvider = providerFrom(
       async (request) =>
@@ -980,10 +1144,10 @@ describe('Sprint 10C.3C segmented extraction', () => {
       ).size,
     ).toBe(result.unitResults.length);
     expect(fake.calls[0]?.metadata).toMatchObject({
-      promptVersion: '8',
+      promptVersion: '10',
       schemaVersion: 'CommercialDocumentExtraction/1',
     });
-    expect(SEGMENTED_EXTRACTION_PROMPT_VERSION).toBe('8');
+    expect(SEGMENTED_EXTRACTION_PROMPT_VERSION).toBe('10');
   });
 
   it('keeps the provider boundary generic and the current one-shot runtime absent', () => {
