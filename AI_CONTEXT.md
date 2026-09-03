@@ -1,5 +1,60 @@
 # Contexto para agentes de IA
 
+## Token & Throughput Efficiency — Sprint 10R.6 (2026-09-03)
+
+O baseline Jeep 10R.5 é 25 provider calls, aproximadamente 2,33M tokens e ~USD 7. A causa dominante é
+o PDF inteiro ser referenciado novamente em cada response, seguida pela repetição do schema (17.827
+chars) e do prompt v11 (10.775 chars); o prompt não repete o Document Map integral nem page excerpts.
+
+A 10R.6 adiciona `CommercialTableIR/1` não persistida, contexto seletivo e coalescing opt-in de tabelas
+consecutivas apenas no mesmo documento/seções/channel, limitado a 4 tabelas, 8 páginas primárias, 4
+páginas de contexto e 60 rows. Uma IR populada permite `includeSourceDocuments=false`; IR ausente falha
+fechado. O runtime padrão continua inalterado. O prompt ativo continua v11; v12 é somente candidato
+determinístico (5.485 chars, -49,1%) até autorização de comparação real.
+
+Sucessos de Unit Extraction passam a ser publicados antes de lançar
+`SegmentedImportPartialFailure`, que expõe completed/pending/failed IDs e permite resume sem repetir
+calls. O budget guard de calibração é opt-in (defaults Jeep: 300k tokens, 10 calls, ~USD 1 configurável)
+e bloqueia antes da request excedente. O benchmark determinístico conservador projeta 10 calls e
+253.657 tokens, com oito grupos de extração; não houve OpenAI real, Supabase/Staging, migration,
+`Legacy`, commit ou push. Ver `docs/import/SPRINT_10R_6_TOKEN_THROUGHPUT_EFFICIENCY.md`.
+
+## Commercial Knowledge Calibration — Sprint 10R.5 (2026-09-01)
+
+O handbook normativo v0.1 foi incorporado ao working tree em
+`docs/import/COMMERCIAL_LETTER_INTERPRETATION_HANDBOOK_v0.1.md`. Document Map permanece no prompt v5.
+Unit Extraction passou de v10 para v11 com instruções compactas retail-only, allowlist MVP,
+Policy/Offer apenas como semântica downstream, composição AND/OR, geometria/merged cells, hierarquia
+de evidência, hyphen/empty, dealer participation sem double count, Retail vs NF, Trade-In vs Loyalty,
+financiamento, temporalidade, inferência matemática e GREEN/YELLOW/RED. Semantic Reconciliation não
+possui prompt de provider: continua determinística em `SemanticallyReconciledCommercialDocument/1` e
+não foi versionada nem alterada. Document Map, planner, timeout, canonicalizer e schemas persistidos
+permanecem intactos.
+
+O sidecar puro `commercial-knowledge-calibration.ts` não persiste nem entra em Domain Mapping. Ele
+classifica somente Varejo na allowlist, reporta benefícios unsupported sem `other`, expande composição,
+replica condição merged por produto, resolve participação da rede uma única vez, deriva apenas uma
+incógnita inequívoca como yellow, preserva variantes de estoque e deduplica somente Policies
+semanticamente idênticas do mesmo produto. O benchmark agora reporta `greenCount`, `yellowCount`,
+`redCount` e `issuesByReasonCode`; yellow/red não mudam PASS se facts/composition/provenance continuam
+corretos. O corpus histórico não foi apagado e ganhou 13 casos calibrados com geometria de tabela para
+Jeep, BYD, GWM, Geely e VW.
+
+Gates determinísticos: Core focado 114/114; Web focado 20/20 com 2 reais skipped; Core completo 514/514;
+Web completo 566/566 com 16 skipped; Adapter 94/94 com 3 integrações skipped; Pricing 71/71; typecheck,
+lint, format check, build e diff check passaram. Uma execução Core paralela excedeu por 620 ms o timeout
+antigo de 5 s no caso Fiat-like Domain Mapping; a repetição isolada passou sem mudança de timeout/teste.
+O warning Node conhecido permanece: runtime local v24.18.0 versus engine 22.x.
+
+Naquele preflight inicial, nenhuma execução real 10R.5 foi iniciada porque `OPENAI_IMPORT_MODEL`,
+`JEEP_GOLDEN_PDF_PATH` e os PDFs das cinco marcas não estavam disponíveis localmente. Após a correção
+do ambiente e autorização específica, uma execução Jeep posterior completou 22 Unit Extractions
+válidas e parou em `UNIT_EXTRACTION_ORCHESTRATION_TIMEOUT`, antes de Merge, Semantic Reconciliation,
+intermediate final e Golden Benchmark. A observação externa dessa execução registrou aproximadamente
+2,33M tokens em 25 provider calls e custo aproximado de USD 7. Não há score v11 real e não se deve
+declarar melhoria de accuracy sobre v10. Não houve Supabase/Staging, migration, Domain Mapping
+persistido, alteração de `Legacy` ou escrita comercial.
+
 ## Par atômico production/model year — Sprint 10R.4 (2026-08-30)
 
 O prompt de Unit Extraction está na versão 10. `productionYear` e `modelYear` são atômicos: ambos só

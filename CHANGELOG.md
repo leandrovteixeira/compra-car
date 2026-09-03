@@ -1,5 +1,40 @@
 # Changelog
 
+## 2026-09-03 — Token & Throughput Efficiency (Sprint 10R.6)
+
+- adiciona telemetria segura por request e agregados de tokens/duplicação, sem registrar PDF, excerpts
+  comerciais ou secrets;
+- introduz `CommercialTableIR/1` in-memory, coalescing determinístico por escopo comercial e contexto
+  seletivo capaz de omitir o PDF somente quando uma IR populada é fornecida;
+- mantém o prompt ativo em v11 e adiciona apenas um candidato v12 medido, 49,1% menor, sem remover as
+  regras comerciais da 10R.5;
+- preserva Unit Extractions válidas antes de falha parcial, serializa completed/pending/failed units e
+  permite resume sem chamar novamente unidades concluídas;
+- adiciona budget guard opt-in com tetos Jeep de 300k tokens, 10 calls e custo configurável;
+- benchmark determinístico projeta 25 → 10 calls e ~2,33M → 253.657 tokens; nenhuma chamada paga,
+  migration, alteração em `Legacy`, Supabase/Staging, commit ou push foi realizada.
+
+## 2026-09-01 — Commercial Knowledge Calibration (Sprint 10R.5)
+
+- adiciona integralmente o handbook comercial v0.1 e traduz suas regras para uma instrução operacional
+  compacta de Unit Extraction v11; Document Map fica em v5 e Semantic Reconciliation permanece
+  determinística no contrato v1, sem novo prompt;
+- adiciona sidecar Core puro e não persistido para retail-only/allowlist, classificação conservadora,
+  composição AND/OR, ownership por produto, dealer participation, inferência matemática amarela,
+  hierarquia de evidência, estoque e deduplicação sem cruzar produtos;
+- mantém planner, limites, timeout, canonicalizer, schemas, Domain Mapping, banco e persistência
+  inalterados;
+- preserva o Golden corpus anterior e adiciona 13 casos calibrados de geometria de tabela para Jeep,
+  BYD, GWM, Geely e VW;
+- estende o benchmark com green/yellow/red e `issuesByReasonCode`, sem fazer confidence alterar o PASS
+  comercial baseado em recall crítico, precision, composition e provenance;
+- conclui todos os gates determinísticos. O preflight inicial sem model/path não iniciou a rodada;
+  posteriormente, uma execução Jeep autorizada completou 22 Unit Extractions válidas e parou em
+  `UNIT_EXTRACTION_ORCHESTRATION_TIMEOUT`, antes do intermediate final e do Golden Benchmark;
+- registra para essa execução aproximadamente 2,33M tokens, 25 provider calls e cerca de USD 7
+  observados externamente, sem score real de accuracy, Supabase/Staging, migration, `Legacy` ou escrita
+  comercial.
+
 ## 2026-08-30 — Par atômico de anos na Unit Extraction (Sprint 10R.4)
 
 - adiciona diagnóstico opt-in e read-only de anos por unit nos estados raw, reconstructed,

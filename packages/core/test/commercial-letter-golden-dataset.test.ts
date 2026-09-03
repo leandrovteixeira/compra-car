@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  COMMERCIAL_LETTER_CALIBRATION_CASES,
   COMMERCIAL_LETTER_GOLDEN_FACTS,
   COMMERCIAL_LETTER_GOLDEN_OFFERS,
 } from './fixtures/commercial-letter-golden-dataset';
@@ -56,5 +57,30 @@ describe('commercial letter golden corpus', () => {
   it('contains both AND and OR compositions', () => {
     const relations = new Set(COMMERCIAL_LETTER_GOLDEN_OFFERS.map((offer) => offer.relation));
     expect(relations).toEqual(new Set(['AND', 'OR']));
+  });
+
+  it('adds calibrated table-geometry cases for Jeep, BYD, GWM, Geely and VW', () => {
+    expect(new Set(COMMERCIAL_LETTER_CALIBRATION_CASES.map((item) => item.brand))).toEqual(
+      new Set(['Jeep', 'BYD', 'GWM', 'Geely', 'VW']),
+    );
+    expect(
+      COMMERCIAL_LETTER_CALIBRATION_CASES.every(
+        (item) => item.source.kind === 'TABLE_GEOMETRY' && item.source.rows.length > 0,
+      ),
+    ).toBe(true);
+    expect(
+      COMMERCIAL_LETTER_CALIBRATION_CASES.find((item) => item.id === 'jeep-vd-cpf-excluded'),
+    ).toMatchObject({ policies: [], offers: [] });
+    expect(
+      COMMERCIAL_LETTER_CALIBRATION_CASES.find(
+        (item) => item.id === 'byd-dolphin-26-27-five-options',
+      ),
+    ).toMatchObject({
+      policies: expect.arrayContaining([expect.objectContaining({ key: 'retail' })]),
+    });
+    expect(
+      COMMERCIAL_LETTER_CALIBRATION_CASES.find((item) => item.id === 'geely-ex5-four-compositions')
+        ?.offers,
+    ).toHaveLength(4);
   });
 });

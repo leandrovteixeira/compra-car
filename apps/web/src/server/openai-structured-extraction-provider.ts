@@ -137,9 +137,18 @@ export class OpenAIStructuredExtractionProvider implements StructuredExtractionP
                   content: [
                     {
                       type: 'input_text',
-                      text: `Unit metadata: ${JSON.stringify(request.metadata)}`,
+                      text: [
+                        `Unit metadata: ${JSON.stringify(request.metadata)}`,
+                        request.documentContext
+                          ? `Compact documentary context:\n${request.documentContext}`
+                          : '',
+                      ]
+                        .filter(Boolean)
+                        .join('\n'),
                     },
-                    ...fileIds.map((fileId) => ({ type: 'input_file', file_id: fileId })),
+                    ...(request.includeSourceDocuments === false
+                      ? []
+                      : fileIds.map((fileId) => ({ type: 'input_file', file_id: fileId }))),
                   ],
                 },
               ],

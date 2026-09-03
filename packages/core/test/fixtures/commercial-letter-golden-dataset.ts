@@ -6,7 +6,11 @@ import type {
 export type GoldenFactType = GoldenBenchmarkFact['factType'];
 
 export type GoldenDocument =
-  'BYD 202606-01.pdf' | 'Geely 202602-01.pdf' | 'GWM 202603-01.pdf' | 'Jeep 202606-01.pdf';
+  | 'BYD 202606-01.pdf'
+  | 'Geely 202602-01.pdf'
+  | 'GWM 202603-01.pdf'
+  | 'Jeep 202606-01.pdf'
+  | 'VW 202606-01.pdf';
 
 export interface GoldenCommercialFact extends Omit<GoldenBenchmarkFact, 'document'> {
   readonly document: GoldenDocument;
@@ -14,6 +18,46 @@ export interface GoldenCommercialFact extends Omit<GoldenBenchmarkFact, 'documen
 
 export interface GoldenOfferComposition extends Omit<GoldenBenchmarkComposition, 'document'> {
   readonly document: GoldenDocument;
+}
+
+export interface GoldenCalibrationPolicy {
+  readonly key: string;
+  readonly productKey: string;
+  readonly policyType:
+    | 'retail_bonus'
+    | 'invoice_discount'
+    | 'trade_in_bonus'
+    | 'loyalty_bonus'
+    | 'subsidized_financing'
+    | 'free_insurance'
+    | 'free_wallbox'
+    | 'free_registration'
+    | 'fuel_or_recharge_voucher';
+  readonly customerBenefitAmount?: string;
+  readonly dealerRebateAmount?: string;
+  readonly financing?: string;
+}
+
+export interface GoldenCalibrationCase {
+  readonly id: string;
+  readonly document: GoldenDocument;
+  readonly brand: 'Jeep' | 'BYD' | 'GWM' | 'Geely' | 'VW';
+  readonly channel: string;
+  readonly source: {
+    readonly kind: 'TABLE_GEOMETRY';
+    readonly columns: readonly string[];
+    readonly rows: readonly (readonly string[])[];
+    readonly mergedCells?: readonly {
+      readonly column: string;
+      readonly rowStart: number;
+      readonly rowEnd: number;
+      readonly text: string;
+    }[];
+  };
+  readonly policies: readonly GoldenCalibrationPolicy[];
+  readonly offers: readonly (readonly string[])[];
+  readonly ignoredEvidence?: readonly string[];
+  readonly expectedIssueReasonCodes?: readonly string[];
 }
 
 const f = (fact: GoldenCommercialFact): GoldenCommercialFact => fact;
@@ -541,5 +585,375 @@ export const COMMERCIAL_LETTER_GOLDEN_OFFERS: readonly GoldenOfferComposition[] 
     relation: 'OR',
     memberFactIds: ['byd-dolphin-fin-rate', 'byd-dolphin-ti-byd'],
     evidence: 'TAXA ... OU TRADE-IN BYD-BYD',
+  },
+];
+
+/** Calibrated commercial interpretation cases. These are sidecar expectations, not database rows. */
+export const COMMERCIAL_LETTER_CALIBRATION_CASES: readonly GoldenCalibrationCase[] = [
+  {
+    id: 'jeep-vd-cpf-excluded',
+    document: 'Jeep 202606-01.pdf',
+    brand: 'Jeep',
+    channel: 'VD-CPF',
+    source: {
+      kind: 'TABLE_GEOMETRY',
+      columns: ['Canal', 'Modelo', 'Condição'],
+      rows: [['VD-CPF', 'Compass Sport 26/26', 'Trade-In 3.000 OU Taxa 0%']],
+    },
+    policies: [],
+    offers: [],
+    ignoredEvidence: ['VD-CPF', 'Sugestão de Oferta'],
+    expectedIssueReasonCodes: ['NON_RETAIL_CHANNEL_IGNORED'],
+  },
+  {
+    id: 'jeep-renegade-altitude-no-condition',
+    document: 'Jeep 202606-01.pdf',
+    brand: 'Jeep',
+    channel: 'VAREJO',
+    source: {
+      kind: 'TABLE_GEOMETRY',
+      columns: ['Produto', 'Trade-In', 'Financiamento'],
+      rows: [['Renegade Altitude 26/27', '-', '-']],
+    },
+    policies: [],
+    offers: [],
+  },
+  {
+    id: 'jeep-renegade-longitude-two-financing-branches',
+    document: 'Jeep 202606-01.pdf',
+    brand: 'Jeep',
+    channel: 'VAREJO',
+    source: {
+      kind: 'TABLE_GEOMETRY',
+      columns: ['Produto', 'Trade-In', 'Opção 1', 'Opção 2'],
+      rows: [['Renegade Longitude 26/27', '6.000', '0% / 50% / 30x', '0% / 60% / 36x']],
+    },
+    policies: [
+      {
+        key: 'ti',
+        productKey: 'renegade-longitude-26-27',
+        policyType: 'trade_in_bonus',
+        customerBenefitAmount: '6000',
+      },
+      {
+        key: 'fin-50-30',
+        productKey: 'renegade-longitude-26-27',
+        policyType: 'subsidized_financing',
+        financing: '0/50/30',
+      },
+      {
+        key: 'fin-60-36',
+        productKey: 'renegade-longitude-26-27',
+        policyType: 'subsidized_financing',
+        financing: '0/60/36',
+      },
+    ],
+    offers: [
+      ['ti', 'fin-50-30'],
+      ['ti', 'fin-60-36'],
+    ],
+  },
+  {
+    id: 'jeep-renegade-sahara-willys-merged-financing',
+    document: 'Jeep 202606-01.pdf',
+    brand: 'Jeep',
+    channel: 'VAREJO',
+    source: {
+      kind: 'TABLE_GEOMETRY',
+      columns: ['Produto', 'Trade-In', 'Financiamento'],
+      rows: [
+        ['Sahara 26/27', '8.000', '0% / 60% / 36x'],
+        ['Willys 26/27', '10.000', ''],
+      ],
+      mergedCells: [{ column: 'Financiamento', rowStart: 0, rowEnd: 1, text: '0% / 60% / 36x' }],
+    },
+    policies: [
+      { key: 'sahara-ti', productKey: 'sahara-26-27', policyType: 'trade_in_bonus' },
+      { key: 'sahara-fin', productKey: 'sahara-26-27', policyType: 'subsidized_financing' },
+      { key: 'willys-ti', productKey: 'willys-26-27', policyType: 'trade_in_bonus' },
+      { key: 'willys-fin', productKey: 'willys-26-27', policyType: 'subsidized_financing' },
+    ],
+    offers: [
+      ['sahara-ti', 'sahara-fin'],
+      ['willys-ti', 'willys-fin'],
+    ],
+  },
+  {
+    id: 'byd-dolphin-25-26-individual-options',
+    document: 'BYD 202606-01.pdf',
+    brand: 'BYD',
+    channel: 'VAREJO',
+    source: {
+      kind: 'TABLE_GEOMETRY',
+      columns: ['Produto', 'Opção 1', 'Opção 2', 'Opção 3'],
+      rows: [['Dolphin 25/26', '0% / 60% / 24x', 'Loyalty BYD-BYD 15.000', 'Trade-In Geral 8.000']],
+    },
+    policies: [
+      {
+        key: 'fin',
+        productKey: 'dolphin-25-26',
+        policyType: 'subsidized_financing',
+        financing: '0/60/24',
+      },
+      {
+        key: 'loyalty',
+        productKey: 'dolphin-25-26',
+        policyType: 'loyalty_bonus',
+        customerBenefitAmount: '15000',
+      },
+      {
+        key: 'trade',
+        productKey: 'dolphin-25-26',
+        policyType: 'trade_in_bonus',
+        customerBenefitAmount: '8000',
+      },
+    ],
+    offers: [['fin'], ['loyalty'], ['trade']],
+  },
+  {
+    id: 'byd-dolphin-26-27-five-options',
+    document: 'BYD 202606-01.pdf',
+    brand: 'BYD',
+    channel: 'VAREJO',
+    source: {
+      kind: 'TABLE_GEOMETRY',
+      columns: ['Produto', 'Fin. Balão', 'Fin. Normal', 'Loyalty', 'Trade-In', 'Bônus Varejo'],
+      rows: [
+        ['Dolphin 26/27', '0% / 60% / 35x + balão', '0% / 60% / 24x', '15.000', '8.000', '8.000'],
+      ],
+    },
+    policies: [
+      { key: 'balloon', productKey: 'dolphin-26-27', policyType: 'subsidized_financing' },
+      { key: 'normal', productKey: 'dolphin-26-27', policyType: 'subsidized_financing' },
+      { key: 'loyalty', productKey: 'dolphin-26-27', policyType: 'loyalty_bonus' },
+      { key: 'trade', productKey: 'dolphin-26-27', policyType: 'trade_in_bonus' },
+      { key: 'retail', productKey: 'dolphin-26-27', policyType: 'retail_bonus' },
+    ],
+    offers: [['balloon'], ['normal'], ['loyalty'], ['trade'], ['retail']],
+  },
+  {
+    id: 'byd-song-plus-premium-composed-options',
+    document: 'BYD 202606-01.pdf',
+    brand: 'BYD',
+    channel: 'VAREJO',
+    source: {
+      kind: 'TABLE_GEOMETRY',
+      columns: ['Produto', 'Financiamento', 'Opção 1', 'Opção 2', 'Custo Rede'],
+      rows: [
+        [
+          'Song Plus Premium 25/26',
+          '0% / 50% / 36x',
+          'Loyalty BYD 40.000',
+          'Trade-In Geral 20.000',
+          'Sem custo',
+        ],
+      ],
+    },
+    policies: [
+      {
+        key: 'fin',
+        productKey: 'song-plus-premium-25-26',
+        policyType: 'subsidized_financing',
+        dealerRebateAmount: '0',
+      },
+      {
+        key: 'loyalty',
+        productKey: 'song-plus-premium-25-26',
+        policyType: 'loyalty_bonus',
+        customerBenefitAmount: '40000',
+      },
+      {
+        key: 'trade',
+        productKey: 'song-plus-premium-25-26',
+        policyType: 'trade_in_bonus',
+        customerBenefitAmount: '20000',
+      },
+    ],
+    offers: [
+      ['fin', 'loyalty'],
+      ['fin', 'trade'],
+    ],
+  },
+  {
+    id: 'gwm-finance-trade-insurance-combinations',
+    document: 'GWM 202603-01.pdf',
+    brand: 'GWM',
+    channel: 'VAREJO',
+    source: {
+      kind: 'TABLE_GEOMETRY',
+      columns: ['Produto', 'Financiamento', 'Trade-In', 'Seguro', 'Participação Rede'],
+      rows: [['Haval H6 PHEV19', 'Taxa zero', '15.000', '1 ano', 'posição ambígua']],
+    },
+    policies: [
+      { key: 'fin', productKey: 'haval-h6-phev19', policyType: 'subsidized_financing' },
+      {
+        key: 'trade',
+        productKey: 'haval-h6-phev19',
+        policyType: 'trade_in_bonus',
+        customerBenefitAmount: '15000',
+      },
+      { key: 'insurance', productKey: 'haval-h6-phev19', policyType: 'free_insurance' },
+    ],
+    offers: [
+      ['fin', 'trade'],
+      ['insurance', 'trade'],
+      ['fin', 'insurance'],
+    ],
+    expectedIssueReasonCodes: ['AMBIGUOUS_DEALER_PARTICIPATION_ALLOCATION'],
+  },
+  {
+    id: 'geely-ex5-four-compositions',
+    document: 'Geely 202602-01.pdf',
+    brand: 'Geely',
+    channel: 'VAREJO',
+    source: {
+      kind: 'TABLE_GEOMETRY',
+      columns: ['Produto', 'Retail', 'Taxa', 'Emplacamento', 'Alternativa'],
+      rows: [['EX5', '10.000 ou 25.000', '0%', 'até 4.000', 'Wallbox ou Recarga 1.740 kWh']],
+    },
+    policies: [
+      {
+        key: 'retail-10',
+        productKey: 'ex5',
+        policyType: 'retail_bonus',
+        customerBenefitAmount: '10000',
+      },
+      { key: 'fin', productKey: 'ex5', policyType: 'subsidized_financing' },
+      {
+        key: 'retail-25',
+        productKey: 'ex5',
+        policyType: 'retail_bonus',
+        customerBenefitAmount: '25000',
+      },
+      {
+        key: 'registration',
+        productKey: 'ex5',
+        policyType: 'free_registration',
+        customerBenefitAmount: '4000',
+      },
+      {
+        key: 'wallbox',
+        productKey: 'ex5',
+        policyType: 'free_wallbox',
+        customerBenefitAmount: '4000',
+      },
+      {
+        key: 'recharge',
+        productKey: 'ex5',
+        policyType: 'fuel_or_recharge_voucher',
+        customerBenefitAmount: '3480',
+      },
+    ],
+    offers: [
+      ['retail-25', 'registration', 'wallbox'],
+      ['retail-25', 'registration', 'recharge'],
+      ['retail-10', 'fin', 'registration', 'wallbox'],
+      ['retail-10', 'fin', 'registration', 'recharge'],
+    ],
+  },
+  {
+    id: 'vw-invoice-retail-dealer-semantics',
+    document: 'VW 202606-01.pdf',
+    brand: 'VW',
+    channel: 'VAREJO',
+    source: {
+      kind: 'TABLE_GEOMETRY',
+      columns: ['Produto', 'Desconto NF', 'Bônus Varejo', 'Trade-In', 'Participação Rede'],
+      rows: [
+        ['Nivus Comfortline 26/26', '12.000', '- + Rede 2.000', '10.000 + Rede 1.600', 'na célula'],
+      ],
+    },
+    policies: [
+      {
+        key: 'nf',
+        productKey: 'nivus-comfortline-26-26',
+        policyType: 'invoice_discount',
+        customerBenefitAmount: '12000',
+      },
+      {
+        key: 'retail',
+        productKey: 'nivus-comfortline-26-26',
+        policyType: 'retail_bonus',
+        customerBenefitAmount: '2000',
+        dealerRebateAmount: '2000',
+      },
+      {
+        key: 'trade',
+        productKey: 'nivus-comfortline-26-26',
+        policyType: 'trade_in_bonus',
+        customerBenefitAmount: '11600',
+        dealerRebateAmount: '1600',
+      },
+    ],
+    offers: [['nf'], ['retail'], ['trade']],
+  },
+  {
+    id: 'vw-nivus-options-distinct-funding',
+    document: 'VW 202606-01.pdf',
+    brand: 'VW',
+    channel: 'VAREJO',
+    source: {
+      kind: 'TABLE_GEOMETRY',
+      columns: ['Produto', 'Opção', 'Trade-In', 'Taxa', 'NF', 'Retail'],
+      rows: [
+        ['Nivus Comfortline', '1', '10.000 + Rede 1.600', '0,99%', '5.000', '3.000'],
+        ['Nivus Comfortline', '2', '8.000 + Rede 1.600', '0%', '5.000', '3.000'],
+      ],
+    },
+    policies: [
+      { key: 'trade-1', productKey: 'nivus-comfortline', policyType: 'trade_in_bonus' },
+      { key: 'fin-1', productKey: 'nivus-comfortline', policyType: 'subsidized_financing' },
+      { key: 'trade-2', productKey: 'nivus-comfortline', policyType: 'trade_in_bonus' },
+      { key: 'fin-2', productKey: 'nivus-comfortline', policyType: 'subsidized_financing' },
+      { key: 'nf', productKey: 'nivus-comfortline', policyType: 'invoice_discount' },
+      { key: 'retail', productKey: 'nivus-comfortline', policyType: 'retail_bonus' },
+    ],
+    offers: [
+      ['trade-1', 'fin-1'],
+      ['trade-2', 'fin-2'],
+    ],
+  },
+  {
+    id: 'vw-saveiro-equal-total-different-semantics',
+    document: 'VW 202606-01.pdf',
+    brand: 'VW',
+    channel: 'VAREJO',
+    source: {
+      kind: 'TABLE_GEOMETRY',
+      columns: ['Produto', 'Trade-In', 'Coluna comercial'],
+      rows: [
+        ['Saveiro', '4.000', 'Bônus Varejo 12.000'],
+        ['Saveiro', '4.000', 'Desconto NF 12.000'],
+      ],
+    },
+    policies: [
+      { key: 'trade', productKey: 'saveiro', policyType: 'trade_in_bonus' },
+      { key: 'retail', productKey: 'saveiro', policyType: 'retail_bonus' },
+      { key: 'invoice', productKey: 'saveiro', policyType: 'invoice_discount' },
+    ],
+    offers: [
+      ['trade', 'retail'],
+      ['trade', 'invoice'],
+    ],
+  },
+  {
+    id: 'vw-tcross-stock-variants-preserved',
+    document: 'VW 202606-01.pdf',
+    brand: 'VW',
+    channel: 'VAREJO',
+    source: {
+      kind: 'TABLE_GEOMETRY',
+      columns: ['Produto', 'Estoque', 'Desconto NF', 'Participação Rede'],
+      rows: [
+        ['T-Cross Comfortline 26/26', 'faixa A', '8.000', '1.000'],
+        ['T-Cross Comfortline 26/26', 'faixa B', '10.000', '1.000'],
+      ],
+    },
+    policies: [
+      { key: 'nf-a', productKey: 'tcross-comfortline-26-26', policyType: 'invoice_discount' },
+      { key: 'nf-b', productKey: 'tcross-comfortline-26-26', policyType: 'invoice_discount' },
+    ],
+    offers: [['nf-a'], ['nf-b']],
+    ignoredEvidence: ['idade de estoque', 'data de faturamento atacado'],
   },
 ];

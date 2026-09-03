@@ -362,6 +362,7 @@ describe.skipIf(!enabled)('Jeep real read-only OpenAI golden benchmark', () => {
       artifact: runtime.documentary!.unitExtractions,
       expectedFacts: COMMERCIAL_LETTER_GOLDEN_FACTS,
       expectedCompositions: COMMERCIAL_LETTER_GOLDEN_OFFERS,
+      retailOnly: true,
     });
     const captured = {
       document: JEEP_DOCUMENT,

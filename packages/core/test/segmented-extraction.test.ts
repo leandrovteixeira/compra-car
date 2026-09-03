@@ -1144,10 +1144,10 @@ describe('Sprint 10C.3C segmented extraction', () => {
       ).size,
     ).toBe(result.unitResults.length);
     expect(fake.calls[0]?.metadata).toMatchObject({
-      promptVersion: '10',
+      promptVersion: '11',
       schemaVersion: 'CommercialDocumentExtraction/1',
     });
-    expect(SEGMENTED_EXTRACTION_PROMPT_VERSION).toBe('10');
+    expect(SEGMENTED_EXTRACTION_PROMPT_VERSION).toBe('11');
   });
 
   it('keeps the provider boundary generic and the current one-shot runtime absent', () => {

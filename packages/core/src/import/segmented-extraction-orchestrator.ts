@@ -21,6 +21,12 @@ import {
   type SegmentedExtractionUnitResult,
   type StructuredExtractionProvider,
 } from './segmented-extraction';
+import { COMMERCIAL_KNOWLEDGE_CALIBRATION_INSTRUCTIONS } from './commercial-knowledge-calibration';
+import {
+  measureProviderCall,
+  type CommercialCalibrationBudget,
+  type ProviderCallEfficiencyObservation,
+} from './commercial-extraction-efficiency';
 
 export interface SegmentedExtractionOrchestratorOptions {
   readonly provider: StructuredExtractionProvider;
@@ -42,6 +48,14 @@ export interface SegmentedExtractionOrchestratorOptions {
   readonly observeUnitYearDiagnostic?: (
     observation: SegmentedExtractionUnitYearDiagnosticObservation,
   ) => void;
+  readonly buildUnitDocumentContext?: (context: SegmentedExtractionUnitContext) => string;
+  readonly includeSourceDocuments?: boolean;
+  readonly budget?: CommercialCalibrationBudget & {
+    readonly initialCalls?: number;
+    readonly initialEstimatedTokens?: number;
+    readonly estimatedSourceTokensPerRequest?: number;
+  };
+  readonly observeProviderCall?: (observation: ProviderCallEfficiencyObservation) => void;
 }
 
 export type SegmentedExtractionUnitValidationPhase =
@@ -180,17 +194,19 @@ Composition contract: Create a composition group only when it has at least two a
 Relationship fact requirement: Never emit a composition relationship with an empty factIds array. A relationship must reference at least one concrete extracted fact; groupIds never substitute for the required fact. If you identified only a group but no concrete fact relationship, do not emit a relationship. If no valid relationships exist, return relationships: []. Never emit placeholder relationship objects to satisfy required fields. Cardinality examples only (all other required fields still apply): VALID relationships: []; VALID factIds: ["fact-temp-1"]; INVALID factIds: [].
 Coverage status contract: Use complete only when every coverage unit is complete, gaps, incompleteBlockIds, unresolvedTableRows and unresolvedScopeIds are all empty, expectedVehicleCount is absent or equals the extracted vehicles, and expectedFamilies equals extractedFamilies as a set. If any of those conditions is false, never use optimistic complete. Use partial for known missing or incomplete required extraction and include the corresponding incomplete unit, gap or unresolved reference. Use ambiguous when unresolved interpretation or competing readings prevent a confident result, represented by an AMBIGUITY gap, an ambiguous unit or an unresolved scope. Never hide gaps, unresolved items or ambiguity merely to make a status pass validation.
 coverage.units must describe only the current unit. The required expectedUnitCount, completedUnitCount, and extractedVehicleCount wire fields are transport-only counters: emit 0 as a safe sentinel because the server deterministically reconstructs them from coverage.units and vehicleIdentities before canonical validation. Never use those counters to declare semantic completeness or hide partial, ambiguous, gap, or unresolved evidence. Local IDs are temporary and must have their contract prefixes.
+${COMMERCIAL_KNOWLEDGE_CALIBRATION_INSTRUCTIONS}
 Never return Product IDs, matching, final Policies/Offers, promotion, persistence IDs, private URLs, file IDs, or credentials.
 `.trim();
 }
 
 const PRIMARY_FAILURE_PRIORITY: Readonly<Record<SegmentedExtractionUnitFailure['code'], number>> = {
-  INVALID_STRUCTURED_OUTPUT: 0,
-  CANONICAL_VALIDATION_FAILED: 1,
-  PROVIDER_FAILURE: 2,
-  PROVIDER_TIMEOUT: 3,
-  ORCHESTRATION_TIMEOUT: 4,
-  ABORTED_SIBLING: 5,
+  BUDGET_EXCEEDED: 0,
+  INVALID_STRUCTURED_OUTPUT: 1,
+  CANONICAL_VALIDATION_FAILED: 2,
+  PROVIDER_FAILURE: 3,
+  PROVIDER_TIMEOUT: 4,
+  ORCHESTRATION_TIMEOUT: 5,
+  ABORTED_SIBLING: 6,
 };
 
 export function selectPrimarySegmentedExtractionFailure(
@@ -416,6 +432,8 @@ export async function executeSegmentedExtraction(
   let fatal = false;
   let session: Awaited<ReturnType<StructuredExtractionProvider['openSource']>> | undefined;
   let cleanup: SegmentedExtractionOperationalResult['cleanup'] = 'succeeded';
+  let requestOrdinal = options.budget?.initialCalls ?? 0;
+  let estimatedTokens = options.budget?.initialEstimatedTokens ?? 0;
 
   try {
     session =
@@ -441,6 +459,46 @@ export async function executeSegmentedExtraction(
       };
       try {
         const context = buildSegmentedExtractionUnitContext(input.documentMap, unit);
+        const instructions = buildSegmentedExtractionUnitInstructions(context);
+        const documentContext = options.buildUnitDocumentContext?.(context);
+        const plannedObservation = measureProviderCall({
+          stage: 'unit_extraction',
+          unitId: unit.unitId,
+          pages: context.primaryPages.map((page) => page.pageNumber),
+          requestOrdinal: requestOrdinal + 1,
+          promptVersion: SEGMENTED_EXTRACTION_PROMPT_VERSION,
+          instructions,
+          schema: options.schema,
+          ...(documentContext ? { documentContext } : {}),
+        });
+        const nextCalls = requestOrdinal + 1;
+        const nextTokens =
+          estimatedTokens +
+          plannedObservation.estimatedInputTokens +
+          (options.includeSourceDocuments === false
+            ? 0
+            : (options.budget?.estimatedSourceTokensPerRequest ?? 0));
+        if (options.budget) {
+          const estimatedCostUsd =
+            options.budget.estimatedCostPerMillionTokensUsd === undefined
+              ? undefined
+              : (nextTokens / 1_000_000) * options.budget.estimatedCostPerMillionTokensUsd;
+          if (
+            nextCalls > options.budget.maxProviderCalls ||
+            nextTokens > options.budget.maxEstimatedTotalTokens ||
+            (options.budget.maxEstimatedCostUsd !== undefined &&
+              estimatedCostUsd !== undefined &&
+              estimatedCostUsd > options.budget.maxEstimatedCostUsd)
+          ) {
+            results[index] = failure(unit, 'BUDGET_EXCEEDED', now() - startedAt);
+            fatal = true;
+            totalController.abort();
+            return;
+          }
+        }
+        requestOrdinal = nextCalls;
+        estimatedTokens = nextTokens;
+        const currentRequestOrdinal = nextCalls;
         const observeYears = (
           stage: SegmentedExtractionUnitYearDiagnosticStage,
           artifact: unknown,
@@ -453,7 +511,11 @@ export async function executeSegmentedExtraction(
         };
         const response = await awaitWithAbort(
           session!.extractStructured({
-            instructions: buildSegmentedExtractionUnitInstructions(context),
+            instructions,
+            ...(documentContext ? { documentContext } : {}),
+            ...(options.includeSourceDocuments === undefined
+              ? {}
+              : { includeSourceDocuments: options.includeSourceDocuments }),
             schemaName: options.schemaName ?? 'commercial_document_extraction_unit_v1',
             schema: options.schema,
             signal: controller.signal,
@@ -462,11 +524,30 @@ export async function executeSegmentedExtraction(
               unitId: unit.unitId,
               unitOrdinal: unit.ordinal,
               unitKind: unit.unitType,
+              requestOrdinal: currentRequestOrdinal,
               promptVersion: SEGMENTED_EXTRACTION_PROMPT_VERSION,
               schemaVersion: SEGMENTED_EXTRACTION_SCHEMA_VERSION,
             },
           }),
           controller.signal,
+        );
+        options.observeProviderCall?.(
+          measureProviderCall({
+            stage: 'unit_extraction',
+            unitId: unit.unitId,
+            pages: context.primaryPages.map((page) => page.pageNumber),
+            requestOrdinal: currentRequestOrdinal,
+            promptVersion: SEGMENTED_EXTRACTION_PROMPT_VERSION,
+            instructions,
+            schema: options.schema,
+            ...(documentContext ? { documentContext } : {}),
+            actual: {
+              inputTokens: response.usage.inputUnits,
+              outputTokens: response.usage.outputUnits,
+              totalTokens: response.usage.totalUnits,
+              elapsedMs: now() - startedAt,
+            },
+          }),
         );
         if (options.validateTransport) {
           try {

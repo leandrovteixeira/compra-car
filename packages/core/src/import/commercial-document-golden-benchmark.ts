@@ -4,6 +4,10 @@ import type {
   CommercialDocumentFactType,
   CommercialDocumentVehicleIdentity,
 } from './commercial-document-extraction';
+import {
+  isRetailCommercialChannel,
+  type CommercialKnowledgeConfidenceStatus,
+} from './commercial-knowledge-calibration';
 
 export type GoldenBenchmarkUnit = 'BRL' | 'percent' | 'months' | 'days' | 'text';
 
@@ -82,8 +86,24 @@ export interface CommercialDocumentGoldenBenchmarkReport {
   readonly precision: number;
   readonly compositionAccuracy: number;
   readonly provenanceAccuracy: number;
+  readonly greenCount: number;
+  readonly yellowCount: number;
+  readonly redCount: number;
+  readonly issuesByReasonCode: Readonly<Record<string, number>>;
+  readonly confidenceDiagnostics: readonly GoldenBenchmarkConfidenceDiagnostic[];
   readonly failures: readonly GoldenBenchmarkFailure[];
   readonly status: 'PASS' | 'FAIL';
+}
+
+export interface GoldenBenchmarkConfidenceDiagnostic {
+  readonly confidenceStatus: CommercialKnowledgeConfidenceStatus;
+  readonly reasonCode: string;
+  readonly explanation: string;
+  readonly decisionTaken: string;
+  readonly sourceBlockIds: readonly string[];
+  readonly page?: number;
+  readonly promptVersion: string;
+  readonly factId?: string;
 }
 
 export interface RunCommercialDocumentGoldenBenchmarkInput {
@@ -91,6 +111,8 @@ export interface RunCommercialDocumentGoldenBenchmarkInput {
   readonly artifact: CommercialDocumentExtractionV1 | readonly CommercialDocumentExtractionV1[];
   readonly expectedFacts: readonly GoldenBenchmarkFact[];
   readonly expectedCompositions: readonly GoldenBenchmarkComposition[];
+  readonly confidenceDiagnostics?: readonly GoldenBenchmarkConfidenceDiagnostic[];
+  readonly retailOnly?: boolean;
 }
 
 interface ResolvedContext {
@@ -231,6 +253,42 @@ const actualFacts = (artifacts: readonly CommercialDocumentExtractionV1[]): Actu
       };
     });
   });
+
+const confidenceDiagnostics = (
+  actual: readonly ActualFact[],
+  supplied: readonly GoldenBenchmarkConfidenceDiagnostic[],
+): GoldenBenchmarkConfidenceDiagnostic[] => {
+  const explicitlyCovered = new Set(
+    supplied.flatMap((diagnostic) => (diagnostic.factId ? [diagnostic.factId] : [])),
+  );
+  const derived = actual
+    .filter(({ fact }) => !explicitlyCovered.has(fact.factId))
+    .map(({ fact, pages }): GoldenBenchmarkConfidenceDiagnostic => {
+      const confidenceStatus: CommercialKnowledgeConfidenceStatus = fact.confidence.ambiguous
+        ? 'red'
+        : fact.confidence.requiresReview
+          ? 'yellow'
+          : 'green';
+      return {
+        confidenceStatus,
+        reasonCode:
+          fact.confidence.reasons[0] ??
+          (confidenceStatus === 'green'
+            ? 'FACT_CONFIDENCE_SUPPORTED'
+            : confidenceStatus === 'yellow'
+              ? 'FACT_REQUIRES_REVIEW'
+              : 'FACT_AMBIGUOUS'),
+        explanation:
+          fact.confidence.reasons.join('; ') || 'Derived from canonical fact confidence flags.',
+        decisionTaken: 'Reported without changing benchmark fact/composition correctness.',
+        sourceBlockIds: [...fact.evidence.blockIds],
+        ...(pages[0] === undefined ? {} : { page: pages[0] }),
+        promptVersion: 'artifact',
+        factId: fact.factId,
+      };
+    });
+  return [...supplied.map((item) => structuredClone(item)), ...derived];
+};
 
 type SemanticDifference = 'factType' | 'value' | 'unit' | 'channel' | 'vehicle' | 'page';
 
@@ -437,9 +495,15 @@ export function runCommercialDocumentGoldenBenchmark(
   input: RunCommercialDocumentGoldenBenchmarkInput,
 ): CommercialDocumentGoldenBenchmarkReport {
   const artifacts = Array.isArray(input.artifact) ? input.artifact : [input.artifact];
-  const expectedFacts = input.expectedFacts.filter((fact) => fact.document === input.document);
+  const expectedFacts = input.expectedFacts.filter(
+    (fact) =>
+      fact.document === input.document &&
+      (!input.retailOnly || isRetailCommercialChannel(fact.channel)),
+  );
   const expectedCompositions = input.expectedCompositions.filter(
-    (composition) => composition.document === input.document,
+    (composition) =>
+      composition.document === input.document &&
+      (!input.retailOnly || isRetailCommercialChannel(composition.channel)),
   );
   const actual = actualFacts(artifacts);
   const usedActual = new Set<ActualFact>();
@@ -516,6 +580,15 @@ export function runCommercialDocumentGoldenBenchmark(
     provenanceAccuracy === 1
       ? 'PASS'
       : 'FAIL';
+  const diagnostics = confidenceDiagnostics(actual, input.confidenceDiagnostics ?? []);
+  const issuesByReasonCode = Object.fromEntries(
+    [...new Set(diagnostics.map((item) => item.reasonCode))]
+      .sort()
+      .map((reasonCode) => [
+        reasonCode,
+        diagnostics.filter((item) => item.reasonCode === reasonCode).length,
+      ]),
+  );
 
   return {
     document: input.document,
@@ -545,6 +618,11 @@ export function runCommercialDocumentGoldenBenchmark(
     precision,
     compositionAccuracy,
     provenanceAccuracy,
+    greenCount: diagnostics.filter((item) => item.confidenceStatus === 'green').length,
+    yellowCount: diagnostics.filter((item) => item.confidenceStatus === 'yellow').length,
+    redCount: diagnostics.filter((item) => item.confidenceStatus === 'red').length,
+    issuesByReasonCode,
+    confidenceDiagnostics: diagnostics,
     failures,
     status,
   };
@@ -561,6 +639,12 @@ export function formatCommercialDocumentGoldenBenchmark(
     `precision: ${percent(report.precision)}`,
     `composition: ${percent(report.compositionAccuracy)}`,
     `provenance: ${percent(report.provenanceAccuracy)}`,
+    `confidence: green=${report.greenCount}; yellow=${report.yellowCount}; red=${report.redCount}`,
+    `issues: ${
+      Object.entries(report.issuesByReasonCode)
+        .map(([reasonCode, count]) => `${reasonCode}=${count}`)
+        .join(', ') || 'none'
+    }`,
   ];
   if (report.failures.length)
     lines.push(

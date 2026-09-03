@@ -5,7 +5,7 @@ import type {
   CommercialExtractionUnitPlanV1,
 } from './commercial-document-map';
 
-export const SEGMENTED_EXTRACTION_PROMPT_VERSION = '10' as const;
+export const SEGMENTED_EXTRACTION_PROMPT_VERSION = '11' as const;
 export const SEGMENTED_EXTRACTION_SCHEMA_VERSION = 'CommercialDocumentExtraction/1' as const;
 
 export const SEGMENTED_EXTRACTION_LIMITS = Object.freeze({
@@ -39,6 +39,8 @@ export interface StructuredExtractionUsage {
 
 export interface StructuredExtractionRequest {
   readonly instructions: string;
+  readonly documentContext?: string;
+  readonly includeSourceDocuments?: boolean;
   readonly schemaName: string;
   readonly schema: Readonly<Record<string, unknown>>;
   readonly signal: AbortSignal;
@@ -77,6 +79,7 @@ export interface SegmentedExtractionUnitContext {
 }
 
 export type SegmentedExtractionErrorCode =
+  | 'BUDGET_EXCEEDED'
   | 'PROVIDER_TIMEOUT'
   | 'PROVIDER_FAILURE'
   | 'INVALID_STRUCTURED_OUTPUT'

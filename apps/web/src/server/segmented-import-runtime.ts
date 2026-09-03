@@ -8,6 +8,10 @@ import type {
   CommercialDocumentExtractionV1,
   CommercialDocumentMapV1,
   CommercialExtractionUnitPlanV1,
+  CommercialTableIRV1,
+  CommercialCalibrationBudget,
+  CommercialUnitCoalescingDiagnostic,
+  ProviderCallEfficiencyObservation,
   ImportBatchDetails,
   SegmentedArtifactManifest,
   SegmentedExtractionSource,
@@ -16,6 +20,11 @@ import type {
   StructuredExtractionUsage,
 } from '@compra-car/core';
 import { createCommercialExtractionUnitPlan } from '@compra-car/core/commercial-document-map-planner';
+import {
+  coalesceCommercialExtractionUnitPlan,
+  createCommercialCalibrationBudgetGuard,
+  measureProviderCall,
+} from '@compra-car/core/commercial-extraction-efficiency';
 import {
   canonicalizeCommercialDocumentMapIds,
   CommercialDocumentMapCanonicalizationError,
@@ -142,6 +151,37 @@ export interface SegmentedImportRuntimeResult {
   readonly summary: SegmentedImportRuntimeSummary;
   readonly documentMap?: CommercialDocumentMapV1;
   readonly documentary?: SegmentedDocumentaryRuntimeResult;
+}
+
+export class SegmentedImportPartialFailure extends Error {
+  readonly completedUnitIds: readonly string[];
+  readonly pendingUnitIds: readonly string[];
+  readonly failedUnitId: string;
+  readonly failureCode: string;
+
+  constructor(input: {
+    readonly completedUnitIds: readonly string[];
+    readonly pendingUnitIds: readonly string[];
+    readonly failedUnitId: string;
+    readonly failureCode: string;
+  }) {
+    super(`UNIT_EXTRACTION_${input.failureCode}`);
+    this.name = 'SegmentedImportPartialFailure';
+    this.completedUnitIds = [...input.completedUnitIds];
+    this.pendingUnitIds = [...input.pendingUnitIds];
+    this.failedUnitId = input.failedUnitId;
+    this.failureCode = input.failureCode;
+  }
+
+  toJSON() {
+    return {
+      code: this.message,
+      failureCode: this.failureCode,
+      completedUnitIds: this.completedUnitIds,
+      pendingUnitIds: this.pendingUnitIds,
+      failedUnitId: this.failedUnitId,
+    };
+  }
 }
 
 export interface SegmentedDocumentaryRuntimeResult {
@@ -389,6 +429,20 @@ export async function executeSegmentedImportRuntime(input: {
   readonly observeUnitExtractionYears?: (
     observation: SegmentedExtractionUnitYearDiagnosticObservation,
   ) => void;
+  readonly efficiency?: {
+    readonly enabled: true;
+    readonly concurrency?: number;
+    readonly commercialTableIRByUnitId?: Readonly<Record<string, CommercialTableIRV1>>;
+    readonly budget?: CommercialCalibrationBudget & {
+      readonly initialCalls?: number;
+      readonly initialEstimatedTokens?: number;
+    };
+    readonly estimatedSourceTokensPerAttachedRequest?: number;
+    readonly observeCoalescing?: (
+      diagnostics: readonly CommercialUnitCoalescingDiagnostic[],
+    ) => void;
+    readonly observeProviderCall?: (observation: ProviderCallEfficiencyObservation) => void;
+  };
 }): Promise<SegmentedImportRuntimeResult> {
   if (input.source.documents.length !== 1) throw new Error('SEGMENTED_PRIMARY_DOCUMENT_REQUIRED');
   const documentId = input.source.documents[0]!.documentId;
@@ -398,6 +452,12 @@ export async function executeSegmentedImportRuntime(input: {
   let reusedArtifactCount = 0;
   let session: StructuredExtractionSourceSession | undefined;
   let cleanup: 'succeeded' | 'failed' = 'succeeded';
+  const calibrationBudgetGuard = input.efficiency?.budget
+    ? createCommercialCalibrationBudgetGuard(input.efficiency.budget, {
+        calls: input.efficiency.budget.initialCalls ?? 0,
+        estimatedTokens: input.efficiency.budget.initialEstimatedTokens ?? 0,
+      })
+    : undefined;
   const observeDocumentMapValidation = (validation: () => void): void => {
     try {
       validation();
@@ -516,6 +576,23 @@ export async function executeSegmentedImportRuntime(input: {
       'document_map',
       'CommercialDocumentMap/1',
       async () => {
+        const requestOrdinal = (calibrationBudgetGuard?.snapshot().calls ?? 0) + 1;
+        const planned = measureProviderCall({
+          stage: 'document_map',
+          pages: [],
+          requestOrdinal,
+          promptVersion: DOCUMENT_MAP_PROMPT_VERSION,
+          instructions: mapInstructions,
+          schema: openAITransportDocumentMapSchema,
+        });
+        const plannedWithSource = {
+          ...planned,
+          estimatedInputTokens:
+            planned.estimatedInputTokens +
+            (input.efficiency?.estimatedSourceTokensPerAttachedRequest ?? 0),
+        };
+        calibrationBudgetGuard?.reserve(plannedWithSource.estimatedInputTokens);
+        const providerStartedAt = Date.now();
         const response = await session!.extractStructured({
           instructions: mapInstructions,
           schemaName: 'commercial_document_map_v1',
@@ -529,6 +606,13 @@ export async function executeSegmentedImportRuntime(input: {
         });
         usage = addUsage(usage, response.usage);
         providerRunIds.push(response.providerRunId);
+        input.efficiency?.observeProviderCall?.({
+          ...plannedWithSource,
+          actualInputTokens: response.usage.inputUnits,
+          outputTokens: response.usage.outputUnits,
+          totalTokens: response.usage.totalUnits,
+          elapsedMs: Date.now() - providerStartedAt,
+        });
         validateDocumentMapWire(response.output);
         if (input.diagnostics && input.observeDocumentMapMetadataReferences)
           input.observeDocumentMapMetadataReferences(
@@ -575,7 +659,16 @@ export async function executeSegmentedImportRuntime(input: {
     const planArtifact = await get(
       'unit_plan',
       'CommercialExtractionUnitPlan/1',
-      async () => ({ body: createCommercialExtractionUnitPlan(documentMap) }),
+      async () => {
+        const basePlan = createCommercialExtractionUnitPlan(documentMap);
+        if (!input.efficiency?.enabled) return { body: basePlan };
+        const coalesced = coalesceCommercialExtractionUnitPlan({
+          map: documentMap,
+          plan: basePlan,
+        });
+        input.efficiency.observeCoalescing?.(coalesced.diagnostics);
+        return { body: coalesced.plan };
+      },
       [mapArtifact],
     );
     const unitPlan = planArtifact.body as ReturnType<typeof createCommercialExtractionUnitPlan>;
@@ -621,10 +714,35 @@ export async function executeSegmentedImportRuntime(input: {
             else console.warn('SEGMENTED_UNIT_EXTRACTION_VALIDATION', observation);
           },
           observeUnitYearDiagnostic: input.observeUnitExtractionYears,
+          ...(input.efficiency?.concurrency === undefined
+            ? {}
+            : { concurrency: input.efficiency.concurrency }),
+          ...(input.efficiency?.commercialTableIRByUnitId
+            ? {
+                buildUnitDocumentContext: (context) => {
+                  const ir = input.efficiency!.commercialTableIRByUnitId?.[context.unit.unitId];
+                  if (!ir) throw new Error('COMMERCIAL_TABLE_IR_MISSING_FOR_UNIT');
+                  return JSON.stringify(ir);
+                },
+                includeSourceDocuments: false,
+              }
+            : {}),
+          ...(input.efficiency?.budget
+            ? {
+                budget: {
+                  ...input.efficiency.budget,
+                  initialCalls: calibrationBudgetGuard?.snapshot().calls ?? 0,
+                  initialEstimatedTokens: calibrationBudgetGuard?.snapshot().estimatedTokens ?? 0,
+                  estimatedSourceTokensPerRequest:
+                    input.efficiency.estimatedSourceTokensPerAttachedRequest ?? 0,
+                },
+              }
+            : {}),
+          ...(input.efficiency?.observeProviderCall
+            ? { observeProviderCall: input.efficiency.observeProviderCall }
+            : {}),
         },
       );
-      const failed = selectPrimarySegmentedExtractionFailure(extraction.unitResults);
-      if (failed) throw new Error(`UNIT_EXTRACTION_${failed.code}`);
       for (const result of extraction.unitResults) {
         if (result.status !== 'succeeded') continue;
         usage = addUsage(usage, result.usage);
@@ -647,6 +765,23 @@ export async function executeSegmentedImportRuntime(input: {
           result.unitId,
         );
         unitArtifacts.set(result.unitId, artifact);
+      }
+      const failed = selectPrimarySegmentedExtractionFailure(extraction.unitResults);
+      if (failed) {
+        const completedUnitIds = extraction.unitResults
+          .filter((result) => result.status === 'succeeded')
+          .map((result) => result.unitId)
+          .sort();
+        const pendingUnitIds = missingUnits
+          .map((unit) => unit.unitId)
+          .filter((unitId) => unitId !== failed.unitId && !completedUnitIds.includes(unitId))
+          .sort();
+        throw new SegmentedImportPartialFailure({
+          completedUnitIds,
+          pendingUnitIds,
+          failedUnitId: failed.unitId,
+          failureCode: failed.code,
+        });
       }
     }
     const orderedUnits = unitPlan.units.map((unit) => unitArtifacts.get(unit.unitId)!);

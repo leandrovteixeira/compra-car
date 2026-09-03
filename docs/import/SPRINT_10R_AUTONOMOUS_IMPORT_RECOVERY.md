@@ -2,6 +2,36 @@
 
 Status: **design + real-letter golden corpus started; no production promotion enabled**
 
+## Sprint 10R.5 — Commercial Knowledge Calibration
+
+The complete user-provided handbook v0.1 is now the normative repository source. Document Map prompt
+v5 remains unchanged. Unit Extraction moves from v10 to v11 with a compact operational calibration:
+retail-only scope, MVP benefit allowlist, downstream Policy/Offer semantics expressed through atomic
+facts and composition, table geometry and merged ownership, source hierarchy, dealer participation,
+Retail/NF and Trade-In/Loyalty distinctions, financing, monthly/PY-MY identity, conservative
+mathematical derivation and GREEN/YELLOW/RED review semantics. Semantic Reconciliation has no provider
+prompt; its deterministic v1 contract and implementation remain unchanged.
+
+A pure Core sidecar exercises those rules without changing `CommercialDocumentExtraction/1`, the
+semantic contract, Domain Mapping or persistence. The historical golden facts remain intact; 13
+calibration cases add table geometry for Jeep, BYD, GWM, Geely and VW. The benchmark adds green, yellow
+and red counts plus issue aggregation by reason code. Confidence reporting is orthogonal to commercial
+PASS: critical recall, precision, composition and provenance still must all equal 1.
+
+Deterministic gates passed: focused Core 114/114; focused Web 20/20 with two real tests skipped; full
+Core 514/514; full Web 566/566 with 16 skipped; Adapter 94/94 with three integrations skipped; Pricing
+71/71; typecheck, lint, format check, build and diff check. One parallel Core run hit the existing 5 s
+Fiat-like Domain Mapping test timeout under resource contention; the isolated full Core rerun passed
+without changing code or timeout. Node v24.18.0 continues to emit the known engine warning against the
+declared Node 22.x.
+
+No real 10R.5 provider call started. The first-letter preflight found no `OPENAI_IMPORT_MODEL`, no
+`JEEP_GOLDEN_PDF_PATH`, and none of the five source PDFs under the inspected local roots. Execution
+stopped before Jeep and did not proceed to BYD, GWM, Geely or VW. Consequently no real v11 score,
+baseline-quality comparison, token usage, elapsed time or cost exists. There was no OpenAI call,
+Supabase/Staging access, migration, timeout/limit change, Domain Mapping persistence, Legacy change,
+merge, commit or push.
+
 ## Sprint 10R.1 — executable Gate A benchmark
 
 The existing corpus is now executable directly against `CommercialDocumentExtraction/1`; no parallel
@@ -121,6 +151,17 @@ output units and 101,401 total units. Failed/in-flight Unit Extraction usage was
 numbers are a lower bound; cost is unavailable. There was no retry, timeout increase, Domain Mapping,
 matching, staging, Supabase or commercial write.
 
+### Subsequent 10R.5 commercial calibration attempt
+
+After the calibration environment became available, one later authorized Jeep execution completed 22
+Unit Extractions with valid canonical output and then stopped at
+`UNIT_EXTRACTION_ORCHESTRATION_TIMEOUT`. Merge and Semantic Reconciliation did not complete, no final
+intermediate was produced, and the Jeep Golden Benchmark therefore did not run.
+
+External provider observations for that execution were approximately 2.33M tokens across 25 calls and
+approximately USD 7. These figures are operational observations, not a real accuracy result. No
+Domain Mapping, matching, staging, Supabase or commercial write occurred.
+
 The checkpoint environment runs Node `v24.18.0` while the monorepo declares Node `22.x`; pnpm emits a
 known `Unsupported engine` warning. This is a local runtime-version warning, not a validated functional
 failure.
@@ -164,6 +205,15 @@ and 101,894 total units; this is a lower bound because the failed Unit Extractio
 published and its usage is unavailable. Cost is unavailable. There was no retry, Unit Extraction
 tuning, Domain Mapping, matching, staging, Supabase or commercial write. The next task should diagnose
 the incomplete production/model-year pairs without changing the metadata closure boundary.
+
+## Sprint 10R.6 — token and throughput efficiency
+
+The deterministic 10R.6 implementation and baseline audit are documented in
+`docs/import/SPRINT_10R_6_TOKEN_THROUGHPUT_EFFICIENCY.md`. It introduces an opt-in compact table IR,
+safe unit coalescing, request telemetry, resumable partial results and a pre-request budget guard.
+The active prompt remains v11; v12 is a measured candidate only. The conservative projection is 10
+provider calls and 253,657 tokens versus the 10R.5 baseline of 25 calls and approximately 2.33M
+tokens. No paid validation run is part of 10R.6.
 
 ## Goal
 

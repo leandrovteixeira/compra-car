@@ -20,6 +20,7 @@ import {
   executeSegmentedImportRuntime,
   openAITransportDocumentExtractionSchema,
   openAITransportDocumentMapSchema,
+  SegmentedImportPartialFailure,
   type SegmentedRuntimeArtifact,
   type SegmentedRuntimeArtifactStore,
 } from '../src/server/segmented-import-runtime';
@@ -304,7 +305,7 @@ describe('segmented import runtime', () => {
         .slice(1)
         .every((request) => request.schema === openAITransportDocumentExtractionSchema),
     ).toBe(true);
-    expect(requests.slice(1).every((request) => request.metadata.promptVersion === '10')).toBe(
+    expect(requests.slice(1).every((request) => request.metadata.promptVersion === '11')).toBe(
       true,
     );
     expect(requests[1]?.instructions).toContain(
@@ -349,7 +350,18 @@ describe('segmented import runtime', () => {
     expect(requests[1]?.instructions).toContain(
       'PY/MY may be inherited from a table or section header',
     );
+    expect(requests[1]?.instructions).toContain('Commercial knowledge calibration v11');
+    expect(requests[1]?.instructions).toContain('only for VAREJO');
+    expect(requests[1]?.instructions).toContain('Do not emit final Policy/Offer objects');
+    expect(requests[1]?.instructions).toContain('Without explicit composition');
+    expect(requests[1]?.instructions).toContain('merged-cell span');
+    expect(requests[1]?.instructions).toContain('never double count it');
+    expect(requests[1]?.instructions).toContain('Invoice discount requires explicit NF/N.F');
+    expect(requests[1]?.instructions).toContain('unsupported families');
     expect(requests.slice(1).map((request) => request.metadata.unitOrdinal)).toEqual([
+      1, 2, 3, 4, 5, 6,
+    ]);
+    expect(requests.slice(1).map((request) => request.metadata.requestOrdinal)).toEqual([
       1, 2, 3, 4, 5, 6,
     ]);
     expect(new Set(requests.slice(1).map((request) => request.metadata.unitId)).size).toBe(6);
@@ -1010,5 +1022,129 @@ describe('segmented import runtime', () => {
       'document_map',
       'unit_plan',
     ]);
+  });
+
+  it('persists successful units, resumes only pending units and preserves deterministic merge', async () => {
+    const blankUnit = () =>
+      extractionTransport({
+        ...structuredClone(geelyLikeCommercialDocumentExtractionFixture),
+        vehicleIdentities: [],
+        scopes: [],
+        facts: [],
+        composition: { groups: [], relationships: [] },
+        coverage: {
+          status: 'complete' as const,
+          expectedUnitCount: 0,
+          completedUnitCount: 0,
+          expectedVehicleCount: 0,
+          extractedVehicleCount: 0,
+          expectedFamilies: [],
+          extractedFamilies: [],
+          units: [
+            {
+              unitId: 'unit-resume',
+              status: 'complete' as const,
+              sourceBlockIds: ['block-heading'],
+              expectedItemCount: 0,
+              extractedItemCount: 0,
+            },
+          ],
+          gaps: [],
+          incompleteBlockIds: [],
+          unresolvedTableRows: [],
+          unresolvedScopeIds: [],
+        },
+      });
+    const requestedUnitIds: string[] = [];
+    const efficiencyObservations: Array<{
+      readonly stage: string;
+      readonly requestOrdinal: number;
+    }> = [];
+    const provider: StructuredExtractionProvider = {
+      async openSource() {
+        return {
+          async extractStructured(request) {
+            if (request.metadata.schemaVersion === 'CommercialDocumentMap/1')
+              return {
+                output: documentMapTransport(),
+                providerRunId: 'resume-map',
+                usage: { inputUnits: 1, outputUnits: 1, totalUnits: 2 },
+              };
+            requestedUnitIds.push(String(request.metadata.unitId));
+            return {
+              output: blankUnit(),
+              providerRunId: `resume-${request.metadata.unitId}`,
+              usage: { inputUnits: 2, outputUnits: 1, totalUnits: 3 },
+            };
+          },
+          async close() {},
+        };
+      },
+    };
+    const artifacts = store();
+    const baseInput = {
+      batch,
+      jobId: 'resumable-job',
+      attempt: 1,
+      correlationId: '00000000-0000-4000-8000-000000000099',
+      source: {
+        documents: [{ documentId: 'document-main', ordinal: 1, bytes: new Uint8Array([1]) }],
+      },
+      provider,
+      artifacts,
+      stopAfter: 'semantic_reconciliation' as const,
+    };
+
+    let partial: SegmentedImportPartialFailure | undefined;
+    try {
+      await executeSegmentedImportRuntime({
+        ...baseInput,
+        efficiency: {
+          enabled: true,
+          concurrency: 1,
+          budget: { maxEstimatedTotalTokens: 300_000, maxProviderCalls: 2 },
+          observeProviderCall: (observation) => efficiencyObservations.push(observation),
+        },
+      });
+    } catch (error) {
+      if (error instanceof SegmentedImportPartialFailure) partial = error;
+      else throw error;
+    }
+    expect(partial).toMatchObject({ failureCode: 'BUDGET_EXCEEDED' });
+    expect(partial?.completedUnitIds).toHaveLength(1);
+    expect(efficiencyObservations.map((observation) => observation.stage)).toEqual([
+      'document_map',
+      'unit_extraction',
+    ]);
+    expect(efficiencyObservations.map((observation) => observation.requestOrdinal)).toEqual([1, 2]);
+    expect(partial?.pendingUnitIds.length).toBeGreaterThan(0);
+    const completed = partial!.completedUnitIds[0]!;
+    expect(JSON.parse(JSON.stringify(partial))).toMatchObject({
+      failureCode: 'BUDGET_EXCEEDED',
+      completedUnitIds: [completed],
+      failedUnitId: expect.any(String),
+    });
+    expect(
+      artifacts.values.filter((item) => item.manifest.stage === 'unit_extraction'),
+    ).toHaveLength(1);
+
+    const resumed = await executeSegmentedImportRuntime({
+      ...baseInput,
+      attempt: 2,
+      efficiency: { enabled: true, concurrency: 1 },
+    });
+    expect(requestedUnitIds.filter((unitId) => unitId === completed)).toHaveLength(1);
+
+    const cleanArtifacts = store();
+    const clean = await executeSegmentedImportRuntime({
+      ...baseInput,
+      jobId: 'clean-resumable-job',
+      artifacts: cleanArtifacts,
+      efficiency: { enabled: true, concurrency: 1 },
+    });
+    expect(resumed.documentary?.reconciliation).toEqual(clean.documentary?.reconciliation);
+    expect(resumed.documentary?.semanticReconciliation).toEqual(
+      clean.documentary?.semanticReconciliation,
+    );
   });
 });

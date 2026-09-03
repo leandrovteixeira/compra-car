@@ -15,6 +15,8 @@
     "./commercial-document-extraction-schema": "./src/import/commercial-document-extraction-schema.ts",
     "./commercial-document-extraction-validator": "./src/import/commercial-document-extraction-validator.ts",
     "./commercial-document-golden-benchmark": "./src/import/commercial-document-golden-benchmark.ts",
+    "./commercial-knowledge-calibration": "./src/import/commercial-knowledge-calibration.ts",
+    "./commercial-extraction-efficiency": "./src/import/commercial-extraction-efficiency.ts",
     "./commercial-document-reconciliation": "./src/import/commercial-document-reconciliation.ts",
     "./commercial-document-semantic-reconciliation": "./src/import/commercial-document-semantic-reconciliation.ts",
     "./commercial-document-domain-mapping": "./src/import/commercial-document-domain-mapping.ts",

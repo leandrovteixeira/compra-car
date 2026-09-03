@@ -211,6 +211,67 @@ describe('commercial document golden benchmark', () => {
     expect(formatCommercialDocumentGoldenBenchmark(report)).toContain('PASS Jeep 202606-01.pdf');
   });
 
+  it('reports green/yellow/red diagnostics by reason without changing commercial PASS', () => {
+    const artifact = extraction([fact('fact-reference')]);
+    const report = runCommercialDocumentGoldenBenchmark({
+      document,
+      artifact,
+      expectedFacts: [goldenFact()],
+      expectedCompositions: [],
+      confidenceDiagnostics: [
+        {
+          confidenceStatus: 'yellow',
+          reasonCode: 'MATHEMATICAL_VALUE_DERIVED',
+          explanation: 'One value was derived unambiguously.',
+          decisionTaken: 'Accepted with review.',
+          sourceBlockIds: ['block-fact-reference'],
+          page: 6,
+          promptVersion: '11',
+          factId: 'fact-reference',
+        },
+        {
+          confidenceStatus: 'red',
+          reasonCode: 'UNSUPPORTED_COMMERCIAL_BENEFIT',
+          explanation: 'An unsupported benefit was observed.',
+          decisionTaken: 'Not materialized.',
+          sourceBlockIds: ['block-fact-reference'],
+          page: 6,
+          promptVersion: '11',
+        },
+      ],
+    });
+    expect(report).toMatchObject({
+      greenCount: 0,
+      yellowCount: 1,
+      redCount: 1,
+      issuesByReasonCode: {
+        MATHEMATICAL_VALUE_DERIVED: 1,
+        UNSUPPORTED_COMMERCIAL_BENEFIT: 1,
+      },
+      status: 'PASS',
+    });
+    expect(formatCommercialDocumentGoldenBenchmark(report)).toContain(
+      'confidence: green=0; yellow=1; red=1',
+    );
+  });
+
+  it('scores retail-only calibration and treats leaked VD facts as false positives', () => {
+    const retailFact = fact('fact-retail', { channel: 'VAREJO' });
+    const leakedVd = fact('fact-vd');
+    const expectedRetail = goldenFact({ id: 'retail-reference', channel: 'VAREJO' });
+    const expectedVd = goldenFact({ id: 'vd-reference' });
+    const report = runCommercialDocumentGoldenBenchmark({
+      document,
+      artifact: extraction([retailFact, leakedVd], { channel: 'VAREJO' }),
+      expectedFacts: [expectedRetail, expectedVd],
+      expectedCompositions: [],
+      retailOnly: true,
+    });
+    expect(report.facts).toMatchObject({ expected: 1, matched: 1, unexpected: 1 });
+    expect(report.precision).toBe(0.5);
+    expect(report.status).toBe('FAIL');
+  });
+
   it('does not equate the same numeric value with the wrong fact type', () => {
     const report = run(extraction([fact('fact-promo', { factType: 'promotional_price' })]));
     expect(report.facts).toMatchObject({ matched: 0, wrong: 1 });
