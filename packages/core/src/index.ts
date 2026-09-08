@@ -57,3 +57,6 @@ export * from './import/commercial-document-extraction';
 export * from './import/commercial-document-map';
 export * from './import/segmented-extraction';
 export * from './import/segmented-artifact-lifecycle';
+export * from './import/vehicle-specs-matrix-dry-run';
+export * from './import/vehicle-specs-csv-dry-run';
+export * from './import/vehicle-specs-catalog-reconciliation';
