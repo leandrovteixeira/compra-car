@@ -93,6 +93,36 @@
   `COMMERCIAL_EXTRACTION_UNIT_CONTEXT_LIMIT_EXCEEDED`; não houve retry, extração de unidade, merge,
   reconciliação semântica, score golden ou persistência comercial.
 
+## Unreleased — Vehicle/specs matrix dry-run
+
+- adiciona leitura local e somente leitura de `Legacy/staging.csv`, preservando a alternativa remota;
+- usa `SC_0005`/`SC_0006` como anos autorais, mantém unknown spec codes não bloqueantes e gera relatório detalhado em `temp/` sem escrita no Supabase.
+- reconcilia deterministicamente os 320 specs do App com a auditoria do Excel e os 293 códigos da
+  matriz, preservando tipos/metadados do App e expondo conflitos sem fuzzy matching;
+- documenta o plano não persistido `PW_0045 = REEV` / `PW_1045 = AT`, a exclusão dos aliases de
+  torque em kgfm e o runbook de validação e apply futuro;
+- valida os 276 veículos contra o catálogo candidato com zero unknown spec code, sem migration,
+  alteração de `Legacy`, escrita no Supabase, commit ou push.
+- refina o parser com extração conservadora do ratio de `EX_0004`, decoração `inch`, zero binary e
+  resolução exclusiva de scales por `spec_set`, preservando TBD/TBC, texto e malformed em review;
+- consolida baseline e membro explícito sem duplicidade, reporta conflitos reais e mantém raw values
+  agregados no artifact para auditoria antes de qualquer apply.
+- corrige a identidade de scale para `group_name + equipment_group + spec_set`, separando Front e
+  Rear Fog Lamps e removendo 29 falsos conflitos sem alterar os 34 conflitos reais restantes;
+- adiciona auditoria read-only dos casos Tilt Down, Parking Camera, binary textual e malformed contra
+  Products/product_specs do App, sem usar os resultados para promoção automática.
+- incorpora no perfil exclusivo `legacy-staging-csv` as quatro decisões finais para Tilt Down,
+  Parking Camera, `CO_0033` e `SF_0041`, preservando raw e rule ID no artifact;
+- encerra o dry-run pré-apply com zero conflito de scale, zero unknown e somente 13 valores
+  pending/malformed não promovidos.
+- executa o apply transacional no Staging após checkpoint e ensaio com rollback, chegando a 321 specs,
+  277 products e 37.949 product_specs;
+- canonicaliza associações numeric na fronteira persistível conforme `numeric(14,4)`, preservando no
+  artifact o valor calculado anterior e o marcador de redução de precisão;
+- regenera o artifact e valida o Staging em modo read-only com `artifact_match=true`, zero diferenças
+  numeric, zero associações ausentes/inesperadas e nenhuma nova escrita; as 478 reduções de precisão de
+  `PW_0035`/`PW_0036` são o arredondamento canônico esperado, sem necessidade de rollback.
+
 ## 2026-08-30 — Refinamento dos formulários de veículo (Sprint 14H)
 
 - alinha Novo e Editar Veículo à surface, campos, labels e hierarquia de ações do design system
@@ -1817,3 +1847,6 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 - A UX exibe vigência aberta, usa “Salvar ofertas” e comunica sucesso ou erro com correlação.
 - Checkpoint das Sprints 9G–9G.4 fechado após validação manual em Staging; Produção permaneceu sem as
   migrations desta rodada. Refinamentos da UX para a operação mensal ficam para a próxima etapa.
+# Unreleased
+
+- Adiciona o núcleo determinístico e somente leitura do dry-run da matriz de veículos/specs, com transpose por código, parsing conservador, matching normalizado, relatório e testes.

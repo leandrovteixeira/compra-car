@@ -1993,3 +1993,31 @@ A prévia do grid usa o Product fixado pelo workspace e as mesmas funções pura
 cabeçalho mensal é 2×2, a competência usa dropdown N−6/N+6 e Offers existentes/novas ocupam a
 mesma matriz. Drafts podem substituir memberships pela RPC existente; published/archived são
 somente leitura. Nenhuma migration ou RPC adicional foi necessária na 9H.1.
+
+## Marco — dry-run de refresh de veículos/specs (2026-09-01)
+
+O refresh de veículos/specs possui agora um reconciliador determinístico e somente leitura. O App
+`public.specs` (320 registros) é a estrutura autoritativa, a auditoria do Excel é complementar e
+`Legacy/staging.csv` fornece 276 veículos e 293 colunas de specs. O catálogo candidato tem 321 códigos
+e o dry-run reconhece todos os códigos da matriz, sem criação automática, fuzzy matching ou escrita
+no Supabase.
+
+A decisão ainda não persistida reserva `PW_0045` para REEV/Engine tech e `PW_1045` para o AT histórico
+de Transmission type; o App confirmou zero usos do antigo `PW_0045`. Torque permanece canônico em Nm
+e quatro aliases kgfm são excluídos. Após o refinamento determinístico de ratio, inch, binary zero e
+baseline por scale estrutural, restam 59 eventos de review, incluindo 34 conflitos reais de scale. A
+chave `group_name + equipment_group + spec_set` separa Front e Rear Fog Lamps. O perfil histórico
+aprovado normaliza os 33 Tilt Down para Both, o único Parking Camera para 360°, `CO_0033` textual para
+true e `SF_0041=USB` para false, preservando raw e rule ID. O dry-run final tem zero conflito de scale
+e restam somente 13 valores pending/malformed sem promoção. Seis divergências estruturais também
+continuam **PENDENTES** de apply. O procedimento e o plano de apply futuro estão em
+`docs/data/VEHICLE_SPECS_DATA_REFRESH_RUNBOOK.md`.
+
+O apply controlado foi posteriormente executado somente no Staging `shfsjyjxmgwnlexmdkcs`, após
+checkpoint e ensaio integral com rollback. O estado persistido tem 321 specs, 277 products e 37.949
+product_specs, sem órfãos, duplicidades ou conflitos de scale. `product_specs.value numeric(14,4)` é a
+precisão canônica persistente: cálculos podem usar maior precisão, mas a associação final e o artifact
+golden arredondam para scale 4 na fronteira de persistência. As 478 reduções de `PW_0035`/`PW_0036`
+observadas após o apply eram esperadas e não exigiam rollback. Depois da regeneração local, a validação
+read-only retornou `artifact_match=true`, zero associações ausentes/inesperadas e zero diferenças
+numeric; nenhum dado foi reescrito.
