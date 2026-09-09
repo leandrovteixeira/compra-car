@@ -1,4 +1,5 @@
 import { validContract } from './fixtures/import/structured-commercial-fixture';
+import { fixtureWorkbook } from './fixtures/import/structured-commercial-workbook';
 import { readFileSync } from 'node:fs';
 
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
@@ -34,6 +35,60 @@ function rewritePart(
 }
 
 describe('CommercialImportContract/1 XLSX ingestion boundary', () => {
+  describe.each([
+    ['Products', 'products'],
+    ['Policies', 'policies'],
+    ['Offers', 'offers'],
+  ] as const)('%s confidence vocabulary', (sheet, key) => {
+    function workbookWithConfidence(status: string): CommercialImportContractV1 {
+      const contract = validContract();
+      return parseCommercialImportContractV1(
+        fixtureWorkbook({
+          ...contract,
+          [key]: contract[key].map((row) => ({ ...row, confidenceStatus: status })),
+        }),
+      );
+    }
+
+    it.each(['green', 'yellow', 'red'])(
+      'accepts canonical %s without changing its value',
+      (status) => {
+        const contract = workbookWithConfidence(status);
+        expect(contract[key][0]?.confidenceStatus).toBe(status);
+        expect(validateCommercialImportContractV1(contract)).toEqual({ ok: true, diagnostics: [] });
+      },
+    );
+
+    it.each([
+      'blue',
+      'high',
+      'medium',
+      'low',
+      'review_required',
+      'GREEN',
+      'YELLOW',
+      'RED',
+      'Green',
+      'Yellow',
+      'Red',
+    ])('rejects unsupported or noncanonical %s', (status) => {
+      const contract = workbookWithConfidence(status);
+      expect(contract[key][0]?.confidenceStatus).toBe(status);
+      expect(validateCommercialImportContractV1(contract)).toEqual({
+        ok: false,
+        diagnostics: [
+          {
+            code: 'INVALID_VALUE',
+            sheet,
+            row: 2,
+            column: 'confidence_status',
+            message: `${sheet}!confidence_status is unsupported.`,
+          },
+        ],
+      });
+    });
+  });
+
   it('parses the canonical template and ignores README plus visually empty rows', () => {
     const contract = parseCommercialImportContractV1(template());
 

@@ -129,7 +129,10 @@ export const COMMERCIAL_IMPORT_COLUMNS = Object.freeze({
 } as const satisfies Readonly<Record<CommercialImportRequiredSheet, readonly string[]>>);
 
 export type CommercialImportPeriodKindV1 = 'monthly' | 'special';
-export type CommercialImportConfidenceStatusV1 = 'high' | 'medium' | 'low' | 'review_required';
+/** Canonical XLSX serialization vocabulary; independent of legacy extraction confidence bands. */
+export const COMMERCIAL_IMPORT_CONFIDENCE_STATUSES_V1 = ['green', 'yellow', 'red'] as const;
+export type CommercialImportConfidenceStatusV1 =
+  (typeof COMMERCIAL_IMPORT_CONFIDENCE_STATUSES_V1)[number];
 export type CommercialImportResolutionStatusV1 =
   'unresolved' | 'resolved' | 'ambiguous' | 'not_found';
 export type CommercialImportIssueSeverityV1 = 'info' | 'warning' | 'error' | 'blocker';

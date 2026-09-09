@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-09 — Canonical XLSX Confidence (Sprint 15C.1c)
+
+- corrige o tipo serializado e o validator de `CommercialImportContract/1` para aceitar exatamente
+  `green/yellow/red` nas sheets Products, Policies e Offers, alinhados ao prompt e à calibração;
+- compartilha o vocabulário entre tipo e validação, preservando diagnóstico `INVALID_VALUE` para
+  valores desconhecidos, bandas antigas e variantes de caixa;
+- atualiza fixture sintético e adiciona regressões de parsing/validação e preview Web;
+- valida a Jeep auditada local (41 Products, 93 Policies, 65 Offers): 199 erros de confidence antes,
+  zero diagnósticos estruturais depois; arquivo real intacto e não versionado.
+
 ## 2026-09-09 — Structured Policies Upload & Preview (Sprint 15C.1b)
 
 - organiza Importações em Cartas comerciais (rota PDF preservada) e Políticas estruturadas (Excel);

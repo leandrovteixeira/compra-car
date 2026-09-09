@@ -34,6 +34,38 @@ const render = async (file: File) => {
 };
 
 describe('structured policies upload and preview', () => {
+  it.each(['green', 'yellow', 'red'])(
+    'previews canonical %s confidence from the real Core boundary',
+    async (confidenceStatus) => {
+      const contract = validContract();
+      const { result, html } = await render(
+        upload({
+          ...contract,
+          products: contract.products.map((row) => ({ ...row, confidenceStatus })),
+          policies: contract.policies.map((row) => ({ ...row, confidenceStatus })),
+          offers: contract.offers.map((row) => ({ ...row, confidenceStatus })),
+        }),
+      );
+      expect(result.status).toBe('STRUCTURALLY_VALID');
+      expect(html).toContain('STRUCTURALLY_VALID');
+      expect(html).toContain(confidenceStatus);
+      expect(html).not.toContain('confidence_status is unsupported');
+    },
+  );
+
+  it('shows unsupported confidence diagnostics without translating blue into a supported value', async () => {
+    const contract = validContract();
+    const { result, html } = await render(
+      upload({
+        ...contract,
+        products: contract.products.map((row) => ({ ...row, confidenceStatus: 'blue' })),
+      }),
+    );
+    expect(result.status).toBe('STRUCTURALLY_INVALID');
+    expect(html).toContain('INVALID_VALUE');
+    expect(html).toContain('Products · linha 2 · confidence_status');
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     guard.mockResolvedValue(undefined);

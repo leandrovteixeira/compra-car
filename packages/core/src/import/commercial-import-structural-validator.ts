@@ -3,6 +3,7 @@ import {
   PRICING_VOUCHER_TYPES,
 } from '../entities/commercial-pricing';
 import {
+  COMMERCIAL_IMPORT_CONFIDENCE_STATUSES_V1,
   COMMERCIAL_IMPORT_CONTRACT_VERSION,
   type CommercialImportContractV1,
   type CommercialImportDiagnostic,
@@ -14,7 +15,7 @@ const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/u;
 const COMPETENCE = /^\d{4}-(?:0[1-9]|1[0-2])$/u;
 const SHA256 = /^[\da-f]{64}$/iu;
 const DECIMAL = /^(?:0|[1-9]\d*)(?:\.\d+)?$/u;
-const CONFIDENCE_STATUSES = new Set(['high', 'medium', 'low', 'review_required']);
+const CONFIDENCE_STATUSES = new Set<string>(COMMERCIAL_IMPORT_CONFIDENCE_STATUSES_V1);
 const RESOLUTION_STATUSES = new Set(['unresolved', 'resolved', 'ambiguous', 'not_found']);
 const PERIOD_KINDS = new Set(['monthly', 'special']);
 const ISSUE_SEVERITIES = new Set(['info', 'warning', 'error', 'blocker']);

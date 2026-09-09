@@ -1,5 +1,25 @@
 # Contexto para agentes de IA
 
+## Sprint 15C.1c — Confidence do contrato XLSX (2026-09-09)
+
+`CommercialImportContract/1` aceita `green`, `yellow`, `red` em confidence_status de Products,
+Policies e Offers. O tipo serializado e o validator agora compartilham o vocabulário canônico;
+`high/medium/low/review_required`, valores desconhecidos e variantes de caixa são rejeitados.
+O parser preserva os valores. A calibração 10R já usa as mesmas cores; não há mapeamento ao domínio
+no preview atual nem conversão para as bandas do importador antigo.
+
+A Jeep auditada local foi lida sem alteração: 41 Products, 93 Policies, 65 Offers; antes havia
+199 diagnósticos de confidence, depois zero diagnósticos estruturais. SHA-256 preservado:
+`675d2bdba410f194a3f019a9e023bceb9802dc4bcaac5dbb4c03f60d900dab91`.
+O XLSX real permanece não versionado. Testes direcionados: Core 48/48 e Web 17/17.
+UI, template, Handbook, Prompt, Product Resolution e persistência permanecem inalterados.
+Gates: lint, typecheck e build passaram; na repetição sem outros gates concorrentes, Core 602,
+adapter 94 e pricing-dry-run 71 passaram, Web 584 passaram e manteve a falha preexistente de CRLF
+em `sprint-14g-mobile-pwa.test.ts:130` (19 testes de integração/smoke ignorados no total).
+Dois timeouts iniciais de Domain Mapping não se repetiram, sem mudança de código ou timeout.
+`format:check` aponta 249 arquivos preexistentes, nenhum alterado nesta correção; Prettier
+direcionado e `git diff --check` passaram. Ambiente Node 24.15.0; projeto declara Node 22.x.
+
 ## Sprint 15C.1b — Structured Policies UI (2026-09-09)
 
 Importações agora agrupa Cartas comerciais (/admin/imports) e Políticas estruturadas (Excel)
