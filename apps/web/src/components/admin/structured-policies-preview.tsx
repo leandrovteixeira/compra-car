@@ -88,7 +88,10 @@ export function StructuredPoliciesPreview({
           ))}
         </ul>
       </section>
-      <CommercialProductResolutionPreview resolution={result.resolution} />
+      <CommercialProductResolutionPreview
+        resolution={result.resolution}
+        initialCatalog={result.operatorCatalog}
+      />
       <section aria-label="Issues da extração" className="space-y-2">
         <h2 className="font-semibold">Issues da extração · {contract.issues.length}</h2>
         <p className="text-sm text-text-secondary">

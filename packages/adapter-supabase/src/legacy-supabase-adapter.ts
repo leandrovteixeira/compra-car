@@ -125,17 +125,26 @@ export class LegacySupabaseAdapter
     ) {
       throw new LegacyAdapterMappingError('Invalid or excessive catalog year scope.');
     }
-    const productionYears = [...new Set(years.map((pair) => pair.productionYear))];
-    const modelYears = [...new Set(years.map((pair) => pair.modelYear))];
+    return this.readMatchingCatalog(years);
+  }
+
+  async listOperatorMatchingProducts(): Promise<readonly AdministrativeVehicle[]> {
+    return this.readMatchingCatalog();
+  }
+
+  private async readMatchingCatalog(
+    years?: readonly CommercialProductYearPair[],
+  ): Promise<readonly AdministrativeVehicle[]> {
     const products: AdministrativeVehicle[] = [];
     let lastId = -1;
     let expectedTotal: number | undefined;
     while (true) {
-      const { data, error, count } = await this.client
-        .from('products')
-        .select(PRODUCT_COLUMNS, { count: 'exact' })
-        .in('production_year', productionYears)
-        .in('model_year', modelYears)
+      let query = this.client.from('products').select(PRODUCT_COLUMNS, { count: 'exact' });
+      if (years)
+        query = query
+          .in('production_year', [...new Set(years.map((pair) => pair.productionYear))])
+          .in('model_year', [...new Set(years.map((pair) => pair.modelYear))]);
+      const { data, error, count } = await query
         .gt('id', lastId)
         .order('id')
         .limit(500)

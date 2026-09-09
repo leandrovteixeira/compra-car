@@ -1,4 +1,5 @@
 import type {
+  AdministrativeVehicle,
   CommercialImportContractV1,
   CommercialImportDiagnostic,
   CommercialProductResolutionSummary,
@@ -12,6 +13,7 @@ export type StructuredPoliciesResult =
       readonly status: 'STRUCTURALLY_VALID';
       readonly filename: string;
       readonly contract: CommercialImportContractV1;
+      readonly operatorCatalog: readonly AdministrativeVehicle[];
       readonly resolution:
         | CommercialProductResolutionSummary
         | { readonly status: 'PRODUCT_RESOLUTION_FAILED'; readonly message: string };

@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-09 — Operator Product Matching (Sprint 15C.3)
+
+- reutiliza seletor Admin na tabela para resolver pendentes por escolha explícita;
+- apresenta candidatos por marca/modelo/PY/MY e fallback paginado do catálogo com guard Admin;
+- mantém source e Product resolvido separados, com OPERATOR_MATCHED somente no preview;
+- adiciona contadores, Próximo pendente, troca/desfazer e PRODUCTS_RESOLVED sem Apply;
+- valida sete casos Jeep no navegador local e adiciona testes Core, adapter e Web;
+- sem aliases, matching aproximado, edição do XLSX ou persistência comercial.
+
 ## 2026-09-09 — Product Resolution (Sprint 15C.2)
 
 - conclui a aceitação da Jeep no Staging: 0 diagnósticos estruturais, 41 NOT_FOUND e demais estados

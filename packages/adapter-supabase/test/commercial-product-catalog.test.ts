@@ -65,6 +65,20 @@ function fake(
 }
 
 describe('read-only commercial catalog batch', () => {
+  it('reuses bounded SELECT pagination for operator fallback without year filters or writes', async () => {
+    const { adapter, calls, write } = fake([
+      { data: [row(1)], count: 2, error: null },
+      { data: [{ ...row(2), production_year: 2025 }], count: 1, error: null },
+    ]);
+    expect(await adapter.listOperatorMatchingProducts()).toHaveLength(2);
+    expect(
+      calls.every(
+        (call) => call.table === 'products' && !call.operations.some((op) => op.startsWith('in:')),
+      ),
+    ).toBe(true);
+    expect(calls[1]?.operations).toContain('gt:id:1');
+    expect(write).not.toHaveBeenCalled();
+  });
   it('reads only products once for a small scope and preserves duplicate identities and visibility flags', async () => {
     const { adapter, calls, write } = fake([{ data: [row(1), row(2)], count: 2, error: null }]);
     expect(await adapter.listCommercialResolutionProducts([...years, ...years])).toEqual(

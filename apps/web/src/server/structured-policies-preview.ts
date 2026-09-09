@@ -31,13 +31,20 @@ export async function previewStructuredPolicies(
         ? await (reader ?? new LegacySupabaseAdapter()).listCommercialResolutionProducts(years)
         : [];
       const resolution = resolveCommercialProducts(contract.products, catalog);
-      return { status: 'STRUCTURALLY_VALID', filename: file.name, contract, resolution };
+      return {
+        status: 'STRUCTURALLY_VALID',
+        filename: file.name,
+        contract,
+        resolution,
+        operatorCatalog: catalog,
+      };
     } catch {
       console.error('[structured-policies] Product catalog resolution failed');
       return {
         status: 'STRUCTURALLY_VALID',
         filename: file.name,
         contract,
+        operatorCatalog: [],
         resolution: {
           status: 'PRODUCT_RESOLUTION_FAILED',
           message:

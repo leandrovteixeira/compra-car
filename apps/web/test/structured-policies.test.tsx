@@ -135,7 +135,7 @@ describe('structured policies upload and preview', () => {
     expect(html).toContain('PY/MY pendente');
     expect(html).toContain('MVS/código');
     expect(html).toContain('Issues da extração');
-    expect(html).not.toMatch(/READY_TO_APPLY|<button/u);
+    expect(html).not.toMatch(/READY_TO_APPLY|>Apply<|>Publicar</u);
     expect(catalogRead).toHaveBeenCalledTimes(1);
     expect(persist).not.toHaveBeenCalled();
   });
@@ -264,7 +264,7 @@ describe('structured policies upload and preview', () => {
     expect(html).toContain(`<strong>${contract.products.length}</strong> Produtos`);
     expect(html).toContain(`<strong>${contract.policies.length}</strong> Políticas`);
     expect(html).toContain(`<strong>${contract.offers.length}</strong> Ofertas`);
-    expect(html).not.toMatch(/READY_TO_APPLY|<button/u);
+    expect(html).not.toMatch(/READY_TO_APPLY|>Apply<|>Publicar</u);
   });
 
   it('shows deterministic structural diagnostics with reason code and location', async () => {

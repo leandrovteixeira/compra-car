@@ -1,5 +1,16 @@
 # Contexto para agentes de IA
 
+## Sprint 15C.3 — Operator Product Matching (2026-09-09)
+
+Status COMPLETE. Preview Admin reutiliza AdminProductCombobox para associação explícita de pendentes.
+Candidatos iniciais por marca/modelo/PY/MY; AMBIGUOUS mantém candidatos exatos; fallback read-only
+do catálogo sob demanda. OPERATOR_MATCHED preserva source e identidade resolvida separadamente,
+com decisões somente no preview atual. Contadores e Próximo pendente; PENDING zero produz
+PRODUCTS_RESOLVED. Sem alias, fuzzy/AI, Apply ou escrita Supabase. Jeep real: 41 NOT_FOUND iniciais;
+amostra local no navegador resolveu 7, restando 34, com dados documentais intactos. QA 41/41 pelo usuário.
+Detalhes e gates: [Sprint 15C.3](docs/import/SPRINT_15C3_OPERATOR_PRODUCT_MATCHING.md).
+Próximas etapas: 15C.4 Final Commercial Preview / Validation e 15D Transactional Commercial Apply.
+
 ## Sprint 15C.2 — Product Resolution (2026-09-09)
 
 Após structural validation, o preview resolve Products por administrativeVehicleIdentity (cinco
