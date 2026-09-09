@@ -105,6 +105,28 @@ describe('generic OpenAI structured extraction source session', () => {
     await session.close();
   });
 
+  it('uses compact IR context without repeating source files when explicitly requested', async () => {
+    const fake = createClient();
+    const session = await new OpenAIStructuredExtractionProvider(
+      fake.client,
+      'test-model',
+    ).openSource(
+      { documents: [{ documentId: 'document-1', ordinal: 1, bytes: new Uint8Array([1]) }] },
+      { signal: new AbortController().signal, correlationId: 'correlation-test' },
+    );
+    await session.extractStructured({
+      ...request(new AbortController().signal),
+      documentContext: '{"schemaVersion":"CommercialTableIR/1","tables":[]}',
+      includeSourceDocuments: false,
+    });
+    const serialized = JSON.stringify(fake.responses[0]);
+    expect(serialized).toContain('Compact documentary context');
+    expect(serialized).toContain('CommercialTableIR/1');
+    expect(serialized).not.toContain('input_file');
+    expect(fake.uploads).toEqual(['document-1.pdf']);
+    await session.close();
+  });
+
   it.each([
     [sdkError(400), 'PROVIDER_REQUEST_INVALID'],
     [sdkError(422), 'PROVIDER_REQUEST_INVALID'],

@@ -1,5 +1,146 @@
 # Changelog
 
+## 2026-09-09 — Structured Policies Upload & Preview (Sprint 15C.1b)
+
+- organiza Importações em Cartas comerciais (rota PDF preservada) e Políticas estruturadas (Excel);
+- adiciona upload Admin em memória até 25 MiB, parsing/validação Core e preview tipado;
+- separa diagnósticos estruturais dos Issues comerciais e mostra produtos aguardando resolução;
+- cobre o fluxo com fixture sintético compartilhado, sem persistência, Apply ou novas dependências.
+
+## 2026-09-08 — Commercial XLSX Parser + Structural Validator (Sprint 15C.1)
+
+- adiciona o boundary puro em memória `CommercialImportContract/1`, com tipos explícitos para
+  Metadata, Products, Policies, Offers, memberships, Issues e Evidence;
+- lê o XLSX canônico via OpenXML, exige as sete sheets e todos os headers congelados, ignora somente
+  `README` e rejeita omissões, duplicidades, sheets/colunas extras e tipos primitivos inválidos;
+- valida versão, formatos, vocabulários comerciais já existentes, chaves únicas e referências
+  Product/Policy/Offer sem resolver Product, MSRP ou parâmetros financeiros;
+- mantém UI, valuation, Product Resolution, Apply, Supabase, migrations, Policies/Offers persistidas e
+  `Legacy` inalterados.
+
+## 2026-09-03 — Token & Throughput Efficiency (Sprint 10R.6)
+
+- adiciona telemetria segura por request e agregados de tokens/duplicação, sem registrar PDF, excerpts
+  comerciais ou secrets;
+- introduz `CommercialTableIR/1` in-memory, coalescing determinístico por escopo comercial e contexto
+  seletivo capaz de omitir o PDF somente quando uma IR populada é fornecida;
+- mantém o prompt ativo em v11 e adiciona apenas um candidato v12 medido, 49,1% menor, sem remover as
+  regras comerciais da 10R.5;
+- preserva Unit Extractions válidas antes de falha parcial, serializa completed/pending/failed units e
+  permite resume sem chamar novamente unidades concluídas;
+- adiciona budget guard opt-in com tetos Jeep de 300k tokens, 10 calls e custo configurável;
+- benchmark determinístico projeta 25 → 10 calls e ~2,33M → 253.657 tokens; nenhuma chamada paga,
+  migration, alteração em `Legacy`, Supabase/Staging, commit ou push foi realizada.
+
+## 2026-09-01 — Commercial Knowledge Calibration (Sprint 10R.5)
+
+- adiciona integralmente o handbook comercial v0.1 e traduz suas regras para uma instrução operacional
+  compacta de Unit Extraction v11; Document Map fica em v5 e Semantic Reconciliation permanece
+  determinística no contrato v1, sem novo prompt;
+- adiciona sidecar Core puro e não persistido para retail-only/allowlist, classificação conservadora,
+  composição AND/OR, ownership por produto, dealer participation, inferência matemática amarela,
+  hierarquia de evidência, estoque e deduplicação sem cruzar produtos;
+- mantém planner, limites, timeout, canonicalizer, schemas, Domain Mapping, banco e persistência
+  inalterados;
+- preserva o Golden corpus anterior e adiciona 13 casos calibrados de geometria de tabela para Jeep,
+  BYD, GWM, Geely e VW;
+- estende o benchmark com green/yellow/red e `issuesByReasonCode`, sem fazer confidence alterar o PASS
+  comercial baseado em recall crítico, precision, composition e provenance;
+- conclui todos os gates determinísticos. O preflight inicial sem model/path não iniciou a rodada;
+  posteriormente, uma execução Jeep autorizada completou 22 Unit Extractions válidas e parou em
+  `UNIT_EXTRACTION_ORCHESTRATION_TIMEOUT`, antes do intermediate final e do Golden Benchmark;
+- registra para essa execução aproximadamente 2,33M tokens, 25 provider calls e cerca de USD 7
+  observados externamente, sem score real de accuracy, Supabase/Staging, migration, `Legacy` ou escrita
+  comercial.
+
+## 2026-08-30 — Par atômico de anos na Unit Extraction (Sprint 10R.4)
+
+- adiciona diagnóstico opt-in e read-only de anos por unit nos estados raw, reconstructed,
+  pre-canonical e canonical validation, limitado a contexto estrutural, identidade comercial, anos,
+  página de evidência e flags de confiança;
+- comprova em execução Jeep v9 que pares parciais já vinham do provider e atravessavam reconstruction e
+  canonicalization sem alteração, sendo corretamente rejeitados pelo validator `incompleteYearPair`;
+- versiona somente a instruction de Unit Extraction para v10: PY/MY são um par atômico, expressões
+  inequívocas `26/27` e `26/26` geram ambos os anos, lados isolados preservam `rawYearText` sem par
+  estruturado e com review, e header explícito pode governar rows com provenance;
+- preserva o validator e o canonicalizer fail-closed, sem inferência automotiva, reparo ou preenchimento
+  silencioso do ano ausente;
+- na única tentativa real pós-correção, 17 Unit Extractions concluíram canonical validation, sem pares
+  parciais; o pipeline parou no novo blocker `UNIT_EXTRACTION_ORCHESTRATION_TIMEOUT`, antes de Merge,
+  Semantic Reconciliation, benchmark, Domain Mapping ou persistência.
+- registra o warning local conhecido: o checkpoint roda em Node `v24.18.0`, enquanto o monorepo exige
+  Node `22.x`; o pnpm reporta `Unsupported engine` sem invalidar os gates concluídos.
+
+## 2026-08-30 — Referential closure de metadata do Document Map (Sprint 10R.3)
+
+- adiciona preflight diagnóstico read-only para `titleHints`, `issuerHints`, `competenceHints` e
+  `validityHints` nos estados raw, reconstructed, pre-canonical e canonicalized;
+- registra somente contagens, paths, fingerprints SHA-256 truncados e existência da definição, sem
+  valores comerciais, IDs brutos, excerpts, PDF bytes ou secrets;
+- reforça no Document Map prompt v5 que todo ID local referenciado precisa de definição correspondente
+  no mesmo artifact, sem exigir IDs canônicos do provider;
+- preserva canonicalizer e validators fail-closed: referências órfãs continuam causando failure e não
+  são filtradas, substituídas ou reparadas;
+- confirma em execução real que o blocker de metadata foi superado e registra o novo primeiro blocker
+  em Unit Extraction: seis veículos da `unit-0002-table` com par de anos incompleto.
+
+## 2026-08-30 — Correção do fan-out de contexto Jeep (Sprint 10R.2)
+
+- adiciona diagnóstico estrutural seguro ao limite de páginas contextuais, com tipo da unit, páginas,
+  contagens e origens agrupadas, sem conteúdo comercial ou secrets;
+- corrige a propagação de notas para respeitar escopo de tabela e o conjunto completo de sections,
+  evitando que co-membership ampla transforme notas locais em regras de todas as units;
+- representa notas `DOCUMENT_WIDE` multipágina por source blocks reais de uma página canônica, mantendo
+  o `noteId` e a provenance integral no Document Map sem fan-out de todas as páginas;
+- mantém `maxContextPagesPerUnit = 4`, regras globais, footnotes, headers herdados e edges direcionais;
+- valida o mapa Jeep real com 37 units e registra que a segunda tentativa parou em um novo blocker de
+  canonicalização do Document Map, antes de Unit Plan ou qualquer escrita externa.
+
+## 2026-08-30 — Golden benchmark documental e diagnóstico Jeep (Sprint 10R.1)
+
+- transforma o corpus golden existente em benchmark determinístico de
+  `CommercialDocumentExtraction/1`, com matching semântico por documento, página, canal, veículo,
+  tipo, valor e unidade, além de proveniência e composição AND/OR;
+- exige recall crítico, precisão, composição e proveniência em 100% para `PASS`, com relatório JSON,
+  resumo legível e diagnósticos explícitos para fatos ausentes, incorretos ou inesperados;
+- reforça minimamente o prompt de Unit Extraction para separar preço público/referência de
+  promocional/cliente, preservar canal e composição e preferir ambiguidade a inferência;
+- adiciona harness Jeep local, opt-in e somente em memória, que interrompe antes do Domain Mapping e
+  não acessa staging ou Supabase;
+- registra a única execução real: Document Map concluído e Unit Plan interrompido por
+  `COMMERCIAL_EXTRACTION_UNIT_CONTEXT_LIMIT_EXCEEDED`; não houve retry, extração de unidade, merge,
+  reconciliação semântica, score golden ou persistência comercial.
+
+## Unreleased — Vehicle/specs matrix dry-run
+
+- adiciona leitura local e somente leitura de `Legacy/staging.csv`, preservando a alternativa remota;
+- usa `SC_0005`/`SC_0006` como anos autorais, mantém unknown spec codes não bloqueantes e gera relatório detalhado em `temp/` sem escrita no Supabase.
+- reconcilia deterministicamente os 320 specs do App com a auditoria do Excel e os 293 códigos da
+  matriz, preservando tipos/metadados do App e expondo conflitos sem fuzzy matching;
+- documenta o plano não persistido `PW_0045 = REEV` / `PW_1045 = AT`, a exclusão dos aliases de
+  torque em kgfm e o runbook de validação e apply futuro;
+- valida os 276 veículos contra o catálogo candidato com zero unknown spec code, sem migration,
+  alteração de `Legacy`, escrita no Supabase, commit ou push.
+- refina o parser com extração conservadora do ratio de `EX_0004`, decoração `inch`, zero binary e
+  resolução exclusiva de scales por `spec_set`, preservando TBD/TBC, texto e malformed em review;
+- consolida baseline e membro explícito sem duplicidade, reporta conflitos reais e mantém raw values
+  agregados no artifact para auditoria antes de qualquer apply.
+- corrige a identidade de scale para `group_name + equipment_group + spec_set`, separando Front e
+  Rear Fog Lamps e removendo 29 falsos conflitos sem alterar os 34 conflitos reais restantes;
+- adiciona auditoria read-only dos casos Tilt Down, Parking Camera, binary textual e malformed contra
+  Products/product_specs do App, sem usar os resultados para promoção automática.
+- incorpora no perfil exclusivo `legacy-staging-csv` as quatro decisões finais para Tilt Down,
+  Parking Camera, `CO_0033` e `SF_0041`, preservando raw e rule ID no artifact;
+- encerra o dry-run pré-apply com zero conflito de scale, zero unknown e somente 13 valores
+  pending/malformed não promovidos.
+- executa o apply transacional no Staging após checkpoint e ensaio com rollback, chegando a 321 specs,
+  277 products e 37.949 product_specs;
+- canonicaliza associações numeric na fronteira persistível conforme `numeric(14,4)`, preservando no
+  artifact o valor calculado anterior e o marcador de redução de precisão;
+- regenera o artifact e valida o Staging em modo read-only com `artifact_match=true`, zero diferenças
+  numeric, zero associações ausentes/inesperadas e nenhuma nova escrita; as 478 reduções de precisão de
+  `PW_0035`/`PW_0036` são o arredondamento canônico esperado, sem necessidade de rollback.
+
 ## 2026-08-30 — Refinamento dos formulários de veículo (Sprint 14H)
 
 - alinha Novo e Editar Veículo à surface, campos, labels e hierarquia de ações do design system
@@ -1724,3 +1865,6 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 - A UX exibe vigência aberta, usa “Salvar ofertas” e comunica sucesso ou erro com correlação.
 - Checkpoint das Sprints 9G–9G.4 fechado após validação manual em Staging; Produção permaneceu sem as
   migrations desta rodada. Refinamentos da UX para a operação mensal ficam para a próxima etapa.
+# Unreleased
+
+- Adiciona o núcleo determinístico e somente leitura do dry-run da matriz de veículos/specs, com transpose por código, parsing conservador, matching normalizado, relatório e testes.

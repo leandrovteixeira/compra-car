@@ -24,7 +24,18 @@ describe('admin foundation', () => {
       { href: '/admin/prices', label: 'Preços públicos', status: 'active' },
       { href: '/admin/prices/input', label: 'Criar preços', status: 'active' },
       { href: '/admin/prices/policies/input', label: 'Criar políticas', status: 'active' },
-      { href: '/admin/imports', label: 'Importações', status: 'active' },
+      {
+        label: 'Importações',
+        status: 'active',
+        children: [
+          { href: '/admin/imports', label: 'Cartas comerciais', status: 'active' },
+          {
+            href: '/admin/imports/structured-policies',
+            label: 'Políticas estruturadas (Excel)',
+            status: 'active',
+          },
+        ],
+      },
       { href: '/admin/users', label: 'Usuários', status: 'active' },
     ]);
   });

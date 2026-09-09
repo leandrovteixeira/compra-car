@@ -1,9 +1,17 @@
 import 'server-only';
 
+import { createHash } from 'node:crypto';
+
 import Ajv2020 from 'ajv/dist/2020.js';
 
 import type {
+  CommercialDocumentExtractionV1,
   CommercialDocumentMapV1,
+  CommercialExtractionUnitPlanV1,
+  CommercialTableIRV1,
+  CommercialCalibrationBudget,
+  CommercialUnitCoalescingDiagnostic,
+  ProviderCallEfficiencyObservation,
   ImportBatchDetails,
   SegmentedArtifactManifest,
   SegmentedExtractionSource,
@@ -12,6 +20,11 @@ import type {
   StructuredExtractionUsage,
 } from '@compra-car/core';
 import { createCommercialExtractionUnitPlan } from '@compra-car/core/commercial-document-map-planner';
+import {
+  coalesceCommercialExtractionUnitPlan,
+  createCommercialCalibrationBudgetGuard,
+  measureProviderCall,
+} from '@compra-car/core/commercial-extraction-efficiency';
 import {
   canonicalizeCommercialDocumentMapIds,
   CommercialDocumentMapCanonicalizationError,
@@ -34,10 +47,12 @@ import {
 import {
   COMMERCIAL_DOCUMENT_RECONCILIATION_VERSION,
   reconcileCommercialDocumentExtractions,
+  type CommercialDocumentReconciliationResult,
 } from '@compra-car/core/commercial-document-reconciliation';
 import {
   reconcileCommercialDocumentSemantics,
   SEMANTIC_COMMERCIAL_DOCUMENT_VERSION,
+  type SemanticallyReconciledCommercialDocument,
 } from '@compra-car/core/commercial-document-semantic-reconciliation';
 import {
   COMMERCIAL_DOCUMENT_DOMAIN_MAPPING_VERSION,
@@ -47,6 +62,7 @@ import { resolveCommercialDocumentPeriod } from '@compra-car/core/commercial-doc
 import {
   executeSegmentedExtraction,
   selectPrimarySegmentedExtractionFailure,
+  type SegmentedExtractionUnitYearDiagnosticObservation,
   type SegmentedExtractionUnitValidationObservation,
 } from '@compra-car/core/segmented-extraction-orchestrator';
 import {
@@ -60,7 +76,7 @@ import {
   reconstructCanonicalValueFromOpenAITransport,
 } from './openai-structured-output-schema';
 
-export const DOCUMENT_MAP_PROMPT_VERSION = '4' as const;
+export const DOCUMENT_MAP_PROMPT_VERSION = '5' as const;
 export const openAITransportDocumentMapSchema = createOpenAIStructuredOutputProjection(
   commercialDocumentMapSchemaV1,
 );
@@ -133,6 +149,47 @@ export interface SegmentedImportRuntimeSummary {
 export interface SegmentedImportRuntimeResult {
   readonly payloads: readonly unknown[];
   readonly summary: SegmentedImportRuntimeSummary;
+  readonly documentMap?: CommercialDocumentMapV1;
+  readonly documentary?: SegmentedDocumentaryRuntimeResult;
+}
+
+export class SegmentedImportPartialFailure extends Error {
+  readonly completedUnitIds: readonly string[];
+  readonly pendingUnitIds: readonly string[];
+  readonly failedUnitId: string;
+  readonly failureCode: string;
+
+  constructor(input: {
+    readonly completedUnitIds: readonly string[];
+    readonly pendingUnitIds: readonly string[];
+    readonly failedUnitId: string;
+    readonly failureCode: string;
+  }) {
+    super(`UNIT_EXTRACTION_${input.failureCode}`);
+    this.name = 'SegmentedImportPartialFailure';
+    this.completedUnitIds = [...input.completedUnitIds];
+    this.pendingUnitIds = [...input.pendingUnitIds];
+    this.failedUnitId = input.failedUnitId;
+    this.failureCode = input.failureCode;
+  }
+
+  toJSON() {
+    return {
+      code: this.message,
+      failureCode: this.failureCode,
+      completedUnitIds: this.completedUnitIds,
+      pendingUnitIds: this.pendingUnitIds,
+      failedUnitId: this.failedUnitId,
+    };
+  }
+}
+
+export interface SegmentedDocumentaryRuntimeResult {
+  readonly documentMap: CommercialDocumentMapV1;
+  readonly unitPlan: CommercialExtractionUnitPlanV1;
+  readonly unitExtractions: readonly CommercialDocumentExtractionV1[];
+  readonly reconciliation: CommercialDocumentReconciliationResult;
+  readonly semanticReconciliation: SemanticallyReconciledCommercialDocument;
 }
 
 export interface SegmentedDocumentMapValidationObservation {
@@ -152,7 +209,57 @@ export interface SegmentedDocumentMapCanonicalizationObservation {
   readonly truncated: boolean;
 }
 
-export type { SegmentedExtractionUnitValidationObservation };
+export type SegmentedDocumentMapDiagnosticStage =
+  'raw_structured_output' | 'reconstructed' | 'pre_canonicalization' | 'canonicalized';
+
+export type SegmentedDocumentMapMetadataCollection =
+  'titleHints' | 'issuerHints' | 'competenceHints' | 'validityHints';
+
+export interface SegmentedDocumentMapMetadataReferenceObservation {
+  readonly path: string;
+  readonly idFingerprint: string;
+  readonly definitionExists: boolean;
+}
+
+export interface SegmentedDocumentMapMetadataHintObservation {
+  readonly documentIndex: number;
+  readonly hintIndex: number;
+  readonly sourceBlockCount: number;
+  readonly references: readonly SegmentedDocumentMapMetadataReferenceObservation[];
+}
+
+export interface SegmentedDocumentMapMetadataCollectionObservation {
+  readonly hintCount: number;
+  readonly referenceCount: number;
+  readonly orphanCount: number;
+  readonly hints: readonly SegmentedDocumentMapMetadataHintObservation[];
+}
+
+export interface SegmentedDocumentMapMetadataAuditObservation {
+  readonly stage: SegmentedDocumentMapDiagnosticStage;
+  readonly definitionCounts: Readonly<{
+    documents: number;
+    pages: number;
+    contentBlocks: number;
+    sections: number;
+    tables: number;
+    notes: number;
+    entityHints: number;
+    contextEdges: number;
+  }>;
+  readonly collections: Readonly<
+    Record<
+      SegmentedDocumentMapMetadataCollection,
+      SegmentedDocumentMapMetadataCollectionObservation
+    >
+  >;
+  readonly orphanCount: number;
+}
+
+export type {
+  SegmentedExtractionUnitValidationObservation,
+  SegmentedExtractionUnitYearDiagnosticObservation,
+};
 
 export function createPersistedSegmentedRuntimeArtifactStore(
   context: SegmentedArtifactPersistenceContext,
@@ -194,6 +301,7 @@ Describe documents, pages, content blocks, sections, tables, notes, entity hints
 Use stable local IDs with the schema prefixes. Preserve ambiguity and evidence locations.
 Always emit every required collection from the schema. Use [] when a required collection has no supported entries; never omit a required collection or invent an entry merely to avoid an empty collection. For every document, always emit titleHints, issuerHints, competenceHints and validityHints. Return [] for a hint collection when no supported candidate exists.
 Every local reference must resolve to a real object emitted in the same map. Never reference a block, page, section, table, note, entity hint or context edge that you did not emit. A document metadata hint requires at least one real sourceBlockIds entry resolving to an emitted content block; if no source block is identifiable, omit the hint instead of inventing an ID. Never create placeholder definitions solely to satisfy references.
+Before returning, perform a referential-closure check: every referenced local ID must have a corresponding definition in the same artifact. Apply this exact check to metadata hint sourceBlockIds, page refs, section refs, table refs, note refs, entity hint refs and both sides of every context edge. Keep IDs model-local; do not rewrite them to canonical server IDs.
 Create a table only when at least one real header block is identifiable. Every table.headerBlockIds must contain at least one real TABLE_REGION or HEADING content block from that table. If no header is identifiable, represent the region with the appropriate content blocks and sections instead of creating an invalid table. A continued table remains one logical table: keep its original headerBlockIds and use inheritedHeaderBlockIds on CONTINUE segments.
 Do not perform product matching or domain mapping. Do not return Product IDs, Policies, Offers, promotion data, URLs, file IDs, credentials or chain-of-thought.`;
 
@@ -207,6 +315,86 @@ const addUsage = (left: StructuredExtractionUsage, right: StructuredExtractionUs
   outputUnits: left.outputUnits + right.outputUnits,
   totalUnits: left.totalUnits + right.totalUnits,
 });
+
+const objectValue = (value: unknown): Readonly<Record<string, unknown>> =>
+  value && typeof value === 'object' ? (value as Readonly<Record<string, unknown>>) : {};
+const arrayValue = (value: unknown): readonly unknown[] => (Array.isArray(value) ? value : []);
+const idFingerprint = (value: unknown): string =>
+  createHash('sha256')
+    .update(typeof value === 'string' ? value : `${typeof value}:${String(value)}`)
+    .digest('hex')
+    .slice(0, 16);
+const metadataCollections: readonly SegmentedDocumentMapMetadataCollection[] = [
+  'titleHints',
+  'issuerHints',
+  'competenceHints',
+  'validityHints',
+];
+
+export function auditDocumentMapMetadataReferences(
+  value: unknown,
+  stage: SegmentedDocumentMapDiagnosticStage,
+): SegmentedDocumentMapMetadataAuditObservation {
+  const root = objectValue(value);
+  const definitions = new Set(
+    arrayValue(root.contentBlocks)
+      .map((block) => objectValue(block).contentBlockId)
+      .filter((id): id is string => typeof id === 'string'),
+  );
+  const documents = arrayValue(root.documents);
+  const collections = Object.fromEntries(
+    metadataCollections.map((collection) => {
+      const hints = documents.flatMap((document, documentIndex) =>
+        arrayValue(objectValue(document)[collection]).map((hint, hintIndex) => {
+          const references = arrayValue(objectValue(hint).sourceBlockIds).map(
+            (id, referenceIndex) => ({
+              path: `/documents/${documentIndex}/${collection}/${hintIndex}/sourceBlockIds/${referenceIndex}`,
+              idFingerprint: idFingerprint(id),
+              definitionExists: typeof id === 'string' && definitions.has(id),
+            }),
+          );
+          return {
+            documentIndex,
+            hintIndex,
+            sourceBlockCount: references.length,
+            references,
+          };
+        }),
+      );
+      const references = hints.flatMap((hint) => hint.references);
+      return [
+        collection,
+        {
+          hintCount: hints.length,
+          referenceCount: references.length,
+          orphanCount: references.filter((reference) => !reference.definitionExists).length,
+          hints,
+        },
+      ];
+    }),
+  ) as unknown as Record<
+    SegmentedDocumentMapMetadataCollection,
+    SegmentedDocumentMapMetadataCollectionObservation
+  >;
+  return {
+    stage,
+    definitionCounts: {
+      documents: documents.length,
+      pages: arrayValue(root.pages).length,
+      contentBlocks: definitions.size,
+      sections: arrayValue(root.sections).length,
+      tables: arrayValue(root.tables).length,
+      notes: arrayValue(root.notes).length,
+      entityHints: arrayValue(root.entityHints).length,
+      contextEdges: arrayValue(root.contextEdges).length,
+    },
+    collections,
+    orphanCount: metadataCollections.reduce(
+      (count, collection) => count + collections[collection].orphanCount,
+      0,
+    ),
+  };
+}
 
 const assertBody = <T>(
   artifact: SegmentedRuntimeArtifact,
@@ -224,6 +412,7 @@ export async function executeSegmentedImportRuntime(input: {
   readonly source: SegmentedExtractionSource;
   readonly provider: StructuredExtractionProvider;
   readonly artifacts: SegmentedRuntimeArtifactStore;
+  readonly stopAfter?: 'document_map' | 'semantic_reconciliation';
   readonly diagnostics?: boolean;
   readonly observeDocumentMapValidation?: (
     observation: SegmentedDocumentMapValidationObservation,
@@ -231,9 +420,29 @@ export async function executeSegmentedImportRuntime(input: {
   readonly observeDocumentMapCanonicalization?: (
     observation: SegmentedDocumentMapCanonicalizationObservation,
   ) => void;
+  readonly observeDocumentMapMetadataReferences?: (
+    observation: SegmentedDocumentMapMetadataAuditObservation,
+  ) => void;
   readonly observeUnitExtractionValidation?: (
     observation: SegmentedExtractionUnitValidationObservation,
   ) => void;
+  readonly observeUnitExtractionYears?: (
+    observation: SegmentedExtractionUnitYearDiagnosticObservation,
+  ) => void;
+  readonly efficiency?: {
+    readonly enabled: true;
+    readonly concurrency?: number;
+    readonly commercialTableIRByUnitId?: Readonly<Record<string, CommercialTableIRV1>>;
+    readonly budget?: CommercialCalibrationBudget & {
+      readonly initialCalls?: number;
+      readonly initialEstimatedTokens?: number;
+    };
+    readonly estimatedSourceTokensPerAttachedRequest?: number;
+    readonly observeCoalescing?: (
+      diagnostics: readonly CommercialUnitCoalescingDiagnostic[],
+    ) => void;
+    readonly observeProviderCall?: (observation: ProviderCallEfficiencyObservation) => void;
+  };
 }): Promise<SegmentedImportRuntimeResult> {
   if (input.source.documents.length !== 1) throw new Error('SEGMENTED_PRIMARY_DOCUMENT_REQUIRED');
   const documentId = input.source.documents[0]!.documentId;
@@ -243,6 +452,12 @@ export async function executeSegmentedImportRuntime(input: {
   let reusedArtifactCount = 0;
   let session: StructuredExtractionSourceSession | undefined;
   let cleanup: 'succeeded' | 'failed' = 'succeeded';
+  const calibrationBudgetGuard = input.efficiency?.budget
+    ? createCommercialCalibrationBudgetGuard(input.efficiency.budget, {
+        calls: input.efficiency.budget.initialCalls ?? 0,
+        estimatedTokens: input.efficiency.budget.initialEstimatedTokens ?? 0,
+      })
+    : undefined;
   const observeDocumentMapValidation = (validation: () => void): void => {
     try {
       validation();
@@ -266,10 +481,19 @@ export async function executeSegmentedImportRuntime(input: {
   const validateDocumentMapWire = (body: unknown): void =>
     observeDocumentMapValidation(() => validateDocumentMapTransport(body));
   const canonicalizeDocumentMap = (body: CommercialDocumentMapV1): CommercialDocumentMapV1 => {
+    if (input.diagnostics && input.observeDocumentMapMetadataReferences)
+      input.observeDocumentMapMetadataReferences(
+        auditDocumentMapMetadataReferences(body, 'pre_canonicalization'),
+      );
     try {
-      return canonicalizeCommercialDocumentMapIds(body, {
+      const canonical = canonicalizeCommercialDocumentMapIds(body, {
         sourceDocumentOrdinals: input.source.documents.map((document) => document.ordinal),
       });
+      if (input.diagnostics && input.observeDocumentMapMetadataReferences)
+        input.observeDocumentMapMetadataReferences(
+          auditDocumentMapMetadataReferences(canonical, 'canonicalized'),
+        );
+      return canonical;
     } catch (error) {
       if (input.diagnostics && error instanceof CommercialDocumentMapCanonicalizationError) {
         const sampleLimit = 30;
@@ -352,6 +576,23 @@ export async function executeSegmentedImportRuntime(input: {
       'document_map',
       'CommercialDocumentMap/1',
       async () => {
+        const requestOrdinal = (calibrationBudgetGuard?.snapshot().calls ?? 0) + 1;
+        const planned = measureProviderCall({
+          stage: 'document_map',
+          pages: [],
+          requestOrdinal,
+          promptVersion: DOCUMENT_MAP_PROMPT_VERSION,
+          instructions: mapInstructions,
+          schema: openAITransportDocumentMapSchema,
+        });
+        const plannedWithSource = {
+          ...planned,
+          estimatedInputTokens:
+            planned.estimatedInputTokens +
+            (input.efficiency?.estimatedSourceTokensPerAttachedRequest ?? 0),
+        };
+        calibrationBudgetGuard?.reserve(plannedWithSource.estimatedInputTokens);
+        const providerStartedAt = Date.now();
         const response = await session!.extractStructured({
           instructions: mapInstructions,
           schemaName: 'commercial_document_map_v1',
@@ -365,11 +606,26 @@ export async function executeSegmentedImportRuntime(input: {
         });
         usage = addUsage(usage, response.usage);
         providerRunIds.push(response.providerRunId);
+        input.efficiency?.observeProviderCall?.({
+          ...plannedWithSource,
+          actualInputTokens: response.usage.inputUnits,
+          outputTokens: response.usage.outputUnits,
+          totalTokens: response.usage.totalUnits,
+          elapsedMs: Date.now() - providerStartedAt,
+        });
         validateDocumentMapWire(response.output);
+        if (input.diagnostics && input.observeDocumentMapMetadataReferences)
+          input.observeDocumentMapMetadataReferences(
+            auditDocumentMapMetadataReferences(response.output, 'raw_structured_output'),
+          );
         const reconstructed = reconstructCanonicalValueFromOpenAITransport(
           response.output,
           commercialDocumentMapSchemaV1,
         ) as CommercialDocumentMapV1;
+        if (input.diagnostics && input.observeDocumentMapMetadataReferences)
+          input.observeDocumentMapMetadataReferences(
+            auditDocumentMapMetadataReferences(reconstructed, 'reconstructed'),
+          );
         return {
           body: canonicalizeDocumentMap(reconstructed),
           provider: {
@@ -386,10 +642,33 @@ export async function executeSegmentedImportRuntime(input: {
       validateDocumentMap,
     );
     const documentMap = assertBody<CommercialDocumentMapV1>(mapArtifact, validateDocumentMap);
+    if (input.stopAfter === 'document_map')
+      return {
+        payloads: [],
+        documentMap,
+        summary: {
+          mode: 'segmented',
+          artifacts: manifests,
+          unitCount: 0,
+          reusedArtifactCount,
+          usage,
+          providerRunIds,
+          cleanup,
+        },
+      };
     const planArtifact = await get(
       'unit_plan',
       'CommercialExtractionUnitPlan/1',
-      async () => ({ body: createCommercialExtractionUnitPlan(documentMap) }),
+      async () => {
+        const basePlan = createCommercialExtractionUnitPlan(documentMap);
+        if (!input.efficiency?.enabled) return { body: basePlan };
+        const coalesced = coalesceCommercialExtractionUnitPlan({
+          map: documentMap,
+          plan: basePlan,
+        });
+        input.efficiency.observeCoalescing?.(coalesced.diagnostics);
+        return { body: coalesced.plan };
+      },
       [mapArtifact],
     );
     const unitPlan = planArtifact.body as ReturnType<typeof createCommercialExtractionUnitPlan>;
@@ -434,10 +713,36 @@ export async function executeSegmentedImportRuntime(input: {
               input.observeUnitExtractionValidation(observation);
             else console.warn('SEGMENTED_UNIT_EXTRACTION_VALIDATION', observation);
           },
+          observeUnitYearDiagnostic: input.observeUnitExtractionYears,
+          ...(input.efficiency?.concurrency === undefined
+            ? {}
+            : { concurrency: input.efficiency.concurrency }),
+          ...(input.efficiency?.commercialTableIRByUnitId
+            ? {
+                buildUnitDocumentContext: (context) => {
+                  const ir = input.efficiency!.commercialTableIRByUnitId?.[context.unit.unitId];
+                  if (!ir) throw new Error('COMMERCIAL_TABLE_IR_MISSING_FOR_UNIT');
+                  return JSON.stringify(ir);
+                },
+                includeSourceDocuments: false,
+              }
+            : {}),
+          ...(input.efficiency?.budget
+            ? {
+                budget: {
+                  ...input.efficiency.budget,
+                  initialCalls: calibrationBudgetGuard?.snapshot().calls ?? 0,
+                  initialEstimatedTokens: calibrationBudgetGuard?.snapshot().estimatedTokens ?? 0,
+                  estimatedSourceTokensPerRequest:
+                    input.efficiency.estimatedSourceTokensPerAttachedRequest ?? 0,
+                },
+              }
+            : {}),
+          ...(input.efficiency?.observeProviderCall
+            ? { observeProviderCall: input.efficiency.observeProviderCall }
+            : {}),
         },
       );
-      const failed = selectPrimarySegmentedExtractionFailure(extraction.unitResults);
-      if (failed) throw new Error(`UNIT_EXTRACTION_${failed.code}`);
       for (const result of extraction.unitResults) {
         if (result.status !== 'succeeded') continue;
         usage = addUsage(usage, result.usage);
@@ -460,6 +765,23 @@ export async function executeSegmentedImportRuntime(input: {
           result.unitId,
         );
         unitArtifacts.set(result.unitId, artifact);
+      }
+      const failed = selectPrimarySegmentedExtractionFailure(extraction.unitResults);
+      if (failed) {
+        const completedUnitIds = extraction.unitResults
+          .filter((result) => result.status === 'succeeded')
+          .map((result) => result.unitId)
+          .sort();
+        const pendingUnitIds = missingUnits
+          .map((unit) => unit.unitId)
+          .filter((unitId) => unitId !== failed.unitId && !completedUnitIds.includes(unitId))
+          .sort();
+        throw new SegmentedImportPartialFailure({
+          completedUnitIds,
+          pendingUnitIds,
+          failedUnitId: failed.unitId,
+          failureCode: failed.code,
+        });
       }
     }
     const orderedUnits = unitPlan.units.map((unit) => unitArtifacts.get(unit.unitId)!);
@@ -488,6 +810,28 @@ export async function executeSegmentedImportRuntime(input: {
       }),
       [mergeArtifact],
     );
+    if (input.stopAfter === 'semantic_reconciliation')
+      return {
+        payloads: [],
+        documentary: {
+          documentMap,
+          unitPlan,
+          unitExtractions: orderedUnits.map(
+            (artifact) => artifact.body as CommercialDocumentExtractionV1,
+          ),
+          reconciliation: mergeArtifact.body as CommercialDocumentReconciliationResult,
+          semanticReconciliation: semanticArtifact.body as SemanticallyReconciledCommercialDocument,
+        },
+        summary: {
+          mode: 'segmented',
+          artifacts: manifests,
+          unitCount: unitPlan.units.length,
+          reusedArtifactCount,
+          usage,
+          providerRunIds,
+          cleanup,
+        },
+      };
     const commercialPeriod = resolveCommercialDocumentPeriod({
       batchCompetence: input.batch.competence,
       semanticDocument: semanticArtifact.body as never,

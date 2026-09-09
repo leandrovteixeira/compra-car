@@ -16,9 +16,11 @@ import { commercialDocumentMapSchemaV1 } from '@compra-car/core/commercial-docum
 import { projectCanonicalValueForOpenAITransport } from '../src/server/openai-structured-output-schema';
 
 import {
+  auditDocumentMapMetadataReferences,
   executeSegmentedImportRuntime,
   openAITransportDocumentExtractionSchema,
   openAITransportDocumentMapSchema,
+  SegmentedImportPartialFailure,
   type SegmentedRuntimeArtifact,
   type SegmentedRuntimeArtifactStore,
 } from '../src/server/segmented-import-runtime';
@@ -265,7 +267,7 @@ describe('segmented import runtime', () => {
     expect(first.summary.unitCount).toBe(6);
     expect(calls).toBe(7);
     expect(requests[0]?.metadata.schemaVersion).toBe('CommercialDocumentMap/1');
-    expect(requests[0]?.metadata.promptVersion).toBe('4');
+    expect(requests[0]?.metadata.promptVersion).toBe('5');
     expect(requests[0]?.instructions).toContain(
       'Always emit every required collection from the schema',
     );
@@ -286,6 +288,15 @@ describe('segmented import runtime', () => {
       'Every local reference must resolve to a real object emitted in the same map',
     );
     expect(requests[0]?.instructions).toContain(
+      'every referenced local ID must have a corresponding definition in the same artifact',
+    );
+    expect(requests[0]?.instructions).toContain(
+      'metadata hint sourceBlockIds, page refs, section refs, table refs, note refs',
+    );
+    expect(requests[0]?.instructions).toContain(
+      'Keep IDs model-local; do not rewrite them to canonical server IDs',
+    );
+    expect(requests[0]?.instructions).toContain(
       'if no source block is identifiable, omit the hint instead of inventing an ID',
     );
     expect(requests[0]?.schema).toBe(openAITransportDocumentMapSchema);
@@ -294,7 +305,9 @@ describe('segmented import runtime', () => {
         .slice(1)
         .every((request) => request.schema === openAITransportDocumentExtractionSchema),
     ).toBe(true);
-    expect(requests.slice(1).every((request) => request.metadata.promptVersion === '8')).toBe(true);
+    expect(requests.slice(1).every((request) => request.metadata.promptVersion === '11')).toBe(
+      true,
+    );
     expect(requests[1]?.instructions).toContain(
       'A row cell is keyed by columnId, not by its array position',
     );
@@ -322,7 +335,33 @@ describe('segmented import runtime', () => {
       'Never emit a composition relationship with an empty factIds array',
     );
     expect(requests[1]?.instructions).toContain('groupIds never substitute for the required fact');
+    expect(requests[1]?.instructions).toContain(
+      'Interpret section and channel before classifying any value',
+    );
+    expect(requests[1]?.instructions).toContain('A documentary "de X por Y" emits both facts');
+    expect(requests[1]?.instructions).toContain(
+      'A value explicitly labeled PREÇO CLIENTE is promotional_price',
+    );
+    expect(requests[1]?.instructions).toContain('Preserve AND/OR literally');
+    expect(requests[1]?.instructions).toContain('productionYear and modelYear form an atomic pair');
+    expect(requests[1]?.instructions).toContain(
+      'If only one side is known, omit both structured fields',
+    );
+    expect(requests[1]?.instructions).toContain(
+      'PY/MY may be inherited from a table or section header',
+    );
+    expect(requests[1]?.instructions).toContain('Commercial knowledge calibration v11');
+    expect(requests[1]?.instructions).toContain('only for VAREJO');
+    expect(requests[1]?.instructions).toContain('Do not emit final Policy/Offer objects');
+    expect(requests[1]?.instructions).toContain('Without explicit composition');
+    expect(requests[1]?.instructions).toContain('merged-cell span');
+    expect(requests[1]?.instructions).toContain('never double count it');
+    expect(requests[1]?.instructions).toContain('Invoice discount requires explicit NF/N.F');
+    expect(requests[1]?.instructions).toContain('unsupported families');
     expect(requests.slice(1).map((request) => request.metadata.unitOrdinal)).toEqual([
+      1, 2, 3, 4, 5, 6,
+    ]);
+    expect(requests.slice(1).map((request) => request.metadata.requestOrdinal)).toEqual([
       1, 2, 3, 4, 5, 6,
     ]);
     expect(new Set(requests.slice(1).map((request) => request.metadata.unitId)).size).toBe(6);
@@ -395,6 +434,29 @@ describe('segmented import runtime', () => {
       for (const offer of row.offers as { policyClientIds: string[] }[])
         expect(offer.policyClientIds.every((id) => policyIds.has(id))).toBe(true);
     }
+    const mapOnly = await executeSegmentedImportRuntime({
+      ...input,
+      stopAfter: 'document_map',
+    });
+    expect(mapOnly.payloads).toEqual([]);
+    expect(mapOnly.documentMap).toEqual(mapBody);
+    expect(mapOnly.documentary).toBeUndefined();
+    expect(mapOnly.summary.unitCount).toBe(0);
+    expect(mapOnly.summary.artifacts.map((artifact) => artifact.stage)).toEqual(['document_map']);
+    expect(calls).toBe(firstCalls);
+    const documentary = await executeSegmentedImportRuntime({
+      ...input,
+      stopAfter: 'semantic_reconciliation',
+    });
+    expect(documentary.payloads).toEqual([]);
+    expect(documentary.documentary?.documentMap).toEqual(mapBody);
+    expect(documentary.documentary?.unitExtractions).toHaveLength(first.summary.unitCount);
+    expect(documentary.documentary?.reconciliation).toEqual(mergeBody);
+    expect(documentary.documentary?.semanticReconciliation).toEqual(semanticBody);
+    expect(documentary.summary.artifacts.map((artifact) => artifact.stage)).not.toContain(
+      'domain_mapping',
+    );
+    expect(calls).toBe(firstCalls);
     const replay = await executeSegmentedImportRuntime(input);
     expect(replay.payloads).toEqual(first.payloads);
     expect(calls).toBe(firstCalls);
@@ -594,6 +656,7 @@ describe('segmented import runtime', () => {
       }
     ).sourceBlockIds = [secret];
     const observeDocumentMapCanonicalization = vi.fn();
+    const observeDocumentMapMetadataReferences = vi.fn();
     const publish = vi.fn();
     const close = vi.fn(async () => undefined);
     const invalidProvider: StructuredExtractionProvider = {
@@ -620,6 +683,7 @@ describe('segmented import runtime', () => {
         artifacts: { load: vi.fn(async () => undefined), publish },
         diagnostics: true,
         observeDocumentMapCanonicalization,
+        observeDocumentMapMetadataReferences,
       }),
     ).rejects.toMatchObject({ code: 'DOCUMENT_MAP_CANONICALIZATION_FAILED' });
     expect(observeDocumentMapCanonicalization).toHaveBeenCalledWith({
@@ -635,9 +699,74 @@ describe('segmented import runtime', () => {
       truncated: false,
     });
     expect(JSON.stringify(observeDocumentMapCanonicalization.mock.calls)).not.toContain(secret);
+    expect(observeDocumentMapMetadataReferences).toHaveBeenCalledTimes(3);
+    const metadataAudits = observeDocumentMapMetadataReferences.mock.calls.map(
+      ([observation]) => observation,
+    );
+    expect(metadataAudits.map((observation) => observation.stage)).toEqual([
+      'raw_structured_output',
+      'reconstructed',
+      'pre_canonicalization',
+    ]);
+    for (const observation of metadataAudits) {
+      expect(observation.definitionCounts.contentBlocks).toBe(invalidMap.contentBlocks.length);
+      expect(observation.orphanCount).toBe(1);
+      expect(observation.collections.titleHints).toMatchObject({
+        hintCount: 1,
+        referenceCount: 1,
+        orphanCount: 1,
+        hints: [
+          {
+            documentIndex: 0,
+            hintIndex: 0,
+            sourceBlockCount: 1,
+            references: [
+              {
+                path: '/documents/0/titleHints/0/sourceBlockIds/0',
+                definitionExists: false,
+              },
+            ],
+          },
+        ],
+      });
+    }
+    expect(JSON.stringify(metadataAudits)).not.toContain(secret);
     expect(publish).not.toHaveBeenCalled();
     expect(close).toHaveBeenCalledTimes(1);
   });
+
+  it.each(['titleHints', 'issuerHints', 'competenceHints', 'validityHints'] as const)(
+    'preflights orphan metadata references in %s without filtering them',
+    (collection) => {
+      const map = documentMapTransport();
+      const orphan = `orphan-${collection}`;
+      (
+        map.documents[0] as unknown as Record<
+          typeof collection,
+          Array<{ value: string; sourceBlockIds: string[] }>
+        >
+      )[collection] = [{ value: 'not observed', sourceBlockIds: [orphan] }];
+      const audit = auditDocumentMapMetadataReferences(map, 'raw_structured_output');
+      expect(audit.orphanCount).toBe(1);
+      expect(audit.collections[collection]).toMatchObject({
+        hintCount: 1,
+        referenceCount: 1,
+        orphanCount: 1,
+        hints: [
+          {
+            documentIndex: 0,
+            hintIndex: 0,
+            sourceBlockCount: 1,
+            references: [expect.objectContaining({ definitionExists: false })],
+          },
+        ],
+      });
+      expect(JSON.stringify(audit)).not.toContain(orphan);
+      expect(
+        (map.documents[0] as unknown as Record<typeof collection, unknown>)[collection],
+      ).toEqual([{ value: 'not observed', sourceBlockIds: [orphan] }]);
+    },
+  );
 
   it('rejects empty table headers at the raw Document Map transport boundary', async () => {
     const invalidMap = documentMapTransport();
@@ -893,5 +1022,129 @@ describe('segmented import runtime', () => {
       'document_map',
       'unit_plan',
     ]);
+  });
+
+  it('persists successful units, resumes only pending units and preserves deterministic merge', async () => {
+    const blankUnit = () =>
+      extractionTransport({
+        ...structuredClone(geelyLikeCommercialDocumentExtractionFixture),
+        vehicleIdentities: [],
+        scopes: [],
+        facts: [],
+        composition: { groups: [], relationships: [] },
+        coverage: {
+          status: 'complete' as const,
+          expectedUnitCount: 0,
+          completedUnitCount: 0,
+          expectedVehicleCount: 0,
+          extractedVehicleCount: 0,
+          expectedFamilies: [],
+          extractedFamilies: [],
+          units: [
+            {
+              unitId: 'unit-resume',
+              status: 'complete' as const,
+              sourceBlockIds: ['block-heading'],
+              expectedItemCount: 0,
+              extractedItemCount: 0,
+            },
+          ],
+          gaps: [],
+          incompleteBlockIds: [],
+          unresolvedTableRows: [],
+          unresolvedScopeIds: [],
+        },
+      });
+    const requestedUnitIds: string[] = [];
+    const efficiencyObservations: Array<{
+      readonly stage: string;
+      readonly requestOrdinal: number;
+    }> = [];
+    const provider: StructuredExtractionProvider = {
+      async openSource() {
+        return {
+          async extractStructured(request) {
+            if (request.metadata.schemaVersion === 'CommercialDocumentMap/1')
+              return {
+                output: documentMapTransport(),
+                providerRunId: 'resume-map',
+                usage: { inputUnits: 1, outputUnits: 1, totalUnits: 2 },
+              };
+            requestedUnitIds.push(String(request.metadata.unitId));
+            return {
+              output: blankUnit(),
+              providerRunId: `resume-${request.metadata.unitId}`,
+              usage: { inputUnits: 2, outputUnits: 1, totalUnits: 3 },
+            };
+          },
+          async close() {},
+        };
+      },
+    };
+    const artifacts = store();
+    const baseInput = {
+      batch,
+      jobId: 'resumable-job',
+      attempt: 1,
+      correlationId: '00000000-0000-4000-8000-000000000099',
+      source: {
+        documents: [{ documentId: 'document-main', ordinal: 1, bytes: new Uint8Array([1]) }],
+      },
+      provider,
+      artifacts,
+      stopAfter: 'semantic_reconciliation' as const,
+    };
+
+    let partial: SegmentedImportPartialFailure | undefined;
+    try {
+      await executeSegmentedImportRuntime({
+        ...baseInput,
+        efficiency: {
+          enabled: true,
+          concurrency: 1,
+          budget: { maxEstimatedTotalTokens: 300_000, maxProviderCalls: 2 },
+          observeProviderCall: (observation) => efficiencyObservations.push(observation),
+        },
+      });
+    } catch (error) {
+      if (error instanceof SegmentedImportPartialFailure) partial = error;
+      else throw error;
+    }
+    expect(partial).toMatchObject({ failureCode: 'BUDGET_EXCEEDED' });
+    expect(partial?.completedUnitIds).toHaveLength(1);
+    expect(efficiencyObservations.map((observation) => observation.stage)).toEqual([
+      'document_map',
+      'unit_extraction',
+    ]);
+    expect(efficiencyObservations.map((observation) => observation.requestOrdinal)).toEqual([1, 2]);
+    expect(partial?.pendingUnitIds.length).toBeGreaterThan(0);
+    const completed = partial!.completedUnitIds[0]!;
+    expect(JSON.parse(JSON.stringify(partial))).toMatchObject({
+      failureCode: 'BUDGET_EXCEEDED',
+      completedUnitIds: [completed],
+      failedUnitId: expect.any(String),
+    });
+    expect(
+      artifacts.values.filter((item) => item.manifest.stage === 'unit_extraction'),
+    ).toHaveLength(1);
+
+    const resumed = await executeSegmentedImportRuntime({
+      ...baseInput,
+      attempt: 2,
+      efficiency: { enabled: true, concurrency: 1 },
+    });
+    expect(requestedUnitIds.filter((unitId) => unitId === completed)).toHaveLength(1);
+
+    const cleanArtifacts = store();
+    const clean = await executeSegmentedImportRuntime({
+      ...baseInput,
+      jobId: 'clean-resumable-job',
+      artifacts: cleanArtifacts,
+      efficiency: { enabled: true, concurrency: 1 },
+    });
+    expect(resumed.documentary?.reconciliation).toEqual(clean.documentary?.reconciliation);
+    expect(resumed.documentary?.semanticReconciliation).toEqual(
+      clean.documentary?.semanticReconciliation,
+    );
   });
 });

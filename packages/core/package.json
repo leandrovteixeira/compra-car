@@ -14,12 +14,18 @@
     "./commercial-document-extraction-canonicalizer": "./src/import/commercial-document-extraction-canonicalizer.ts",
     "./commercial-document-extraction-schema": "./src/import/commercial-document-extraction-schema.ts",
     "./commercial-document-extraction-validator": "./src/import/commercial-document-extraction-validator.ts",
+    "./commercial-document-golden-benchmark": "./src/import/commercial-document-golden-benchmark.ts",
+    "./commercial-knowledge-calibration": "./src/import/commercial-knowledge-calibration.ts",
+    "./commercial-extraction-efficiency": "./src/import/commercial-extraction-efficiency.ts",
     "./commercial-document-reconciliation": "./src/import/commercial-document-reconciliation.ts",
     "./commercial-document-semantic-reconciliation": "./src/import/commercial-document-semantic-reconciliation.ts",
     "./commercial-document-domain-mapping": "./src/import/commercial-document-domain-mapping.ts",
     "./commercial-document-period-resolution": "./src/import/commercial-document-period-resolution.ts",
     "./segmented-artifact-lifecycle": "./src/import/segmented-artifact-lifecycle.ts",
-    "./segmented-extraction-orchestrator": "./src/import/segmented-extraction-orchestrator.ts"
+    "./segmented-extraction-orchestrator": "./src/import/segmented-extraction-orchestrator.ts",
+    "./commercial-import-contract": "./src/import/commercial-import-contract.ts",
+    "./commercial-import-xlsx-parser": "./src/import/commercial-import-xlsx-parser.ts",
+    "./commercial-import-structural-validator": "./src/import/commercial-import-structural-validator.ts"
   },
   "types": "./src/index.ts",
   "scripts": {
@@ -28,10 +34,12 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@types/node": "24.13.3",
     "vitest": "4.1.10"
   },
   "dependencies": {
     "ajv": "8.20.0",
-    "decimal.js": "10.6.0"
+    "decimal.js": "10.6.0",
+    "fflate": "0.8.3"
   }
 }

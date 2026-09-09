@@ -4,7 +4,10 @@ import {
   COMMERCIAL_DOCUMENT_MAP_LIMITS,
   COMMERCIAL_EXTRACTION_UNIT_LIMITS,
 } from '../src/import/commercial-document-map';
-import { createCommercialExtractionUnitPlan } from '../src/import/commercial-document-map-planner';
+import {
+  CommercialExtractionUnitContextLimitError,
+  createCommercialExtractionUnitPlan,
+} from '../src/import/commercial-document-map-planner';
 import {
   commercialDocumentMapSchemaV1,
   commercialExtractionUnitPlanSchemaV1,
@@ -317,6 +320,160 @@ describe('CommercialDocumentMap/1 and deterministic unit planning', () => {
       expect(unit.overlaps).toContainEqual(
         expect.objectContaining({ refId: 'note-later-general-rule', usage: 'CONTEXT_ONLY' }),
       );
+    }
+  });
+
+  it('reports safe structural diagnostics before rejecting required shared-note fan-out', () => {
+    const map = structuredClone(geelyLikeCommercialDocumentMapFixture);
+    const note = map.notes.find((item) => item.noteId === 'note-later-general-rule')!;
+    const sourceBlockIds = [1, 3, 4, 5, 6].map(
+      (pageNumber) =>
+        map.contentBlocks.find(
+          (block) =>
+            map.pages.find((page) => page.pageNumber === pageNumber)?.pageId === block.pageId,
+        )!.contentBlockId,
+    );
+    (note as unknown as { sourceBlockIds: string[] }).sourceBlockIds = sourceBlockIds;
+
+    try {
+      createCommercialExtractionUnitPlan(map);
+      throw new Error('Expected context limit failure.');
+    } catch (error) {
+      expect(error).toBeInstanceOf(CommercialExtractionUnitContextLimitError);
+      expect((error as Error).message).toBe('COMMERCIAL_EXTRACTION_UNIT_CONTEXT_LIMIT_EXCEEDED');
+      expect(error).toMatchObject({
+        code: 'COMMERCIAL_EXTRACTION_UNIT_CONTEXT_LIMIT_EXCEEDED',
+        diagnostic: {
+          unitType: 'TABLE',
+          documentOrdinal: 1,
+          primaryPageNumbers: [2],
+          contextPageNumbers: [1, 3, 4, 5, 6],
+          contextPageCount: 5,
+          sectionCount: 1,
+          tableCount: 1,
+          noteCount: 1,
+          reasons: expect.arrayContaining([
+            {
+              reason: 'SHARED_NOTE',
+              contextPageNumbers: [1, 3, 4, 5, 6],
+              contextBlockCount: 5,
+              overlapCount: 11,
+            },
+          ]),
+        },
+      });
+      expect(JSON.stringify(error)).not.toContain('Synthetic');
+    }
+  });
+
+  it('represents a multi-page document rule with its canonical source page without provenance loss', () => {
+    const map = structuredClone(geelyLikeCommercialDocumentMapFixture);
+    const note = map.notes.find((item) => item.noteId === 'note-later-general-rule')!;
+    const sourceBlockIds = [1, 3, 4, 5, 6].map(
+      (pageNumber) =>
+        map.contentBlocks.find(
+          (block) =>
+            map.pages.find((page) => page.pageNumber === pageNumber)?.pageId === block.pageId,
+        )!.contentBlockId,
+    );
+    (note as unknown as { noteKind: string }).noteKind = 'DOCUMENT_WIDE';
+    (note as unknown as { sourceBlockIds: string[] }).sourceBlockIds = sourceBlockIds;
+
+    const plan = createCommercialExtractionUnitPlan(map);
+    const unit = plan.units.find((item) => item.tableIds.includes('table-family-a'))!;
+    const canonicalBlock = sourceBlockIds.find(
+      (blockId) =>
+        map.contentBlocks.find((block) => block.contentBlockId === blockId)?.pageId === 'page-006',
+    )!;
+    expect(unit.noteIds).toContain(note.noteId);
+    expect(unit.contextPageIds).toEqual(['page-006']);
+    expect(unit.contextContentBlockIds).toContain(canonicalBlock);
+    expect(unit.contextContentBlockIds).not.toEqual(
+      expect.arrayContaining(sourceBlockIds.slice(0, 4)),
+    );
+    expect(note.sourceBlockIds).toEqual(sourceBlockIds);
+    expect(unit.overlaps).toContainEqual({
+      refType: 'CONTENT_BLOCK',
+      refId: canonicalBlock,
+      usage: 'CONTEXT_ONLY',
+      reason: 'DOCUMENT_RULE',
+    });
+  });
+
+  it('keeps governing note edges directional', () => {
+    const plan = createCommercialExtractionUnitPlan(geelyLikeCommercialDocumentMapFixture);
+    const governed = plan.units.find((unit) => unit.tableIds.includes('table-family-a'))!;
+    const noteOwner = plan.units.find((unit) => unit.primaryPageIds.includes('page-006'))!;
+    expect(governed.noteIds).toContain('note-later-general-rule');
+    expect(governed.contextPageIds).toContain('page-006');
+    expect(noteOwner.contextPageIds).not.toContain('page-002');
+  });
+
+  it('does not widen a table-scoped note through shared section membership', () => {
+    const map = structuredClone(geelyLikeCommercialDocumentMapFixture);
+    const note = map.notes.find((item) => item.noteId === 'note-later-general-rule')!;
+    (note as unknown as { tableIds: string[] }).tableIds = ['table-family-b'];
+    const plan = createCommercialExtractionUnitPlan(map);
+    const familyA = plan.units.find((unit) => unit.tableIds.includes('table-family-a'))!;
+    const familyB = plan.units.find((unit) => unit.tableIds.includes('table-family-b'))!;
+    expect(familyA.noteIds).not.toContain(note.noteId);
+    expect(familyB.noteIds).toContain(note.noteId);
+  });
+
+  it('requires the complete declared section scope before sharing an unbound note', () => {
+    const map = structuredClone(geelyLikeCommercialDocumentMapFixture);
+    const note = map.notes.find((item) => item.noteId === 'note-later-general-rule')!;
+    (note as unknown as { tableIds: string[] }).tableIds = [];
+    (note as unknown as { sectionIds: string[] }).sectionIds = [
+      'section-family-a',
+      'section-general-rules',
+    ];
+    const withoutCompleteScope = createCommercialExtractionUnitPlan(map);
+    expect(
+      withoutCompleteScope.units.find((unit) => unit.tableIds.includes('table-family-a'))!.noteIds,
+    ).not.toContain(note.noteId);
+
+    const page = map.pages.find((item) => item.pageId === 'page-002')!;
+    (page as unknown as { sectionIds: string[] }).sectionIds = [
+      ...page.sectionIds,
+      'section-general-rules',
+    ];
+    const withCompleteScope = createCommercialExtractionUnitPlan(map);
+    expect(
+      withCompleteScope.units.find((unit) => unit.tableIds.includes('table-family-a'))!.noteIds,
+    ).toContain(note.noteId);
+  });
+
+  it('still fails when five distinct shared-context pages are genuinely required', () => {
+    const map = structuredClone(geelyLikeCommercialDocumentMapFixture);
+    (map as unknown as { contextEdges: unknown[] }).contextEdges.push(
+      ...[1, 3, 4, 5, 6].map((pageNumber) => ({
+        contextEdgeId: `edge-required-${pageNumber}`,
+        relation: 'SHARED_CONTEXT',
+        from: { refType: 'PAGE', refId: 'page-002' },
+        to: { refType: 'PAGE', refId: `page-${String(pageNumber).padStart(3, '0')}` },
+        reason: 'Distinct required structural context.',
+      })),
+    );
+    expect(() => createCommercialExtractionUnitPlan(map)).toThrow(
+      CommercialExtractionUnitContextLimitError,
+    );
+    try {
+      createCommercialExtractionUnitPlan(map);
+    } catch (error) {
+      expect(error).toMatchObject({
+        diagnostic: {
+          unitType: 'TABLE',
+          primaryPageNumbers: [2],
+          contextPageCount: 5,
+          reasons: expect.arrayContaining([
+            expect.objectContaining({
+              reason: 'CONTEXT_EDGE',
+              contextPageNumbers: [1, 3, 4, 5, 6],
+            }),
+          ]),
+        },
+      });
     }
   });
 
