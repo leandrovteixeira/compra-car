@@ -1,5 +1,16 @@
 # Contexto para agentes de IA
 
+## Sprint 15C.1b — Structured Policies UI (2026-09-09)
+
+Importações agora agrupa Cartas comerciais (/admin/imports) e Políticas estruturadas (Excel)
+(/admin/imports/structured-policies). Upload Admin de XLSX até 25 MiB usa parser/validator reais
+da 15C.1 em Node, com preview documental, diagnósticos e Issues separados; zero persistência
+comercial, sem Apply ou resolução. Próxima etapa: Product Resolution. Teste manual Jeep pendente.
+Lint, typecheck, build e 21 testes direcionados passaram. Gates globais têm pendências preexistentes:
+teste mobile sensível a CRLF e format:check (234 arquivos); detalhes no documento da sprint.
+Detalhes e diferenças de vocabulário do baseline em
+[SPRINT_15C1B_STRUCTURED_POLICIES_UI.md](docs/import/SPRINT_15C1B_STRUCTURED_POLICIES_UI.md).
+
 ## Token & Throughput Efficiency — Sprint 10R.6 (2026-09-03)
 
 O baseline Jeep 10R.5 é 25 provider calls, aproximadamente 2,33M tokens e ~USD 7. A causa dominante é
@@ -2021,3 +2032,16 @@ golden arredondam para scale 4 na fronteira de persistência. As 478 reduções 
 observadas após o apply eram esperadas e não exigiam rollback. Depois da regeneração local, a validação
 read-only retornou `artifact_match=true`, zero associações ausentes/inesperadas e zero diferenças
 numeric; nenhum dado foi reescrito.
+
+## Marco — Commercial XLSX Parser + Structural Validator (Sprint 15C.1, 2026-09-08)
+
+O Core possui agora um boundary puro para `CommercialImportContract/1`: o parser OpenXML recebe bytes
+XLSX e materializa Metadata, Products, Policies, Offers, OfferPolicies, Issues e Evidence em memória.
+As sete sheets e todos os headers do template são obrigatórios; `README` é a única sheet opcional
+ignorada. O parser não inventa colunas ou valores e produz diagnostics estruturados para falhas.
+
+O structural validator reutiliza os vocabulários de Commercial Policy e voucher da Sprint 10R e
+verifica versão, formatos, chaves e referências Product/Policy/Offer. Product Resolution, MSRP,
+valuation, Apply, UI, persistência, Supabase e migrations permanecem **PENDENTES** e fora do boundary.
+`Legacy` e o banco não foram alterados. A decisão está documentada em
+`docs/import/SPRINT_15C1_COMMERCIAL_XLSX_INGESTION.md`.

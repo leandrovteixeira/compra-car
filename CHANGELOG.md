@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-09 — Structured Policies Upload & Preview (Sprint 15C.1b)
+
+- organiza Importações em Cartas comerciais (rota PDF preservada) e Políticas estruturadas (Excel);
+- adiciona upload Admin em memória até 25 MiB, parsing/validação Core e preview tipado;
+- separa diagnósticos estruturais dos Issues comerciais e mostra produtos aguardando resolução;
+- cobre o fluxo com fixture sintético compartilhado, sem persistência, Apply ou novas dependências.
+
+## 2026-09-08 — Commercial XLSX Parser + Structural Validator (Sprint 15C.1)
+
+- adiciona o boundary puro em memória `CommercialImportContract/1`, com tipos explícitos para
+  Metadata, Products, Policies, Offers, memberships, Issues e Evidence;
+- lê o XLSX canônico via OpenXML, exige as sete sheets e todos os headers congelados, ignora somente
+  `README` e rejeita omissões, duplicidades, sheets/colunas extras e tipos primitivos inválidos;
+- valida versão, formatos, vocabulários comerciais já existentes, chaves únicas e referências
+  Product/Policy/Offer sem resolver Product, MSRP ou parâmetros financeiros;
+- mantém UI, valuation, Product Resolution, Apply, Supabase, migrations, Policies/Offers persistidas e
+  `Legacy` inalterados.
+
 ## 2026-09-03 — Token & Throughput Efficiency (Sprint 10R.6)
 
 - adiciona telemetria segura por request e agregados de tokens/duplicação, sem registrar PDF, excerpts

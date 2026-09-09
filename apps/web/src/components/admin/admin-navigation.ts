@@ -2,6 +2,7 @@ export interface AdminNavigationItem {
   readonly href?: string;
   readonly label: string;
   readonly status: 'active' | 'planned';
+  readonly children?: readonly AdminNavigationItem[];
 }
 
 export const adminNavigationItems: readonly AdminNavigationItem[] = [
@@ -13,7 +14,18 @@ export const adminNavigationItems: readonly AdminNavigationItem[] = [
   { label: 'Equipamentos', status: 'planned' },
   { label: 'Categorias', status: 'planned' },
   { label: 'Marcas', status: 'planned' },
-  { href: '/admin/imports', label: 'Importações', status: 'active' },
+  {
+    label: 'Importações',
+    status: 'active',
+    children: [
+      { href: '/admin/imports', label: 'Cartas comerciais', status: 'active' },
+      {
+        href: '/admin/imports/structured-policies',
+        label: 'Políticas estruturadas (Excel)',
+        status: 'active',
+      },
+    ],
+  },
   { href: '/admin/users', label: 'Usuários', status: 'active' },
   { label: 'Configurações', status: 'planned' },
 ];

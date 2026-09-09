@@ -8,6 +8,7 @@ import { adminNavigationItems } from './admin-navigation';
 export function AdminNav() {
   const pathname = usePathname();
   const activeHref = adminNavigationItems
+    .flatMap((item) => item.children ?? [item])
     .filter(
       (item) =>
         item.status === 'active' &&
@@ -21,7 +22,26 @@ export function AdminNav() {
       <ul className="grid gap-1">
         {adminNavigationItems.map((item) => (
           <li key={item.label}>
-            {item.status === 'active' && item.href ? (
+            {item.children ? (
+              <>
+                <span className="block px-2.5 py-2 text-[0.8125rem] font-semibold text-text-secondary">
+                  {item.label}
+                </span>
+                <ul className="ml-3 grid gap-1 border-l border-border pl-2">
+                  {item.children.map((child) => (
+                    <li key={child.href}>
+                      <Link
+                        href={child.href!}
+                        aria-current={activeHref === child.href ? 'page' : undefined}
+                        className={`block rounded-md px-2 py-2 text-[0.8125rem] focus-visible:outline-focus ${activeHref === child.href ? 'bg-selection font-semibold text-text-primary' : 'text-text-secondary hover:bg-surface-muted'}`}
+                      >
+                        {child.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : item.status === 'active' && item.href ? (
               <Link
                 aria-current={activeHref === item.href ? 'page' : undefined}
                 className={`touch-target relative flex min-h-8 items-center rounded-md px-2.5 text-[0.8125rem] transition focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus ${activeHref === item.href ? 'bg-selection font-semibold text-text-primary before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-selection-strong' : 'font-medium text-text-secondary hover:bg-surface-muted hover:text-text-primary'}`}

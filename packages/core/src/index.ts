@@ -63,3 +63,6 @@ export * from './import/segmented-artifact-lifecycle';
 export * from './import/vehicle-specs-matrix-dry-run';
 export * from './import/vehicle-specs-csv-dry-run';
 export * from './import/vehicle-specs-catalog-reconciliation';
+export * from './import/commercial-import-contract';
+export * from './import/commercial-import-xlsx-parser';
+export * from './import/commercial-import-structural-validator';

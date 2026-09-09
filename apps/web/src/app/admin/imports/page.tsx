@@ -26,9 +26,9 @@ export default async function AdminImportsPage({
             Nova importação
           </Link>
         }
-        description="Receba, organize e audite documentos antes das futuras etapas de extração e revisão."
+        description="Importação de cartas comerciais em PDF para interpretação assistida."
         eyebrow="Import Engine"
-        title="Importações"
+        title="Cartas comerciais"
       />
       <form className="mt-5 grid gap-2 border-b border-border pb-4 sm:grid-cols-4">
         <input
