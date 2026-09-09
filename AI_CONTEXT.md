@@ -1,5 +1,20 @@
 # Contexto para agentes de IA
 
+## Sprint 15C.2 — Product Resolution (2026-09-09)
+
+Após structural validation, o preview resolve Products por administrativeVehicleIdentity (cinco
+campos exatos, normalização administrativa existente). Estados MATCHED/NOT_FOUND/AMBIGUOUS/
+NEEDS_OPERATOR_DECISION; candidatos/IDs e contagens auditáveis, MVS apenas documental. Leitura
+batch paginada pelo adapter existente, sem persistência ou Apply. Anos parciais agora são barrados
+pelo validator. Aceitação da Jeep executada no Staging: 0 structural diagnostics, 41 Products,
+0 MATCHED, 41 NOT_FOUND, 0 AMBIGUOUS e 0 NEEDS_OPERATOR_DECISION. XLSX externo intacto.
+Lint/typecheck/build passaram; testes direcionados 63 Core + 10 adapter + 21 Web passaram.
+Suítes completas: Core 617 (um worker após timeout antigo), adapter 104, pricing 71, Web 588;
+mantém a falha Web preexistente de CRLF e format:check em 244 arquivos fora da alteração.
+Status 15C.2 COMPLETE: os 41 NOT_FOUND e observações humanas de nomenclatura estão documentados
+para a 15C.3, sem alterar o resultado determinístico ou aprovar associações.
+Detalhes: [Sprint 15C.2](docs/import/SPRINT_15C2_PRODUCT_RESOLUTION.md).
+
 ## Sprint 15C.1c — Confidence do contrato XLSX (2026-09-09)
 
 `CommercialImportContract/1` aceita `green`, `yellow`, `red` em confidence_status de Products,

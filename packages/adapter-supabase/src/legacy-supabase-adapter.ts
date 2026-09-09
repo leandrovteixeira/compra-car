@@ -1,4 +1,6 @@
 import type {
+  CommercialProductCatalogReader,
+  CommercialProductYearPair,
   AdministrativeVehicle,
   AdministrativeVehicleInput,
   AdministrativeVehicleFilters,
@@ -91,7 +93,8 @@ export class LegacySupabaseAdapter
     ComparisonRepository,
     AdministrativeVehicleRepository,
     AdministrativeProductDuplicationRepository,
-    AdministrativeProductSpecsRepository
+    AdministrativeProductSpecsRepository,
+    CommercialProductCatalogReader
 {
   private readonly comparisonBatches = new Map<string, Promise<ComparisonBatch>>();
 
@@ -104,6 +107,74 @@ export class LegacySupabaseAdapter
     return [...new Set(vehicles.map((vehicle) => vehicle.brand))].sort((a, b) =>
       a.localeCompare(b, 'pt-BR'),
     );
+  }
+
+  async listCommercialResolutionProducts(
+    years: readonly CommercialProductYearPair[],
+  ): Promise<readonly AdministrativeVehicle[]> {
+    if (years.length === 0) return [];
+    if (
+      years.length > 100 ||
+      years.some(
+        (pair) =>
+          !Number.isSafeInteger(pair.productionYear) ||
+          !Number.isSafeInteger(pair.modelYear) ||
+          pair.productionYear < 1900 ||
+          pair.modelYear < 1900,
+      )
+    ) {
+      throw new LegacyAdapterMappingError('Invalid or excessive catalog year scope.');
+    }
+    const productionYears = [...new Set(years.map((pair) => pair.productionYear))];
+    const modelYears = [...new Set(years.map((pair) => pair.modelYear))];
+    const products: AdministrativeVehicle[] = [];
+    let lastId = -1;
+    let expectedTotal: number | undefined;
+    while (true) {
+      const { data, error, count } = await this.client
+        .from('products')
+        .select(PRODUCT_COLUMNS, { count: 'exact' })
+        .in('production_year', productionYears)
+        .in('model_year', modelYears)
+        .gt('id', lastId)
+        .order('id')
+        .limit(500)
+        .abortSignal(AbortSignal.timeout(15_000));
+      if (error) throw queryError('identidades para resolução comercial', error);
+      if (
+        count === null ||
+        !Array.isArray(data) ||
+        count > 10_000 ||
+        (expectedTotal !== undefined && count !== expectedTotal - products.length)
+      ) {
+        throw new LegacyAdapterQueryError(
+          'Catalog incomplete, changed during pagination or exceeds the resolution limit.',
+        );
+      }
+      expectedTotal ??= count;
+      if (data.length === 0 && products.length !== expectedTotal)
+        throw new LegacyAdapterQueryError('Catalog pagination returned an incomplete result.');
+      for (const row of data as unknown as LegacyProductRow[]) {
+        if (!Number.isSafeInteger(row.id) || row.id <= lastId)
+          throw new LegacyAdapterMappingError('Invalid catalog pagination identity.');
+        const product = mapLegacyProductToAdministrativeVehicle(row);
+        if (
+          !product.brand.trim() ||
+          !product.model.trim() ||
+          !product.version.trim() ||
+          !Number.isSafeInteger(product.productionYear) ||
+          !Number.isSafeInteger(product.modelYear) ||
+          product.productionYear < 1900 ||
+          product.modelYear < 1900
+        )
+          throw new LegacyAdapterMappingError('Incomplete catalog identity.');
+        products.push(product);
+        lastId = row.id;
+      }
+      if (products.length === expectedTotal) return products;
+      if (products.length > expectedTotal)
+        throw new LegacyAdapterQueryError('Inconsistent catalog count.');
+    }
   }
 
   async listAvailableModels(brand: string): Promise<readonly string[]> {
@@ -157,8 +228,6 @@ export class LegacySupabaseAdapter
           version: row.version,
           modelYear: Number(row.model_year),
           productionYear: Number(row.production_year),
-          isActive: row.is_active === true,
-          isPublic: row.is_public === true,
         }) === identity
       );
     });

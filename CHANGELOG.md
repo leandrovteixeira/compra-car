@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-09 — Product Resolution (Sprint 15C.2)
+
+- conclui a aceitação da Jeep no Staging: 0 diagnósticos estruturais, 41 NOT_FOUND e demais estados
+  zerados; lista integral e observações humanas documentadas, XLSX externo preservado;
+- resolve identidades completas de Products pelo helper administrativo existente, sem aproximação;
+- adiciona leitura batch read-only de identidades com paginação e verificação de completude;
+- mostra status, reason codes, candidatos e Product Compra-Car ao lado da identidade documental;
+- bloqueia pares de anos parciais antes da consulta e mantém Issues separados;
+- adiciona regressões Core, adapter e Web; nenhuma escrita comercial ou Apply.
+
 ## 2026-09-09 — Canonical XLSX Confidence (Sprint 15C.1c)
 
 - corrige o tipo serializado e o validator de `CommercialImportContract/1` para aceitar exatamente

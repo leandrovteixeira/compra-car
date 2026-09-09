@@ -90,7 +90,7 @@ export function StructuredPoliciesForm() {
       </form>
       <div aria-live="polite">
         {loading ? (
-          <p role="status">Validando estrutura do arquivo…</p>
+          <p role="status">Validando estrutura e resolvendo produtos…</p>
         ) : (
           result && <StructuredPoliciesPreview result={result} />
         )}

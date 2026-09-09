@@ -1,4 +1,8 @@
-import type { CommercialImportContractV1, CommercialImportDiagnostic } from '@compra-car/core';
+import type {
+  CommercialImportContractV1,
+  CommercialImportDiagnostic,
+  CommercialProductResolutionSummary,
+} from '@compra-car/core';
 
 export const STRUCTURED_POLICIES_MAX_BYTES = 25 * 1024 * 1024;
 export const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
@@ -8,6 +12,9 @@ export type StructuredPoliciesResult =
       readonly status: 'STRUCTURALLY_VALID';
       readonly filename: string;
       readonly contract: CommercialImportContractV1;
+      readonly resolution:
+        | CommercialProductResolutionSummary
+        | { readonly status: 'PRODUCT_RESOLUTION_FAILED'; readonly message: string };
     }
   | {
       readonly status: 'STRUCTURALLY_INVALID' | 'PARSER_FAILURE';

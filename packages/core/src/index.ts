@@ -66,3 +66,4 @@ export * from './import/vehicle-specs-catalog-reconciliation';
 export * from './import/commercial-import-contract';
 export * from './import/commercial-import-xlsx-parser';
 export * from './import/commercial-import-structural-validator';
+export * from './import/commercial-product-resolution';

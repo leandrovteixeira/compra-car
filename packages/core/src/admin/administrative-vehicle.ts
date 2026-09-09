@@ -90,7 +90,12 @@ export function validateAdministrativeVehicle(
   return Object.keys(errors).length === 0 ? { ok: true, data } : { ok: false, fieldErrors: errors };
 }
 
-export function administrativeVehicleIdentity(input: AdministrativeVehicleInput): string {
+export function administrativeVehicleIdentity(
+  input: Pick<
+    AdministrativeVehicleInput,
+    'brand' | 'model' | 'version' | 'productionYear' | 'modelYear'
+  >,
+): string {
   return [
     vehicleTextComparisonKey(input.brand),
     vehicleTextComparisonKey(input.model),

@@ -249,6 +249,16 @@ export function validateCommercialImportContractV1(
     required(diagnostics, 'Products', row, 'version', product.version);
     validateInteger(diagnostics, 'Products', row, 'production_year', product.productionYear, 1900);
     validateInteger(diagnostics, 'Products', row, 'model_year', product.modelYear, 1900);
+    if ((product.productionYear === null) !== (product.modelYear === null)) {
+      diagnostic(
+        diagnostics,
+        'INVALID_VALUE',
+        'Products',
+        row,
+        product.productionYear === null ? 'production_year' : 'model_year',
+        'Products!production_year and model_year must both be present or both be absent.',
+      );
+    }
     validateInteger(diagnostics, 'Products', row, 'source_page', product.sourcePage);
     validateConfidence(
       diagnostics,

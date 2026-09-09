@@ -1,3 +1,4 @@
+import { CommercialProductResolutionPreview } from './commercial-product-resolution-preview';
 import type { StructuredPoliciesResult } from '@/application/admin/structured-policies';
 
 export function StructuredPoliciesPreview({
@@ -68,12 +69,13 @@ export function StructuredPoliciesPreview({
           Estrutura válida ✓ · STRUCTURALLY_VALID
         </p>
         <p className="text-sm text-text-secondary">
-          A estrutura do arquivo é válida. A resolução dos produtos será executada na próxima etapa.
+          A estrutura do arquivo é válida. Confira a resolução dos produtos e os Issues da extração
+          abaixo.
         </p>
         <dl className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
           {fields.map(([label, value]) => (
             <div key={label}>
-              <dt className="text-text-muted">{label}</dt>
+              <dt className="text-text-muted whitespace-nowrap">{label}</dt>
               <dd className="break-words">{value ?? 'Não informado'}</dd>
             </div>
           ))}
@@ -86,50 +88,7 @@ export function StructuredPoliciesPreview({
           ))}
         </ul>
       </section>
-      <section aria-label="Produtos documentais">
-        <h2 className="mb-2 font-semibold">Produtos do arquivo</h2>
-        <div className="max-h-96 overflow-auto rounded-md border border-border">
-          <table className="w-full text-left text-sm">
-            <thead className="sticky top-0 bg-surface-muted">
-              <tr>
-                {['Marca', 'Modelo', 'Versão', 'PY/MY', 'Confidence', 'Status documental'].map(
-                  (label) => (
-                    <th
-                      key={label}
-                      scope="col"
-                      className="px-3 py-2 font-semibold whitespace-nowrap"
-                    >
-                      {label}
-                    </th>
-                  ),
-                )}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {contract.products.map((product, index) => (
-                <tr key={product.productExternalKey ?? index}>
-                  {[
-                    product.brand,
-                    product.model,
-                    product.version,
-                    product.productionYear === null || product.modelYear === null
-                      ? 'PY/MY pendente'
-                      : `${product.productionYear}/${product.modelYear}`,
-                    [product.confidenceStatus, product.confidenceScore]
-                      .filter((value) => value !== null)
-                      .join(' · ') || 'Não informado',
-                    'Aguardando resolução',
-                  ].map((value, column) => (
-                    <td key={column} className="px-3 py-2">
-                      {value}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <CommercialProductResolutionPreview resolution={result.resolution} />
       <section aria-label="Issues da extração" className="space-y-2">
         <h2 className="font-semibold">Issues da extração · {contract.issues.length}</h2>
         <p className="text-sm text-text-secondary">

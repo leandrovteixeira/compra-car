@@ -1,16 +1,23 @@
 import 'server-only';
+import { LegacySupabaseAdapter } from '@compra-car/adapter-supabase';
 
 import {
   CommercialImportContractParseError,
   parseCommercialImportContractV1,
   validateCommercialImportContractV1,
+  commercialProductResolutionYears,
+  resolveCommercialProducts,
+  type CommercialProductCatalogReader,
 } from '@compra-car/core';
 import {
   checkStructuredPoliciesFile,
   type StructuredPoliciesResult,
 } from '@/application/admin/structured-policies';
 
-export async function previewStructuredPolicies(file: File): Promise<StructuredPoliciesResult> {
+export async function previewStructuredPolicies(
+  file: File,
+  reader?: CommercialProductCatalogReader,
+): Promise<StructuredPoliciesResult> {
   const rejected = checkStructuredPoliciesFile(file);
   if (rejected) return rejected;
   try {
@@ -18,7 +25,26 @@ export async function previewStructuredPolicies(file: File): Promise<StructuredP
     const validation = validateCommercialImportContractV1(contract);
     if (!validation.ok)
       return { status: 'STRUCTURALLY_INVALID', diagnostics: validation.diagnostics };
-    return { status: 'STRUCTURALLY_VALID', filename: file.name, contract };
+    try {
+      const years = commercialProductResolutionYears(contract.products);
+      const catalog = years.length
+        ? await (reader ?? new LegacySupabaseAdapter()).listCommercialResolutionProducts(years)
+        : [];
+      const resolution = resolveCommercialProducts(contract.products, catalog);
+      return { status: 'STRUCTURALLY_VALID', filename: file.name, contract, resolution };
+    } catch {
+      console.error('[structured-policies] Product catalog resolution failed');
+      return {
+        status: 'STRUCTURALLY_VALID',
+        filename: file.name,
+        contract,
+        resolution: {
+          status: 'PRODUCT_RESOLUTION_FAILED',
+          message:
+            'Não foi possível concluir a leitura do catálogo. Valide novamente para tentar resolver os produtos.',
+        },
+      };
+    }
   } catch (error) {
     if (error instanceof CommercialImportContractParseError)
       return { status: 'PARSER_FAILURE', diagnostics: error.diagnostics };
