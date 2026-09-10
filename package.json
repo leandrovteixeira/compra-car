@@ -14,6 +14,7 @@
     "format:check": "prettier --check .",
     "lint": "turbo run lint",
     "pricing:dry-run": "pnpm --filter @compra-car/pricing-dry-run dry-run",
+    "pricing:msrp:reconcile": "pnpm --filter @compra-car/core exec tsx ../../scripts/data-refresh/run-msrp-history-import.ts",
     "specs:dry-run": "pnpm --filter @compra-car/core exec tsx ../../scripts/data-refresh/run-vehicle-specs-dry-run.ts",
     "specs:reconcile": "pnpm --filter @compra-car/core exec tsx ../../scripts/data-refresh/run-vehicle-specs-reconciliation.ts",
     "pricing:snapshot:test": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pricing/tests/pricing-snapshot-scripts.test.ps1",
