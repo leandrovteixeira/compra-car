@@ -21,18 +21,85 @@ function queryError(error: PostgrestError): PricingAdapterQueryError {
   return new PricingAdapterQueryError('Falha ao consultar preços públicos.', { cause: error });
 }
 
+function normalizeSearch(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .trim()
+    .replace(/\s+/gu, ' ')
+    .toLocaleLowerCase('pt-BR');
+}
+
+function matchesSearch(displayName: string, query: string): boolean {
+  const tokenize = (value: string) =>
+    normalizeSearch(value)
+      .split(/[^\p{L}\p{N}]+/u)
+      .filter(Boolean);
+  const searchableTokens = tokenize(displayName);
+  return tokenize(query).every((queryToken) =>
+    searchableTokens.some((searchableToken) => searchableToken.startsWith(queryToken)),
+  );
+}
+
 export class ProductPublicPriceSupabaseAdapter implements ProductPublicPriceRepository {
   constructor(private readonly client: SupabaseClient = createLegacySupabaseClientFromEnv()) {
     assertLegacyServerRuntime();
+  }
+
+  private async currentPriceIds(): Promise<readonly number[]> {
+    const { data, error } = await this.client.from('vw_current_product_public_prices').select('id');
+    if (error) throw queryError(error);
+    return Object.freeze(((data ?? []) as { id: number }[]).map((row) => row.id));
+  }
+
+  private async matchingProductIds(search: string): Promise<readonly number[]> {
+    if (!search.trim()) return [];
+    const { data, error } = await this.client
+      .from('products')
+      .select('id,brand,model,version')
+      .limit(2000);
+    if (error) throw queryError(error);
+    return Object.freeze(
+      ((data ?? []) as { id: number; brand: string; model: string; version: string }[])
+        .filter((product) =>
+          matchesSearch([product.brand, product.model, product.version].join(' '), search),
+        )
+        .map((product) => product.id),
+    );
   }
 
   async listProductPublicPrices(
     query: ListProductPublicPricesQuery,
   ): Promise<ProductPublicPricePage> {
     const ascending = query.direction === 'asc';
+    const currentIds =
+      query.status === 'current' || query.status === 'expired' ? await this.currentPriceIds() : [];
+    const matchingProductIds = query.search?.trim()
+      ? await this.matchingProductIds(query.search)
+      : undefined;
+
+    if (matchingProductIds && matchingProductIds.length === 0) {
+      return Object.freeze({ items: Object.freeze([]), total: 0 });
+    }
+    if (query.status === 'current' && currentIds.length === 0) {
+      return Object.freeze({ items: Object.freeze([]), total: 0 });
+    }
+
     let request = this.client
       .from('product_public_prices')
       .select(PRICE_LIST_COLUMNS, { count: 'exact' });
+
+    if (matchingProductIds) request = request.in('product_id', [...matchingProductIds]);
+
+    if (query.status === 'current') {
+      request = request.in('id', [...currentIds]);
+    } else if (query.status === 'expired') {
+      request = request.eq('status', 'published');
+      if (currentIds.length) request = request.not('id', 'in', `(${currentIds.join(',')})`);
+    } else if (query.status) {
+      request = request.eq('status', query.status);
+    }
+
     if (query.sort === 'vehicle') {
       request = request
         .order('brand', { ascending, referencedTable: 'product' })
@@ -49,15 +116,37 @@ export class ProductPublicPriceSupabaseAdapter implements ProductPublicPriceRepo
       }[query.sort];
       request = request.order(column, { ascending, nullsFirst: false });
     }
+
     const { data, error, count } = await request
       .order('id', { ascending })
       .range(query.offset, query.offset + query.limit - 1);
-
     if (error) throw queryError(error);
+
+    const rows = (data ?? []) as unknown as ProductPublicPriceRow[];
+    const publishedIds = rows.filter((row) => row.status === 'published').map((row) => Number(row.id));
+    const effectiveEndsOn = new Map<number, string | null>();
+    if (publishedIds.length) {
+      const { data: periods, error: periodsError } = await this.client
+        .from('vw_product_public_price_periods')
+        .select('id,ends_on')
+        .in('id', publishedIds);
+      if (periodsError) throw queryError(periodsError);
+      for (const period of (periods ?? []) as { id: number; ends_on: string | null }[]) {
+        effectiveEndsOn.set(period.id, period.ends_on);
+      }
+    }
 
     return Object.freeze({
       items: Object.freeze(
-        ((data ?? []) as unknown as ProductPublicPriceRow[]).map(mapProductPublicPriceRow),
+        rows.map((row) =>
+          mapProductPublicPriceRow({
+            ...row,
+            ends_on:
+              row.status === 'published'
+                ? (effectiveEndsOn.get(Number(row.id)) ?? row.ends_on)
+                : row.ends_on,
+          }),
+        ),
       ),
       total: count ?? 0,
     });

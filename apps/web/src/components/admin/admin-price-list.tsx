@@ -3,6 +3,7 @@
 import type { ProductPublicPriceListPageDto, PricingWorkflowStatus } from '@compra-car/contracts';
 import { isProductPublicPriceEditable } from '@compra-car/core';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { buttonClassName, tableClassName, tableFrameClassName } from '@compra-car/ui';
 
 import {
@@ -31,6 +32,16 @@ function statusClass(status: PricingWorkflowStatus, expired: boolean): string {
       : 'border-slate-700 bg-slate-900 text-slate-300';
 }
 
+function hrefWithParams(currentParams: URLSearchParams, changes: Readonly<Record<string, string | null>>): string {
+  const params = new URLSearchParams(currentParams.toString());
+  for (const [name, value] of Object.entries(changes)) {
+    if (value === null || value === '') params.delete(name);
+    else params.set(name, value);
+  }
+  const query = params.toString();
+  return query ? `/admin/prices?${query}` : '/admin/prices';
+}
+
 function SortHeader({
   page,
   field,
@@ -40,6 +51,7 @@ function SortHeader({
   readonly field: ProductPublicPriceListPageDto['sort'];
   readonly children: React.ReactNode;
 }) {
+  const currentParams = useSearchParams();
   const active = page.sort === field;
   const direction = active && page.direction === 'asc' ? 'desc' : 'asc';
   return (
@@ -50,7 +62,11 @@ function SortHeader({
     >
       <Link
         className="inline-flex items-center gap-1 rounded hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus"
-        href={{ pathname: '/admin/prices', query: { sort: field, direction } }}
+        href={hrefWithParams(currentParams, {
+          page: null,
+          sort: field,
+          direction,
+        })}
       >
         {children}
         <span aria-hidden="true">{active ? (page.direction === 'asc' ? '↑' : '↓') : '↕'}</span>
@@ -61,6 +77,7 @@ function SortHeader({
 
 export function AdminPriceList({ page, onEdit, publishAction, onPublished }: AdminPriceListProps) {
   const operationalDate = operationalDateInSaoPaulo();
+  const currentParams = useSearchParams();
   return (
     <div className={`${tableFrameClassName} admin-pricing-table-frame`}>
       <div className="admin-pricing-table-scroll overflow-auto">
@@ -118,7 +135,12 @@ export function AdminPriceList({ page, onEdit, publishAction, onPublished }: Adm
                   <span
                     className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${statusClass(price.status, isAdminPriceExpired(price.status, price.endsOn, operationalDate))}`}
                   >
-                    {adminPriceVisualStatusLabel(price.status, price.endsOn, operationalDate)}
+                    {adminPriceVisualStatusLabel(
+                      price.status,
+                      price.startsOn,
+                      price.endsOn,
+                      operationalDate,
+                    )}
                   </span>
                 </td>
                 <td className="whitespace-nowrap text-text-secondary">
@@ -182,7 +204,7 @@ export function AdminPriceList({ page, onEdit, publishAction, onPublished }: Adm
             {page.page > 1 ? (
               <Link
                 className={buttonClassName({ size: 'action', variant: 'secondary' })}
-                href={`/admin/prices?page=${page.page - 1}`}
+                href={hrefWithParams(currentParams, { page: String(page.page - 1) })}
               >
                 Anterior
               </Link>
@@ -193,7 +215,7 @@ export function AdminPriceList({ page, onEdit, publishAction, onPublished }: Adm
             {page.page < page.pageCount ? (
               <Link
                 className={buttonClassName({ size: 'action', variant: 'secondary' })}
-                href={`/admin/prices?page=${page.page + 1}`}
+                href={hrefWithParams(currentParams, { page: String(page.page + 1) })}
               >
                 Próxima
               </Link>

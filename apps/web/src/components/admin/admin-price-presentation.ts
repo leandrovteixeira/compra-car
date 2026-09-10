@@ -42,12 +42,14 @@ export function operationalDateInSaoPaulo(now: Date = new Date()): string {
 
 export function adminPriceVisualStatusLabel(
   status: PricingWorkflowStatus,
+  startsOn: string,
   endsOn: string | null,
   operationalDate: string,
 ): string {
-  return isAdminPriceExpired(status, endsOn, operationalDate)
-    ? 'Expirado'
-    : adminPriceStatusLabel(status);
+  if (status !== 'published') return adminPriceStatusLabel(status);
+  if (startsOn > operationalDate) return 'Publicado';
+  if (isAdminPriceExpired(status, endsOn, operationalDate)) return 'Expirado';
+  return 'Vigente';
 }
 
 export function isAdminPriceExpired(

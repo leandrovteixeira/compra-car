@@ -2,6 +2,7 @@ import type {
   ProductPublicPricePage,
   ProductPublicPriceRepository,
   ProductPublicPriceSort,
+  ProductPublicPriceStatusFilter,
   SortDirection,
 } from '../repositories/product-public-price-repository';
 
@@ -13,6 +14,8 @@ export interface ListProductPublicPricesInput {
   readonly pageSize?: number;
   readonly sort?: ProductPublicPriceSort;
   readonly direction?: SortDirection;
+  readonly search?: string;
+  readonly status?: ProductPublicPriceStatusFilter;
 }
 
 export interface ListProductPublicPricesResult extends ProductPublicPricePage {
@@ -43,6 +46,8 @@ export class ListProductPublicPrices {
       offset: (page - 1) * pageSize,
       sort: input.sort ?? 'updatedAt',
       direction: input.direction ?? 'desc',
+      search: input.search,
+      status: input.status,
     });
 
     return {

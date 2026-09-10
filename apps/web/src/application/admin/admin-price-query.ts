@@ -2,6 +2,23 @@ export interface AdminPriceQuery {
   readonly page?: string | readonly string[];
   readonly sort?: string | readonly string[];
   readonly direction?: string | readonly string[];
+  readonly search?: string | readonly string[];
+  readonly status?: string | readonly string[];
+}
+
+export type AdminPriceStatusFilter =
+  | 'current'
+  | 'expired'
+  | 'published'
+  | 'draft'
+  | 'needs_review'
+  | 'rejected'
+  | 'archived'
+  | 'all';
+
+export interface AdminPriceFilterValues {
+  readonly search: string;
+  readonly status: AdminPriceStatusFilter;
 }
 
 function first(value: string | readonly string[] | undefined): string | undefined {
@@ -21,4 +38,23 @@ export function parseAdminPriceSort(query: AdminPriceQuery) {
   const sort = SORTS.find((candidate) => candidate === sortValue) ?? 'updatedAt';
   const direction = first(query.direction) === 'asc' ? 'asc' : 'desc';
   return { sort, direction } as const;
+}
+
+const STATUSES: readonly AdminPriceStatusFilter[] = [
+  'current',
+  'expired',
+  'published',
+  'draft',
+  'needs_review',
+  'rejected',
+  'archived',
+  'all',
+];
+
+export function parseAdminPriceFilters(query: AdminPriceQuery): AdminPriceFilterValues {
+  const statusValue = first(query.status);
+  return {
+    search: first(query.search)?.trim() ?? '',
+    status: STATUSES.find((candidate) => candidate === statusValue) ?? 'current',
+  };
 }

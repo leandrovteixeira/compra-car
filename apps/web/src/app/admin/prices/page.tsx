@@ -1,10 +1,12 @@
 import {
+  parseAdminPriceFilters,
   parseAdminPricePage,
   parseAdminPriceSort,
   type AdminPriceQuery,
 } from '@/application/admin/admin-price-query';
 import { requireRole } from '@/auth/authorization';
 import { AdminPriceError } from '@/components/admin/admin-price-error';
+import { AdminPriceFilters } from '@/components/admin/admin-price-filters';
 import { AdminPriceManager } from '@/components/admin/admin-price-manager';
 import { PageHeader } from '@/components/admin/page-header';
 import { loadAdminProductPublicPrices } from '@/server/admin-product-public-price-service';
@@ -19,12 +21,19 @@ interface AdminPricesPageProps {
 
 export default async function AdminPricesPage({ searchParams }: AdminPricesPageProps) {
   await requireRole('admin');
-  const page = parseAdminPricePage(await searchParams);
-  const sorting = parseAdminPriceSort(await searchParams);
+  const params = await searchParams;
+  const page = parseAdminPricePage(params);
+  const sorting = parseAdminPriceSort(params);
+  const filters = parseAdminPriceFilters(params);
   const [result, productsResult] = await withDevTiming('pricing.page.list', () =>
     Promise.all([
       withDevTiming('pricing.listBasePrices', () =>
-        loadAdminProductPublicPrices({ page, ...sorting }),
+        loadAdminProductPublicPrices({
+          page,
+          ...sorting,
+          search: filters.search || undefined,
+          status: filters.status === 'all' ? undefined : filters.status,
+        }),
       ),
       withDevTiming('pricing.listProductOptions', () => loadAdminProducts()),
     ]),
@@ -55,6 +64,9 @@ export default async function AdminPricesPage({ searchParams }: AdminPricesPageP
           eyebrow="Pricing"
           title="Preços públicos"
         />
+      </div>
+      <div className="admin-pricing-toolbar">
+        <AdminPriceFilters values={filters} />
       </div>
       <div className="admin-pricing-results mt-5 lg:mt-0">
         {!result.ok || !productsResult.ok ? (

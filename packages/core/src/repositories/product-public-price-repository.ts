@@ -1,11 +1,22 @@
 import type { ProductPublicPrice } from '../entities/product-public-price';
 import type { ProductPublicPriceWriteInput } from '../admin/product-public-price';
 
+export type ProductPublicPriceStatusFilter =
+  | 'current'
+  | 'expired'
+  | 'draft'
+  | 'needs_review'
+  | 'published'
+  | 'rejected'
+  | 'archived';
+
 export interface ListProductPublicPricesQuery {
   readonly limit: number;
   readonly offset: number;
   readonly sort: ProductPublicPriceSort;
   readonly direction: SortDirection;
+  readonly search?: string;
+  readonly status?: ProductPublicPriceStatusFilter;
 }
 
 export type ProductPublicPriceSort =
