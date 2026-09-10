@@ -40,7 +40,10 @@ export default async function AdminPricesPage({ searchParams }: AdminPricesPageP
   );
 
   return (
-    <section className="admin-pricing-workspace">
+    <section
+      className="admin-pricing-workspace"
+      style={{ gridTemplateRows: 'auto auto minmax(0, 1fr)' }}
+    >
       <div className="admin-pricing-page-header">
         <PageHeader
           compact
