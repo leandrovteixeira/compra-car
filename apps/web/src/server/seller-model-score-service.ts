@@ -1,5 +1,7 @@
 import { createLegacySupabaseClientFromEnv } from '@compra-car/adapter-supabase';
 
+import { keepLatestSellerProducts } from '@/application/catalog/seller-product-eligibility';
+
 const MONETARY_CATEGORIES = ['Acabamento','Audio & Conectividade','Conforto','Design','Dirigibilidade','Performance','Seguranca','Tecnologia'] as const;
 const SPACE_CODES = ['DM_0001','DM_0002','DM_0003','DM_0004','DM_0006','DM_0007'] as const;
 const OWNERSHIP_CODES = ['OW_0001','OW_0002','OW_0003','OW_0004','OW_0005','OW_0006','OW_0007','OW_0009','OW_0010','PW_0028'] as const;
@@ -19,8 +21,6 @@ function displayCategory(c:string){return ({'Audio & Conectividade':'Áudio & Co
 function scoreRatio(value:number|null,max:number){if(value===null||!Number.isFinite(value)||max<=0)return null;return Math.max(0,Math.min(10,(value/max)*10));}
 function inverseScoreRatio(value:number|null,min:number){if(value===null||!Number.isFinite(value)||value<=0||min<=0)return null;return Math.max(0,Math.min(10,(min/value)*10));}
 function average(values:readonly number[]){return values.length?values.reduce((a,b)=>a+b,0)/values.length:null;}
-function productIdentity(p:ProductRow){return [p.brand,p.model,p.version].map(v=>v.trim().toLocaleLowerCase('pt-BR')).join('|');}
-function keepLatestCommercialProduct(products:readonly ProductRow[]):ProductRow[]{const latest=new Map<string,{modelYear:number;productionYear:number}>();for(const p of products){const key=productIdentity(p);const current=latest.get(key);if(current===undefined||p.model_year>current.modelYear||(p.model_year===current.modelYear&&p.production_year>current.productionYear))latest.set(key,{modelYear:p.model_year,productionYear:p.production_year});}return products.filter(p=>{const current=latest.get(productIdentity(p));return p.model_year===current?.modelYear&&p.production_year===current.productionYear;});}
 function emptyCategories():readonly SellerCategoryScore[]{return Object.freeze<SellerCategoryScore[]>([
  ...MONETARY_CATEGORIES.slice(0,5).map(c=>({key:c,label:displayCategory(c),score:null})),
  {key:'Ownership',label:'Ownership',score:null},
@@ -37,7 +37,7 @@ export async function loadSellerModelScore(productId:number|null,radius:SellerSc
  if(priceError)throw priceError;if(productError)throw productError;
  const prices=(priceData??[]) as CurrentPriceRow[];const priceByProduct=new Map(prices.map(r=>[Number(r.product_id),Number(r.amount)]));
  const pricedProducts=((productData??[]) as ProductRow[]).filter(p=>priceByProduct.has(Number(p.id)));
- const products=keepLatestCommercialProduct(pricedProducts);
+ const products=keepLatestSellerProducts(pricedProducts);
  const options=Object.freeze(products.map(p=>({id:p.id,label:labelFor(p)})));
  const selectedProduct=productId===null?null:products.find(p=>p.id===productId)??null;
  if(!selectedProduct)return {options,selected:null,radius,peerCount:0,overallScore:null,categories:Object.freeze([])};
