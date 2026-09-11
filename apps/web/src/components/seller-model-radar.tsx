@@ -22,29 +22,31 @@ export function SellerModelRadar({ categories }: SellerModelRadarProps) {
     .join(' ');
 
   return (
-    <div className="ui-surface overflow-hidden">
-      <div className="mb-2">
+    <div className="ui-surface flex min-h-0 flex-col overflow-hidden">
+      <div className="mb-1">
         <h2 className="text-base font-semibold">Radar de valor percebido</h2>
         <p className="text-xs text-text-muted">Notas relativas aos modelos no raio de preço selecionado.</p>
       </div>
-      <svg aria-label="Radar de notas por categoria" className="mx-auto block w-full max-w-[34rem]" viewBox="0 0 300 300" role="img">
-        {grid.map((points, index) => (
-          <polygon key={index} points={points} fill="none" stroke="currentColor" className="text-border" strokeWidth="1" />
-        ))}
-        {categories.map((_, index) => {
-          const [x, y] = point(index, total, 1);
-          return <line key={index} x1="150" y1="150" x2={x} y2={y} stroke="currentColor" className="text-border" strokeWidth="1" />;
-        })}
-        <polygon points={polygon} fill="color-mix(in srgb, var(--color-selection-strong) 28%, transparent)" stroke="var(--color-interactive)" strokeWidth="2" />
-        {categories.map((category, index) => {
-          const [x, y] = point(index, total, 1.13);
-          return (
-            <text key={category.key} x={x} y={y} textAnchor={x < 135 ? 'end' : x > 165 ? 'start' : 'middle'} dominantBaseline="middle" className="fill-text-secondary text-[7px] font-semibold">
-              {category.label}
-            </text>
-          );
-        })}
-      </svg>
+      <div className="flex min-h-0 flex-1 items-center justify-center">
+        <svg aria-label="Radar de notas por categoria" className="block w-full max-w-[43rem]" viewBox="0 0 300 300" role="img">
+          {grid.map((points, index) => (
+            <polygon key={index} points={points} fill="none" stroke="currentColor" className="text-border" strokeWidth="1" />
+          ))}
+          {categories.map((_, index) => {
+            const [x, y] = point(index, total, 1);
+            return <line key={index} x1="150" y1="150" x2={x} y2={y} stroke="currentColor" className="text-border" strokeWidth="1" />;
+          })}
+          <polygon points={polygon} fill="color-mix(in srgb, var(--color-selection-strong) 28%, transparent)" stroke="var(--color-interactive)" strokeWidth="2" />
+          {categories.map((category, index) => {
+            const [x, y] = point(index, total, 1.13);
+            return (
+              <text key={category.key} x={x} y={y} textAnchor={x < 135 ? 'end' : x > 165 ? 'start' : 'middle'} dominantBaseline="middle" className="fill-text-secondary text-[7px] font-semibold">
+                {category.label}
+              </text>
+            );
+          })}
+        </svg>
+      </div>
     </div>
   );
 }
