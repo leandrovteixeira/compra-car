@@ -19,25 +19,32 @@ function normalizedIdentity(vehicle: CatalogVehicleDto): string {
     .join('|');
 }
 
+function yearNumber(value: CatalogVehicleDto['modelYear'] | CatalogVehicleDto['productionYear']): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : Number.NEGATIVE_INFINITY;
+}
+
 function keepLatestCommercialProduct(vehicles: readonly CatalogVehicleDto[]): readonly CatalogVehicleDto[] {
   const latestByIdentity = new Map<string, { modelYear: number; productionYear: number }>();
   for (const vehicle of vehicles) {
     const key = normalizedIdentity(vehicle);
+    const modelYear = yearNumber(vehicle.modelYear);
+    const productionYear = yearNumber(vehicle.productionYear);
     const current = latestByIdentity.get(key);
     if (
       current === undefined ||
-      vehicle.modelYear > current.modelYear ||
-      (vehicle.modelYear === current.modelYear && vehicle.productionYear > current.productionYear)
+      modelYear > current.modelYear ||
+      (modelYear === current.modelYear && productionYear > current.productionYear)
     ) {
-      latestByIdentity.set(key, {
-        modelYear: vehicle.modelYear,
-        productionYear: vehicle.productionYear,
-      });
+      latestByIdentity.set(key, { modelYear, productionYear });
     }
   }
   return vehicles.filter((vehicle) => {
     const latest = latestByIdentity.get(normalizedIdentity(vehicle));
-    return vehicle.modelYear === latest?.modelYear && vehicle.productionYear === latest.productionYear;
+    return (
+      yearNumber(vehicle.modelYear) === latest?.modelYear &&
+      yearNumber(vehicle.productionYear) === latest.productionYear
+    );
   });
 }
 
