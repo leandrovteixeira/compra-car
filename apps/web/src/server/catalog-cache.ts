@@ -13,6 +13,22 @@ export const CATALOG_CACHE_TAGS = Object.freeze({
 
 const CACHE_REVALIDATE_SECONDS = 300;
 
+function normalizedIdentity(vehicle: CatalogVehicleDto): string {
+  return [vehicle.brand, vehicle.model, vehicle.version]
+    .map((value) => value.trim().toLocaleLowerCase('pt-BR'))
+    .join('|');
+}
+
+function keepLatestModelYear(vehicles: readonly CatalogVehicleDto[]): readonly CatalogVehicleDto[] {
+  const latestByIdentity = new Map<string, number>();
+  for (const vehicle of vehicles) {
+    const key = normalizedIdentity(vehicle);
+    const current = latestByIdentity.get(key);
+    if (current === undefined || vehicle.modelYear > current) latestByIdentity.set(key, vehicle.modelYear);
+  }
+  return vehicles.filter((vehicle) => vehicle.modelYear === latestByIdentity.get(normalizedIdentity(vehicle)));
+}
+
 export const getCachedBrands = unstable_cache(
   async (): Promise<readonly CatalogOptionDto[]> => {
     const brands = await getCatalogCompositionRoot().listAvailableBrands.execute();
@@ -43,7 +59,7 @@ export const getCachedVehicles = unstable_cache(
       brand,
       model,
     });
-    return vehicles.map(toCatalogVehicle);
+    return keepLatestModelYear(vehicles.map(toCatalogVehicle));
   },
   ['catalog-vehicles'],
   {
@@ -55,7 +71,7 @@ export const getCachedVehicles = unstable_cache(
 export const getCachedCatalogVehicles = unstable_cache(
   async (): Promise<readonly CatalogVehicleDto[]> => {
     const vehicles = await getCatalogCompositionRoot().listAvailableVehicles.execute();
-    return vehicles.map(toCatalogVehicle);
+    return keepLatestModelYear(vehicles.map(toCatalogVehicle));
   },
   ['catalog-search-vehicles'],
   {
