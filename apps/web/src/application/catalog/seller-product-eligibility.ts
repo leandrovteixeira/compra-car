@@ -2,8 +2,10 @@ export interface SellerEligibleProductLike {
   readonly brand: string;
   readonly model: string;
   readonly version: string;
-  readonly modelYear: number | string;
-  readonly productionYear: number | string;
+  readonly modelYear?: number | string;
+  readonly productionYear?: number | string;
+  readonly model_year?: number | string;
+  readonly production_year?: number | string;
 }
 
 function normalizedIdentity(product: SellerEligibleProductLike): string {
@@ -12,9 +14,17 @@ function normalizedIdentity(product: SellerEligibleProductLike): string {
     .join('|');
 }
 
-function numericYear(value: number | string): number {
+function numericYear(value: number | string | undefined): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : Number.NEGATIVE_INFINITY;
+}
+
+function modelYear(product: SellerEligibleProductLike): number {
+  return numericYear(product.modelYear ?? product.model_year);
+}
+
+function productionYear(product: SellerEligibleProductLike): number {
+  return numericYear(product.productionYear ?? product.production_year);
 }
 
 export function keepLatestSellerProducts<T extends SellerEligibleProductLike>(
@@ -24,24 +34,24 @@ export function keepLatestSellerProducts<T extends SellerEligibleProductLike>(
 
   for (const product of products) {
     const key = normalizedIdentity(product);
-    const modelYear = numericYear(product.modelYear);
-    const productionYear = numericYear(product.productionYear);
+    const candidateModelYear = modelYear(product);
+    const candidateProductionYear = productionYear(product);
     const current = latestByIdentity.get(key);
 
     if (
       current === undefined ||
-      modelYear > current.modelYear ||
-      (modelYear === current.modelYear && productionYear > current.productionYear)
+      candidateModelYear > current.modelYear ||
+      (candidateModelYear === current.modelYear && candidateProductionYear > current.productionYear)
     ) {
-      latestByIdentity.set(key, { modelYear, productionYear });
+      latestByIdentity.set(key, {
+        modelYear: candidateModelYear,
+        productionYear: candidateProductionYear,
+      });
     }
   }
 
   return products.filter((product) => {
     const latest = latestByIdentity.get(normalizedIdentity(product));
-    return (
-      numericYear(product.modelYear) === latest?.modelYear &&
-      numericYear(product.productionYear) === latest.productionYear
-    );
+    return modelYear(product) === latest?.modelYear && productionYear(product) === latest.productionYear;
   });
 }
