@@ -9,10 +9,10 @@ function money(v:number){return new Intl.NumberFormat('pt-BR',{style:'currency',
 function score(v:number|null){return v===null?'N/D':v.toFixed(1).replace('.',',');}
 export default async function SellerModelPage({searchParams}:Props){const params=await searchParams;const radius=parseRadius(params.radius);const raw=Number(first(params.product));const id=Number.isSafeInteger(raw)&&raw>0?raw:null;const result=await loadSellerModelScore(id,radius);
 return <main className="min-h-[calc(100dvh-var(--app-topbar-height))] bg-background px-3 py-3 text-text-primary sm:px-5 lg:px-6"><div className="mx-auto w-full max-w-[100rem]">
- <div className="grid items-end gap-3 border-b border-border pb-2 lg:grid-cols-[minmax(18rem,31rem)_1fr]">
-  <div><h1 className="text-2xl font-semibold tracking-tight">Ver modelo</h1><p className="mt-0.5 text-sm text-text-muted">Valor percebido contra veículos de preço semelhante.</p></div>
-  <SellerModelPicker options={result.options} radius={radius}/>
+ <div className="border-b border-border pb-3">
+  <h1 className="text-2xl font-semibold tracking-tight">Ver modelo</h1><p className="mt-0.5 text-sm text-text-muted">Valor percebido contra veículos de preço semelhante.</p>
  </div>
+ <div className="mt-3"><SellerModelPicker options={result.options} radius={radius} showLabel={false}/></div>
  {!result.selected?<div className="ui-surface mt-3 flex min-h-64 items-center justify-center text-center"><div><h2 className="text-lg font-semibold">Escolha um modelo</h2><p className="mt-1 text-sm text-text-muted">Use a busca acima para abrir o score e o radar.</p></div></div>:
  <section className="mt-3 min-w-0">
   <div className="ui-surface !px-4 !py-3"><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-lg font-semibold">{result.selected.label}</h2><p className="text-sm text-text-muted">MSRP vigente: {money(result.selected.price)}</p></div><div className="flex items-center gap-2"><span className="text-xs font-semibold text-text-muted">Raio</span>{[3,5,10].map(v=><Link className={`ui-button ui-button--compact ${radius===v?'ui-button--primary':'ui-button--secondary'}`} href={`/ver-modelo?product=${result.selected!.id}&radius=${v}`} key={v}>±{v}%</Link>)}</div></div></div>
