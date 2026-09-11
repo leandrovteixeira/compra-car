@@ -1,6 +1,8 @@
 import type { CatalogOptionDto, CatalogVehicleDto } from '@compra-car/contracts';
 import { unstable_cache } from 'next/cache';
 
+import { keepLatestSellerProducts } from '@/application/catalog/seller-product-eligibility';
+
 import { getCatalogCompositionRoot } from './composition-root';
 import { toCatalogOption, toCatalogVehicle } from './catalog-dtos';
 
@@ -12,41 +14,6 @@ export const CATALOG_CACHE_TAGS = Object.freeze({
 });
 
 const CACHE_REVALIDATE_SECONDS = 300;
-
-function normalizedIdentity(vehicle: CatalogVehicleDto): string {
-  return [vehicle.brand, vehicle.model, vehicle.version]
-    .map((value) => value.trim().toLocaleLowerCase('pt-BR'))
-    .join('|');
-}
-
-function yearNumber(value: CatalogVehicleDto['modelYear'] | CatalogVehicleDto['productionYear']): number {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : Number.NEGATIVE_INFINITY;
-}
-
-function keepLatestCommercialProduct(vehicles: readonly CatalogVehicleDto[]): readonly CatalogVehicleDto[] {
-  const latestByIdentity = new Map<string, { modelYear: number; productionYear: number }>();
-  for (const vehicle of vehicles) {
-    const key = normalizedIdentity(vehicle);
-    const modelYear = yearNumber(vehicle.modelYear);
-    const productionYear = yearNumber(vehicle.productionYear);
-    const current = latestByIdentity.get(key);
-    if (
-      current === undefined ||
-      modelYear > current.modelYear ||
-      (modelYear === current.modelYear && productionYear > current.productionYear)
-    ) {
-      latestByIdentity.set(key, { modelYear, productionYear });
-    }
-  }
-  return vehicles.filter((vehicle) => {
-    const latest = latestByIdentity.get(normalizedIdentity(vehicle));
-    return (
-      yearNumber(vehicle.modelYear) === latest?.modelYear &&
-      yearNumber(vehicle.productionYear) === latest.productionYear
-    );
-  });
-}
 
 export const getCachedBrands = unstable_cache(
   async (): Promise<readonly CatalogOptionDto[]> => {
@@ -78,7 +45,7 @@ export const getCachedVehicles = unstable_cache(
       brand,
       model,
     });
-    return keepLatestCommercialProduct(vehicles.map(toCatalogVehicle));
+    return keepLatestSellerProducts(vehicles.map(toCatalogVehicle));
   },
   ['catalog-vehicles'],
   {
@@ -90,7 +57,7 @@ export const getCachedVehicles = unstable_cache(
 export const getCachedCatalogVehicles = unstable_cache(
   async (): Promise<readonly CatalogVehicleDto[]> => {
     const vehicles = await getCatalogCompositionRoot().listAvailableVehicles.execute();
-    return keepLatestCommercialProduct(vehicles.map(toCatalogVehicle));
+    return keepLatestSellerProducts(vehicles.map(toCatalogVehicle));
   },
   ['catalog-search-vehicles'],
   {
