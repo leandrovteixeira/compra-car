@@ -7,13 +7,14 @@ import type { SellerModelOption, SellerScoreRadius } from '@/server/seller-model
 interface Props {
   readonly options: readonly SellerModelOption[];
   readonly radius: SellerScoreRadius;
+  readonly showLabel?: boolean;
 }
 
 function normalize(value: string) {
   return value.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('pt-BR');
 }
 
-export function SellerModelPicker({ options, radius }: Props) {
+export function SellerModelPicker({ options, radius, showLabel = true }: Props) {
   const root = useRef<HTMLDivElement>(null);
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
@@ -39,13 +40,16 @@ export function SellerModelPicker({ options, radius }: Props) {
   }, [open]);
 
   return (
-    <div className="relative" ref={root}>
-      <label className="ui-label block" htmlFor="seller-model-search">
-        Buscar modelo
-      </label>
+    <div className="relative w-full" ref={root}>
+      {showLabel ? (
+        <label className="ui-label block" htmlFor="seller-model-search">
+          Buscar modelo
+        </label>
+      ) : null}
       <input
         id="seller-model-search"
-        className="ui-field mt-1"
+        aria-label={showLabel ? undefined : 'Buscar modelo'}
+        className={`ui-field ${showLabel ? 'mt-1' : ''}`}
         autoComplete="off"
         onChange={(event) => {
           setSearch(event.target.value);
