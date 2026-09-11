@@ -18,6 +18,17 @@ export type AdministrativeVehicleStatusPatch =
   | { readonly isActive: boolean; readonly isPublic?: never }
   | { readonly isPublic: boolean; readonly isActive?: never };
 
+/** One administrative intent; deactivation must also unpublish atomically. */
+export function administrativeVehicleStatusTransition(patch: AdministrativeVehicleStatusPatch) {
+  if (patch.isActive === false) {
+    return { changes: { isActive: false, isPublic: false }, requiresActive: false } as const;
+  }
+  if (patch.isActive === true) {
+    return { changes: { isActive: true }, requiresActive: false } as const;
+  }
+  return { changes: { isPublic: patch.isPublic }, requiresActive: patch.isPublic } as const;
+}
+
 export function isValidAdministrativeVehicleStatusUpdate(
   id: unknown,
   patch: unknown,
@@ -92,6 +103,9 @@ export function validateAdministrativeVehicle(
   if (!data.brand) addError(errors, 'brand', 'Informe a marca.');
   if (!data.model) addError(errors, 'model', 'Informe o modelo.');
   if (!data.version) addError(errors, 'version', 'Informe a versão.');
+  if (data.isPublic && !data.isActive) {
+    addError(errors, 'isPublic', 'Ative o veículo antes de publicá-lo.');
+  }
 
   if (!isFourDigitInteger(data.modelYear) || data.modelYear <= 2000) {
     addError(errors, 'modelYear', 'O ano modelo deve ser maior que 2000.');

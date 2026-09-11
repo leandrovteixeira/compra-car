@@ -1,5 +1,164 @@
 # Sprint 17R — Catalog Visibility & Inline Product Status
 
+## Sprint 17R.1 — Product State Invariant + Compare Eligibility Row-Limit Fix
+
+Data: 2026-09-11. Worktree: `C:/Dev/compra-car-17r`.
+Branch: `sprint-17r-catalog-visibility`. Base limpa desta continuação: `d572cf7` —
+`fix(catalog): align seller visibility with public status`, presente em origin/main conforme escopo.
+A Sprint 17R.1 foi commitada e publicada na branch `sprint-17r-catalog-visibility`.
+Commit atual: `f71b62a` — `fix(catalog): enforce public active invariant and paginate eligibility`.
+A publicação da implementação original da 17R está registrada no histórico abaixo; as regras desta
+seção substituem a permissão de quatro estados daquele registro.
+
+### Estado administrativo
+
+**Public requires Active:** `is_public=true => is_active=true`.
+
+| Estado inicial / intenção | Resultado e persistência, além de `updated_at` |
+| --- | --- |
+| Active/Public → desativar | Inactive/Private; os dois flags false no mesmo UPDATE |
+| Active/Private → desativar | Inactive/Private; os dois flags false no mesmo UPDATE |
+| Inactive/Private → ativar | Active/Private; grava somente Active=true |
+| Active/Private → publicar | Active/Public; grava somente Public=true, com Active=true no WHERE |
+| Active/Public → despublicar | Active/Private; grava somente Public=false |
+| Inactive/Private → publicar | rejeitado, sem mudança nem invalidação de cache |
+
+A intenção recebida continua contendo exatamente um boolean. O core modela a transição de
+desativação e o contrato do repositório exige aplicação atômica. O predicado Active no UPDATE de
+publicação protege também contra desativação concorrente; o erro não expõe detalhes do banco.
+Autorização admin antes do acesso ao adapter, pending, trava de clique duplicado, filtros, layout
+e erro acessível foram preservados.
+
+O badge de publicação fica disabled enquanto inativo, com título e aria-label explicativos.
+Criação/edição/duplicação compartilham o formulário que desmarca Public ao desativar, bloqueia
+publicação enquanto inativo e não publica ao reativar. Server/core rejeitam Inactive/Public.
+Public e desativação expiram imediatamente o catálogo; edição completa mantém a invalidação em
+todo sucesso. Next 15.5.20 e `revalidateTag(tag)` preservados.
+
+### Causa e solução do truncamento
+
+Confirmado no código de `d572cf7`: `listPublicEligibleVehicles()` consultava todas as associações
+dos produtos públicos em uma resposta sem paginação. Com o teto de 1.000 linhas, produtos cuja
+evidência ficava depois desse corte eram incorretamente descartados. A auditoria informada pelo
+usuário encontrou 14 produtos públicos e 2.009 associações; esses números não foram reconsultados
+no banco durante este hotfix.
+
+**Divergência da base:** a migration baseline e os inventários versionados não possuem FK
+`product_specs.product_id -> products.id`. Existe apenas a FK de `equipment_id -> specs.id`.
+Por isso não foi usado o join direto de products com product_specs. Foi implementada a alternativa
+de paginação explícita autorizada no escopo:
+
+1. produtos Public em páginas de 500, ordenados por ID;
+2. associações de cada lote de até 500 IDs em páginas de 500, ordenadas por product_id/equipment_id;
+3. `specs!inner(id)` e `specs.is_active=true` aplicam o requisito de spec ativa no PostgREST;
+4. somente IDs elegíveis são acumulados; cada página de associações é descartada após processamento;
+5. a leitura do lote termina ao esgotar as associações ou encontrar evidência para todos os produtos.
+
+Não há consulta individual por produto, aumento de Max Rows, nova FK ou carregamento acumulado de
+todas as associações. A paginação também protege catálogos com mais de 1.000 produtos públicos.
+O cliente instalado é `@supabase/supabase-js 2.110.7`; sua implementação real constrói os requests
+nos testes. Referência: [joins Supabase](https://supabase.com/docs/guides/database/joins-and-nesting).
+A sintaxe de `range()` também foi conferida no `PostgrestTransformBuilder` instalado.
+
+Seller continua usando Public como único gate de status. Comparar mantém spec ativa, sem exigir
+preço. Latest vem depois da elegibilidade. Ver Modelo continua Public → preço vigente → latest;
+`keepLatestSellerProducts`, preços, MSRP, specs, scores, políticas comerciais e RLS não foram alterados.
+
+### Migration e pendências de ambiente
+
+Criada pela CLI, sem aplicação no banco:
+`supabase/migrations/20260911204125_products_public_requires_active.sql`.
+Adiciona CHECK validada `products_public_requires_active` com a expressão
+`is_public IS NOT TRUE OR is_active IS TRUE`. Não contém UPDATE ou reparação: se houver registro
+inválido, a adição falha. O escopo informa zero inconsistências na auditoria anterior.
+
+O teste Vitest da migration passou. O pgTAP
+`supabase/tests/017_product_state_invariant.test.sql` verifica a constraint instalada e exercita
+estados em tabela temporária, terminando com rollback. **PENDENTE:** execução desse teste e aplicação
+da migration, pois o daemon Docker local está indisponível; nenhuma migration foi aplicada remotamente.
+**PENDENTE após deploy:** buscar Corolla no Comparar e confirmar IDs 895, 896, 615 e 897 com as quatro
+versões descritas pelo usuário. Nenhum dos quatro produtos foi alterado por este trabalho.
+
+### Validação da Sprint 17R.1
+
+Testes direcionados: 108 core, 22 adapter e 147 web, **277 aprovados**. Incluem transições,
+autorização, rejeição no formulário/core, tentativa de publicação concorrente, cache aquecido,
+latest após elegibilidade, Ver Modelo, comparação e limite de linhas.
+
+Regressão HTTP simula teto de 1.000 linhas e ausência de FK products → product_specs. Cobre produto
+posterior a 2.009 associações ativas, evidência ativa após specs inativas e 1.001 produtos públicos.
+Foi executado um teste de mutação: os três testes falharam com a consulta original de HEAD;
+o adapter corrigido foi restaurado integralmente e os testes passaram.
+
+| Gate final | Resultado | Comparação com `d572cf7` |
+| --- | --- | --- |
+| `pnpm lint` | passou, 7 tarefas | sem erros novos |
+| `pnpm build` | passou, Next 15.5.20, 29 páginas | sem upgrade |
+| `pnpm typecheck` | falhou com 5 TS2554 em `admin-product-public-prices.test.ts:101–105` | mesmos cinco erros do baseline |
+| `pnpm test` | core 656 passaram; pricing 71 passaram; adapter 108 passaram, 1 falhou, 3 skipped | mesmo teste preexistente de preços no adapter; core tinha 651 e adapter 104 aprovados |
+| `pnpm --filter @compra-car/web test` | 631 passaram, 8 falharam, 16 skipped | mesmos oito erros do baseline, que tinha 620 aprovados |
+| `pnpm format:check` | 15 arquivos preexistentes fora deste diff | nenhum arquivo alterado nesta sprint na lista |
+| `git diff --check` | passou | sem erros de whitespace |
+
+O Turbo interrompe o teste global no adapter; por isso a suíte web foi executada separadamente.
+A falha do adapter é `lists a page with exact count and deterministic range` em
+`product-public-price-supabase-adapter.test.ts`, cujo fake não implementa `.in()` usado na leitura
+de períodos. As oito falhas web permanecem: cinco de navegação autenticada, uma de status visual de
+preço, uma de mobile/PWA e uma de largura do menu de instalação. Nenhuma foi corrigida fora do escopo.
+
+Comandos direcionados executados:
+
+```text
+pnpm --filter @compra-car/core test administrative-vehicle administrative-vehicle-status domain
+pnpm --filter @compra-car/adapter-supabase test legacy-supabase-adapter catalog-eligibility-row-limit product-state-migration
+pnpm --filter @compra-car/web test admin-product-status-toggle admin-product-form-status admin-product-creation admin-product-editing admin-product-duplication admin-product-refinements catalog-visibility seller-product-eligibility comparison
+```
+
+### Arquivos da Sprint 17R.1
+
+24 arquivos modificados e cinco novos, incluídos no commit `f71b62a`, publicado na branch
+`sprint-17r-catalog-visibility`. A listagem abaixo registra o estado anterior ao commit, para referência histórica.
+
+```text
+ M AI_CONTEXT.md
+ M CHANGELOG.md
+ M apps/web/src/application/admin/update-admin-product-status.ts
+ M apps/web/src/components/admin/admin-product-form.tsx
+ M apps/web/src/components/admin/admin-product-list.tsx
+ M apps/web/src/components/admin/admin-product-status-toggle.tsx
+ M apps/web/test/admin-product-creation.test.ts
+ M apps/web/test/admin-product-duplication.test.ts
+ M apps/web/test/admin-product-editing.test.ts
+ M apps/web/test/admin-product-refinements.test.ts
+ M apps/web/test/admin-product-status-toggle.test.ts
+ M apps/web/test/catalog-visibility.test.ts
+ M docs/admin/SPRINT_17R_CATALOG_VISIBILITY.md
+ M docs/admin/VEHICLE_MANAGEMENT.md
+ M docs/architecture/decisions/ADR-004-ACTIVE-AND-PUBLIC-ARE-DISTINCT.md
+ M docs/data/MVP_DATA_REQUIREMENTS.md
+ M packages/adapter-supabase/src/legacy-supabase-adapter.ts
+ M packages/adapter-supabase/test/legacy-supabase-adapter.test.ts
+ M packages/contracts/src/index.ts
+ M packages/core/src/admin/administrative-vehicle.ts
+ M packages/core/src/repositories/administrative-vehicle-repository.ts
+ M packages/core/src/use-cases/update-administrative-vehicle-status.ts
+ M packages/core/test/administrative-vehicle-status.test.ts
+ M packages/core/test/administrative-vehicle.test.ts
+?? apps/web/test/admin-product-form-status.test.ts
+?? packages/adapter-supabase/test/catalog-eligibility-row-limit.test.ts
+?? packages/adapter-supabase/test/product-state-migration.test.ts
+?? supabase/migrations/20260911204125_products_public_requires_active.sql
+?? supabase/tests/017_product_state_invariant.test.sql
+```
+
+Logs locais ignorados pelo Git: `.local-reports/17r1-*.log`. A execução usa Node 24.18.0 e
+pnpm 10.34.5; o projeto declara Node 22.x, divergência de ambiente mantida sem upgrade.
+
+## Registro histórico — Sprint 17R original
+
+As seções abaixo documentam a entrega original, seus testes e seu diff, não o estado da 17R.1.
+As regras Active/Public da seção 17R.1 acima e do ADR-004 atual prevalecem.
+
 Data: 2026-09-11.
 Worktree: C:/Dev/compra-car-17r.
 Branch: sprint-17r-catalog-visibility.

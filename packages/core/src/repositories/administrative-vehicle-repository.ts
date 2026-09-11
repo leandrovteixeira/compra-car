@@ -14,10 +14,11 @@ export type AdministrativeVehicleUpdate =
   | { readonly status: 'duplicate' };
 
 export interface AdministrativeVehicleStatusRepository {
+  /** Apply the intent atomically, enforcing Public requires Active at write time. */
   updateAdministrativeVehicleStatus(
     id: string,
     patch: AdministrativeVehicleStatusPatch,
-  ): Promise<{ readonly status: 'updated' | 'not_found' }>;
+  ): Promise<{ readonly status: 'updated' | 'not_found' | 'publication_rejected' }>;
 }
 
 export interface AdministrativeVehicleRepository {

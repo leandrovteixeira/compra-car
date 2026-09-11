@@ -23,6 +23,7 @@ import type {
 } from '@compra-car/core';
 import {
   administrativeVehicleIdentity,
+  administrativeVehicleStatusTransition,
   isValidAdministrativeVehicleStatusUpdate,
 } from '@compra-car/core';
 import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js';
@@ -45,6 +46,7 @@ const PRODUCT_COLUMNS = 'id,brand,model,version,model_year,production_year,is_ac
 const SPEC_COLUMNS =
   'id,code,type,group_name,equipment_group,spec_set,detail,unit,value_direction,is_active';
 const PRODUCT_SPEC_COLUMNS = 'product_id,equipment_id,value,is_present,input_unit';
+const CATALOG_PAGE_SIZE = 500;
 
 function escapedIlikeContains(value: string): string {
   return `%${value.replace(/[\\%_]/gu, '\\$&')}%`;
@@ -327,24 +329,22 @@ export class LegacySupabaseAdapter
   async updateAdministrativeVehicleStatus(
     id: string,
     patch: AdministrativeVehicleStatusPatch,
-  ): Promise<{ readonly status: 'updated' | 'not_found' }> {
+  ): Promise<{ readonly status: 'updated' | 'not_found' | 'publication_rejected' }> {
     if (!isValidAdministrativeVehicleStatusUpdate(id, patch)) {
       throw new LegacyAdapterMappingError('ID ou status de veículo inválido.');
     }
+    const { changes, requiresActive } = administrativeVehicleStatusTransition(patch);
     const payload = {
-      ...(Object.hasOwn(patch, 'isActive')
-        ? { is_active: patch.isActive }
-        : { is_public: patch.isPublic }),
+      ...('isActive' in changes ? { is_active: changes.isActive } : {}),
+      ...('isPublic' in changes ? { is_public: changes.isPublic } : {}),
       updated_at: new Date().toISOString(),
     };
-    const { data, error } = await this.client
-      .from('products')
-      .update(payload)
-      .eq('id', Number(id))
-      .select('id')
-      .maybeSingle();
+    let query = this.client.from('products').update(payload).eq('id', Number(id));
+    // Test the current state in the UPDATE itself, including concurrent deactivation.
+    if (requiresActive) query = query.eq('is_active', true);
+    const { data, error } = await query.select('id').maybeSingle();
     if (error) throw queryError('atualização de status de product', error);
-    return { status: data ? 'updated' : 'not_found' };
+    return { status: data ? 'updated' : requiresActive ? 'publication_rejected' : 'not_found' };
   }
 
   async rollbackAdministrativeVehicleDuplication(productId: string): Promise<void> {
@@ -458,48 +458,43 @@ export class LegacySupabaseAdapter
   async listPublicEligibleVehicles(
     filters: AvailableVehicleFilters = {},
   ): Promise<readonly Vehicle[]> {
-    let query = this.client.from('products').select(PRODUCT_COLUMNS).eq('is_public', true);
+    const vehicles: Vehicle[] = [];
+    // This schema has no product_specs.product_id -> products.id FK, so products cannot
+    // embed product_specs. Page both resources below the API cap and keep only eligible IDs.
+    for (let offset = 0; ; offset += CATALOG_PAGE_SIZE) {
+      let query = this.client.from('products').select(PRODUCT_COLUMNS).eq('is_public', true);
+      if (filters.brand) query = query.eq('brand', filters.brand);
+      if (filters.model) query = query.eq('model', filters.model);
+      const { data, error } = await query.order('id').range(offset, offset + CATALOG_PAGE_SIZE - 1);
+      if (error) throw queryError('products públicos', error);
+      const products = (data ?? []) as unknown as LegacyProductRow[];
+      if (products.length === 0) break;
 
-    if (filters.brand) query = query.eq('brand', filters.brand);
-    if (filters.model) query = query.eq('model', filters.model);
-
-    const { data, error } = await query;
-    if (error) throw queryError('products públicos', error);
-
-    const products = (data ?? []) as unknown as LegacyProductRow[];
-    if (products.length === 0) return [];
-
-    const ids = products.map((product) => product.id);
-    const { data: associationData, error: associationError } = await this.client
-      .from('product_specs')
-      .select('product_id,equipment_id')
-      .in('product_id', ids);
-    if (associationError) throw queryError('elegibilidade em product_specs', associationError);
-
-    const associations = (associationData ?? []) as unknown as Pick<
-      LegacyProductSpecRow,
-      'product_id' | 'equipment_id'
-    >[];
-    if (associations.length === 0) return [];
-
-    const equipmentIds = [...new Set(associations.map((row) => row.equipment_id))];
-    const { data: specData, error: specError } = await this.client
-      .from('specs')
-      .select('id')
-      .eq('is_active', true)
-      .in('id', equipmentIds);
-    if (specError) throw queryError('specs ativas para elegibilidade', specError);
-
-    const activeSpecIds = new Set(
-      ((specData ?? []) as unknown as { readonly id: number }[]).map((row) => row.id),
-    );
-    const eligibleIds = new Set(
-      associations
-        .filter((row) => activeSpecIds.has(row.equipment_id))
-        .map((row) => row.product_id),
-    );
-
-    return products.filter((product) => eligibleIds.has(product.id)).map(mapLegacyProductToVehicle);
+      const ids = products.map((product) => product.id);
+      const eligibleIds = new Set<number>();
+      for (let associationOffset = 0; ; associationOffset += CATALOG_PAGE_SIZE) {
+        // The existing equipment_id -> specs.id FK filters active specs in PostgREST.
+        const { data: associationData, error: associationError } = await this.client
+          .from('product_specs')
+          .select('product_id,specs!inner(id)')
+          .in('product_id', ids)
+          .eq('specs.is_active', true)
+          .order('product_id')
+          .order('equipment_id')
+          .range(associationOffset, associationOffset + CATALOG_PAGE_SIZE - 1);
+        if (associationError) throw queryError('elegibilidade em product_specs', associationError);
+        const associations = (associationData ?? []) as unknown as {
+          readonly product_id: number;
+        }[];
+        for (const association of associations) eligibleIds.add(association.product_id);
+        if (associations.length < CATALOG_PAGE_SIZE || eligibleIds.size === products.length) break;
+      }
+      vehicles.push(
+        ...products.filter((product) => eligibleIds.has(product.id)).map(mapLegacyProductToVehicle),
+      );
+      if (products.length < CATALOG_PAGE_SIZE) break;
+    }
+    return vehicles;
   }
 
   async getVehiclesByIds(ids: readonly VehicleId[]): Promise<readonly Vehicle[]> {

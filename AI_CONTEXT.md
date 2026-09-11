@@ -1,9 +1,38 @@
 # Contexto para agentes de IA
 
-## Sprint 17R — Catalog Visibility & Inline Product Status (2026-09-11)
+## Sprint 17R.1 — Product State Invariant + Compare Row-Limit Fix (2026-09-11)
+
+Hotfix incremental no worktree C:/Dev/compra-car-17r, branch sprint-17r-catalog-visibility,
+sobre d572cf7 (Sprint 17R presente em origin/main conforme escopo). **Public requires Active**:
+somente Active/Public, Active/Private e Inactive/Private são válidos. Esta regra substitui a
+permissão irrestrita de quatro estados registrada na seção histórica da 17R abaixo.
+
+Desativar despublica atomicamente no mesmo UPDATE. Ativar não publica. Publicar exige Active no
+UPDATE; despublicar preserva Active. Formulário compartilhado bloqueia Public enquanto inativo e
+desmarca Public ao desativar; server/core rejeitam Inactive/Public. Admin-only, pending, proteção
+contra duplo clique e erro acessível mantidos. Public e desativação invalidam imediatamente catálogo;
+edição completa mantém invalidação em todo sucesso, usando Next 15.5.20 sem upgrade.
+
+Comparar usa Public + existência de associação com spec ativa. A base não possui FK product_specs
+→ products; por isso usa a alternativa de paginação explícita de produtos e associações, em páginas
+de 500 com ordenação estável. `specs!inner(id)` filtra specs ativas no servidor usando a FK existente;
+somente IDs elegíveis são acumulados. A consulta anterior sofria truncamento no teto de 1.000 linhas.
+Regressão usa supabase-js 2.110.7 com HTTP simulando teto e ausência da FK. Sem N+1, mudança de Max
+Rows ou requisito de preço.
+Seller permanece Public-only. Ver Modelo, preços, specs, scores, RLS e keepLatestSellerProducts intactos.
+
+Migration local: supabase/migrations/20260911204125_products_public_requires_active.sql, CHECK
+`is_public IS NOT TRUE OR is_active IS TRUE`, sem alteração de dados. Aplicação no banco e validação
+do caso Corolla após deploy permanecem PENDENTES; Docker local indisponível para executar pgTAP.
+A Sprint 17R.1 foi commitada e publicada na branch `sprint-17r-catalog-visibility` no commit
+`f71b62a` — `fix(catalog): enforce public active invariant and paginate eligibility`.
+Gates, baseline e limites de validação no relatório da Sprint 17R.
+
+## Histórico: Sprint 17R — Catalog Visibility & Inline Product Status (2026-09-11)
 
 Public é o gate editorial/confidencial seller; Active representa trabalho/monitoramento interno.
-Todos os quatro estados são válidos, sem cascata no formulário ou validação do core. Comparar,
+Na implementação original, os quatro estados eram válidos, sem cascata no formulário ou validação
+do core; essa parte foi substituída pela Sprint 17R.1 acima. Comparar,
 incluindo acesso direto por IDs, exige somente Public como status de visibilidade e mantém specs.
 Ver Modelo consulta Public, filtra preço público vigente e então aplica keepLatestSellerProducts.
 A função latest permanece inalterada: brand/model/version, maior MY e desempate por PY.

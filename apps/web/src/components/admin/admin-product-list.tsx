@@ -54,6 +54,7 @@ export function AdminProductList({ products }: AdminProductListProps) {
                     productId={product.id}
                     productName={`${product.brand} ${product.model} ${product.version}`}
                     field="isActive"
+                    isActive={product.isActive}
                     value={product.isActive}
                   />
                 </td>
@@ -62,6 +63,7 @@ export function AdminProductList({ products }: AdminProductListProps) {
                     productId={product.id}
                     productName={`${product.brand} ${product.model} ${product.version}`}
                     field="isPublic"
+                    isActive={product.isActive}
                     value={product.isPublic}
                   />
                 </td>

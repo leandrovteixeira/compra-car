@@ -600,6 +600,7 @@ export type ComparisonPageResultDto =
   | { readonly ok: true; readonly data: ComparisonPageDataDto }
   | { readonly ok: false; readonly error: ComparisonPageErrorDto };
 
+/** One admin intent. Deactivation also unpublishes; publication requires an active vehicle. */
 export type AdministrativeVehicleStatusPatchDto = AdministrativeVehicleStatusPatch;
 
 export type UpdateAdministrativeVehicleStatusActionResultDto =

@@ -3,7 +3,10 @@ import type { AdministrativeVehicleStatusRepository } from '../repositories/admi
 
 export type UpdateAdministrativeVehicleStatusResult =
   | { readonly ok: true }
-  | { readonly ok: false; readonly code: 'INVALID_STATUS_UPDATE' | 'NOT_FOUND' };
+  | {
+      readonly ok: false;
+      readonly code: 'INVALID_STATUS_UPDATE' | 'NOT_FOUND' | 'PUBLICATION_REJECTED';
+    };
 
 export class UpdateAdministrativeVehicleStatus {
   constructor(private readonly repository: AdministrativeVehicleStatusRepository) {}
@@ -13,6 +16,9 @@ export class UpdateAdministrativeVehicleStatus {
       return { ok: false, code: 'INVALID_STATUS_UPDATE' };
     }
     const result = await this.repository.updateAdministrativeVehicleStatus(id, patch);
+    if (result.status === 'publication_rejected') {
+      return { ok: false, code: 'PUBLICATION_REJECTED' };
+    }
     return result.status === 'updated' ? { ok: true } : { ok: false, code: 'NOT_FOUND' };
   }
 }

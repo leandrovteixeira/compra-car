@@ -161,7 +161,7 @@ describe('administrative product duplication', () => {
     });
   });
 
-  it('allows public inactive vehicles without changing either flag', async () => {
+  it('rejects public inactive vehicles before creating or copying anything', async () => {
     const target = repository();
     const result = await executeAdminProductDuplication(
       '42',
@@ -173,14 +173,12 @@ describe('administrative product duplication', () => {
       },
     );
 
-    expect(result).toEqual(
-      expect.objectContaining({
-        status: 'success',
-      }),
-    );
-    expect(target.createAdministrativeVehicle).toHaveBeenCalledWith(
-      expect.objectContaining({ isActive: false, isPublic: true }),
-    );
+    expect(result).toMatchObject({
+      status: 'error',
+      fieldErrors: { isPublic: ['Ative o veículo antes de publicá-lo.'] },
+    });
+    expect(target.createAdministrativeVehicle).not.toHaveBeenCalled();
+    expect(target.saveAdministrativeProductSpecs).not.toHaveBeenCalled();
   });
 
   it('does not report success or revalidate when copying specs fails', async () => {

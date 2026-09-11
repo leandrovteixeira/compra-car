@@ -38,6 +38,26 @@ function repository(
 }
 
 describe('administrative product editing', () => {
+  it('rejects an inactive public submission before any persistence or invalidation', async () => {
+    const target = repository();
+    const invalidateCatalog = vi.fn();
+    const result = await executeAdminProductUpdate(
+      '42',
+      formData({ isActive: 'false', isPublic: 'true' }),
+      {
+        authorize: vi.fn(async () => undefined),
+        createRepository: () => target,
+        revalidate: vi.fn(),
+        invalidateCatalog,
+      },
+    );
+    expect(result).toMatchObject({
+      status: 'error',
+      fieldErrors: { isPublic: ['Ative o veículo antes de publicá-lo.'] },
+    });
+    expect(target.updateAdministrativeVehicle).not.toHaveBeenCalled();
+    expect(invalidateCatalog).not.toHaveBeenCalled();
+  });
   it('loads and maps the existing product into initial form values', async () => {
     await expect(
       loadAdminProductForEditing('42', {

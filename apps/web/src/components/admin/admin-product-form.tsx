@@ -117,10 +117,11 @@ function ProductFields({ action, currentYear, mode, pending, state }: ProductFie
 
   function changeActive(checked: boolean) {
     setIsActive(checked);
+    if (!checked) setIsPublic(false);
   }
 
   function changePublic(checked: boolean) {
-    setIsPublic(checked);
+    setIsPublic(checked && isActive);
   }
 
   function changeProductionYear(nextProductionYear: string) {
@@ -255,6 +256,8 @@ function ProductFields({ action, currentYear, mode, pending, state }: ProductFie
           <label className="touch-target flex min-h-9 cursor-pointer items-center gap-2 px-1 text-[0.8125rem] font-medium text-text-secondary lg:mt-5 lg:min-w-20">
             <input
               checked={isPublic}
+              disabled={!isActive}
+              title={!isActive ? 'Ative o veículo antes de publicá-lo.' : undefined}
               className="size-4 accent-selection-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
               onChange={(event) => changePublic(event.target.checked)}
               type="checkbox"

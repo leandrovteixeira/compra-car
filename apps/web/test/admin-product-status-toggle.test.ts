@@ -37,18 +37,20 @@ vi.mock('../src/app/admin/products/actions', () => ({
 
 import { AdminProductStatusToggle } from '../src/components/admin/admin-product-status-toggle';
 
-function render(field: 'isPublic' | 'isActive' = 'isPublic', value = true) {
+function render(field: 'isPublic' | 'isActive' = 'isPublic', value = true, isActive = true) {
   const tree = AdminProductStatusToggle({
     productId: '7',
     productName: 'Toyota Corolla Cross XRE',
     field,
     value,
+    isActive,
   });
   const children = (tree as ReactElement<{ children: ReactElement[] }>).props.children;
   return {
     button: children[0] as ReactElement<{
       onClick: () => void;
       disabled: boolean;
+      title?: string;
       children: string;
       'aria-label': string;
       'aria-pressed': boolean;
@@ -66,6 +68,16 @@ beforeEach(() => {
 });
 
 describe('inline status controls with controlled React hooks', () => {
+  it('disables publication while inactive and explains how to enable it', () => {
+    const { button } = render('isPublic', false, false);
+    expect(button.props.disabled).toBe(true);
+    expect(button.props.children).toBe('Privado');
+    expect(button.props.title).toBe('Ative o veículo antes de publicá-lo.');
+    expect(button.props['aria-label']).toContain('Ative o veículo antes de publicá-lo.');
+    button.props.onClick();
+    expect(harness.action).not.toHaveBeenCalled();
+    expect(render('isActive', false, false).button.props.disabled).toBe(false);
+  });
   it.each([
     ['isActive', true, 'Ativo', 'inativo', { isActive: false }],
     ['isActive', false, 'Inativo', 'ativo', { isActive: true }],

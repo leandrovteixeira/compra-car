@@ -34,7 +34,7 @@ describe('administrative vehicle year options', () => {
     expect(modelYearAfterProductionYearChange('2027', '2026', 2026)).toBe('');
   });
 
-  it('renders dependent year selects while keeping status flags independent', () => {
+  it('renders dependent year selects and requires Active for Public without automatic activation', () => {
     const form = source('../src/components/admin/admin-product-form.tsx');
     expect(form).toContain('<select');
     expect(form).toContain('name="modelYear"');
@@ -43,7 +43,8 @@ describe('administrative vehicle year options', () => {
     expect(form).toContain('createModelYearOptions(productionYear, currentYear)');
     expect(form.indexOf('Ano produção')).toBeLessThan(form.indexOf('Ano modelo'));
     expect(form).not.toContain('if (checked) setIsActive(true)');
-    expect(form).not.toContain('if (!checked) setIsPublic(false)');
+    expect(form).toContain('if (!checked) setIsPublic(false)');
+    expect(form).toContain('disabled={!isActive}');
     expect(form).not.toContain('min-h-20');
     expect(form).not.toContain('bg-slate-950/60');
   });

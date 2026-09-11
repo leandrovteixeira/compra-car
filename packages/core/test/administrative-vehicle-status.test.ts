@@ -1,7 +1,27 @@
 import { describe, expect, it, vi } from 'vitest';
-import { UpdateAdministrativeVehicleStatus } from '../src';
+import { administrativeVehicleStatusTransition, UpdateAdministrativeVehicleStatus } from '../src';
 
 describe('UpdateAdministrativeVehicleStatus', () => {
+  it.each([
+    [{ isActive: false }, { changes: { isActive: false, isPublic: false }, requiresActive: false }],
+    [{ isActive: true }, { changes: { isActive: true }, requiresActive: false }],
+    [{ isPublic: false }, { changes: { isPublic: false }, requiresActive: false }],
+    [{ isPublic: true }, { changes: { isPublic: true }, requiresActive: true }],
+  ] as const)('models the state transition for %j', (intent, transition) => {
+    expect(administrativeVehicleStatusTransition(intent)).toEqual(transition);
+  });
+
+  it('reports publication refused by the atomic state guard', async () => {
+    const repository = {
+      updateAdministrativeVehicleStatus: vi.fn(async () => ({
+        status: 'publication_rejected' as const,
+      })),
+    };
+    expect(
+      await new UpdateAdministrativeVehicleStatus(repository).execute('42', { isPublic: true }),
+    ).toEqual({ ok: false, code: 'PUBLICATION_REJECTED' });
+  });
+
   it.each([{ isActive: true }, { isActive: false }, { isPublic: true }, { isPublic: false }])(
     'forwards only %j',
     async (patch) => {

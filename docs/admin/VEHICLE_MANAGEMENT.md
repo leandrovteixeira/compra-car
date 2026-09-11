@@ -40,20 +40,37 @@ mas continua bloqueando conflito com qualquer outro produto.
 Somente `brand`, `model`, `version`, `model_year`, `production_year`, `is_active` e `is_public` são
 alterados. Como as inspeções registradas em `docs/data/SUPABASE_INSPECTION_RESULTS.md` e
 `docs/data/LEGACY_BASELINE_EXTRACTION_RESULTS.md` não encontraram trigger de aplicação, o adapter
-define `updated_at` explicitamente em toda atualização. Nenhuma migration foi necessária.
+define `updated_at` explicitamente em toda atualização. A implementação original da edição não
+exigiu migration; a Sprint 17R.1 acrescenta a constraint de estado descrita abaixo.
 
-## Status inline — Sprint 17R
+## Status inline — Sprint 17R.1
 
 Ativo/Inativo e Público/Privado na listagem são botões com a mesma aparência dos badges, sem modal.
-Cada clique passa pela autorização admin e grava somente o boolean solicitado + `updated_at`, sem
-normalizar/regravar identidade ou o outro status. A operação dedicada rejeita IDs inválidos, múltiplos
+Cada clique passa pela autorização admin e envia uma intenção de alteração de status, sem
+normalizar/regravar identidade. A operação dedicada rejeita IDs inválidos, múltiplos
 campos, campos desconhecidos e valores não booleanos. Durante pending mantém texto/tamanho e bloqueia
 cliques duplicados. Erros são anunciados com `role="alert"` e não simulam sucesso.
 
-Active representa monitoramento interno e Public a decisão editorial/confidencial. Os quatro estados
-são válidos também em criação/edição/duplicação. Os filtros administrativos permanecem combináveis
-e o refresh mantém a URL atual com busca/filtros. Toggle Public e edição completa expiram a tag global
-do catálogo após sucesso; na versão instalada Next 15.5.20 isso usa `revalidateTag(tag)` imediato.
+Active representa monitoramento interno e Public a decisão editorial/confidencial.
+**Public requires Active:** Active/Public, Active/Private e Inactive/Private são válidos;
+Inactive/Public é rejeitado. Esta regra substitui a independência irrestrita da Sprint 17R.
+
+| Intenção | Persistência, além de `updated_at` |
+| --- | --- |
+| Desativar | `is_active=false` e `is_public=false`, no mesmo UPDATE |
+| Ativar | somente `is_active=true`; permanece Private |
+| Publicar | somente `is_public=true`, condicionado a `is_active=true` no UPDATE |
+| Despublicar | somente `is_public=false`; preserva Active |
+
+O badge de publicação fica desabilitado enquanto inativo, com explicação acessível “Ative o veículo
+antes de publicá-lo.” O formulário compartilhado de criação/edição/duplicação desmarca Public ao
+desativar e bloqueia a seleção de Public enquanto inativo. Reativar não publica automaticamente.
+Server/core rejeitam submissões Inactive/Public. A constraint `products_public_requires_active`
+protege também imports e SQL; sua migration não modifica registros existentes.
+
+Os filtros administrativos permanecem combináveis e o refresh mantém a URL atual com busca/filtros.
+Toggle Public, desativação (que também despublica) e edição completa expiram a tag global do catálogo
+após sucesso; na versão instalada Next 15.5.20 isso usa `revalidateTag(tag)` imediato.
 
 ## Duplicação
 
@@ -75,6 +92,14 @@ recém-criados. Como criação, cópia e compensação são operações PostgRES
 janela sem atomicidade estrita; falha da compensação devolve o ID incompleto para revisão.
 
 ## Specs e comparabilidade
+
+O catálogo Comparar exige Public e existência de associação com spec ativa, sem exigir preço.
+Na Sprint 17R.1, produtos e associações são paginados em lotes de 500, com ordenação estável e
+`specs!inner(id)` filtrando spec ativa no servidor. Apenas IDs elegíveis são acumulados. A consulta
+anterior perdia produtos quando `product_specs` excedia 1.000 linhas. A base não possui FK entre
+product_specs e products, impedindo o join direto preferido; nenhuma FK nova foi criada.
+Latest continua após a elegibilidade.
+Ver Modelo continua Public → preço público vigente → latest, com scores e função latest preservados.
 
 Todos os spec codes do master devem estar disponíveis para consulta e associação. Para elegibilidade pública, não basta existir uma linha: deve haver ao menos um item comparável com valor válido segundo a semântica confirmada de `product_specs`.
 

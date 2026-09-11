@@ -10,6 +10,7 @@ interface AdminProductStatusToggleProps {
   readonly productName: string;
   readonly field: 'isActive' | 'isPublic';
   readonly value: boolean;
+  readonly isActive: boolean;
 }
 
 export function AdminProductStatusToggle({
@@ -17,19 +18,22 @@ export function AdminProductStatusToggle({
   productName,
   field,
   value,
+  isActive,
 }: AdminProductStatusToggleProps) {
   const router = useRouter();
   const errorId = useId();
   const submitting = useRef(false);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const publicationBlocked = field === 'isPublic' && !isActive;
+  const publicationHelp = 'Ative o veículo antes de publicá-lo.';
   const label =
     field === 'isActive' ? (value ? 'Ativo' : 'Inativo') : value ? 'Público' : 'Privado';
   const target =
     field === 'isActive' ? (value ? 'inativo' : 'ativo') : value ? 'privado' : 'público';
 
   function toggle() {
-    if (submitting.current || pending) return;
+    if (submitting.current || pending || publicationBlocked) return;
     submitting.current = true;
     setError(null);
     startTransition(async () => {
@@ -59,10 +63,15 @@ export function AdminProductStatusToggle({
             : 'border-border bg-surface-muted text-text-muted'
         }`}
         onClick={toggle}
-        disabled={pending}
+        disabled={pending || publicationBlocked}
+        title={publicationBlocked ? publicationHelp : undefined}
         aria-busy={pending}
         aria-pressed={value}
-        aria-label={`Marcar ${productName} como ${target}`}
+        aria-label={
+          publicationBlocked
+            ? `${productName}: ${publicationHelp}`
+            : `Marcar ${productName} como ${target}`
+        }
         aria-describedby={error ? errorId : undefined}
       >
         {label}

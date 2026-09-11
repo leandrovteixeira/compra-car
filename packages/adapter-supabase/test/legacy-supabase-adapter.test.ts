@@ -24,6 +24,7 @@ class FakeQuery implements PromiseLike<FakeResponse> {
   constructor(
     private readonly response: FakeResponse,
     readonly call: FakeCall,
+    private readonly tables: Readonly<Record<string, readonly (readonly unknown[])[]>> = {},
   ) {}
 
   select(columns: string): this {
@@ -33,6 +34,11 @@ class FakeQuery implements PromiseLike<FakeResponse> {
 
   order(column: string): this {
     this.call.operations.push(`order:${column}`);
+    return this;
+  }
+
+  range(from: number, to: number): this {
+    this.call.operations.push(`range:${from}:${to}`);
     return this;
   }
 
@@ -84,7 +90,18 @@ class FakeQuery implements PromiseLike<FakeResponse> {
       if (!row || typeof row !== 'object') return false;
       const record = row as Readonly<Record<string, unknown>>;
       return (
-        this.equalityFilters.every(([column, value]) => record[column] === value) &&
+        this.equalityFilters.every(([column, value]) => {
+          if (column === 'specs.is_active') {
+            return (
+              this.call.operations.some((operation) => operation.includes('specs!inner(id)')) &&
+              (this.tables.specs?.[0] ?? []).some((spec) => {
+                const item = spec as Record<string, unknown>;
+                return item.id === record.equipment_id && item.is_active === value;
+              })
+            );
+          }
+          return record[column] === value;
+        }) &&
         this.inequalityFilters.every(([column, value]) => record[column] !== value) &&
         this.ilikeFilters.every(([column, pattern]) => {
           const term = pattern
@@ -119,7 +136,11 @@ function fakeClient(responses: Readonly<Record<string, readonly (readonly unknow
       offsets.set(table, offset + 1);
       const call: FakeCall = { table, operations: [] };
       calls.push(call);
-      return new FakeQuery({ data: responses[table]?.[offset] ?? [], error: null }, call);
+      return new FakeQuery(
+        { data: responses[table]?.[offset] ?? [], error: null },
+        call,
+        responses,
+      );
     },
   } as unknown as SupabaseClient;
 
@@ -588,9 +609,8 @@ describe('LegacySupabaseAdapter', () => {
       expect.arrayContaining(['eq:is_public:true', 'eq:brand:Marca', 'eq:model:Modelo']),
     );
     expect(calls[0]?.operations).not.toContain('eq:is_active:true');
-    expect(new Set(calls.map((call) => call.table))).toEqual(
-      new Set(['products', 'product_specs', 'specs']),
-    );
+    expect(calls.map((call) => call.table)).toEqual(['products', 'product_specs']);
+    expect(calls[1]?.operations).toContain('range:0:499');
   });
 
   it('preserva a ordem dos IDs solicitados', async () => {

@@ -7,6 +7,7 @@ const state = vi.hoisted(() => ({
   tables: {} as Record<string, Row[]>,
   calls: [] as QueryCall[],
   writeError: false,
+  beforeWrite: undefined as (() => void) | undefined,
   authorize: vi.fn(),
   revalidatePath: vi.fn(),
   revalidateTag: vi.fn(),
@@ -18,11 +19,20 @@ const state = vi.hoisted(() => ({
 class Query {
   private predicates: ((row: Row) => boolean)[] = [];
   private call: QueryCall;
+  private embeddedEligibility = false;
+  private offset = 0;
+  private pageSize = 1000;
   constructor(private table: string) {
     this.call = { table, filters: [] };
     state.calls.push(this.call);
   }
-  select() {
+  select(columns: string) {
+    this.embeddedEligibility = columns.includes('specs!inner(id)');
+    return this;
+  }
+  range(from: number, to: number) {
+    this.offset = from;
+    this.pageSize = Math.min(1000, to - from + 1);
     return this;
   }
   order() {
@@ -30,7 +40,17 @@ class Query {
   }
   eq(field: string, value: unknown) {
     this.call.filters.push([field, value]);
-    this.predicates.push((row) => row[field] === value);
+    this.predicates.push((row) => {
+      if (field === 'specs.is_active') {
+        return (
+          this.embeddedEligibility &&
+          (state.tables.specs ?? []).some(
+            (spec) => spec.id === row.equipment_id && spec.is_active === value,
+          )
+        );
+      }
+      return row[field] === value;
+    });
     return this;
   }
   neq(field: string, value: unknown) {
@@ -46,13 +66,14 @@ class Query {
     return this;
   }
   private result() {
+    if (this.call.payload) state.beforeWrite?.();
     const data = (state.tables[this.table] ?? []).filter((row) =>
       this.predicates.every((test) => test(row)),
     );
     if (this.call.payload && state.writeError)
       return { data: null, error: { code: 'XX000', message: 'private database detail' } };
     if (this.call.payload) for (const row of data) Object.assign(row, this.call.payload);
-    return { data, error: null };
+    return { data: data.slice(this.offset, this.offset + this.pageSize), error: null };
   }
   async maybeSingle() {
     const result = this.result();
@@ -120,11 +141,12 @@ beforeEach(() => {
   state.calls = [];
   state.cache.clear();
   state.writeError = false;
+  state.beforeWrite = undefined;
   state.client = { from: (table) => new Query(table) };
   state.tables = {
     products: [
       product(1),
-      product(2, { is_active: false }),
+      product(2),
       product(3, { is_public: false }),
       product(4, { is_active: false, is_public: false }),
     ],
@@ -166,6 +188,8 @@ beforeEach(() => {
 
 describe('seller publication and generation boundaries', () => {
   it('Compare includes both public states and rejects both private states, including direct URLs', async () => {
+    // Read-side defense: visibility stays Public-only even if old inconsistent data is supplied.
+    state.tables.products![1]!.is_active = false;
     expect((await getCachedCatalogVehicles()).map((p) => p.id)).toEqual(['1', '2']);
     expect(
       (
@@ -183,6 +207,17 @@ describe('seller publication and generation boundaries', () => {
   it('Compare still requires an association with an active spec', async () => {
     state.tables.specs![0]!.is_active = false;
     expect(await getCachedCatalogVehicles()).toEqual([]);
+  });
+
+  it('Compare applies latest after active-spec eligibility and does not require a price', async () => {
+    state.tables.products = [
+      product(1, { version: 'GS' }),
+      product(2, { version: 'GS', model_year: 2028, production_year: 2027 }),
+    ];
+    state.tables.product_specs = [{ product_id: 1, equipment_id: 10 }];
+    state.tables.vw_current_product_public_prices = [];
+    expect((await getCachedCatalogVehicles()).map((p) => p.id)).toEqual(['1']);
+    expect((await getCachedVehicles('BYD', 'Dolphin')).map((p) => p.id)).toEqual(['1']);
   });
 
   it('Ver Modelo uses Public for options, selected product and peer scores, keeping current prices', async () => {
@@ -227,7 +262,7 @@ describe('admin status persistence and catalog invalidation', () => {
         version: 'GS',
         production_year: 2027,
         model_year: 2028,
-        is_active: false,
+        is_active: true,
         is_public: false,
       }),
     ];
@@ -238,21 +273,32 @@ describe('admin status persistence and catalog invalidation', () => {
     await updateAdminProductStatusAction('2', { isPublic: false });
     expect((await getCachedCatalogVehicles()).map((p) => p.id)).toEqual(['1']);
     expect((await loadSellerModelScore(1, 5)).options.map((p) => p.id)).toEqual([1]);
-    expect(state.tables.products[1]!.is_active).toBe(false);
+    expect(state.tables.products[1]!.is_active).toBe(true);
   });
 
-  it.each([{ isActive: false }, { isActive: true }, { isPublic: false }, { isPublic: true }])(
-    'writes only %j and updated_at',
-    async (patch) => {
+  it.each([
+    [true, true, { isActive: false }, { is_active: false, is_public: false }],
+    [true, false, { isActive: false }, { is_active: false, is_public: false }],
+    [false, false, { isActive: true }, { is_active: true }],
+    [true, false, { isPublic: true }, { is_public: true }],
+    [true, true, { isPublic: false }, { is_public: false }],
+  ] as const)(
+    'atomically transitions Active=%s Public=%s with intent %j',
+    async (isActive, isPublic, patch, persisted) => {
+      state.tables.products![0] = product(1, { is_active: isActive, is_public: isPublic });
       const before = { ...state.tables.products![0] };
       expect(await updateAdminProductStatusAction('1', patch)).toEqual({ status: 'success' });
-      const persisted =
-        'isActive' in patch ? { is_active: patch.isActive } : { is_public: patch.isPublic };
       const writes = state.calls.filter((call) => call.payload);
       expect(writes).toEqual([
         {
           table: 'products',
-          filters: [['id', 1]],
+          filters:
+            'isPublic' in patch && patch.isPublic
+              ? [
+                  ['id', 1],
+                  ['is_active', true],
+                ]
+              : [['id', 1]],
           payload: { ...persisted, updated_at: expect.any(String) },
         },
       ]);
@@ -263,11 +309,13 @@ describe('admin status persistence and catalog invalidation', () => {
       });
       expect(state.authorize).toHaveBeenCalledExactlyOnceWith('admin');
       expect(state.revalidatePath).toHaveBeenCalledExactlyOnceWith('/admin/products');
-      expect(state.revalidateTag).toHaveBeenCalledTimes('isPublic' in patch ? 1 : 0);
+      expect(state.revalidateTag).toHaveBeenCalledTimes(
+        'isPublic' in patch || patch.isActive === false ? 1 : 0,
+      );
     },
   );
 
-  it('immediately removes and restores a public inactive product in warmed seller catalogs', async () => {
+  it('immediately removes and restores a public active product in warmed seller catalogs', async () => {
     expect((await getCachedCatalogVehicles()).map((p) => p.id)).toEqual(['1', '2']);
     expect((await getCachedVehicles('BYD', 'Dolphin')).map((p) => p.id)).toEqual(['1', '2']);
     await updateAdminProductStatusAction('2', { isPublic: false });
@@ -280,6 +328,45 @@ describe('admin status persistence and catalog invalidation', () => {
     expect((await loadSellerModelScore(2, 5)).selected?.id).toBe(2);
   });
 
+  it.each(['already inactive', 'concurrently deactivated'])(
+    'rejects publication when %s at write time',
+    async (mode) => {
+      state.tables.products![0] = product(1, {
+        is_active: mode !== 'already inactive',
+        is_public: false,
+      });
+      if (mode === 'concurrently deactivated')
+        state.beforeWrite = () => {
+          state.tables.products![0]!.is_active = false;
+        };
+      const result = await updateAdminProductStatusAction('1', { isPublic: true });
+      expect(result).toMatchObject({
+        status: 'error',
+        message: expect.stringContaining('Ative o veículo antes de publicá-lo.'),
+      });
+      expect(state.tables.products![0]).toEqual(product(1, { is_active: false, is_public: false }));
+      expect(state.calls).toHaveLength(1);
+      expect(state.calls[0]!.filters).toContainEqual(['is_active', true]);
+      expect(state.revalidateTag).not.toHaveBeenCalled();
+      expect(state.revalidatePath).not.toHaveBeenCalled();
+    },
+  );
+
+  it('deactivation immediately unpublishes from warmed catalogs and reactivation never republishes', async () => {
+    await getCachedCatalogVehicles();
+    await getCachedVehicles('BYD', 'Dolphin');
+    expect(await updateAdminProductStatusAction('2', { isActive: false })).toEqual({
+      status: 'success',
+    });
+    expect(state.revalidateTag).toHaveBeenCalledExactlyOnceWith(CATALOG_CACHE_TAGS.all);
+    expect((await getCachedCatalogVehicles()).map((p) => p.id)).toEqual(['1']);
+    expect((await getCachedVehicles('BYD', 'Dolphin')).map((p) => p.id)).toEqual(['1']);
+    expect((await loadSellerModelScore(2, 5)).selected).toBeNull();
+    await updateAdminProductStatusAction('2', { isActive: true });
+    expect(state.tables.products![1]).toMatchObject({ is_active: true, is_public: false });
+    expect((await getCachedCatalogVehicles()).map((p) => p.id)).toEqual(['1']);
+  });
+
   it.each([false, true])('full edit expires the same catalog for Public=%s', async (isPublic) => {
     await getCachedCatalogVehicles();
     const form = new FormData();
@@ -289,7 +376,7 @@ describe('admin status persistence and catalog invalidation', () => {
       version: 'V1',
       productionYear: '2026',
       modelYear: '2027',
-      isActive: 'false',
+      isActive: String(isPublic),
       isPublic: String(isPublic),
     }))
       form.set(key, value);

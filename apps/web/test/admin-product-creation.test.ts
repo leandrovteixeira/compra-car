@@ -37,6 +37,22 @@ function repository(
 }
 
 describe('administrative product creation orchestration', () => {
+  it('rejects an inactive public submission before creating a vehicle', async () => {
+    const target = repository();
+    const result = await executeAdminProductCreation(
+      formData({ isActive: 'false', isPublic: 'true' }),
+      {
+        authorize: vi.fn(async () => undefined),
+        createRepository: () => target,
+        revalidate: vi.fn(),
+      },
+    );
+    expect(result).toMatchObject({
+      status: 'error',
+      fieldErrors: { isPublic: ['Ative o veículo antes de publicá-lo.'] },
+    });
+    expect(target.createAdministrativeVehicle).not.toHaveBeenCalled();
+  });
   afterEach(() => {
     vi.restoreAllMocks();
   });

@@ -39,8 +39,9 @@ Os dois anos permanecem separados no contrato e são lidos de `products.producti
 
 Um veículo precisa possuir pelo menos um item comparável com valor válido conforme a semântica confirmada de `product_specs`. O adaptador atual exige ao menos uma associação com spec ativa, mas essa implementação não encerra a validação da regra de negócio. Numeric vazio não é zero e prefixes não definem tipos.
 
-Publicação e comparabilidade são obrigatórias para o catálogo Comparar. Atividade interna é
-independente e não bloqueia produtos públicos; preço, specs e geração não inferem publicação.
+Publicação e comparabilidade são obrigatórias para o catálogo Comparar. Public é o único gate
+de status nas consultas seller. A invariante de escrita **Public requires Active** (ADR-004,
+Sprint 17R.1) rejeita Inactive/Public; preço, specs e geração não inferem publicação.
 
 ## ComparisonItem
 

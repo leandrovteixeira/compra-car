@@ -156,15 +156,15 @@ describe('administrative vehicle validation', () => {
     }
   });
 
-  it('accepts a public inactive vehicle', () => {
+  it('rejects a public inactive vehicle', () => {
     const result = validateAdministrativeVehicle({
       ...validInput,
       isActive: false,
       isPublic: true,
     });
     expect(result).toEqual({
-      ok: true,
-      data: expect.objectContaining({ isActive: false, isPublic: true }),
+      ok: false,
+      fieldErrors: { isPublic: ['Ative o veículo antes de publicá-lo.'] },
     });
   });
 });

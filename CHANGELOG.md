@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-09-11 — Product State Invariant + Compare Eligibility Row-Limit Fix (Sprint 17R.1)
+
+- refina a regra para **Public requires Active**, substituindo a permissão dos quatro estados da 17R;
+- desativação inline grava Active=false e Public=false atomicamente; ativação nunca publica;
+  publicação exige Active no UPDATE e despublicação preserva Active;
+- aplica a regra ao formulário compartilhado e à validação core/server, mantendo admin-only,
+  pending, filtros e erros acessíveis; desativação também expira o catálogo imediatamente;
+- adiciona CHECK `products_public_requires_active` em migration local, sem modificar registros;
+- corrige o truncamento de `product_specs` no Comparar com paginação explícita de produtos e
+  associações em lotes de 500, `specs!inner` com spec ativa e acumulação apenas de IDs elegíveis;
+  a ausência de FK product_specs → products impede o join direto preferido; sem N+1 ou alteração de Max Rows;
+- adiciona regressão HTTP com teto de 1.000 linhas usando o cliente Supabase instalado, testes de
+  transições, concorrência, formulário, cache e constraint. Ver Modelo/latest/preços/specs/RLS intactos.
+
 ## 2026-09-11 — Catalog Visibility & Inline Product Status (Sprint 17R)
 
 - torna Public o único flag de visibilidade em Comparar/IDs e Ver Modelo, mantendo specs e preço
