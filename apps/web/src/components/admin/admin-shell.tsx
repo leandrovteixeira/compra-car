@@ -18,16 +18,6 @@ export function AdminShell({ children, displayName, profile }: AdminShellProps) 
         area="admin"
         displayName={displayName}
         logoutAction={logout}
-        mobileNavigation={
-          <details className="relative ml-auto lg:hidden">
-            <summary className="ui-button ui-button--secondary ui-button--compact cursor-pointer list-none">
-              Menu
-            </summary>
-            <div className="absolute right-0 z-50 mt-2 w-[min(18rem,calc(100vw-2rem))] rounded-lg border border-border bg-surface p-2 shadow-lg">
-              <AdminNav />
-            </div>
-          </details>
-        }
         profile={profile}
       />
       <div className="lg:grid lg:grid-cols-[13.5rem_minmax(0,1fr)]">
