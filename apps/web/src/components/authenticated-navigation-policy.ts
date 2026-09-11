@@ -40,7 +40,10 @@ export function getAuthenticatedNavigationModel(
 
   return {
     areaLabel: 'Área do vendedor',
-    localLinks: [{ href: '/invite-requests', label: 'Convidar alguém' }],
+    localLinks: [
+      { href: '/ver-modelo', label: 'Ver Modelo' },
+      { href: '/', label: 'Comparar Modelos' },
+    ],
     roleLabel: profile.role === 'admin' ? 'Administrador' : 'Vendedor',
   };
 }
