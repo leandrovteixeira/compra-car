@@ -1,5 +1,6 @@
 import type {
   AdministrativeVehicleFieldErrors,
+  AdministrativeVehicleStatusPatch,
   AvailableVehicleFilters,
   ComparisonItem,
   ComparisonOutcome,
@@ -598,3 +599,8 @@ export interface ComparisonPageErrorDto {
 export type ComparisonPageResultDto =
   | { readonly ok: true; readonly data: ComparisonPageDataDto }
   | { readonly ok: false; readonly error: ComparisonPageErrorDto };
+
+export type AdministrativeVehicleStatusPatchDto = AdministrativeVehicleStatusPatch;
+
+export type UpdateAdministrativeVehicleStatusActionResultDto =
+  { readonly status: 'success' } | { readonly status: 'error'; readonly message: string };

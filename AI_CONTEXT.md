@@ -1,5 +1,25 @@
 # Contexto para agentes de IA
 
+## Sprint 17R — Catalog Visibility & Inline Product Status (2026-09-11)
+
+Public é o gate editorial/confidencial seller; Active representa trabalho/monitoramento interno.
+Todos os quatro estados são válidos, sem cascata no formulário ou validação do core. Comparar,
+incluindo acesso direto por IDs, exige somente Public como status de visibilidade e mantém specs.
+Ver Modelo consulta Public, filtra preço público vigente e então aplica keepLatestSellerProducts.
+A função latest permanece inalterada: brand/model/version, maior MY e desempate por PY.
+
+Admin > Veículos possui toggles nos badges com operação dedicada de um boolean + updated_at,
+validação estrita, role admin, bloqueio de double submit/pending e erro acessível. Filtros/search
+permanecem na URL. Public inline e edição completa expiram a tag global do catálogo após sucesso.
+Next confirmado nesta branch: 15.5.20, com revalidateTag(tag) imediato; updateTag não está disponível.
+
+Implementação feita no worktree sprint-17r-catalog-visibility, sobre a base origin/main 35fe6be, sem
+consultar ou copiar arquivos do checkout anterior, alterar dados, preços/specs/RLS ou publicar produtos
+automaticamente. A implementação foi commitada e publicada na branch sprint-17r-catalog-visibility
+no commit 8f6ad89 — fix(catalog): align seller visibility with public status. ADR-004 e guia
+administrativo sincronizados. Resultados dos gates e divergências da base constam em
+docs/admin/SPRINT_17R_CATALOG_VISIBILITY.md.
+
 ## Sprint 15C.3 — Operator Product Matching (2026-09-09)
 
 Status COMPLETE. Preview Admin reutiliza AdminProductCombobox para associação explícita de pendentes.

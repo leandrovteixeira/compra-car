@@ -573,7 +573,7 @@ describe('LegacySupabaseAdapter', () => {
     await expect(adapter.listAvailableVehicles()).resolves.toEqual([]);
   });
 
-  it('lista somente veículo público elegível e aplica os dois filtros distintos', async () => {
+  it('lista veículo público elegível sem filtrar atividade interna', async () => {
     const { client, calls } = fakeClient({
       products: [[product]],
       product_specs: [[{ product_id: 1, equipment_id: 10 }]],
@@ -585,13 +585,9 @@ describe('LegacySupabaseAdapter', () => {
       adapter.listAvailableVehicles({ brand: 'Marca', model: 'Modelo' }),
     ).resolves.toEqual([expect.objectContaining({ id: '1', isActive: true, isPublic: true })]);
     expect(calls[0]?.operations).toEqual(
-      expect.arrayContaining([
-        'eq:is_active:true',
-        'eq:is_public:true',
-        'eq:brand:Marca',
-        'eq:model:Modelo',
-      ]),
+      expect.arrayContaining(['eq:is_public:true', 'eq:brand:Marca', 'eq:model:Modelo']),
     );
+    expect(calls[0]?.operations).not.toContain('eq:is_active:true');
     expect(new Set(calls.map((call) => call.table))).toEqual(
       new Set(['products', 'product_specs', 'specs']),
     );
@@ -604,12 +600,10 @@ describe('LegacySupabaseAdapter', () => {
 
     const vehicles = await adapter.getVehiclesByIds([createVehicleId('2'), createVehicleId('1')]);
     expect(vehicles.map((vehicle) => vehicle.id)).toEqual(['2', '1']);
-    expect(calls[0]?.operations).toEqual(
-      expect.arrayContaining(['eq:is_active:true', 'eq:is_public:true']),
-    );
+    expect(calls[0]?.operations).toEqual(expect.arrayContaining(['eq:is_public:true']));
   });
 
-  it('filtra por comportamento produtos inativos, não públicos e IDs inexistentes', async () => {
+  it('aceita públicos inativos e rejeita privados e IDs inexistentes', async () => {
     const activePublic = product;
     const inactive = { ...product, id: 2, is_active: false, version: 'Inativo' };
     const privateProduct = { ...product, id: 3, is_public: false, version: 'Privado' };
@@ -627,8 +621,9 @@ describe('LegacySupabaseAdapter', () => {
 
     expect(vehicles).toEqual([
       expect.objectContaining({ id: '1', version: 'Versão', isActive: true, isPublic: true }),
+      expect.objectContaining({ id: '2', isActive: false, isPublic: true }),
     ]);
-    expect(vehicles.map((vehicle) => vehicle.id)).not.toContain('2');
+    expect(vehicles.map((vehicle) => vehicle.id)).toContain('2');
     expect(vehicles.map((vehicle) => vehicle.id)).not.toContain('3');
     expect(vehicles.map((vehicle) => vehicle.id)).not.toContain('999');
   });

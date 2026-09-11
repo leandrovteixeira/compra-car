@@ -9,11 +9,13 @@ import {
   type UpdateAdminProductDependencies,
 } from '@/application/admin/update-admin-product';
 import { requireRole } from '@/auth/authorization';
+import { invalidateCatalog } from './catalog-cache';
 
 const defaultDependencies: UpdateAdminProductDependencies = {
   authorize: () => requireRole('admin'),
   createRepository: () => new LegacySupabaseAdapter(),
   revalidate: revalidatePath,
+  invalidateCatalog,
 };
 
 export async function executeAdminProductUpdate(

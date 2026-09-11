@@ -23,7 +23,7 @@ Os dois anos permanecem separados no contrato e são lidos de `products.producti
 
 ### ActiveStatus
 
-- **Significado:** vigência comercial da combinação veículo/modelo-ano.
+- **Significado:** trabalho/monitoramento interno; não controla exposição seller (ADR-004 / 17R).
 - **Contrato:** `Vehicle.isActive`.
 - **Evidência:** flag, datas, view ou regra confirmada e validação comercial.
 - **Risco:** tratar existência histórica como disponibilidade vigente.
@@ -39,7 +39,8 @@ Os dois anos permanecem separados no contrato e são lidos de `products.producti
 
 Um veículo precisa possuir pelo menos um item comparável com valor válido conforme a semântica confirmada de `product_specs`. O adaptador atual exige ao menos uma associação com spec ativa, mas essa implementação não encerra a validação da regra de negócio. Numeric vazio não é zero e prefixes não definem tipos.
 
-As três condições são independentes e obrigatórias para o catálogo público.
+Publicação e comparabilidade são obrigatórias para o catálogo Comparar. Atividade interna é
+independente e não bloqueia produtos públicos; preço, specs e geração não inferem publicação.
 
 ## ComparisonItem
 

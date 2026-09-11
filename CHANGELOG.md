@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-11 — Catalog Visibility & Inline Product Status (Sprint 17R)
+
+- torna Public o único flag de visibilidade em Comparar/IDs e Ver Modelo, mantendo specs e preço
+  público vigente respectivamente; latest ocorre após a seleção do conjunto público elegível;
+- mantém Active/Public independentes no core e no formulário compartilhado;
+- transforma os badges administrativos em toggles com autorização admin, payload estrito de um
+  boolean, timestamp, proteção contra clique duplicado e erros acessíveis, preservando filtros;
+- expira imediatamente o cache do catálogo após publicação inline e edição completa usando a API
+  do Next 15.5.20 instalado;
+- cobre confidencialidade entre gerações, estados, queries seller, gravação parcial, autorização,
+  cache aquecido e interação dos controles; nenhuma alteração de dados, preços/specs/RLS ou migration.
+
 ## 2026-09-09 — Operator Product Matching (Sprint 15C.3)
 
 - reutiliza seletor Admin na tabela para resolver pendentes por escolha explícita;

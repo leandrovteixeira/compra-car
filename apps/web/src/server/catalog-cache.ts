@@ -1,5 +1,5 @@
 import type { CatalogOptionDto, CatalogVehicleDto } from '@compra-car/contracts';
-import { unstable_cache } from 'next/cache';
+import { revalidateTag, unstable_cache } from 'next/cache';
 
 import { keepLatestSellerProducts } from '@/application/catalog/seller-product-eligibility';
 
@@ -14,6 +14,11 @@ export const CATALOG_CACHE_TAGS = Object.freeze({
 });
 
 const CACHE_REVALIDATE_SECONDS = 300;
+
+// Next 15 expires the tag immediately. On Next 16 this requires updateTag in Server Actions.
+export function invalidateCatalog(): void {
+  revalidateTag(CATALOG_CACHE_TAGS.all);
+}
 
 export const getCachedBrands = unstable_cache(
   async (): Promise<readonly CatalogOptionDto[]> => {

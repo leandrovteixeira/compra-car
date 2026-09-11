@@ -42,6 +42,19 @@ alterados. Como as inspeções registradas em `docs/data/SUPABASE_INSPECTION_RES
 `docs/data/LEGACY_BASELINE_EXTRACTION_RESULTS.md` não encontraram trigger de aplicação, o adapter
 define `updated_at` explicitamente em toda atualização. Nenhuma migration foi necessária.
 
+## Status inline — Sprint 17R
+
+Ativo/Inativo e Público/Privado na listagem são botões com a mesma aparência dos badges, sem modal.
+Cada clique passa pela autorização admin e grava somente o boolean solicitado + `updated_at`, sem
+normalizar/regravar identidade ou o outro status. A operação dedicada rejeita IDs inválidos, múltiplos
+campos, campos desconhecidos e valores não booleanos. Durante pending mantém texto/tamanho e bloqueia
+cliques duplicados. Erros são anunciados com `role="alert"` e não simulam sucesso.
+
+Active representa monitoramento interno e Public a decisão editorial/confidencial. Os quatro estados
+são válidos também em criação/edição/duplicação. Os filtros administrativos permanecem combináveis
+e o refresh mantém a URL atual com busca/filtros. Toggle Public e edição completa expiram a tag global
+do catálogo após sucesso; na versão instalada Next 15.5.20 isso usa `revalidateTag(tag)` imediato.
+
 ## Duplicação
 
 Duplicar em `/admin/products/[id]/duplicate` usa os sete campos editáveis da origem como valores

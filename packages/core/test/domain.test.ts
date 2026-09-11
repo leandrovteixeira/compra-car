@@ -106,13 +106,13 @@ describe('Vehicle', () => {
     ).toThrow(DomainValidationError);
   });
 
-  it('exige atividade, publicação e ao menos um item para o catálogo público', async () => {
+  it('exige publicação e ao menos um item independentemente da atividade interna', async () => {
     const eligible = vehicle('eligible');
     const inactive = vehicle('inactive', { isActive: false });
     const privateVehicle = vehicle('private', { isPublic: false });
 
     expect(isVehicleEligibleForPublicCatalog(eligible, 1)).toBe(true);
-    expect(isVehicleEligibleForPublicCatalog(inactive, 1)).toBe(false);
+    expect(isVehicleEligibleForPublicCatalog(inactive, 1)).toBe(true);
     expect(isVehicleEligibleForPublicCatalog(privateVehicle, 1)).toBe(false);
     expect(isVehicleEligibleForPublicCatalog(eligible, 0)).toBe(false);
 
@@ -121,7 +121,10 @@ describe('Vehicle', () => {
       inactive: 1,
       private: 1,
     });
-    await expect(new ListAvailableVehicles(repository).execute()).resolves.toEqual([eligible]);
+    await expect(new ListAvailableVehicles(repository).execute()).resolves.toEqual([
+      eligible,
+      inactive,
+    ]);
   });
 });
 
@@ -164,6 +167,27 @@ describe('ComparisonItem', () => {
 });
 
 describe('CompareVehicles', () => {
+  it.each([true, false])('accepts public with active=%s', async (isActive) => {
+    const first = vehicle('first', { isActive });
+    const second = vehicle('second');
+    expect(
+      (
+        await compare([first, second], [item('SF_0001', 'binary')], []).execute({
+          vehicleIds: [first.id, second.id],
+        })
+      ).vehicles,
+    ).toContainEqual(first);
+  });
+
+  it.each([true, false])('rejects private with active=%s', async (isActive) => {
+    const first = vehicle('first', { isActive, isPublic: false });
+    const second = vehicle('second');
+    await expect(
+      compare([first, second], [item('SF_0001', 'binary')], []).execute({
+        vehicleIds: [first.id, second.id],
+      }),
+    ).rejects.toThrow();
+  });
   const firstVehicle = vehicle('vehicle-1');
   const secondVehicle = vehicle('vehicle-2');
   const thirdVehicle = vehicle('vehicle-3');

@@ -16,6 +16,7 @@ export * from './use-cases/compare-vehicles';
 export * from './use-cases/create-administrative-vehicle';
 export * from './use-cases/duplicate-administrative-vehicle';
 export * from './use-cases/update-administrative-vehicle';
+export * from './use-cases/update-administrative-vehicle-status';
 export * from './use-cases/get-vehicles-by-ids';
 export * from './use-cases/list-available-brands';
 export * from './use-cases/list-available-models';

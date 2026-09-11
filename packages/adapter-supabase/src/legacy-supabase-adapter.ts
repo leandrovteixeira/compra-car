@@ -5,6 +5,8 @@ import type {
   AdministrativeVehicleInput,
   AdministrativeVehicleFilters,
   AdministrativeVehicleRepository,
+  AdministrativeVehicleStatusRepository,
+  AdministrativeVehicleStatusPatch,
   AdministrativeProductDuplicationRepository,
   AdministrativeProductSpecsRepository,
   AdministrativeProductSpecValue,
@@ -19,7 +21,10 @@ import type {
   VehicleRepository,
   UnitConversion,
 } from '@compra-car/core';
-import { administrativeVehicleIdentity } from '@compra-car/core';
+import {
+  administrativeVehicleIdentity,
+  isValidAdministrativeVehicleStatusUpdate,
+} from '@compra-car/core';
 import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js';
 
 import { assertLegacyServerRuntime, createLegacySupabaseClientFromEnv } from './client';
@@ -92,6 +97,7 @@ export class LegacySupabaseAdapter
     VehicleRepository,
     ComparisonRepository,
     AdministrativeVehicleRepository,
+    AdministrativeVehicleStatusRepository,
     AdministrativeProductDuplicationRepository,
     AdministrativeProductSpecsRepository,
     CommercialProductCatalogReader
@@ -318,6 +324,29 @@ export class LegacySupabaseAdapter
     return data ? { status: 'updated' } : { status: 'not_found' };
   }
 
+  async updateAdministrativeVehicleStatus(
+    id: string,
+    patch: AdministrativeVehicleStatusPatch,
+  ): Promise<{ readonly status: 'updated' | 'not_found' }> {
+    if (!isValidAdministrativeVehicleStatusUpdate(id, patch)) {
+      throw new LegacyAdapterMappingError('ID ou status de veículo inválido.');
+    }
+    const payload = {
+      ...(Object.hasOwn(patch, 'isActive')
+        ? { is_active: patch.isActive }
+        : { is_public: patch.isPublic }),
+      updated_at: new Date().toISOString(),
+    };
+    const { data, error } = await this.client
+      .from('products')
+      .update(payload)
+      .eq('id', Number(id))
+      .select('id')
+      .maybeSingle();
+    if (error) throw queryError('atualização de status de product', error);
+    return { status: data ? 'updated' : 'not_found' };
+  }
+
   async rollbackAdministrativeVehicleDuplication(productId: string): Promise<void> {
     const parsedId = parseAdministrativeProductId(productId);
     if (parsedId === null) throw new LegacyAdapterMappingError('ID de produto inválido.');
@@ -429,11 +458,7 @@ export class LegacySupabaseAdapter
   async listPublicEligibleVehicles(
     filters: AvailableVehicleFilters = {},
   ): Promise<readonly Vehicle[]> {
-    let query = this.client
-      .from('products')
-      .select(PRODUCT_COLUMNS)
-      .eq('is_active', true)
-      .eq('is_public', true);
+    let query = this.client.from('products').select(PRODUCT_COLUMNS).eq('is_public', true);
 
     if (filters.brand) query = query.eq('brand', filters.brand);
     if (filters.model) query = query.eq('model', filters.model);
@@ -483,7 +508,6 @@ export class LegacySupabaseAdapter
     const { data, error } = await this.client
       .from('products')
       .select(PRODUCT_COLUMNS)
-      .eq('is_active', true)
       .eq('is_public', true)
       .in('id', legacyIds);
     if (error) throw queryError('products por ids', error);

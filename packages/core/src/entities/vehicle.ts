@@ -64,5 +64,5 @@ export function isVehicleEligibleForPublicCatalog(
   vehicle: Vehicle,
   comparisonItemCount: number,
 ): boolean {
-  return vehicle.isActive && vehicle.isPublic && comparisonItemCount > 0;
+  return vehicle.isPublic && comparisonItemCount > 0;
 }

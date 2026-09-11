@@ -18,6 +18,7 @@ export interface UpdateAdminProductDependencies {
   readonly authorize: () => Promise<unknown>;
   readonly createRepository: () => AdministrativeVehicleRepository;
   readonly revalidate: (path: string) => void;
+  readonly invalidateCatalog: () => void;
 }
 
 export async function executeAdminProductUpdate(
@@ -47,6 +48,7 @@ export async function executeAdminProductUpdate(
       };
     }
 
+    dependencies.invalidateCatalog();
     dependencies.revalidate('/admin/products');
     dependencies.revalidate(`/admin/products/${id}/edit`);
     return {

@@ -202,7 +202,7 @@ export class CompareVehicles {
       if (!vehicle) {
         throw new VehicleNotFoundError(vehicleId);
       }
-      if (!vehicle.isActive || !vehicle.isPublic) {
+      if (!vehicle.isPublic) {
         throw new VehicleNotEligibleError(vehicleId);
       }
       return vehicle;

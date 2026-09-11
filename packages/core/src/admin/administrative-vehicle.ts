@@ -14,6 +14,33 @@ export interface AdministrativeVehicle extends AdministrativeVehicleInput {
   readonly id: string;
 }
 
+export type AdministrativeVehicleStatusPatch =
+  | { readonly isActive: boolean; readonly isPublic?: never }
+  | { readonly isPublic: boolean; readonly isActive?: never };
+
+export function isValidAdministrativeVehicleStatusUpdate(
+  id: unknown,
+  patch: unknown,
+): patch is AdministrativeVehicleStatusPatch {
+  if (
+    typeof id !== 'string' ||
+    !/^[1-9]\d*$/u.test(id) ||
+    !Number.isSafeInteger(Number(id)) ||
+    patch === null ||
+    typeof patch !== 'object' ||
+    Array.isArray(patch)
+  )
+    return false;
+
+  const keys = Object.keys(patch);
+  const field = keys[0];
+  return (
+    keys.length === 1 &&
+    (field === 'isActive' || field === 'isPublic') &&
+    typeof (patch as Record<string, unknown>)[field] === 'boolean'
+  );
+}
+
 export interface AdministrativeVehicleFilters {
   readonly brand?: string;
   readonly model?: string;
@@ -81,10 +108,6 @@ export function validateAdministrativeVehicle(
       'productionYear',
       'O ano de produção deve ser igual ao ano modelo ou um ano menor.',
     );
-  }
-
-  if (data.isPublic && !data.isActive) {
-    addError(errors, 'isPublic', 'Um veículo público precisa estar ativo.');
   }
 
   return Object.keys(errors).length === 0 ? { ok: true, data } : { ok: false, fieldErrors: errors };

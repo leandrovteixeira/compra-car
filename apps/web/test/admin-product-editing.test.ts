@@ -77,10 +77,12 @@ describe('administrative product editing', () => {
   it('authorizes, normalizes, updates, stays on edit and revalidates both views', async () => {
     const target = repository();
     const revalidate = vi.fn();
+    const invalidateCatalog = vi.fn();
     const result = await executeAdminProductUpdate('42', formData(), {
       authorize: vi.fn(async () => undefined),
       createRepository: () => target,
       revalidate,
+      invalidateCatalog,
     });
 
     expect(result).toEqual({
@@ -107,6 +109,7 @@ describe('administrative product editing', () => {
       expect.objectContaining({ brand: 'Toyota', model: 'Corolla cross', version: 'Xrx' }),
     );
     expect(revalidate.mock.calls).toEqual([['/admin/products'], ['/admin/products/42/edit']]);
+    expect(invalidateCatalog).toHaveBeenCalledOnce();
   });
 
   it('returns the same duplicate feedback used by creation', async () => {
@@ -114,6 +117,7 @@ describe('administrative product editing', () => {
       authorize: vi.fn(async () => undefined),
       createRepository: () => repository({ duplicate: true }),
       revalidate: vi.fn(),
+      invalidateCatalog: vi.fn(),
     });
     expect(result).toEqual(
       expect.objectContaining({

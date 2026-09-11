@@ -117,12 +117,10 @@ function ProductFields({ action, currentYear, mode, pending, state }: ProductFie
 
   function changeActive(checked: boolean) {
     setIsActive(checked);
-    if (!checked) setIsPublic(false);
   }
 
   function changePublic(checked: boolean) {
     setIsPublic(checked);
-    if (checked) setIsActive(true);
   }
 
   function changeProductionYear(nextProductionYear: string) {

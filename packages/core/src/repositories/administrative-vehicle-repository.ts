@@ -1,6 +1,7 @@
 import type {
   AdministrativeVehicle,
   AdministrativeVehicleInput,
+  AdministrativeVehicleStatusPatch,
 } from '../admin/administrative-vehicle';
 import type { AdministrativeProductSpecsRepository } from '../admin/administrative-product-specs';
 
@@ -11,6 +12,13 @@ export type AdministrativeVehicleUpdate =
   | { readonly status: 'updated' }
   | { readonly status: 'not_found' }
   | { readonly status: 'duplicate' };
+
+export interface AdministrativeVehicleStatusRepository {
+  updateAdministrativeVehicleStatus(
+    id: string,
+    patch: AdministrativeVehicleStatusPatch,
+  ): Promise<{ readonly status: 'updated' | 'not_found' }>;
+}
 
 export interface AdministrativeVehicleRepository {
   findAdministrativeVehicleDuplicate(

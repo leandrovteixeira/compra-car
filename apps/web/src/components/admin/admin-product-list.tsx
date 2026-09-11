@@ -1,28 +1,9 @@
 import type { AdminProductListItem } from '@/server/admin-product-service';
 import Link from 'next/link';
+import { AdminProductStatusToggle } from './admin-product-status-toggle';
 
 interface AdminProductListProps {
   readonly products: readonly AdminProductListItem[];
-}
-
-function StatusBadge({
-  children,
-  positive,
-}: {
-  readonly children: string;
-  readonly positive: boolean;
-}) {
-  return (
-    <span
-      className={`ui-badge ${
-        positive
-          ? 'border-emerald-800 bg-emerald-950/50 text-emerald-300'
-          : 'border-border bg-surface-muted text-text-muted'
-      }`}
-    >
-      {children}
-    </span>
-  );
 }
 
 export function AdminProductList({ products }: AdminProductListProps) {
@@ -69,14 +50,20 @@ export function AdminProductList({ products }: AdminProductListProps) {
                   {product.productionYear}/{product.modelYear}
                 </td>
                 <td>
-                  <StatusBadge positive={product.isActive}>
-                    {product.isActive ? 'Ativo' : 'Inativo'}
-                  </StatusBadge>
+                  <AdminProductStatusToggle
+                    productId={product.id}
+                    productName={`${product.brand} ${product.model} ${product.version}`}
+                    field="isActive"
+                    value={product.isActive}
+                  />
                 </td>
                 <td>
-                  <StatusBadge positive={product.isPublic}>
-                    {product.isPublic ? 'Público' : 'Privado'}
-                  </StatusBadge>
+                  <AdminProductStatusToggle
+                    productId={product.id}
+                    productName={`${product.brand} ${product.model} ${product.version}`}
+                    field="isPublic"
+                    value={product.isPublic}
+                  />
                 </td>
                 <td>
                   <div className="flex flex-wrap gap-1">
