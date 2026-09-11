@@ -9,7 +9,7 @@ export interface SellerModelOption { readonly id:number; readonly label:string; 
 export interface SellerCategoryScore { readonly key:string; readonly label:string; readonly score:number|null; }
 export interface SellerModelScoreResult { readonly options:readonly SellerModelOption[]; readonly selected:{readonly id:number;readonly label:string;readonly price:number}|null; readonly radius:SellerScoreRadius; readonly peerCount:number; readonly overallScore:number|null; readonly categories:readonly SellerCategoryScore[]; }
 interface CurrentPriceRow { readonly product_id:number; readonly amount:number|string; }
-interface ProductRow { readonly id:number;readonly brand:string;readonly model:string;readonly version:string;readonly model_year:number; }
+interface ProductRow { readonly id:number;readonly brand:string;readonly model:string;readonly version:string;readonly production_year:number;readonly model_year:number; }
 interface ValueRow { readonly product_id:number;readonly category:string;readonly perceived_value:number|string|null; }
 interface SpecRow { readonly id:number;readonly code:string; }
 interface ProductSpecRow { readonly product_id:number;readonly equipment_id:number;readonly value:number|string|null;readonly is_present:boolean|null; }
@@ -20,7 +20,7 @@ function scoreRatio(value:number|null,max:number){if(value===null||!Number.isFin
 function inverseScoreRatio(value:number|null,min:number){if(value===null||!Number.isFinite(value)||value<=0||min<=0)return null;return Math.max(0,Math.min(10,(min/value)*10));}
 function average(values:readonly number[]){return values.length?values.reduce((a,b)=>a+b,0)/values.length:null;}
 function productIdentity(p:ProductRow){return [p.brand,p.model,p.version].map(v=>v.trim().toLocaleLowerCase('pt-BR')).join('|');}
-function keepLatestModelYear(products:readonly ProductRow[]):ProductRow[]{const latest=new Map<string,number>();for(const p of products){const key=productIdentity(p);const current=latest.get(key);if(current===undefined||p.model_year>current)latest.set(key,p.model_year);}return products.filter(p=>p.model_year===latest.get(productIdentity(p)));}
+function keepLatestCommercialProduct(products:readonly ProductRow[]):ProductRow[]{const latest=new Map<string,{modelYear:number;productionYear:number}>();for(const p of products){const key=productIdentity(p);const current=latest.get(key);if(current===undefined||p.model_year>current.modelYear||(p.model_year===current.modelYear&&p.production_year>current.productionYear))latest.set(key,{modelYear:p.model_year,productionYear:p.production_year});}return products.filter(p=>{const current=latest.get(productIdentity(p));return p.model_year===current?.modelYear&&p.production_year===current.productionYear;});}
 function emptyCategories():readonly SellerCategoryScore[]{return Object.freeze<SellerCategoryScore[]>([
  ...MONETARY_CATEGORIES.slice(0,5).map(c=>({key:c,label:displayCategory(c),score:null})),
  {key:'Ownership',label:'Ownership',score:null},
@@ -32,12 +32,12 @@ export async function loadSellerModelScore(productId:number|null,radius:SellerSc
  const client=createLegacySupabaseClientFromEnv();
  const [{data:priceData,error:priceError},{data:productData,error:productError}]=await Promise.all([
   client.from('vw_current_product_public_prices').select('product_id,amount'),
-  client.from('products').select('id,brand,model,version,model_year').eq('is_active',true).order('brand').order('model').order('version'),
+  client.from('products').select('id,brand,model,version,production_year,model_year').eq('is_active',true).order('brand').order('model').order('version'),
  ]);
  if(priceError)throw priceError;if(productError)throw productError;
  const prices=(priceData??[]) as CurrentPriceRow[];const priceByProduct=new Map(prices.map(r=>[Number(r.product_id),Number(r.amount)]));
  const pricedProducts=((productData??[]) as ProductRow[]).filter(p=>priceByProduct.has(Number(p.id)));
- const products=keepLatestModelYear(pricedProducts);
+ const products=keepLatestCommercialProduct(pricedProducts);
  const options=Object.freeze(products.map(p=>({id:p.id,label:labelFor(p)})));
  const selectedProduct=productId===null?null:products.find(p=>p.id===productId)??null;
  if(!selectedProduct)return {options,selected:null,radius,peerCount:0,overallScore:null,categories:Object.freeze([])};
