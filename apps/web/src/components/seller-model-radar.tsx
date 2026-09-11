@@ -4,7 +4,7 @@ interface SellerModelRadarProps {
   readonly categories: readonly SellerCategoryScore[];
 }
 
-function point(index: number, total: number, value: number, radius = 118) {
+function point(index: number, total: number, value: number, radius = 112) {
   const angle = -Math.PI / 2 + (index * Math.PI * 2) / total;
   const r = radius * value;
   return [150 + Math.cos(angle) * r, 150 + Math.sin(angle) * r] as const;
@@ -22,13 +22,13 @@ export function SellerModelRadar({ categories }: SellerModelRadarProps) {
     .join(' ');
 
   return (
-    <div className="ui-surface flex min-h-0 flex-col overflow-hidden">
+    <div className="ui-surface flex min-h-0 flex-col overflow-hidden !p-4">
       <div className="mb-1">
         <h2 className="text-base font-semibold">Radar de valor percebido</h2>
         <p className="text-xs text-text-muted">Notas relativas aos modelos no raio de preço selecionado.</p>
       </div>
-      <div className="flex min-h-0 flex-1 items-center justify-center">
-        <svg aria-label="Radar de notas por categoria" className="block w-full max-w-[43rem]" viewBox="0 0 300 300" role="img">
+      <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden">
+        <svg aria-label="Radar de notas por categoria" className="block h-auto max-h-[24rem] w-full max-w-[36rem]" viewBox="0 0 300 300" role="img">
           {grid.map((points, index) => (
             <polygon key={index} points={points} fill="none" stroke="currentColor" className="text-border" strokeWidth="1" />
           ))}
@@ -38,7 +38,7 @@ export function SellerModelRadar({ categories }: SellerModelRadarProps) {
           })}
           <polygon points={polygon} fill="color-mix(in srgb, var(--color-selection-strong) 28%, transparent)" stroke="var(--color-interactive)" strokeWidth="2" />
           {categories.map((category, index) => {
-            const [x, y] = point(index, total, 1.13);
+            const [x, y] = point(index, total, 1.14);
             return (
               <text key={category.key} x={x} y={y} textAnchor={x < 135 ? 'end' : x > 165 ? 'start' : 'middle'} dominantBaseline="middle" className="fill-text-secondary text-[7px] font-semibold">
                 {category.label}
