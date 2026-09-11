@@ -19,6 +19,8 @@ function displayCategory(c:string){return ({'Audio & Conectividade':'Áudio & Co
 function scoreRatio(value:number|null,max:number){if(value===null||!Number.isFinite(value)||max<=0)return null;return Math.max(0,Math.min(10,(value/max)*10));}
 function inverseScoreRatio(value:number|null,min:number){if(value===null||!Number.isFinite(value)||value<=0||min<=0)return null;return Math.max(0,Math.min(10,(min/value)*10));}
 function average(values:readonly number[]){return values.length?values.reduce((a,b)=>a+b,0)/values.length:null;}
+function productIdentity(p:ProductRow){return [p.brand,p.model,p.version].map(v=>v.trim().toLocaleLowerCase('pt-BR')).join('|');}
+function keepLatestModelYear(products:readonly ProductRow[]):ProductRow[]{const latest=new Map<string,number>();for(const p of products){const key=productIdentity(p);const current=latest.get(key);if(current===undefined||p.model_year>current)latest.set(key,p.model_year);}return products.filter(p=>p.model_year===latest.get(productIdentity(p)));}
 function emptyCategories():readonly SellerCategoryScore[]{return Object.freeze<SellerCategoryScore[]>([
  ...MONETARY_CATEGORIES.slice(0,5).map(c=>({key:c,label:displayCategory(c),score:null})),
  {key:'Ownership',label:'Ownership',score:null},
@@ -34,7 +36,8 @@ export async function loadSellerModelScore(productId:number|null,radius:SellerSc
  ]);
  if(priceError)throw priceError;if(productError)throw productError;
  const prices=(priceData??[]) as CurrentPriceRow[];const priceByProduct=new Map(prices.map(r=>[Number(r.product_id),Number(r.amount)]));
- const products=((productData??[]) as ProductRow[]).filter(p=>priceByProduct.has(Number(p.id)));
+ const pricedProducts=((productData??[]) as ProductRow[]).filter(p=>priceByProduct.has(Number(p.id)));
+ const products=keepLatestModelYear(pricedProducts);
  const options=Object.freeze(products.map(p=>({id:p.id,label:labelFor(p)})));
  const selectedProduct=productId===null?null:products.find(p=>p.id===productId)??null;
  if(!selectedProduct)return {options,selected:null,radius,peerCount:0,overallScore:null,categories:Object.freeze([])};
