@@ -3,13 +3,24 @@ import type { ReactNode } from 'react';
 
 import { logout } from '../../app/actions/auth';
 import { ApplicationTopbar } from '../application-topbar';
+import type { NavigationLink } from '../authenticated-navigation-policy';
 import { AdminNav } from './admin-nav';
+import { adminNavigationItems } from './admin-navigation';
 
 interface AdminShellProps {
   readonly children: ReactNode;
   readonly displayName: string;
   readonly profile: AuthProfile;
 }
+
+const mobileAdminLinks: readonly NavigationLink[] = adminNavigationItems.flatMap((item) => {
+  if (item.children) {
+    return item.children
+      .filter((child) => child.status === 'active' && child.href)
+      .map((child) => ({ href: child.href!, label: child.label }));
+  }
+  return item.status === 'active' && item.href ? [{ href: item.href, label: item.label }] : [];
+});
 
 export function AdminShell({ children, displayName, profile }: AdminShellProps) {
   return (
@@ -18,6 +29,7 @@ export function AdminShell({ children, displayName, profile }: AdminShellProps) 
         area="admin"
         displayName={displayName}
         logoutAction={logout}
+        navigationLinks={mobileAdminLinks}
         profile={profile}
       />
       <div className="lg:grid lg:grid-cols-[13.5rem_minmax(0,1fr)]">
