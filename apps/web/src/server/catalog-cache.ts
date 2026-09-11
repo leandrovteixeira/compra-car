@@ -19,14 +19,26 @@ function normalizedIdentity(vehicle: CatalogVehicleDto): string {
     .join('|');
 }
 
-function keepLatestModelYear(vehicles: readonly CatalogVehicleDto[]): readonly CatalogVehicleDto[] {
-  const latestByIdentity = new Map<string, number>();
+function keepLatestCommercialProduct(vehicles: readonly CatalogVehicleDto[]): readonly CatalogVehicleDto[] {
+  const latestByIdentity = new Map<string, { modelYear: number; productionYear: number }>();
   for (const vehicle of vehicles) {
     const key = normalizedIdentity(vehicle);
     const current = latestByIdentity.get(key);
-    if (current === undefined || vehicle.modelYear > current) latestByIdentity.set(key, vehicle.modelYear);
+    if (
+      current === undefined ||
+      vehicle.modelYear > current.modelYear ||
+      (vehicle.modelYear === current.modelYear && vehicle.productionYear > current.productionYear)
+    ) {
+      latestByIdentity.set(key, {
+        modelYear: vehicle.modelYear,
+        productionYear: vehicle.productionYear,
+      });
+    }
   }
-  return vehicles.filter((vehicle) => vehicle.modelYear === latestByIdentity.get(normalizedIdentity(vehicle)));
+  return vehicles.filter((vehicle) => {
+    const latest = latestByIdentity.get(normalizedIdentity(vehicle));
+    return vehicle.modelYear === latest?.modelYear && vehicle.productionYear === latest.productionYear;
+  });
 }
 
 export const getCachedBrands = unstable_cache(
@@ -59,7 +71,7 @@ export const getCachedVehicles = unstable_cache(
       brand,
       model,
     });
-    return keepLatestModelYear(vehicles.map(toCatalogVehicle));
+    return keepLatestCommercialProduct(vehicles.map(toCatalogVehicle));
   },
   ['catalog-vehicles'],
   {
@@ -71,7 +83,7 @@ export const getCachedVehicles = unstable_cache(
 export const getCachedCatalogVehicles = unstable_cache(
   async (): Promise<readonly CatalogVehicleDto[]> => {
     const vehicles = await getCatalogCompositionRoot().listAvailableVehicles.execute();
-    return keepLatestModelYear(vehicles.map(toCatalogVehicle));
+    return keepLatestCommercialProduct(vehicles.map(toCatalogVehicle));
   },
   ['catalog-search-vehicles'],
   {
