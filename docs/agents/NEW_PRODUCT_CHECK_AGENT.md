@@ -10,8 +10,11 @@ Sprint 19A.4, worktree `C:\Dev\compra-car-agent1`, branch
 Rótulos oficiais e canônicos permanecem preservados. O agente não responde
 qual PY/MY precisa ser cadastrado; isso pertence ao futuro Product Year Agent.
 
-READ-ONLY: sem escrita canônica, migrations, aliases table, UI ou scheduler.
-Blueprint canônico dos cinco agentes e da futura plataforma:
+Default READ-ONLY: reports locais e zero escrita no banco. A Sprint 19B
+adicionou --persist-findings como opt-in exclusivo de dados operacionais,
+com o mesmo UUID do report e revisão Admin sem executar ações canônicas.
+Migration local ainda não aplicada. [Plataforma 19B](AGENT_PLATFORM_19B.md).
+Sem aliases table ou scheduler. Blueprint canônico dos cinco agentes:
 [AGENT_PLATFORM_ARCHITECTURE.md](AGENT_PLATFORM_ARCHITECTURE.md).
 
 ## Pipeline

@@ -36,6 +36,7 @@ describe('admin foundation', () => {
           },
         ],
       },
+      { href: '/admin/agents', label: 'Agentes', status: 'active' },
       { href: '/admin/users', label: 'Usuários', status: 'active' },
     ]);
   });

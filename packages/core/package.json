@@ -26,7 +26,9 @@
     "./commercial-import-contract": "./src/import/commercial-import-contract.ts",
     "./commercial-import-xlsx-parser": "./src/import/commercial-import-xlsx-parser.ts",
     "./commercial-import-structural-validator": "./src/import/commercial-import-structural-validator.ts",
-    "./agents": "./src/agents/index.ts"
+    "./agents": "./src/agents/index.ts",
+    "./agent-platform": "./src/agent-platform/index.ts",
+    "./agent-platform/testing": "./src/agent-platform/testing.ts"
   },
   "types": "./src/index.ts",
   "scripts": {

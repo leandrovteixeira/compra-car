@@ -1,10 +1,12 @@
 # Agent Platform Architecture — referência canônica
 
-## Estado e decisão da Sprint 19A.4
+## Estado atual — Sprint 19B
 
-Este documento define a direção das próximas Sprints. **Somente a reconciliação
-MMV do agente atual está implementada.** Os outros quatro agentes, plataforma
-persistida, review operacional e scheduler descritos abaixo são futuros.
+A reconciliação MMV e a plataforma operacional **Runs + Findings + Evidence +
+Human Review** estão implementadas no código. A migration 19B é local, ainda
+não aplicada. Os outros quatro agentes e o scheduler permanecem futuros.
+Decisões de review não executam ações canônicas. Detalhes e validação:
+[AGENT_PLATFORM_19B.md](AGENT_PLATFORM_19B.md).
 
 `New Product Check Agent` é o nome histórico do código/CLI. Sua responsabilidade
 atual corresponde a **MMV Discovery Agent**. Não se renomeiam diretórios nem
@@ -43,9 +45,10 @@ as quatro ocorrências. Nenhum ano é escolhido como a identidade correta.
 | SPEC_INTELLIGENCE | Extrair specs e mapear ao master existente | UNMATCHED_SPEC, SPEC_CHANGE | Não cria spec master arbitrariamente |
 | PRICE_INTELLIGENCE | Propor preço público com proveniência e referência temporal | NEW_PRICE, PRICE_CHANGE | Não mistura fontes oficiais/externas nem publica automaticamente |
 
-A taxonomia é conceitual, **sem schema final**. O enum atual ainda usa
-AMBIGUOUS. POSSIBLE_YEAR_CHANGE pode permanecer definido para compatibilidade
-histórica, mas o MMV Discovery não o emite.
+A plataforma centraliza esses cinco AgentTypes e dez finding types, incluindo
+MMV_MATCHED informativo. O MMV atual ainda emite AMBIGUOUS, mapeado para
+AMBIGUOUS_MMV na persistência. POSSIBLE_YEAR_CHANGE permanece por compatibilidade
+histórica e não é emitido. Nenhum agente futuro foi implementado.
 
 ### 1. Brand Connector Agent — futuro
 
@@ -163,9 +166,9 @@ O futuro orchestrator deverá registrar versões de connector/matcher, entradas
 aprovadas e idempotência. Mudança do catálogo após um finding exige revalidar a
 ação proposta. Nenhuma dessas capacidades de execução foi criada na 19A.4.
 
-## Shared platform — Sprint 19B, futura
+## Shared platform — Sprint 19B, implementada localmente
 
-A 19B deverá implementar a base operacional compartilhada:
+A 19B implementa a base operacional compartilhada:
 
 - `agent_runs`: execução, tipo do agente, escopo, estado, configuração/versionamento
   e métricas;
@@ -173,17 +176,20 @@ A 19B deverá implementar a base operacional compartilhada:
 - `agent_evidence`: proveniência, referência e associação aos fatos/findings;
 - `agent_reviews`: decisão humana, responsável, justificativa e auditoria.
 
-São responsabilidades propostas, não um DDL aprovado. Nenhuma tabela, migration
-ou persistência de AgentRun/Finding/Evidence/Review foi criada nesta Sprint.
-O resultado atual permanece em JSON/Markdown locais ignorados pelo Git.
+Migration local versionada, contratos/core, adapter dedicado e Admin Review
+estão implementados. RLS não concede acesso ao browser; o guard administrativo
+protege o repository privilegiado no servidor. A migration ainda não foi aplicada.
+O MMV permanece JSON/Markdown local por default; --persist-findings habilita
+somente persistência operacional. COMPLETED congela observações; reviews são
+append-only e Accept não executa proposal.
 
-Tipos futuros: BRAND_CONNECTOR, MMV_DISCOVERY, PRODUCT_YEAR,
-SPEC_INTELLIGENCE, PRICE_INTELLIGENCE. Findings futuros:
-NEW_BRAND_CONNECTOR, NEW_MODEL, NEW_VERSION, AMBIGUOUS_MMV, NEW_PRODUCT_YEAR,
+Tipos centrais: BRAND_CONNECTOR, MMV_DISCOVERY, PRODUCT_YEAR,
+SPEC_INTELLIGENCE, PRICE_INTELLIGENCE. Finding types centrais:
+MMV_MATCHED, NEW_BRAND_CONNECTOR, NEW_MODEL, NEW_VERSION, AMBIGUOUS_MMV, NEW_PRODUCT_YEAR,
 UNMATCHED_SPEC, SPEC_CHANGE, NEW_PRICE, PRICE_CHANGE.
 
 MMV virtual e fingerprint dependem de normalização versionada. A persistência
-futura deverá guardar contexto suficiente para revisão de resultados antigos,
+guarda subject, candidate, warnings, product rows e proveniência para review,
 sem assumir que uma mudança do matcher preservará automaticamente as chaves.
 
 ## Review humano e fronteira de autonomia
@@ -198,7 +204,7 @@ autorizar qualquer alteração posterior: a ação deve ser concreta, rastreáve
 revalidada contra o estado atual.
 
 Até a Sprint 23, agentes podem pesquisar, extrair, comparar, propor e gerar
-evidence; poderão persistir findings operacionais quando a plataforma existir.
+evidence e persistir findings operacionais mediante opt-in explícito.
 Não podem autonomamente publicar veículo, criar spec master, apagar produto,
 alterar histórico, alterar preço canônico sem workflow aprovado ou modificar
 matcher silenciosamente.
@@ -211,8 +217,8 @@ ação canônica, migration, run OpenAI ou novo agente especialista.
 O core contém projeções, regras determinísticas e contratos. Adapters fazem
 acesso a providers/dados; Supabase permanece isolado em adapter-supabase.
 Aplicação recebe capacidades explícitas de leitura e report, não um cliente
-de banco com poderes de mutação. UI futura consome contratos, sem tabelas
-legadas expostas.
+de banco com poderes canônicos. A integração 19B recebe a capability operacional
+persistRunBundle. UI consome contratos, sem tabelas legadas expostas.
 
 Mudanças de regras precisam de testes de regressão por marca, revisão e
 documentação. O benchmark distingue MMVs de ocorrências e não exige

@@ -1,9 +1,11 @@
 import { randomUUID } from 'node:crypto';
+import type { AgentPlatformRepository } from '@compra-car/core/agent-platform';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import {
   NewProductCheckAgent,
+  mapMmvRunToPlatform,
   AdministrativeProductCatalogReader,
   FixtureProductCatalogReader,
   FixtureProductResearchProvider,
@@ -15,14 +17,20 @@ import {
   OpenAIProductResearchProvider,
   ProductResearchProviderError,
 } from '@compra-car/adapter-openai';
-import { LocalProductReportWriter } from './report-writer';
+import { LocalProductReportWriter, redactSecrets } from './report-writer';
 
 export function parseAgentArguments(args: readonly string[]) {
   const values = args[0] === '--' ? args.slice(1) : [...args];
   const options = new Map<string, string>();
-  for (let index = 0; index < values.length; index += 2) {
-    const name = values[index],
-      value = values[index + 1];
+  let persistFindings = false;
+  for (let index = 0; index < values.length; index += 1) {
+    const name = values[index];
+    if (name === '--persist-findings') {
+      if (persistFindings) throw new Error('INVALID_AGENT_ARGUMENTS');
+      persistFindings = true;
+      continue;
+    }
+    const value = values[++index];
     if (
       !['--brand', '--provider'].includes(name ?? '') ||
       !value ||
@@ -37,7 +45,7 @@ export function parseAgentArguments(args: readonly string[]) {
   if (!brand || (provider !== 'fixture' && provider !== 'openai'))
     throw new Error('INVALID_AGENT_ARGUMENTS');
   const scope = officialBrandSource({ country: 'BR', brand });
-  return { scope: { country: scope.country, brand: scope.brand }, provider };
+  return { scope: { country: scope.country, brand: scope.brand }, provider, persistFindings };
 }
 
 export async function runNewProductCheckCli(
@@ -45,10 +53,11 @@ export async function runNewProductCheckCli(
   env: Readonly<Record<string, string | undefined>> = process.env,
   log: (message: string) => void = console.log,
   repositoryRoot = fileURLToPath(new URL('../../', import.meta.url)),
+  persistence?: Pick<AgentPlatformRepository, 'persistRunBundle'>,
 ): Promise<number> {
   let stage = 'arguments';
   try {
-    const { scope, provider } = parseAgentArguments(args);
+    const { scope, provider, persistFindings } = parseAgentArguments(args);
     stage = 'configuration';
     if (
       provider === 'openai' &&
@@ -60,6 +69,14 @@ export async function runNewProductCheckCli(
       log(
         'Configuration required: OPENAI_API_KEY, OPENAI_AGENT_MODEL, SUPABASE_URL, SUPABASE_SERVER_KEY.',
       );
+      return 1;
+    }
+    if (
+      persistFindings &&
+      !persistence &&
+      (!env.SUPABASE_URL?.trim() || !env.SUPABASE_SERVER_KEY?.trim())
+    ) {
+      log('Persistence configuration required: SUPABASE_URL, SUPABASE_SERVER_KEY.');
       return 1;
     }
     const secrets = [env.OPENAI_API_KEY ?? '', env.SUPABASE_SERVER_KEY ?? ''];
@@ -130,6 +147,24 @@ export async function runNewProductCheckCli(
         productCheckFixture(scope).knownExpectations,
       );
       log('Fixture benchmark: ' + JSON.stringify(benchmark));
+    }
+    if (persistFindings) {
+      stage = 'operational persistence';
+      const repository =
+        persistence ??
+        (await (async () => {
+          const { AgentPlatformSupabaseAdapter, createLegacySupabaseClient } =
+            await import('@compra-car/adapter-supabase');
+          return new AgentPlatformSupabaseAdapter(
+            createLegacySupabaseClient({
+              url: env.SUPABASE_URL!,
+              serverKey: env.SUPABASE_SERVER_KEY!,
+            }),
+          );
+        })());
+      const sanitized = JSON.parse(redactSecrets(JSON.stringify(result), secrets)) as typeof result;
+      await repository.persistRunBundle(mapMmvRunToPlatform(sanitized, { provider }));
+      log('Operational findings persisted. Catalog unchanged.');
     }
     log('Reports: .local-reports/agents/new-product-check/' + runId + '.{json,md}');
     return 0;

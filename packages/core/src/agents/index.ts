@@ -27,3 +27,5 @@ export {
 } from './product-component-normalization';
 
 export * from './jeep-captured-mmv-fixture';
+
+export * from './mmv-platform-mapper';

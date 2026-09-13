@@ -1,5 +1,22 @@
 # Changelog
 
+## Sprint 19B — Agent Platform (2026-09-13)
+
+Run/Finding/Evidence/Review genéricos, migration local com RLS sem acesso de
+browser, repository operacional e Admin em /admin/agents. Accept/Reject/Defer
+são decisões append-only; **não executam proposal nem alteram catálogo**.
+COMPLETED congela observações. Bundle usa UUID do report e fingerprints,
+rejeita conteúdo conflitante e finaliza somente após persistir o conjunto.
+MMV mantém reports locais por default; --persist-findings é opt-in e foi
+testado exclusivamente com mocks. Migration não aplicada; zero OpenAI ou
+escrita remota/canônica. Nenhum agente futuro ou scheduler implementado.
+
+HEAD inicial 0b81aa8, branch sprint-19b-agent-platform, worktree inicialmente
+limpo; sem commit/staging. PENDENTE: PostgreSQL/RLS real e smoke autenticado;
+Docker daemon indisponível. Um writer por run; concorrência distribuída e
+aggregations no banco são follow-ups. Issue T270 MHEV registrado sem correção.
+Implementação, schema, limites, testes e Git: [AGENT_PLATFORM_19B.md](docs/agents/AGENT_PLATFORM_19B.md).
+
 ## Sprint 19A.4 — MMV Identity Reconciliation + Agent Platform Blueprint (2026-09-13)
 
 New Product Check Agent mantém nome histórico; sua missão atual é MMV Discovery.

@@ -1,3 +1,4 @@
+import type { AgentRunBundle } from '@compra-car/core/agent-platform';
 import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -22,6 +23,108 @@ afterEach(async () => {
   for (const root of roots.splice(0)) await rm(root, { recursive: true, force: true });
 });
 describe('CLI and local reports', () => {
+  it('default ignores persistence capability even with credentials present', async () => {
+    const persistence = { persistRunBundle: vi.fn() };
+    vi.stubGlobal('fetch', () => {
+      throw new Error('Network forbidden');
+    });
+    expect(
+      await runNewProductCheckCli(
+        ['--brand', 'Jeep', '--provider', 'fixture'],
+        { SUPABASE_URL: 'https://example.invalid', SUPABASE_SERVER_KEY: 'synthetic-key' },
+        vi.fn(),
+        await temporaryRoot(),
+        persistence,
+      ),
+    ).toBe(0);
+    expect(persistence.persistRunBundle).not.toHaveBeenCalled();
+  });
+  it('explicit opt-in passes only the operational bundle with the report UUID', async () => {
+    const persistence = {
+      persistRunBundle: vi.fn<(bundle: AgentRunBundle) => Promise<void>>(async () => {}),
+    };
+    const root = await temporaryRoot();
+    vi.stubGlobal('fetch', () => {
+      throw new Error('Network forbidden');
+    });
+    expect(
+      await runNewProductCheckCli(
+        ['--brand', 'Jeep', '--provider', 'fixture', '--persist-findings'],
+        {},
+        vi.fn(),
+        root,
+        persistence,
+      ),
+    ).toBe(0);
+    expect(persistence.persistRunBundle).toHaveBeenCalledOnce();
+    const bundle = persistence.persistRunBundle.mock.calls[0]![0] as unknown as {
+      run: { id: string };
+      findings: unknown[];
+    };
+    const report = JSON.parse(
+      await readFile(
+        join(root, '.local-reports/agents/new-product-check', bundle.run.id + '.json'),
+        'utf8',
+      ),
+    );
+    expect(report.runId).toBe(bundle.run.id);
+    expect(bundle.findings).toHaveLength(7);
+  });
+  it('opt-in fails safely with missing config and without calling network', async () => {
+    vi.stubGlobal('fetch', () => {
+      throw new Error('Network forbidden');
+    });
+    expect(
+      await runNewProductCheckCli(
+        ['--brand', 'Jeep', '--provider', 'fixture', '--persist-findings'],
+        {},
+        vi.fn(),
+        await temporaryRoot(),
+      ),
+    ).toBe(1);
+  });
+  it('persistence failure leaves local reports and returns nonzero without leaking the error', async () => {
+    const root = await temporaryRoot(),
+      log = vi.fn();
+    const persistence = {
+      persistRunBundle: vi.fn(async () => {
+        throw new Error('synthetic-private-error');
+      }),
+    };
+    expect(
+      await runNewProductCheckCli(
+        ['--persist-findings', '--brand', 'Jeep', '--provider', 'fixture'],
+        {},
+        log,
+        root,
+        persistence,
+      ),
+    ).toBe(1);
+    expect(await readdir(join(root, '.local-reports/agents/new-product-check'))).toHaveLength(2);
+    expect(JSON.stringify(log.mock.calls)).not.toContain('synthetic-private-error');
+  });
+  it('rejects duplicate opt-in flags and unexpected values', () => {
+    expect(() =>
+      parseAgentArguments([
+        '--brand',
+        'Jeep',
+        '--provider',
+        'fixture',
+        '--persist-findings',
+        '--persist-findings',
+      ]),
+    ).toThrow();
+    expect(() =>
+      parseAgentArguments([
+        '--brand',
+        'Jeep',
+        '--provider',
+        'fixture',
+        '--persist-findings',
+        'true',
+      ]),
+    ).toThrow();
+  });
   it('reports a captured MMV once with four associated year rows in JSON and Markdown', async () => {
     const root = await temporaryRoot();
     const result = await new NewProductCheckAgent({
