@@ -1,6 +1,209 @@
-# Sprint 19A / 19A.1 / 19A.2 / 19A.3 — validação e entrega
+# Sprint 19A — histórico de validação (19A.1–19A.4)
 
-## Entrega atual: 19A.3 — Cross-brand validation / Jeep BR
+## Entrega atual: 19A.4 — MMV Identity Reconciliation + Agent Platform Blueprint
+
+Worktree `C:\Dev\compra-car-agent1`, branch `sprint-19-new-product-agent`.
+Antes de qualquer alteração, `git status --short` estava vazio; HEAD inicial:
+**8140a10** (19A.3 já commitada pelo operador). Trabalho anterior preservado.
+**Sem commit e sem staging.**
+
+### Decisão implementada
+
+O nome histórico New Product Check Agent passa a representar a missão
+**MMV Discovery**. MMV = marca/modelo/identidade de versão; product row =
+ocorrência MMV + PY/MY. A separação é virtual, sem nova tabela.
+
+`CatalogMmvIdentity` agrupa rows por brand/model/canonical version label
+normalizados. Preserva nomes originais, componentes históricos e todas as
+productRows com ids, anos e estados. Não consolida rótulos canônicos diferentes
+por semelhança e não usa anos ou visibilidade na identidade.
+
+A aplicação projeta uma vez por run. Matching intersecta MMVs por trim,
+propulsão, cilindrada, família de transmissão e tração. Zero MMVs compatíveis
+→ NEW_VERSION; uma segura → MATCHED; múltiplas distintas → AMBIGUOUS.
+Quatro ocorrências anuais de uma versão não são quatro opções de identidade.
+
+Cilindrada usa precisão decimal comum e half-up com decimal.js já existente:
+1.332/1.3, 1.995/2.0 e 2.184/2.2 são compatíveis. 1.8/2.0 e 1.3/1.5 não são.
+Precisão canônica explícita é preservada; 1.332 versus 1.30 conflita na precisão
+de duas casas. Sem fuzzy ou epsilon arbitrário.
+
+Engine labels e nomes comerciais de powertrain são metadados. Não existe mapa
+T270/Hurricane para motor. Delimitação de um sufixo histórico só usa o rótulo
+de powertrain literalmente fornecido no candidato. AT aceita Automático/
+Automática; TD é descritor histórico genérico. Tração ausente não conflita;
+4x4/4x2 explícitos continuam incompatíveis.
+
+PY/MY fica no candidato/report e em yearObservations de observações repetidas.
+Não rejeita/desempata MMV, não cria conflito por anos diferentes e não gera
+POSSIBLE_YEAR_CHANGE. O enum permanece definido para compatibilidade histórica.
+O futuro Product Year Agent será responsável por NEW_PRODUCT_YEAR.
+
+JSON schemaVersion 19A.4 contém canonicalProductRows, knownMmvIdentities e
+matchedMmvIdentities, com productRows associadas. Os campos planos antigos de
+rows permanecem para compatibilidade. Benchmark usa MMVs no denominador.
+
+### Fixtures e regressão capturada executadas
+
+| Métrica | Toyota | Jeep pequena | Jeep capturada/reconstruída |
+| --- | ---: | ---: | ---: |
+| canonicalProductRows | 8 | 4 | 16 |
+| knownMmvIdentities | 8 | 4 | 13 |
+| officialCandidates | 21 | 8 | 18 |
+| matchedMmvCandidates | 8 | 4 | 13 |
+| reconciledKnownMmvIdentities | 8 | 4 | 13 |
+| knownReconciliationRate | 100% | 100% | 100% |
+| falseNewMmv / falseNewRate | 0 / 0% | 0 / 0% | 0 / 0% |
+| NEW_MODEL | 3 | 1 | 3 |
+| NEW_VERSION | 2 | 1 | 0 |
+| AMBIGUOUS | 1 | 1 | 0 |
+| Rejeitados / fontes externas rejeitadas | 0 / 0 | 0 / 0 | 0 / 0 |
+
+Todos os matches são LEGACY_NAMING. As fixtures Toyota/Jeep pequenas mantêm
+seus dados e resultados anteriores. Comandos, ambos exit 0:
+
+```powershell
+pnpm agent:new-products:dry-run -- --brand Toyota --provider fixture
+pnpm agent:new-products:dry-run -- --brand Jeep --provider fixture
+```
+
+Runs geradas:
+
+- Toyota: `e2d77654-1e76-4f9b-a298-e99fadbbfaae`.
+- Jeep pequena: `ead21b24-a542-4cf6-acc3-f9930ca86da3`.
+- Replay capturado offline: `55872347-3ff3-4b31-b883-8acdd4bafed1`.
+
+JSON/Markdown em `.local-reports/agents/new-product-check/<run-id>.{json,md}`.
+Replay e métricas reproduzíveis locais:
+`validation/19a4/replay-captured.ts` e `captured-benchmark.json`.
+O replay usa somente um provider fixture e catálogo em memória, sem rede.
+
+**Limite de proveniência:** a run original
+2506bcb5-7ff7-4529-bbd2-29b51efd5778 tinha 18 candidatos e 51 rows, segundo o
+report salvo. Os 18 candidatos foram copiados da captura, preservando fatos e
+evidências. Apenas seis rows estavam guardadas nas correspondências do report.
+A fixture acrescenta dez rows sintéticas baseadas nos casos fornecidos pelo
+operador: total **16 rows / 13 MMVs**, sem afirmar reconstrução das 51 rows.
+
+Commander Longitude reconcilia uma MMV com ids 960, 996, 1064 e 1128 e seus
+quatro PY/MY. Os outros doze candidatos conhecidos também reconciliam.
+As cinco variantes Avenger/Gladiator/Wrangler permanecem em três NEW_MODEL.
+
+### Blueprint criado
+
+[AGENT_PLATFORM_ARCHITECTURE.md](AGENT_PLATFORM_ARCHITECTURE.md) é a referência
+canônica para Brand Connector, MMV Discovery, Product Year, Spec Intelligence
+e Price Intelligence. Documenta orchestrator/scheduler como infraestrutura,
+não sexto especialista; plataforma 19B (agent_runs/findings/evidence/reviews);
+taxonomia futura; connector declarativo; review humano e limites até Sprint 23.
+
+Somente o agente atual foi alterado. Nenhum agente futuro, plataforma persistida,
+tabela, migration, review operacional ou scheduler foi implementado.
+
+### Testes e gates executados
+
+| Verificação | Resultado |
+| --- | --- |
+| Core direcionado: new-product-check-agent, legacy-product-version-parser, product-reconciliation, cross-brand-product-check e mmv-product-reconciliation | **242 passed** |
+| CLI/report: new-product-check-cli | **13 passed** |
+| Provider: product-research-provider, transporte simulado | **17 passed** |
+| Total direcionado | **272 passed** |
+| Core completo no gate global | **898 passed** |
+| Typecheck core e scripts/agents direcionados | exit 0 |
+| pnpm lint | exit 0, após corrigir variável descartada na projeção |
+| pnpm typecheck | exit 1; mesmos cinco TS2554 da 19A.3 |
+| pnpm test | exit 1; mesma falha de preços públicos |
+| pnpm format:check | exit 1; mesmos 15 arquivos |
+| pnpm build | exit 0 |
+| Prettier de todos os arquivos de código alterados | exit 0 |
+| git diff --check | exit 0 |
+
+Os 35 critérios obrigatórios estão cobertos: agrupamento e anos, match com
+múltiplas rows e exposição de todas elas, precisão da cilindrada, labels
+informativos, restrições ICE/MHEV e tração, AT, os treze casos capturados,
+regressão Toyota, agregação NEW_MODEL, ambiguidade MMV real, ausência de mutação
+e JSON/Markdown de uma MMV com quatro rows.
+
+Também há regressões para zeros finais de precisão, fronteira half-up,
+preservação de pares de anos sem composição artificial e benchmark sem
+denominador de rows. Testes anteriores que esperavam ambiguidade por anos ou
+POSSIBLE_YEAR_CHANGE foram substituídos pelo comportamento MMV.
+
+Comandos direcionados:
+
+```powershell
+pnpm --filter @compra-car/core exec vitest run test/new-product-check-agent.test.ts test/legacy-product-version-parser.test.ts test/product-reconciliation.test.ts test/cross-brand-product-check.test.ts test/mmv-product-reconciliation.test.ts
+pnpm --filter @compra-car/agents test
+pnpm --filter @compra-car/adapter-openai exec vitest run test/product-research-provider.test.ts
+pnpm --filter @compra-car/core --filter @compra-car/agents typecheck
+```
+
+Logs: `validation/19a4/final-*.log`. Comparação automatizada com 19A.3 em
+`validation/19a4/diagnostic-comparison.json`: **sameAs19A3=true** para
+typecheck, testes e formatação. Os erros preexistentes continuam:
+
+- Cinco TS2554 em `apps/web/test/admin-product-public-prices.test.ts:101–105`.
+- `product-public-price-supabase-adapter.test.ts`: lists a page with exact count
+  and deterministic range; `.in is not a function`. Pacote: 1 failed,
+  108 passed, 3 skipped.
+- Os 15 arquivos de formatação listados no histórico deste documento.
+
+Smokes OpenAI, benchmark remoto Jeep e integrações Supabase/staging foram
+desabilitados no processo dos gates. O Turbo pode interromper tarefas após
+falhas; suítes do escopo foram executadas separadamente. Ambiente Node 24.18.0 /
+pnpm 10.34.5; warning conhecido do Node 22.x declarado.
+
+### Arquivos e Git
+
+Criados (4):
+
+- `docs/agents/AGENT_PLATFORM_ARCHITECTURE.md`
+- `packages/core/src/agents/catalog-mmv-identity.ts`
+- `packages/core/src/agents/jeep-captured-mmv-fixture.ts`
+- `packages/core/test/mmv-product-reconciliation.test.ts`
+
+Alterados (19):
+
+- `AI_CONTEXT.md`
+- `CHANGELOG.md`
+- `docs/agents/NEW_PRODUCT_CHECK_AGENT.md`
+- `docs/agents/CROSS_BRAND_BENCHMARK.md`
+- `docs/agents/SPRINT_19A_VALIDATION.md`
+- `packages/core/src/agents/index.ts`
+- `packages/core/src/agents/legacy-product-version-parser.ts`
+- `packages/core/src/agents/new-product-check-agent.ts`
+- `packages/core/src/agents/new-product-check-fixture.ts`
+- `packages/core/src/agents/new-product-check-types.ts`
+- `packages/core/src/agents/official-product-candidate-deduplication.ts`
+- `packages/core/src/agents/product-candidate-matcher.ts`
+- `packages/core/src/agents/product-check-fixture-benchmark.ts`
+- `packages/core/src/agents/product-component-normalization.ts`
+- `packages/core/test/cross-brand-product-check.test.ts`
+- `packages/core/test/new-product-check-agent.test.ts`
+- `scripts/agents/report-writer.ts`
+- `scripts/agents/run-new-product-check.ts`
+- `scripts/agents/test/new-product-check-cli.test.ts`
+
+Status final: 19 modificados + 4 novos; índice vazio. Auditoria local:
+`validation/19a4/git-audit.json`. Sem alterações de registry, prompt, provider,
+domains, modelo, catalog reader, dependências/lockfile, banco ou Legacy.
+
+### Limitações e confirmação
+
+**PENDENTE:** snapshot completo das 51 rows para conferir todas as identidades
+concorrentes; run real manual somente após revisão. O resultado 13/13 prova a
+regressão dos casos capturados no catálogo reconstruído, não um replay integral
+da base real. Os problemas globais preexistentes seguem fora do escopo.
+
+A projeção não une versões históricas distintas por semântica; nomes não
+interpretáveis e fatos insuficientes continuam sujeitos a revisão. JSON numérico
+perde zeros finais oficiais; a regra de precisão mínima foi documentada. Nenhuma
+disponibilidade atual ou fidelidade da pesquisa foi revalidada remotamente.
+
+**Zero OpenAI calls durante a Sprint 19A.4; zero canonical writes; zero migrations;
+zero renames; zero Jeep-specific matcher. Sem commit e sem staging.**
+
+## Histórico da entrega 19A.3 — Cross-brand validation / Jeep BR
 
 Worktree `C:\Dev\compra-car-agent1`, branch `sprint-19-new-product-agent`.
 Base limpa observada: **cf041ee**, com a 19A.2 já commitada pelo operador.

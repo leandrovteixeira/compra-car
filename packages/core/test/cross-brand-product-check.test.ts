@@ -273,9 +273,12 @@ describe('reusable cross-brand fixture benchmark', () => {
       );
       expect(benchmark).toEqual({
         brand,
-        knownProducts: known,
-        reconciledKnownProducts: known,
-        falseNewProducts: 0,
+        canonicalProductRows: known,
+        knownMmvIdentities: known,
+        officialCandidates: brand === 'Toyota' ? 21 : 8,
+        matchedMmvCandidates: known,
+        reconciledKnownMmvIdentities: known,
+        falseNewMmv: 0,
         newModels,
         newVersions,
         ambiguous: 1,
@@ -304,6 +307,7 @@ describe('reusable cross-brand fixture benchmark', () => {
           warnings: [],
           matchedProductIds: [],
           matchedProducts: [],
+          matchedMmvIdentities: [],
           matchMode: null,
           reason: 'Injected regression',
         },
@@ -312,8 +316,8 @@ describe('reusable cross-brand fixture benchmark', () => {
     expect(
       benchmarkProductFixture(broken, productCheckFixture(scope).knownExpectations),
     ).toMatchObject({
-      reconciledKnownProducts: 3,
-      falseNewProducts: 1,
+      reconciledKnownMmvIdentities: 3,
+      falseNewMmv: 1,
       knownReconciliationRate: 0.75,
       falseNewRate: 0.25,
     });
@@ -329,8 +333,7 @@ describe('reusable cross-brand fixture benchmark', () => {
       ],
     };
     expect(
-      benchmarkProductFixture(broken, productCheckFixture(scope).knownExpectations)
-        .falseNewProducts,
+      benchmarkProductFixture(broken, productCheckFixture(scope).knownExpectations).falseNewMmv,
     ).toBe(2);
   });
   it('requires expected correspondence, not just any matched id', async () => {
@@ -338,37 +341,15 @@ describe('reusable cross-brand fixture benchmark', () => {
     const broken = {
       ...result,
       matchedCandidates: result.matchedCandidates.map((m, i) =>
-        i === 0 ? { ...m, matchedProductIds: ['wrong-id'] } : m,
+        i === 0
+          ? { ...m, matchedMmvIdentities: [{ ...m.matchedMmvIdentities[0]!, id: 'wrong-mmv' }] }
+          : m,
       ),
     };
     expect(
       benchmarkProductFixture(broken, productCheckFixture(scope).knownExpectations)
-        .reconciledKnownProducts,
+        .reconciledKnownMmvIdentities,
     ).toBe(3);
-  });
-  it('counts unique year-change reconciliation without calling it a false new product', async () => {
-    const result = await run();
-    const first = result.matchedCandidates[0]!;
-    const changed = {
-      ...result,
-      matchedCandidates: result.matchedCandidates.slice(1),
-      findings: [
-        ...result.findings,
-        {
-          ...first,
-          type: 'POSSIBLE_YEAR_CHANGE' as const,
-          fingerprint: findingFingerprint(scope, base, 'POSSIBLE_YEAR_CHANGE'),
-          variants: [],
-          warnings: [],
-        },
-      ],
-    };
-    expect(
-      benchmarkProductFixture(changed, productCheckFixture(scope).knownExpectations),
-    ).toMatchObject({
-      knownReconciliationRate: 1,
-      falseNewRate: 0,
-    });
   });
   it('rejects incomplete fixture ground truth', async () => {
     const result = await run();
@@ -379,7 +360,16 @@ describe('reusable cross-brand fixture benchmark', () => {
   it('uses null rates for a benchmark with no known products', async () => {
     const result = await run();
     expect(
-      benchmarkProductFixture({ ...result, knownProducts: 0, matchedCandidates: [] }, []),
+      benchmarkProductFixture(
+        {
+          ...result,
+          knownProducts: 0,
+          canonicalProductRows: 0,
+          knownMmvIdentities: 0,
+          matchedCandidates: [],
+        },
+        [],
+      ),
     ).toMatchObject({
       knownReconciliationRate: null,
       falseNewRate: null,

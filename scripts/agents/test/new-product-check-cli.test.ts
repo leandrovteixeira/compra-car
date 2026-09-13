@@ -6,6 +6,8 @@ import {
   FixtureProductResearchProvider,
   FixtureProductCatalogReader,
   NewProductCheckAgent,
+  jeepCapturedMmvCandidates,
+  jeepCapturedMmvCatalog,
 } from '@compra-car/core/agents';
 import { LocalProductReportWriter } from '../report-writer';
 import { parseAgentArguments, runNewProductCheckCli } from '../run-new-product-check';
@@ -20,6 +22,55 @@ afterEach(async () => {
   for (const root of roots.splice(0)) await rm(root, { recursive: true, force: true });
 });
 describe('CLI and local reports', () => {
+  it('reports a captured MMV once with four associated year rows in JSON and Markdown', async () => {
+    const root = await temporaryRoot();
+    const result = await new NewProductCheckAgent({
+      research: {
+        researchProducts: async () => ({
+          candidates: jeepCapturedMmvCandidates,
+          metadata: { provider: 'fixture-captured-offline', webSearchCount: 0 },
+        }),
+      },
+      catalog: { readProducts: async () => jeepCapturedMmvCatalog },
+      reports: new LocalProductReportWriter(root),
+    }).run({ country: 'BR', brand: 'Jeep' }, 'mmv-report');
+    const directory = join(root, '.local-reports/agents/new-product-check');
+    const json = JSON.parse(await readFile(join(directory, 'mmv-report.json'), 'utf8'));
+    const md = await readFile(join(directory, 'mmv-report.md'), 'utf8');
+    expect(json.canonicalProductRows).toBe(16);
+    expect(json.knownMmvIdentities).toBe(13);
+    expect(json.matchedCandidates).toHaveLength(13);
+    const match = json.matchedCandidates.find(
+      (m: { candidate: { officialVersionLabel: string } }) =>
+        m.candidate.officialVersionLabel === 'COMMANDER LONGITUDE T270 7L',
+    );
+    expect(match.matchedMmvIdentities).toHaveLength(1);
+    expect(match.matchedMmvIdentities[0].productRows).toHaveLength(4);
+    expect(match.matchedMmvIdentities[0].productRows.map((p: { id: string }) => p.id)).toEqual([
+      '960',
+      '996',
+      '1064',
+      '1128',
+    ]);
+    expect(match.candidate.modelYear).toBe(2027);
+    expect(result.findings.every((f) => f.type === 'NEW_MODEL')).toBe(true);
+    const block = md.split('### Jeep Commander COMMANDER LONGITUDE T270 7L')[1]!.split('### ')[0]!;
+    expect(block).toContain('MMV correspondences:');
+    expect(block).toContain('Jeep Commander / Longitude 1.3 TGDI AT');
+    expect(block).toContain('Associated product rows');
+    for (const text of [
+      '960 / 2025/2025',
+      '996 / 2025/2026',
+      '1064 / 2026/2026',
+      '1128 / 2026/2027',
+    ])
+      expect(block).toContain(text);
+    expect(block).not.toContain('unresolved identities');
+    expect(md).toContain('| Canonical product rows | 16 |');
+    expect(md).toContain('| Known MMV identities | 13 |');
+    expect(md).not.toContain('## Possible year changes');
+  });
+
   it('executes Jeep with shared JSON/Markdown reports and fixture-only benchmark', async () => {
     vi.stubGlobal('fetch', () => {
       throw new Error('Network forbidden');
@@ -66,9 +117,10 @@ describe('CLI and local reports', () => {
       .find((line) => line.startsWith('Fixture benchmark: '))!;
     expect(JSON.parse(benchmarkLine.slice('Fixture benchmark: '.length))).toMatchObject({
       brand: 'Jeep',
-      knownProducts: 4,
-      reconciledKnownProducts: 4,
-      falseNewProducts: 0,
+      canonicalProductRows: 4,
+      knownMmvIdentities: 4,
+      reconciledKnownMmvIdentities: 4,
+      falseNewMmv: 0,
       knownReconciliationRate: 1,
       falseNewRate: 0,
     });
@@ -128,7 +180,7 @@ describe('CLI and local reports', () => {
     expect(result.researchedCandidates).toBe(21);
     expect(result.matchedCandidates).toHaveLength(8);
     expect(result.findings).toHaveLength(6);
-    expect(result.schemaVersion).toBe('19A.2');
+    expect(result.schemaVersion).toBe('19A.4');
     expect(
       result.matchedCandidates.every((m: { matchMode: string }) => m.matchMode === 'LEGACY_NAMING'),
     ).toBe(true);
@@ -159,9 +211,10 @@ describe('CLI and local reports', () => {
     expect(md).toContain('| Official version | XR |');
     expect(md).toContain('| Propulsion | HEV |');
     expect(md).toContain('| Matched legacy naming | 8 |');
-    expect(md).toContain('| Known canonical products | 8 |');
+    expect(md).toContain('| Canonical product rows | 8 |');
     expect(md).toContain('## Ambiguous — manual review');
-    expect(md).toContain('| POSSIBLE_YEAR_CHANGE |');
+    expect(md).not.toContain('| POSSIBLE_YEAR_CHANGE |');
+    expect(md).toContain('| Known MMV identities | 8 |');
     expect(md).toContain('https://www.toyota.com.br/modelos');
     for (const secret of [env.OPENAI_API_KEY, env.SUPABASE_SERVER_KEY])
       expect(json + md + JSON.stringify(log.mock.calls)).not.toContain(secret);

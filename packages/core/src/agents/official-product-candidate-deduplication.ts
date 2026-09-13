@@ -2,6 +2,7 @@ import { vehicleTextComparisonKey as key } from '../admin/vehicle-text-normaliza
 import { officialCandidateIdentity } from './product-candidate-matcher';
 import {
   transmissionComparisonKey,
+  compatibleEngineDisplacement,
   powertrainComparisonKey,
 } from './product-component-normalization';
 import { officialCandidateTextFields } from './official-product-candidate-validation';
@@ -32,7 +33,16 @@ function merge(a: OfficialProductCandidate, b: OfficialProductCandidate): Offici
   const conflict = fields.some((field) => {
     const left = a[field],
       right = b[field];
-    if (left === null || right === null) return false;
+    if (
+      left === null ||
+      right === null ||
+      field === 'productionYear' ||
+      field === 'modelYear' ||
+      field === 'engineLabel'
+    )
+      return false;
+    if (field === 'engineDisplacement')
+      return !compatibleEngineDisplacement(left as number, right as number);
     if (typeof left === 'string' && typeof right === 'string') {
       const compare =
         field === 'transmission'
@@ -45,10 +55,29 @@ function merge(a: OfficialProductCandidate, b: OfficialProductCandidate): Offici
     return left !== right;
   });
   const result = { ...a };
-  for (const field of fields) Object.assign(result, { [field]: a[field] ?? b[field] });
+  for (const field of fields)
+    Object.assign(result, {
+      [field]:
+        field === 'productionYear' || field === 'modelYear' ? a[field] : (a[field] ?? b[field]),
+    });
   return {
     ...result,
     confidence: Math.min(a.confidence, b.confidence),
+    yearObservations: [
+      ...new Map(
+        [a, b]
+          .flatMap(
+            (c) =>
+              c.yearObservations ?? [
+                {
+                  productionYear: c.productionYear,
+                  modelYear: c.modelYear,
+                },
+              ],
+          )
+          .map((observation) => [JSON.stringify(observation), observation]),
+      ).values(),
+    ],
     evidence: deduplicateProductEvidence([...a.evidence, ...b.evidence]),
     extractionWarnings: [
       ...new Set([

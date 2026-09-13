@@ -1,5 +1,27 @@
 # Changelog
 
+## Sprint 19A.4 — MMV Identity Reconciliation + Agent Platform Blueprint (2026-09-13)
+
+New Product Check Agent mantém nome histórico; sua missão atual é MMV Discovery.
+CatalogMmvIdentity projeta marca/modelo/versão normalizados, preservando todas as
+productRows. Matching e benchmark contam MMVs, não ocorrências PY/MY. Anos são
+observações; POSSIBLE_YEAR_CHANGE não é mais emitido. Product Year Agent será futuro.
+
+Cilindrada é comparada na precisão decimal comum, sem fuzzy. Engine/powertrain
+textuais são informativos; componentes estruturados fecham a identidade.
+Sem regras Jeep, mapas T270/Hurricane, alterações de provider ou fontes.
+
+Toyota fixture 8/8, Jeep pequena 4/4. Regressão com 18 candidatos Jeep capturados
+e catálogo reconstruído (16 rows/13 MMVs): 13 matches, 3 NEW_MODEL, zero falso novo.
+**PENDENTE:** catálogo completo da run original (51 rows); apenas seis rows estavam
+preservadas no report, outras dez são sintéticas dos casos de aceitação.
+Zero OpenAI calls, escrita canônica, migrations e renomeações; sem commit/staging.
+HEAD inicial 8140a10, worktree inicialmente limpo.
+
+Blueprint canônico dos cinco agentes, plataforma 19B e revisão humana:
+[AGENT_PLATFORM_ARCHITECTURE.md](docs/agents/AGENT_PLATFORM_ARCHITECTURE.md).
+[Benchmark](docs/agents/CROSS_BRAND_BENCHMARK.md) · [Validação](docs/agents/SPRINT_19A_VALIDATION.md).
+
 ## Sprint 19A.3 — Cross-brand validation / Jeep BR (2026-09-13)
 
 Jeep/BR adicionada ao registry com jeep.com.br, subdomínios DNS por opt-in e

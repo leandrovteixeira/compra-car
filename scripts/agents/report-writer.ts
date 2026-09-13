@@ -58,7 +58,12 @@ function details(item: MatchedProductCandidate | NewProductFinding): string {
         ['Propulsion', c.propulsion],
         ['Transmission', c.transmission],
         ['Drivetrain', c.drivetrain],
-        ['PY/MY', String(c.productionYear ?? '—') + '/' + String(c.modelYear ?? '—')],
+        [
+          'Observed PY/MY',
+          (c.yearObservations ?? [c])
+            .map((y) => String(y.productionYear ?? '—') + '/' + String(y.modelYear ?? '—'))
+            .join(', '),
+        ],
         ['Match mode', item.matchMode],
         ['Confidence', c.confidence.toFixed(2)],
         [
@@ -69,30 +74,33 @@ function details(item: MatchedProductCandidate | NewProductFinding): string {
       ] as const
     ).map(([label, value]) => '| ' + label + ' | ' + cell(value) + ' |'),
     '',
-    'Canonical correspondences' +
-      ('type' in item && item.type === 'AMBIGUOUS'
-        ? ' (review options, not confirmed matches)'
-        : '') +
+    'MMV correspondences' +
+      ('type' in item && item.type === 'AMBIGUOUS' ? ' (unresolved identities)' : '') +
       ':',
     '',
-    ...(item.matchedProducts.length
-      ? item.matchedProducts.map(
-          (p) =>
-            '- ' +
-            cell(
-              p.id +
-                ': ' +
-                p.brand +
-                ' ' +
-                p.model +
-                ' / ' +
-                p.version +
-                ' / ' +
-                p.productionYear +
-                '/' +
-                p.modelYear,
-            ),
-        )
+    ...(item.matchedMmvIdentities.length
+      ? item.matchedMmvIdentities.flatMap((mmv) => [
+          '- ' + cell(mmv.brand + ' ' + mmv.model + ' / ' + mmv.canonicalVersionLabel),
+          '',
+          'Associated product rows (PY/MY observations):',
+          '',
+          ...mmv.productRows.map(
+            (p) =>
+              '- ' +
+              cell(
+                p.id +
+                  ' / ' +
+                  p.productionYear +
+                  '/' +
+                  p.modelYear +
+                  ' / Active: ' +
+                  p.isActive +
+                  ' / Public: ' +
+                  p.isPublic,
+              ),
+          ),
+          '',
+        ])
       : ['- None']),
     '',
     'Evidence:',
@@ -169,14 +177,16 @@ export function renderMarkdownReport(result: NewProductCheckResult): string {
     '| Variants resolved | ' + result.variantsResolved + ' |',
     '| Candidates researched | ' + result.researchedCandidates + ' |',
     '| Candidates accepted (deduplicated) | ' + result.acceptedCandidates + ' |',
-    '| Known canonical products | ' + result.knownProducts + ' |',
+    '| Canonical product rows | ' + result.canonicalProductRows + ' |',
+    '| Known MMV identities | ' + result.knownMmvIdentities + ' |',
+    '| Matched MMV candidates | ' + result.matchedCandidates.length + ' |',
     '| Matched exact | ' +
       result.matchedCandidates.filter((m) => m.matchMode === 'EXACT_OFFICIAL').length +
       ' |',
     '| Matched legacy naming | ' +
       result.matchedCandidates.filter((m) => m.matchMode === 'LEGACY_NAMING').length +
       ' |',
-    ...(['NEW_MODEL', 'NEW_VERSION', 'POSSIBLE_YEAR_CHANGE', 'AMBIGUOUS'] as const).map(
+    ...(['NEW_MODEL', 'NEW_VERSION', 'AMBIGUOUS'] as const).map(
       (type) => '| ' + type + ' | ' + result.findings.filter((f) => f.type === type).length + ' |',
     ),
     '| Rejected | ' + result.rejectedCandidates.length + ' |',
@@ -193,10 +203,6 @@ export function renderMarkdownReport(result: NewProductCheckResult): string {
     '## New versions',
     '',
     ...result.findings.filter((f) => f.type === 'NEW_VERSION').map(details),
-    '',
-    '## Possible year changes',
-    '',
-    ...result.findings.filter((f) => f.type === 'POSSIBLE_YEAR_CHANGE').map(details),
     '',
     '## Ambiguous — manual review',
     '',

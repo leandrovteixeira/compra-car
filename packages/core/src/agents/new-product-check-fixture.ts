@@ -1,3 +1,4 @@
+import { catalogMmvIdentityId } from './catalog-mmv-identity';
 import { jeepFixtureCandidates, jeepFixtureCatalog } from './jeep-product-check-fixture';
 import type { AdministrativeVehicle } from '../admin/administrative-vehicle';
 import type {
@@ -151,7 +152,7 @@ const fixtures = new Map([
       catalog: toyotaFixtureCatalog,
       // Paired acceptance fixtures declare the expected identity independently of matcher output.
       knownExpectations: toyotaFixtureCatalog.map((p, index) => ({
-        productId: p.id,
+        mmvIdentityId: catalogMmvIdentityId(p),
         candidate: toyotaFixtureCandidates[index]!,
       })),
     },
@@ -162,7 +163,7 @@ const fixtures = new Map([
       candidates: jeepFixtureCandidates,
       catalog: jeepFixtureCatalog,
       knownExpectations: jeepFixtureCatalog.map((p, index) => ({
-        productId: p.id,
+        mmvIdentityId: catalogMmvIdentityId(p),
         candidate: jeepFixtureCandidates[index]!,
       })),
     },

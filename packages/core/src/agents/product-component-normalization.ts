@@ -1,3 +1,4 @@
+import Decimal from 'decimal.js';
 import { vehicleTextComparisonKey as key } from '../admin/vehicle-text-normalization';
 import type { ProductPropulsion } from './new-product-check-types';
 
@@ -44,7 +45,7 @@ export function normalizeTransmissionFamily(
   if (cvt) return 'CVT';
   if (dht) return 'DHT';
   if (manual) return 'MT';
-  if (explicitAt || /\bautomatica\b/u.test(label)) return 'AT';
+  if (explicitAt || /\bautomatic[ao]\b/u.test(label)) return 'AT';
   return null;
 }
 export interface PowertrainComponents {
@@ -93,4 +94,32 @@ export function powertrainComparisonKey(value: string): string {
   return parsed.displacement !== null || parsed.propulsion !== null || parsed.code !== null
     ? JSON.stringify(parsed)
     : key(value);
+}
+
+/** Numeric JSON loses trailing zeroes; numeric observations have at least one decimal place. */
+export function displacementPrecision(value: number): number {
+  return Math.max(1, new Decimal(value).decimalPlaces());
+}
+/** Round both observations to their common declared precision, decimal half-up. No epsilon/fuzzy tolerance. */
+export function compatibleEngineDisplacement(
+  official: number | null,
+  canonical: number | null,
+  canonicalPrecision?: number | null,
+): boolean {
+  if (official === null || canonical === null) return true;
+  if (!Number.isFinite(official) || !Number.isFinite(canonical) || official <= 0 || canonical <= 0)
+    return false;
+  const precision = Math.min(
+    displacementPrecision(official),
+    canonicalPrecision ?? displacementPrecision(canonical),
+  );
+  return new Decimal(official)
+    .toDecimalPlaces(precision, Decimal.ROUND_HALF_UP)
+    .equals(new Decimal(canonical).toDecimalPlaces(precision, Decimal.ROUND_HALF_UP));
+}
+export function drivetrainComparisonKey(value: string): string {
+  const text = key(value);
+  // Explicit 4x2/4x4 with optional reduction description; no AWD equivalence is invented.
+  const match = /^(4x[24])(?: com reduzida)?$/u.exec(text);
+  return match?.[1] ?? text;
 }

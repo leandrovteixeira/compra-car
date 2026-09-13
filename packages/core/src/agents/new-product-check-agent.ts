@@ -1,3 +1,4 @@
+import { projectCatalogMmvIdentities } from './catalog-mmv-identity';
 import { vehicleTextComparisonKey as key } from '../admin/vehicle-text-normalization';
 import { officialBrandSource, officialEvidenceUrl } from './official-product-sources';
 import { ProductCandidateMatcher, isResolvedOfficialVariant } from './product-candidate-matcher';
@@ -86,13 +87,14 @@ export class NewProductCheckAgent {
         extractionWarnings: raw.extractionWarnings ?? [],
       });
     });
+    const identities = projectCatalogMmvIdentities(catalog);
     const candidates = deduplicateOfficialCandidates(normalizedScope, accepted);
     const matcher = this.dependencies.matcher ?? new ProductCandidateMatcher();
     const matches = candidates.map((candidate) =>
-      matcher.match(normalizedScope, candidate, catalog),
+      matcher.matchIdentities(normalizedScope, candidate, identities),
     );
     const result: NewProductCheckResult = {
-      schemaVersion: '19A.2',
+      schemaVersion: '19A.4',
       runId,
       startedAt,
       completedAt: now().toISOString(),
@@ -107,6 +109,8 @@ export class NewProductCheckAgent {
       ).size,
       variantsResolved: candidates.filter(isResolvedOfficialVariant).length,
       knownProducts: catalog.length,
+      canonicalProductRows: catalog.length,
+      knownMmvIdentities: identities.length,
       matchedCandidates: matches.flatMap((m) => ('matched' in m ? [m.matched] : [])),
       findings: aggregateProductFindings(
         normalizedScope,

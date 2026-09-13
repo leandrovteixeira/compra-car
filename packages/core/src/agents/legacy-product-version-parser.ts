@@ -6,6 +6,7 @@ export interface LegacyParsedProduct {
   readonly product: AdministrativeVehicle;
   readonly trim: string | null;
   readonly engineDisplacement: number | null;
+  readonly engineDisplacementPrecision: number | null;
   readonly propulsion: ProductPropulsion | null;
   readonly propulsionBasis: 'EXPLICIT_TOKEN' | 'LEGACY_EXPANDED_CONVENTION' | 'UNKNOWN';
   readonly transmission: string | null;
@@ -26,9 +27,9 @@ const propulsionTokens: Readonly<Record<string, ProductPropulsion>> = {
 };
 const transmissions = new Set(['CVT', 'AT', 'DHT', 'MT']);
 const drivetrains = new Set(['4X4', '4X2', 'AWD', 'FWD', 'RWD', '2WD', '4WD']);
-const displacement = (token: string) => /^\d\.[0-9]$/u.test(token) && Number(token) > 0;
+const displacement = (token: string) => /^\d{1,2}\.[0-9]+$/u.test(token) && Number(token) > 0;
 const powertrain = (token: string) => /^T\d{3}$/u.test(token);
-const engine = (token: string) => token === 'TGDI';
+const engine = (token: string) => token === 'TGDI' || token === 'TD';
 
 export function parseLegacyProductVersion(product: AdministrativeVehicle): LegacyParsedProduct {
   const tokens = product.version.trim().split(/\s+/u);
@@ -63,7 +64,7 @@ export function parseLegacyProductVersion(product: AdministrativeVehicle): Legac
       !drivetrains.has(token) &&
       !powertrain(token),
   );
-  const conflictingTokens = [engines, propulsions, gears, drives, engineLabels, powertrains].some(
+  const conflictingTokens = [engines, propulsions, gears, drives].some(
     (values) => values.length > 1,
   );
   // Explicit convention for historical expanded names, not an inference about official facts.
@@ -80,6 +81,10 @@ export function parseLegacyProductVersion(product: AdministrativeVehicle): Legac
     product,
     trim: prefix.join(' ') || null,
     engineDisplacement: engines.length === 1 ? engines[0]! : null,
+    engineDisplacementPrecision:
+      engines.length === 1
+        ? Math.min(...attributes.filter(displacement).map((token) => token.split('.')[1]!.length))
+        : null,
     propulsion,
     propulsionBasis:
       propulsions.length === 1

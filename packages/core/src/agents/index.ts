@@ -18,3 +18,12 @@ export { aggregateProductFindings } from './product-finding-aggregation';
 
 export * from './jeep-product-check-fixture';
 export * from './product-check-fixture-benchmark';
+
+export * from './catalog-mmv-identity';
+export {
+  compatibleEngineDisplacement,
+  displacementPrecision,
+  drivetrainComparisonKey,
+} from './product-component-normalization';
+
+export * from './jeep-captured-mmv-fixture';

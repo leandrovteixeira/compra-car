@@ -139,10 +139,10 @@ describe('component reconciliation, uniqueness and years', () => {
         matcher.match(scope, toyotaFixtureCandidates[index]!, toyotaFixtureCatalog),
       ).toHaveProperty('matched');
   });
-  it('requires a unique compatible canonical record', () => {
+  it('groups duplicate rows under a unique compatible MMV', () => {
     expect(
       match({}, [...toyotaFixtureCatalog, { ...toyotaFixtureCatalog[0]!, id: 'duplicate' }]),
-    ).toMatchObject({ finding: { type: 'AMBIGUOUS', matchedProductIds: ['895', 'duplicate'] } });
+    ).toMatchObject({ matched: { matchedProductIds: ['895', 'duplicate'] } });
   });
   it('does not use years to choose between multiple compatible products', () => {
     expect(
@@ -150,7 +150,7 @@ describe('component reconciliation, uniqueness and years', () => {
         ...toyotaFixtureCatalog,
         { ...toyotaFixtureCatalog[0]!, id: 'historical', modelYear: 2025 },
       ]),
-    ).toMatchObject({ finding: { type: 'AMBIGUOUS' } });
+    ).toMatchObject({ matched: { matchedProductIds: ['895', 'historical'] } });
   });
   it('keeps XRX without propulsion/engine ambiguous between ICE and HEV', () => {
     expect(
@@ -173,12 +173,12 @@ describe('component reconciliation, uniqueness and years', () => {
       finding: { type: 'NEW_VERSION', matchedProductIds: [], matchedProducts: [] },
     });
   });
-  it('enforces powertrain label conflicts when both sides provide one', () => {
+  it('treats commercial powertrain text as metadata when hard components agree', () => {
     expect(
       match({ officialVersionLabel: 'XR T270', powertrainLabel: 'T270' }, [
         { ...toyotaFixtureCatalog[0]!, version: 'XR T200 2.0 CVT' },
       ]),
-    ).toMatchObject({ finding: { type: 'NEW_VERSION', matchedProductIds: [] } });
+    ).toMatchObject({ matched: { matchedProductIds: ['895'] } });
   });
   it('does not let exact label override an explicit component conflict', () => {
     expect(match({ officialVersionLabel: 'XR 2.0 CVT', propulsion: 'HEV' })).toMatchObject({
@@ -204,10 +204,9 @@ describe('component reconciliation, uniqueness and years', () => {
         transmission: 'Direct Shift CVT',
       }),
     ).toHaveProperty('matched'));
-  it('reports year change only after unique reconciliation', () => {
+  it('keeps explicit years as observations after unique MMV reconciliation', () => {
     expect(match({ modelYear: 2027 })).toMatchObject({
-      finding: {
-        type: 'POSSIBLE_YEAR_CHANGE',
+      matched: {
         matchMode: 'LEGACY_NAMING',
         matchedProductIds: ['895'],
       },
@@ -372,7 +371,7 @@ describe('validated evidence and structured deduplication', () => {
     ]);
     expect(result.matchedCandidates[0]?.candidate.evidence).toHaveLength(2);
   });
-  it.each([{ modelYear: 2027 }, { engineDisplacement: 1.8 }, { transmission: 'MT' }])(
+  it.each([{ engineDisplacement: 1.8 }, { transmission: 'MT' }])(
     'marks contradictory observations as ambiguous %j',
     async (patch) => {
       const result = await run([candidate({ modelYear: 2026 }), candidate(patch)]);
@@ -419,7 +418,7 @@ describe('read-only fixture application', () => {
       reports: { write: async () => {} },
     }).run(scope, 'fixture-test');
     expect(result).toMatchObject({
-      schemaVersion: '19A.2',
+      schemaVersion: '19A.4',
       modelsDiscovered: 5,
       variantsResolved: 20,
       researchedCandidates: 21,

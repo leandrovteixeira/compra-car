@@ -1,3 +1,4 @@
+import type { CatalogMmvIdentity } from './catalog-mmv-identity';
 import type { AdministrativeVehicle } from '../admin/administrative-vehicle';
 
 export interface AgentMarketScope {
@@ -30,7 +31,13 @@ export type ExtractionWarning =
 export type OfficialProductTaxonomy =
   'MODEL' | 'VARIANT' | 'POWERTRAIN' | 'LANDING_PAGE' | 'UNKNOWN';
 export type ProductPropulsion = 'ICE' | 'MHEV' | 'HEV' | 'PHEV' | 'BEV';
+export interface OfficialYearObservation {
+  readonly productionYear: number | null;
+  readonly modelYear: number | null;
+}
 export interface OfficialProductCandidate {
+  /** Collected locally from repeated observations; never an MMV constraint. */
+  readonly yearObservations?: readonly OfficialYearObservation[];
   readonly brand: string;
   /** Manufacturer's base model, never inferred from a URL slug. */
   readonly model: string;
@@ -56,6 +63,7 @@ export type ProductMatchMode = 'EXACT_OFFICIAL' | 'LEGACY_NAMING';
 export type NewProductFindingType =
   'NEW_MODEL' | 'NEW_VERSION' | 'POSSIBLE_YEAR_CHANGE' | 'AMBIGUOUS';
 export interface NewProductFinding {
+  readonly matchedMmvIdentities: readonly CatalogMmvIdentity[];
   /** Deduplicated official variants for a model-level finding; empty for other types. */
   readonly variants: readonly OfficialProductCandidate[];
   readonly warnings: readonly ExtractionWarning[];
@@ -63,7 +71,7 @@ export interface NewProductFinding {
   readonly type: NewProductFindingType;
   readonly candidate: OfficialProductCandidate;
   readonly matchedProductIds: readonly string[];
-  /** Possible correspondences for ambiguity; reconciled record for year change. */
+  /** Flattened associated rows retained for compatibility; ambiguity is MMV-level. */
   readonly matchedProducts: readonly AdministrativeVehicle[];
   readonly matchMode: ProductMatchMode | null;
   readonly reason: string;
@@ -88,6 +96,8 @@ export interface ProductCatalogReader {
   readProducts(scope: AgentMarketScope): Promise<readonly AdministrativeVehicle[]>;
 }
 export interface MatchedProductCandidate {
+  /** Exactly one MMV; its N product rows do not imply N identities. */
+  readonly matchedMmvIdentities: readonly CatalogMmvIdentity[];
   readonly candidate: OfficialProductCandidate;
   readonly matchedProductIds: readonly string[];
   readonly matchedProducts: readonly AdministrativeVehicle[];
@@ -99,7 +109,7 @@ export interface RejectedProductCandidate {
   readonly reason: 'INVALID_CANDIDATE' | 'OUT_OF_SCOPE' | 'NO_OFFICIAL_EVIDENCE';
 }
 export interface NewProductCheckResult {
-  readonly schemaVersion: '19A.2';
+  readonly schemaVersion: '19A.4';
   readonly runId: string;
   readonly startedAt: string;
   readonly completedAt: string;
@@ -109,7 +119,10 @@ export interface NewProductCheckResult {
   readonly acceptedCandidates: number;
   readonly modelsDiscovered: number;
   readonly variantsResolved: number;
+  /** @deprecated Row count; use canonicalProductRows or knownMmvIdentities explicitly. */
   readonly knownProducts: number;
+  readonly canonicalProductRows: number;
+  readonly knownMmvIdentities: number;
   readonly matchedCandidates: readonly MatchedProductCandidate[];
   readonly findings: readonly NewProductFinding[];
   readonly rejectedCandidates: readonly RejectedProductCandidate[];

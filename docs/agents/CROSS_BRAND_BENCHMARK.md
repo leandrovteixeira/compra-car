@@ -1,128 +1,120 @@
-# Cross-brand benchmark — New Product Check Agent
+# Cross-brand benchmark — reconciliação MMV
 
-## Objetivo e escopo
+## Unidade de avaliação na Sprint 19A.4
 
-Sprint 19A.3: verificar generalização Toyota/Jeep no Brasil com fixtures offline.
-A classificação, o matcher, o parser de versões, a normalização de componentes,
-a agregação, o catalog reader e o report writer são os mesmos da 19A.2, sem diff.
+O benchmark agora distingue **MMV identity** de **Product/PY-MY occurrence**.
+O denominador de reconciliação é o número de identidades conhecidas, nunca
+o número de linhas físicas. Quatro anos da mesma versão são uma MMV.
 
-As diferenças por marca ficam no source registry, search hints e fixtures.
-Não há JeepMatcher, branching Jeep na identidade, aliases novos ou conhecimento
-hardcoded T270 → 1.3 / Hurricane → 2.0.
+O nome histórico New Product Check Agent permanece no CLI; a responsabilidade
+atual é MMV Discovery. Blueprint: [AGENT_PLATFORM_ARCHITECTURE.md](AGENT_PLATFORM_ARCHITECTURE.md).
 
-Toyota é um **smoke real previamente validado, segundo o operador**:
-10 modelos, 30 variantes resolvidas, 32 candidatos, 8 conhecidos e reconciliados
-em LEGACY_NAMING, 8 NEW_MODEL, 2 NEW_VERSION, zero ambiguidades/rejeições.
-Esses números são contexto fornecido, não execução desta Sprint.
+## Gabarito e métricas
 
-Jeep é **candidata à validação real cross-brand**. Nesta entrega, somente
-fixture. A run real Jeep permanece PENDENTE de autorização posterior à revisão.
+O helper puro `benchmarkProductFixture` recebe resultado e expectativas
+declaradas em fixture: candidato oficial + mmvIdentityId esperado. A chave
+canônica é derivada do brand/model/version esperado, sem executar o matcher
+para descobrir a resposta certa. Repetições do mesmo MMV no gabarito não
+aumentam o denominador.
 
-## Diferenças exercitadas
+| Métrica | Definição |
+| --- | --- |
+| canonicalProductRows | Total de ocorrências canônicas disponíveis no catálogo da execução |
+| knownMmvIdentities | MMVs únicas no gabarito, conferidas contra a projeção do resultado |
+| officialCandidates | Quantidade pesquisada, antes de deduplicação |
+| matchedMmvCandidates | Candidatos oficiais reconciliados, não rows |
+| reconciledKnownMmvIdentities | MMVs esperadas com candidato e correspondência única ao id correto |
+| falseNewMmv | MMVs conhecidas incorretamente classificadas NEW_VERSION ou cujo modelo conhecido recebeu NEW_MODEL |
+| newModels / newVersions / ambiguous | Contagens após agregação/classificação |
+| rejected / rejectedExternalSources | Rejeições de candidatos e de evidências |
+| knownReconciliationRate | reconciledKnownMmvIdentities / knownMmvIdentities |
+| falseNewRate | falseNewMmv / knownMmvIdentities |
 
-| Dimensão | Toyota fixture | Jeep fixture |
-| --- | --- | --- |
-| Powertrain oficial | Componentes e variantes ICE/HEV | T270, T270 MHEV, Hurricane, Hurricane Flex |
-| Rótulo oficial / legado | XRE / XRE 2.0 CVT | Longitude T270 / Longitude 1.3 TGDI AT |
-| Transmissão | Direct Shift (CVT), Multidrive, Hybrid Transaxle | Automática de 6 velocidades / AT |
-| Propulsão | ICE versus HEV | ICE versus MHEV |
-| Modelo ausente | Corolla, SW4, RAV4 agregados | Commander agregado com duas variantes |
-| Nova variante | GRS, GRS Dualtone com warnings | Blackhawk Hurricane Flex, sem inferir cilindrada |
-| Ambiguidade proposital | Corolla Cross sem variante | Compass sem variante |
-| Fontes | Hosts Toyota explícitos | jeep.com.br e subdomínios DNS permitidos |
+Taxas são razões [0,1]; sem MMVs conhecidas, são null. Um match pode expor N
+productRows e continua valendo uma identidade. POSSIBLE_YEAR_CHANGE não é
+produzido nem contado como match operacional deste agente. Anos observados
+não mudam a identidade.
 
-Ausência do nome comercial no legado não é conflito. Cilindrada explícita,
-propulsão e transmissão podem resolver a identidade. Cilindrada ausente continua
-null; T270 não desempata duas opções de motor. MHEV elimina ICE. O teste também
-executa os mesmos dados sob uma marca sintética diretamente no matcher, sem
-adicionar essa marca ao registry.
+Testes do benchmark injetam falso NEW_VERSION, falso NEW_MODEL, id MMV incorreto
+e gabarito incompleto. Também exercitam a regressão com 16 rows/13 MMVs para
+impedir que o denominador volte a ser row-level.
 
-## Fonte de verdade e métricas
+## Resultados offline executados
 
-`productCheckFixture(scope)` seleciona candidatos, catálogo e
-`knownExpectations`. As primeiras observações de cada fixture são pareadas com
-os produtos conhecidos, em ordem declarada nos dados sintéticos; essas
-associações não são produzidas pelo matcher.
+| Métrica | Toyota original | Jeep pequena | Jeep captura/reconstrução |
+| --- | ---: | ---: | ---: |
+| canonicalProductRows | 8 | 4 | 16 |
+| knownMmvIdentities | 8 | 4 | 13 |
+| officialCandidates | 21 | 8 | 18 |
+| matchedMmvCandidates | 8 | 4 | 13 |
+| reconciledKnownMmvIdentities | 8 | 4 | 13 |
+| knownReconciliationRate | 100% | 100% | 100% |
+| falseNewMmv / falseNewRate | 0 / 0% | 0 / 0% | 0 / 0% |
+| newModels | 3 | 1 | 3 |
+| newVersions | 2 | 1 | 0 |
+| ambiguous | 1 | 1 | 0 |
+| rejected / rejectedExternalSources | 0 / 0 | 0 / 0 | 0 / 0 |
 
-`benchmarkProductFixture(result, expectations)` é um helper puro reutilizável:
+Todos os matches são LEGACY_NAMING. As fixtures originais preservam seus dados
+e resultados de classificação; as métricas e o report agora usam MMV.
 
-- `knownProducts`: número de ids únicos no gabarito, validado contra o catálogo
-  informado no resultado. Gabarito incompleto ou marca divergente é rejeitado.
-- `reconciledKnownProducts`: ids únicos com candidato esperado e correspondência
-  única ao id esperado. POSSIBLE_YEAR_CHANGE com matchMode também conta como
-  identidade reconciliada, preservando a revisão de ano.
-- `falseNewProducts`: ids conhecidos cujo candidato foi classificado NEW_VERSION
-  ou cujo modelo conhecido recebeu NEW_MODEL. Produtos novos legítimos não
-  entram nessa métrica. Conta ids únicos, não número de findings.
-- `knownReconciliationRate = reconciledKnownProducts / knownProducts`.
-- `falseNewRate = falseNewProducts / knownProducts`.
-- `newModels`, `newVersions`, `ambiguous`, `rejected` e
-  `rejectedExternalSources`: contagens do resultado, após agregação.
-
-Taxas são razões entre 0 e 1; com zero conhecidos, ambas são null, sem declarar
-100% por falta de amostra. Os testes injetam NEW_VERSION falso, NEW_MODEL falso,
-id reconciliado errado e year change para verificar o próprio benchmark.
-
-## Resultados executados
-
-| Métrica | Toyota | Jeep |
-| --- | ---: | ---: |
-| knownProducts | 8 | 4 |
-| reconciledKnownProducts | 8 | 4 |
-| knownReconciliationRate | 100% | 100% |
-| falseNewProducts | 0 | 0 |
-| falseNewRate | 0% | 0% |
-| newModels | 3 | 1 |
-| newVersions | 2 | 1 |
-| ambiguous | 1 | 1 |
-| rejected | 0 | 0 |
-| rejectedExternalSources | 0 | 0 |
-| Models discovered | 5 | 3 |
-| Variants resolved | 20 | 7 |
-| Candidates researched | 21 | 8 |
-| EXACT_OFFICIAL / LEGACY_NAMING | 0 / 8 | 0 / 4 |
-
-Comandos executados, ambos exit 0:
+Comandos originais, ambos exit 0:
 
 ```powershell
 pnpm agent:new-products:dry-run -- --brand Toyota --provider fixture
 pnpm agent:new-products:dry-run -- --brand Jeep --provider fixture
 ```
 
-Runs finais:
+Runs:
 
-- Toyota: `256a4faf-8569-4f44-a072-9543e23a4da5`.
-- Jeep: `3d53b88b-d410-450c-bcf9-3ade7f361c5d`.
+- Toyota: `e2d77654-1e76-4f9b-a298-e99fadbbfaae`.
+- Jeep pequena: `ead21b24-a542-4cf6-acc3-f9930ca86da3`.
+- Jeep capturada, replay exclusivamente offline:
+  `55872347-3ff3-4b31-b883-8acdd4bafed1`.
 
-Cada run gerou JSON/Markdown em
-`.local-reports/agents/new-product-check/<run-id>.{json,md}`.
-O CLI imprime `Fixture benchmark: {...}` somente para provider fixture.
-O report writer e o schemaVersion 19A.2 foram preservados; nenhum novo formato
-de relatório por marca nem persistência em banco.
+Relatórios: `.local-reports/agents/new-product-check/<run-id>.{json,md}`.
+Métricas do replay:
+`validation/19a4/captured-benchmark.json` no mesmo diretório.
+O CLI imprime benchmark apenas em fixture, sem impor esses gates a runs reais.
 
-## Gate e limites da conclusão
+## Proveniência da regressão capturada
 
-Os testes exigem 100% de reconciliação e zero falsos novos para as duas fixtures.
-Isso não se aplica automaticamente a pesquisas reais: cobertura incompleta,
-identidades ambíguas ou dados contraditórios podem exigir revisão.
+A run OpenAI anterior `2506bcb5-7ff7-4529-bbd2-29b51efd5778`, informada
+pelo operador, tinha 18 candidatos e 51 rows conhecidas. Seu JSON salvo foi
+lido **localmente**, sem nova pesquisa nem consulta ao banco.
 
-A fixture pequena prova reutilização nos casos exercitados; não prova cobertura
-da linha Jeep atual, fidelidade da extração remota ou ausência universal de
-falsos matches. Não foram feitas consultas de catálogo real nem pesquisas web.
-Jeep pode ter ambiguidades legítimas; reduzi-las artificialmente não é objetivo.
+A fixture `jeep-captured-mmv-fixture.ts` preserva os 18 candidatos capturados,
+incluindo nomes, atributos, anos, confidence e evidências. Cinco variantes de
+Avenger/Gladiator/Wrangler continuam em três NEW_MODEL agregados.
 
-O registry aceita somente jeep.com.br e subdomínios com fronteira DNS correta,
-via opt-in `allowedSubdomainRoots`. Não é verificação independente de publicação,
-redirecionamentos ou controle de cada página. Domínios externos Stellantis
-permanecem fora da allowlist. Nenhuma fonte externa essencial foi investigada;
-se aparecer na run futura, será candidata à revisão, sem inclusão automática.
+O report antigo reteve somente seis rows canônicas: quatro Commander Longitude
+(960, 996, 1064, 1128), uma Limited MHEV (1129) e uma Overland MHEV (1130).
+As outras dez rows da fixture usam ids sintéticos e versões dadas pelo operador.
+Logo, a regressão contém **16 rows / 13 MMVs**, não 51 rows ou uma suposta
+contagem de 22 MMVs do catálogo completo.
 
-Uma terceira marca deve exigir entrada no registry e fixture/gabarito, sem
-tocar no matcher, finding model, report writer ou catalog reader. A exceção
-encontrada nesta Sprint foi o prompt anterior fixando sites Toyota e o registry
-anterior limitado a hosts exatos. Ambos agora recebem política declarativa.
-Nenhuma terceira marca foi adicionada.
+Os treze casos conhecidos cobrem Renegade Altitude/Longitude MHEV/Sahara MHEV/
+Willys; Compass Sport/Longitude/Serie S/Blackhawk; Commander Longitude/
+Limited MHEV/Overland MHEV/Overland Diesel/Blackhawk.
+Exercitam 1.332→1.3, 1.995→2.0, 2.184→2.2, AT no masculino, engine labels
+informativos, tração ausente e múltiplos PY/MY.
 
-**Zero chamadas OpenAI nesta Sprint, zero escritas canônicas, zero renomeações.**
-Sem UI, migrations, aliases table, scheduler, worker ou commit.
-Gates e arquivos: [validação da Sprint](SPRINT_19A_VALIDATION.md).
+## Generalização e limites
+
+As mudanças de identidade são genéricas: projeção normalizada, precisão decimal,
+rótulos textuais informativos e delimitação literal de powertrain fornecido
+pelo candidato. Não há Jeep matcher nem mapa T270/Hurricane para motor.
+Registry, domains, hints, prompt e provider permaneceram intactos na 19A.4.
+
+100% e zero falso novo são gates das fixtures, não promessa para pesquisa real.
+A fixture reconstruída não inclui todas as MMVs concorrentes do catálogo
+original; **PENDENTE** replay com snapshot completo ou run real manual após revisão.
+Nenhuma nova chamada OpenAI foi feita para obter esse snapshot.
+
+O smoke Toyota real previamente validado é contexto fornecido pelo operador,
+não execução desta Sprint. A regressão Toyota offline permanece 8/8.
+Review humano continua necessário para propostas canônicas, e não se força
+zero AMBIGUOUS em casos sem identidade suficiente.
+
+**Zero chamadas OpenAI, zero escritas canônicas, zero migrations, zero renomeações.**
+Gates e arquivos: [validação](SPRINT_19A_VALIDATION.md).

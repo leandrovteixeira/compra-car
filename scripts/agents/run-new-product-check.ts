@@ -104,9 +104,11 @@ export async function runNewProductCheckCli(
         result.variantsResolved +
         ' | researched: ' +
         result.researchedCandidates +
-        ' | known products: ' +
-        result.knownProducts +
-        ' | matched: ' +
+        ' | canonical product rows: ' +
+        result.canonicalProductRows +
+        ' | known MMV identities: ' +
+        result.knownMmvIdentities +
+        ' | matched MMV candidates: ' +
         result.matchedCandidates.length +
         ' | exact: ' +
         result.matchedCandidates.filter((m) => m.matchMode === 'EXACT_OFFICIAL').length +
