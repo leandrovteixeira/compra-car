@@ -7,6 +7,8 @@ export interface AgentMarketScope {
 export interface OfficialBrandSource extends AgentMarketScope {
   readonly allowedDomains: readonly string[];
   readonly allowedHosts: readonly string[];
+  /** Explicit opt-in to a domain and its DNS subdomains; empty by default. */
+  readonly allowedSubdomainRoots?: readonly string[];
   readonly searchHints: readonly string[];
 }
 export type OfficialEvidenceType =

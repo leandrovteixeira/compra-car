@@ -15,3 +15,6 @@ export {
   powertrainComparisonKey,
 } from './product-component-normalization';
 export { aggregateProductFindings } from './product-finding-aggregation';
+
+export * from './jeep-product-check-fixture';
+export * from './product-check-fixture-benchmark';

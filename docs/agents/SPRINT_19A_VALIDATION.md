@@ -1,6 +1,174 @@
-# Sprint 19A / 19A.1 / 19A.2 — validação e entrega
+# Sprint 19A / 19A.1 / 19A.2 / 19A.3 — validação e entrega
 
-## Entrega atual: 19A.2 — reconciliação determinística e agregação
+## Entrega atual: 19A.3 — Cross-brand validation / Jeep BR
+
+Worktree `C:\Dev\compra-car-agent1`, branch `sprint-19-new-product-agent`.
+Base limpa observada: **cf041ee**, com a 19A.2 já commitada pelo operador.
+Esta Sprint permanece **sem commit e sem staging**.
+
+### Resultado e reutilização
+
+Jeep/BR adicionada ao registry com jeep.com.br e subdomínios DNS por opt-in
+declarativo, sem autorizar domínios externos Stellantis. Search hints incluem
+versões, ficha técnica, configurador, T270, T270 MHEV, Hurricane e Hurricane Flex.
+A política Toyota de hosts exatos permaneceu intacta.
+
+O matcher existente reconciliou os casos Jeep sem alterações. Não há
+JeepMatcher, branching Jeep na identidade nem tradução hardcoded de powertrain
+para motor. T270/Hurricane permanecem rótulos comerciais; cilindrada só participa
+quando explícita. A ausência desse rótulo no legado não cria conflito.
+
+Exceções necessárias à extensão: o registry anterior só selecionava Toyota,
+aceitava apenas hosts exatos e o prompt fixava consultas site:toyota.com.br.
+Foram adicionados seleção por marca/mercado e allowedSubdomainRoots; o provider
+recebe essa política no input e o prompt usa hints/domínios configurados.
+Modelo, Responses API, estratégia, schema de pesquisa e permissões de escrita
+não foram alterados.
+
+Matcher, parser, component normalization, aplicação/classificação, agregação,
+catalog reader e report writer: **sem diff**. Contrato de findings e relatórios
+permanece schemaVersion 19A.2. A extensão de tipo afeta apenas configuração de fontes.
+
+### Fixtures e benchmark
+
+| Métrica | Toyota | Jeep |
+| --- | ---: | ---: |
+| Candidatos / variantes resolvidas / modelos | 21 / 20 / 5 | 8 / 7 / 3 |
+| knownProducts | 8 | 4 |
+| reconciledKnownProducts | 8 | 4 |
+| knownReconciliationRate | 100% | 100% |
+| falseNewProducts / falseNewRate | 0 / 0% | 0 / 0% |
+| EXACT_OFFICIAL / LEGACY_NAMING | 0 / 8 | 0 / 4 |
+| NEW_MODEL | 3 | 1 |
+| NEW_VERSION | 2 | 1 |
+| AMBIGUOUS | 1 | 1 |
+| Rejeitados / fontes externas rejeitadas | 0 / 0 | 0 / 0 |
+
+Comandos executados, ambos **exit 0**:
+
+```powershell
+pnpm agent:new-products:dry-run -- --brand Toyota --provider fixture
+pnpm agent:new-products:dry-run -- --brand Jeep --provider fixture
+```
+
+Runs finais:
+
+- Toyota: `256a4faf-8569-4f44-a072-9543e23a4da5`.
+- Jeep: `3d53b88b-d410-450c-bcf9-3ade7f361c5d`.
+
+Relatórios JSON/Markdown existentes em
+`.local-reports/agents/new-product-check/<run-id>.{json,md}`, ignorados pelo Git.
+Jeep: Commander agregado com Limited/Overland Hurricane; Blackhawk Hurricane Flex
+como NEW_VERSION; Compass sem variante como AMBIGUOUS. Toyota preserva os dados
+e resultados sintéticos da 19A.2.
+
+Benchmark é um helper puro com gabarito declarado na fixture. Não deriva a verdade
+esperada da saída do matcher. CLI imprime métricas somente em provider fixture;
+runs reais não recebem exigência artificial de 100% ou zero ambiguidades.
+Definições, denominadores, regressões do próprio benchmark e limites:
+[CROSS_BRAND_BENCHMARK.md](CROSS_BRAND_BENCHMARK.md).
+
+### Testes e gates executados
+
+| Verificação | Resultado |
+| --- | --- |
+| Core: new-product-check-agent, legacy-product-version-parser, product-reconciliation, cross-brand-product-check | **204 passed** |
+| CLI/report: new-product-check-cli | **12 passed** |
+| Provider OpenAI: product-research-provider, transporte simulado | **17 passed** |
+| Total direcionado | **233 passed** |
+| Suíte completa core no gate global | **860 passed** |
+| Typecheck core, adapter-openai e scripts/agents direcionados | exit 0 |
+| pnpm lint | exit 0 |
+| pnpm typecheck | exit 1; mesmos cinco TS2554 |
+| pnpm test | exit 1; mesma falha de preços públicos |
+| pnpm format:check | exit 1; mesmos 15 arquivos |
+| pnpm build | exit 0 |
+| Prettier dos arquivos de código alterados | exit 0 |
+| git diff --check | exit 0 |
+
+Os 20 critérios obrigatórios estão cobertos: registry e hosts Jeep verdadeiros/
+falsos; nomes T270/Hurricane preservados; nenhuma cilindrada inventada; T270 com
+componentes explícitos; MHEV versus ICE; Blackhawk nova; Commander agregado;
+Compass ambíguo; regressão Toyota; benchmark 100%/zero falso novo; mesmas regras
+sob marca sintética no matcher; capacidades somente de leitura e reports Jeep.
+
+O benchmark também detecta regressões injetadas: falso NEW_VERSION sem matched
+ids, falso NEW_MODEL com projeção model-level e id canônico incorreto; preserva
+reconciliação de year change e usa taxas null se não houver produtos conhecidos.
+
+Comandos direcionados:
+
+```powershell
+pnpm --filter @compra-car/core exec vitest run test/new-product-check-agent.test.ts test/legacy-product-version-parser.test.ts test/product-reconciliation.test.ts test/cross-brand-product-check.test.ts
+pnpm --filter @compra-car/agents test
+pnpm --filter @compra-car/adapter-openai exec vitest run test/product-research-provider.test.ts
+pnpm --filter @compra-car/core --filter @compra-car/adapter-openai --filter @compra-car/agents typecheck
+```
+
+Logs: `validation/19a3/final-*.log` no diretório local de reports.
+Comparação automatizada com logs 19A.2:
+`validation/19a3/diagnostic-comparison.json`, **sameAs19A2=true** para typecheck,
+testes e formatação. Erros preexistentes:
+
+- Cinco TS2554 em `apps/web/test/admin-product-public-prices.test.ts:101–105`.
+- `product-public-price-supabase-adapter.test.ts`: lists a page with exact count
+  and deterministic range; `.in is not a function`. Pacote: 1 failed,
+  108 passed, 3 skipped.
+- Os 15 arquivos de formatação estão listados no histórico ao final deste documento.
+
+O Turbo encerra tarefas após falha; as suítes do agente foram executadas
+separadamente. Flags de smoke OpenAI, benchmark remoto Jeep e integrações
+Supabase/staging foram desabilitadas no processo dos gates, sem mudar configuração
+persistida. Node 24.18.0 / pnpm 10.34.5; warning conhecido de Node 22.x declarado.
+
+### Arquivos e Git
+
+Criados (4):
+
+- `docs/agents/CROSS_BRAND_BENCHMARK.md`
+- `packages/core/src/agents/jeep-product-check-fixture.ts`
+- `packages/core/src/agents/product-check-fixture-benchmark.ts`
+- `packages/core/test/cross-brand-product-check.test.ts`
+
+Alterados (14):
+
+- `AI_CONTEXT.md`
+- `CHANGELOG.md`
+- `docs/agents/NEW_PRODUCT_CHECK_AGENT.md`
+- `docs/agents/SPRINT_19A_VALIDATION.md`
+- `docs/agents/prompts/new-product-check-agent-v1.md`
+- `packages/adapter-openai/src/product-research-provider.ts`
+- `packages/adapter-openai/test/product-research-provider.test.ts`
+- `packages/core/src/agents/index.ts`
+- `packages/core/src/agents/new-product-check-fixture.ts`
+- `packages/core/src/agents/new-product-check-types.ts`
+- `packages/core/src/agents/official-product-sources.ts`
+- `packages/core/test/new-product-check-agent.test.ts`
+- `scripts/agents/run-new-product-check.ts`
+- `scripts/agents/test/new-product-check-cli.test.ts`
+
+`git status --short`: 14 modificados e 4 novos, índice vazio.
+Auditoria local de status/stat e caminhos preservados:
+`validation/19a3/git-audit.json`.
+Sem novas dependências, lockfile, migrations, UI, scheduler, worker,
+aliases table ou alteração de Legacy. Nenhuma terceira marca foi adicionada.
+
+### Limitações e confirmação
+
+Toyota: smoke real validado anteriormente **conforme informado pelo operador**,
+com 10 modelos, 30 variantes resolvidas, 32 candidatos, 8 LEGACY_NAMING,
+8 NEW_MODEL, 2 NEW_VERSION e zero ambiguidades/rejeições. Não foi reexecutado.
+
+Jeep: **PENDENTE** run real após revisão e autorização. A fixture valida os
+conceitos exercitados, sem provar cobertura atual ou fidelidade da extração.
+Nenhuma pesquisa web ou leitura de catálogo real foi feita. Fontes essenciais
+em outros domínios Stellantis, se encontradas futuramente, exigirão revisão.
+As falhas globais preexistentes permanecem fora do escopo.
+
+**Zero chamadas OpenAI nesta Sprint; zero escritas canônicas; zero renomeações
+canônicas. Sem commit e sem staging.**
+
+## Histórico da entrega 19A.2 — reconciliação determinística e agregação
 
 Worktree: `C:\Dev\compra-car-agent1`. Branch:
 `sprint-19-new-product-agent`. Base observada: **c1a27e6**, contendo 19A/19A.1

@@ -231,7 +231,7 @@ describe('component reconciliation, uniqueness and years', () => {
     });
     expect(result.findings).toHaveLength(0);
   });
-  it('handles Jeep official powertrain naming without a Jeep web registry', () => {
+  it('handles Jeep official powertrain naming with the shared registry', () => {
     const official = candidate({
       brand: 'Jeep',
       model: 'Renegade',
@@ -258,9 +258,7 @@ describe('component reconciliation, uniqueness and years', () => {
         candidate: { officialVersionLabel: 'Longitude T270 MHEV' },
       },
     });
-    expect(() => officialBrandSource({ country: 'BR', brand: 'Jeep' })).toThrow(
-      'UNSUPPORTED_AGENT_SCOPE',
-    );
+    expect(officialBrandSource({ country: 'BR', brand: 'Jeep' }).brand).toBe('Jeep');
   });
   it('does not fuzzy-match close trim spelling', () => {
     expect(match({ officialVersionLabel: 'XRF', trim: 'XRF' })).toMatchObject({

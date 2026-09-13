@@ -1,3 +1,4 @@
+import { jeepFixtureCandidates, jeepFixtureCatalog } from './jeep-product-check-fixture';
 import type { AdministrativeVehicle } from '../admin/administrative-vehicle';
 import type {
   ProductResearchProvider,
@@ -142,18 +143,48 @@ export const toyotaFixtureCandidates: readonly OfficialProductCandidate[] = [
   })),
   unresolved,
 ];
+const fixtures = new Map([
+  [
+    'Toyota',
+    {
+      candidates: toyotaFixtureCandidates,
+      catalog: toyotaFixtureCatalog,
+      // Paired acceptance fixtures declare the expected identity independently of matcher output.
+      knownExpectations: toyotaFixtureCatalog.map((p, index) => ({
+        productId: p.id,
+        candidate: toyotaFixtureCandidates[index]!,
+      })),
+    },
+  ],
+  [
+    'Jeep',
+    {
+      candidates: jeepFixtureCandidates,
+      catalog: jeepFixtureCatalog,
+      knownExpectations: jeepFixtureCatalog.map((p, index) => ({
+        productId: p.id,
+        candidate: jeepFixtureCandidates[index]!,
+      })),
+    },
+  ],
+]);
+export function productCheckFixture(scope: AgentMarketScope) {
+  const source = officialBrandSource(scope);
+  const fixture = fixtures.get(source.brand);
+  if (!fixture) throw new Error('UNSUPPORTED_AGENT_FIXTURE');
+  return fixture;
+}
 export class FixtureProductResearchProvider implements ProductResearchProvider {
   async researchProducts(scope: AgentMarketScope) {
-    officialBrandSource(scope);
+    const fixture = productCheckFixture(scope);
     return {
-      candidates: structuredClone(toyotaFixtureCandidates),
+      candidates: structuredClone(fixture.candidates),
       metadata: { provider: 'fixture', webSearchCount: 0 },
     };
   }
 }
 export class FixtureProductCatalogReader implements ProductCatalogReader {
   async readProducts(scope: AgentMarketScope) {
-    officialBrandSource(scope);
-    return structuredClone(toyotaFixtureCatalog);
+    return structuredClone(productCheckFixture(scope).catalog);
   }
 }

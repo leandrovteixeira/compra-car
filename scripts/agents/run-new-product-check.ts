@@ -8,6 +8,8 @@ import {
   FixtureProductCatalogReader,
   FixtureProductResearchProvider,
   officialBrandSource,
+  productCheckFixture,
+  benchmarkProductFixture,
 } from '@compra-car/core/agents';
 import {
   OpenAIProductResearchProvider,
@@ -120,6 +122,13 @@ export async function runNewProductCheckCli(
         ' | rejected external sources: ' +
         result.rejectedExternalSources,
     );
+    if (provider === 'fixture') {
+      const benchmark = benchmarkProductFixture(
+        result,
+        productCheckFixture(scope).knownExpectations,
+      );
+      log('Fixture benchmark: ' + JSON.stringify(benchmark));
+    }
     log('Reports: .local-reports/agents/new-product-check/' + runId + '.{json,md}');
     return 0;
   } catch (error) {

@@ -20,6 +20,60 @@ afterEach(async () => {
   for (const root of roots.splice(0)) await rm(root, { recursive: true, force: true });
 });
 describe('CLI and local reports', () => {
+  it('executes Jeep with shared JSON/Markdown reports and fixture-only benchmark', async () => {
+    vi.stubGlobal('fetch', () => {
+      throw new Error('Network forbidden');
+    });
+    const root = await temporaryRoot(),
+      log = vi.fn();
+    expect(
+      await runNewProductCheckCli(['--brand', 'Jeep', '--provider', 'fixture'], {}, log, root),
+    ).toBe(0);
+    const directory = join(root, '.local-reports/agents/new-product-check');
+    const files = await readdir(directory);
+    const result = JSON.parse(
+      await readFile(
+        join(
+          directory,
+          files.find((f) => f.endsWith('.json'))!,
+        ),
+        'utf8',
+      ),
+    );
+    const md = await readFile(
+      join(
+        directory,
+        files.find((f) => f.endsWith('.md'))!,
+      ),
+      'utf8',
+    );
+    expect(result.brand).toBe('Jeep');
+    expect(result.matchedCandidates).toHaveLength(4);
+    expect(result.findings).toHaveLength(3);
+    expect(
+      result.findings.find((f: { type: string }) => f.type === 'NEW_MODEL').variants,
+    ).toHaveLength(2);
+    expect(md).toContain('Longitude T270 MHEV');
+    expect(md).toContain('Longitude 1.3 TGDI AT MHEV');
+    expect(md).toContain('Blackhawk Hurricane Flex');
+    expect(md.match(/^### Jeep Commander$/gm)).toHaveLength(1);
+    expect(md).toContain('## New models');
+    expect(md).toContain('## New versions');
+    expect(md).toContain('## Ambiguous');
+    expect(md).not.toContain('Toyota');
+    const benchmarkLine = log.mock.calls
+      .map(([line]) => line as string)
+      .find((line) => line.startsWith('Fixture benchmark: '))!;
+    expect(JSON.parse(benchmarkLine.slice('Fixture benchmark: '.length))).toMatchObject({
+      brand: 'Jeep',
+      knownProducts: 4,
+      reconciledKnownProducts: 4,
+      falseNewProducts: 0,
+      knownReconciliationRate: 1,
+      falseNewRate: 0,
+    });
+  });
+
   it.each([
     [],
     ['--brand', 'Toyota'],

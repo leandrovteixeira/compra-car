@@ -13,10 +13,40 @@ const toyota: OfficialBrandSource = Object.freeze({
     'Prioridade: ficha técnica, documento de versões, lista oficial (somente identidade), configurador, página de modelo, release',
   ]),
 });
+const jeep: OfficialBrandSource = Object.freeze({
+  country: 'BR',
+  brand: 'Jeep',
+  allowedDomains: Object.freeze(['jeep.com.br']),
+  allowedHosts: Object.freeze(['jeep.com.br', 'www.jeep.com.br', 'configurador.jeep.com.br']),
+  allowedSubdomainRoots: Object.freeze(['jeep.com.br']),
+  searchHints: Object.freeze([
+    'site:jeep.com.br Jeep Brasil modelos atuais versões ano modelo',
+    'site:jeep.com.br ficha técnica motor powertrain T270 T270 MHEV',
+    'site:jeep.com.br monte o seu configurador Hurricane Hurricane Flex',
+    'Preservar nomes comerciais de powertrain separados de trim e atributos técnicos; somente fatos explícitos.',
+  ]),
+});
+const sources: readonly OfficialBrandSource[] = Object.freeze([toyota, jeep]);
 export function officialBrandSource(scope: AgentMarketScope): OfficialBrandSource {
-  if (scope.country !== 'BR' || vehicleTextComparisonKey(scope.brand) !== 'toyota')
-    throw new Error('UNSUPPORTED_AGENT_SCOPE');
-  return toyota;
+  const source = sources.find(
+    (s) =>
+      s.country === scope.country &&
+      vehicleTextComparisonKey(s.brand) === vehicleTextComparisonKey(scope.brand),
+  );
+  if (!source) throw new Error('UNSUPPORTED_AGENT_SCOPE');
+  return source;
+}
+function isAllowedHostname(hostname: string, source: OfficialBrandSource): boolean {
+  if (source.allowedHosts.includes(hostname)) return true;
+  return (source.allowedSubdomainRoots ?? []).some((root) => {
+    if (!source.allowedDomains.includes(root)) return false;
+    if (hostname === root) return true;
+    if (!hostname.endsWith('.' + root)) return false;
+    return hostname
+      .slice(0, -(root.length + 1))
+      .split('.')
+      .every((label) => /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/u.test(label));
+  });
 }
 export function officialEvidenceUrl(raw: string, source: OfficialBrandSource): string | null {
   try {
@@ -26,7 +56,7 @@ export function officialEvidenceUrl(raw: string, source: OfficialBrandSource): s
       url.username ||
       url.password ||
       url.port ||
-      !source.allowedHosts.includes(url.hostname)
+      !isAllowedHostname(url.hostname, source)
     )
       return null;
     url.hash = '';

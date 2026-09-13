@@ -2,9 +2,9 @@
 
 ## Escopo e direção canônica
 
-Sprint 19A.2 no worktree
+Sprint 19A.3 no worktree
 `C:\Dev\compra-car-agent1`, branch `sprint-19-new-product-agent`.
-Base Git: `c1a27e6` (19A e 19A.1 já commitadas pelo operador).
+Base Git: `cf041ee` (19A.2 já commitada pelo operador).
 
 **Official naming is authoritative. Legacy Compra-Car naming is transitional.**
 O agente aprende/extrai a linguagem comercial oficial e pode reconciliá-la com
@@ -17,7 +17,7 @@ ambos, separadamente. `Longitude T270 MHEV` não é convertido em
 
 Continua READ-ONLY: nenhuma alteração em products, specs, preços ou dados
 comerciais; nenhuma migration, persistência de aliases/findings, UI ou scheduler.
-Sem Price Agent, Spec Agent, Railway ou registry web Jeep.
+Sem Price Agent, Spec Agent, Railway ou terceira marca.
 
 ## Arquitetura: um agente
 
@@ -95,14 +95,29 @@ O core também valida estrutura, limites e URLs e projeta apenas campos permitid
 
 ## Fontes e resolução
 
-Registry apenas Toyota/BR:
+Registry declarativo por marca/mercado:
 
-- Domain filters da pesquisa: `toyota.com.br`, `media.toyota.com.br`.
-- Hosts aceitos localmente: `toyota.com.br`, `www.toyota.com.br`,
-  `media.toyota.com.br`. Outros subdomínios não são implicitamente autorizados.
-- HTTPS obrigatório; credenciais em URL, porta não padrão, host falso, terceiros
-  e concessionários independentes são rejeitados pelo parser de URL/hostname.
-- Fragmentos são removidos; não se usa `.includes("toyota.com.br")`.
+| Marca / BR | Domain filters | Validação local |
+| --- | --- | --- |
+| Toyota | toyota.com.br, media.toyota.com.br | Somente toyota.com.br, www.toyota.com.br e media.toyota.com.br |
+| Jeep | jeep.com.br | Domínio raiz e subdomínios DNS de jeep.com.br por opt-in |
+
+`allowedHosts` mantém hosts exatos; `allowedSubdomainRoots` autoriza explicitamente
+um domínio configurado em allowedDomains e seus subdomínios. A comparação é por
+hostname exato ou sufixo `.` + domínio, com validação dos labels DNS; não usa
+includes. HTTPS obrigatório, sem credenciais, porta não padrão ou hosts falsos;
+fragmentos são removidos. A regra Toyota de hosts exatos não foi ampliada.
+
+Jeep recebe hints de versões, ficha técnica, monte o seu, configurador, motor,
+powertrain, T270, T270 MHEV, Hurricane, Hurricane Flex, ano modelo e Jeep Brasil.
+Não há mapeamento desses nomes para cilindrada. Nenhum domínio Stellantis
+externo foi autorizado. Eventual fonte essencial fora de jeep.com.br deverá
+ser documentada como candidata e revisada antes de inclusão.
+
+O provider recebe a política de hosts e hints do registry no input. O prompt
+deixou de fixar consultas site:toyota.com.br; usa searchHints/allowedDomains
+da marca selecionada. Responses, modelo configurado, schema e estratégia
+Discovery/Resolution permanecem iguais.
 
 Prioridade instruída para resolução: ficha técnica → documento de versões →
 lista oficial de preços **somente para identidade** → configurador → página de
@@ -270,6 +285,7 @@ Na raiz do worktree:
 
 ```powershell
 pnpm agent:new-products:dry-run -- --brand Toyota --provider fixture
+pnpm agent:new-products:dry-run -- --brand Jeep --provider fixture
 ```
 
 Fixture sintética: 8 registros administrativos, 21 candidatos, 5 modelos,
@@ -277,6 +293,16 @@ Fixture sintética: 8 registros administrativos, 21 candidatos, 5 modelos,
 (Corolla: 5 variantes; SW4: 3; RAV4: 2), 2 NEW_VERSION (GRS e GRS Dualtone)
 com warnings e 1 AMBIGUOUS (Corolla Cross sem variante). PY/MY ausentes na
 fixture; POSSIBLE_YEAR_CHANGE é coberto por testes próprios.
+
+Jeep fixture: 4 registros administrativos, 8 candidatos, 3 modelos, 7 variantes
+resolvidas, 4 LEGACY_NAMING, 1 NEW_MODEL Commander (duas variantes), 1 NEW_VERSION
+Blackhawk Hurricane Flex e 1 AMBIGUOUS Compass sem variante. T270/Hurricane não
+implicam cilindrada; os componentes técnicos só entram quando explícitos.
+
+Ambas as fixtures alcançam 100% de reconciliação e zero falsos novos conhecidos.
+O CLI imprime métricas de benchmark somente em fixture, com gabarito independente;
+o JSON/Markdown compartilhado permanece no schema 19A.2. Métricas, denominadores,
+limites e extensão futura: [CROSS_BRAND_BENCHMARK.md](CROSS_BRAND_BENCHMARK.md).
 
 OpenAI exige OPENAI_API_KEY, OPENAI_AGENT_MODEL, SUPABASE_URL e SUPABASE_SERVER_KEY
 no ambiente do processo; o CLI não carrega .env automaticamente. Não há modelo
@@ -286,13 +312,18 @@ Telemetria opcional preservada: provider/model/responseId/tokens/webSearchCount.
 Não há cálculo monetário.
 
 **Nesta entrega, somente fixture. Não executar o provider OpenAI automaticamente.**
-Não há chamada OpenAI real autorizada no escopo 19A.2.
+Não há chamada OpenAI real autorizada no escopo 19A.3. A run real Jeep
+permanece PENDENTE de revisão e autorização posterior.
 Nenhuma chamada real é feita pelos testes da Sprint; transporte simulado e rede
 bloqueada nesses testes. Gates e evidência real da fixture:
 [SPRINT_19A_VALIDATION.md](SPRINT_19A_VALIDATION.md).
 
 ## Limitações e futuro
 
+- Toyota: o operador informou um smoke real posterior validado com 10 modelos,
+  30 variantes resolvidas, 32 candidatos, 8 LEGACY_NAMING, 8 NEW_MODEL,
+  2 NEW_VERSION e zero ambiguidades/rejeições. Não foi reexecutado nesta Sprint.
+- Jeep: validação real cross-brand PENDENTE; fixture não prova a linha atual.
 - O smoke 19A.1 informado pelo operador (run 64682aee-12c8-49f1-92d0-e6efd3ccf431)
   já forneceu 36 variantes em 11 modelos. Foi consultado somente como arquivo
   local. Seus oito produtos conhecidos têm PY 2026 contra PY 2025 no catálogo

@@ -1,7 +1,9 @@
+import { readFile } from 'node:fs/promises';
 import type { Response } from 'openai/resources/responses/responses';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import {
   toyotaFixtureCandidates,
+  jeepFixtureCandidates,
   NewProductCheckAgent,
   FixtureProductCatalogReader,
 } from '@compra-car/core/agents';
@@ -34,6 +36,50 @@ beforeEach(() =>
 );
 afterEach(() => vi.unstubAllGlobals());
 describe('OpenAI research adapter (mock transport only)', () => {
+  it('uses Jeep registry and generic prompt through the same simulated Responses transport', async () => {
+    const prompt = await readFile(
+      new URL('../../../docs/agents/prompts/new-product-check-agent-v1.md', import.meta.url),
+      'utf8',
+    );
+    expect(prompt).not.toContain('site:toyota.com.br');
+    expect(prompt).not.toContain('site:media.toyota.com.br');
+    const transport = vi.fn<ProductResearchTransport>(async () =>
+      response({
+        output_text: JSON.stringify({ candidates: jeepFixtureCandidates }),
+      }),
+    );
+    const result = await new OpenAIProductResearchProvider({
+      apiKey: secret,
+      model: 'configured-model',
+      prompt,
+      transport,
+    }).researchProducts({ country: 'BR', brand: 'Jeep' });
+    const request = transport.mock.calls[0]![0];
+    expect(request).toMatchObject({
+      model: 'configured-model',
+      instructions: prompt,
+      tools: [
+        {
+          type: 'web_search',
+          filters: { allowed_domains: ['jeep.com.br'] },
+          user_location: { type: 'approximate', country: 'BR' },
+        },
+      ],
+    });
+    const input = JSON.parse(request.input as string);
+    expect(input).toMatchObject({
+      brand: 'Jeep',
+      country: 'BR',
+      allowedDomains: ['jeep.com.br'],
+      allowedSubdomainRoots: ['jeep.com.br'],
+      researchStages: ['MODEL_DISCOVERY', 'VARIANT_RESOLUTION'],
+    });
+    expect(input.searchHints.join(' ')).toContain('Hurricane Flex');
+    expect(input.searchHints.join(' ')).not.toContain('Toyota');
+    expect(result.candidates[0]?.officialVersionLabel).toBe('Longitude T270');
+    expect(result.candidates[4]?.powertrainLabel).toBe('Hurricane Flex');
+  });
+
   it('uses Responses, web search, allowlist, required schema and configured model', async () => {
     vi.stubGlobal('fetch', () => {
       throw new Error('Network forbidden');

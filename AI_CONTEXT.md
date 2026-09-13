@@ -1,5 +1,24 @@
 # Contexto para agentes de IA
 
+## Sprint 19A.3 — Cross-brand validation / Jeep BR (2026-09-13)
+
+Jeep/BR adicionada ao registry com jeep.com.br, subdomínios DNS por opt-in e
+search hints de versões/ficha/configurador/T270/Hurricane. Prompt usa o escopo
+do registry; provider existente recebe a política de hosts. Sem troca de modelo.
+
+Matcher, classificação, normalização, agregação, catalog reader e report writer
+da 19A.2 preservados. Não há Jeep-specific matcher nem mapa comercial → motor.
+Fixtures: Toyota 8/8 e Jeep 4/4 conhecidos reconciliados, zero falsos novos;
+uma ambiguidade proposital por marca. Benchmark com gabarito independente do
+matcher e taxas exclusivas de fixture, sem impor 100% a pesquisas reais.
+
+Toyota: smoke real validado anteriormente conforme informado pelo operador.
+Jeep: **PENDENTE** run real após revisão/autorização. Nesta Sprint: zero OpenAI
+calls, zero escrita canônica, zero renomeações; sem commit/staging.
+Base observada cf041ee (19A.2 já commitada).
+[Benchmark](docs/agents/CROSS_BRAND_BENCHMARK.md) e
+[validação](docs/agents/SPRINT_19A_VALIDATION.md).
+
 ## Sprint 19A.2 — Deterministic Reconciliation + Finding Aggregation (2026-09-13)
 
 NEW_MODEL agregado por mercado/marca/modelo, com variantes, evidências, maior

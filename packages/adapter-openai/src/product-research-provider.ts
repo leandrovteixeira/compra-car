@@ -63,6 +63,7 @@ export class OpenAIProductResearchProvider implements ProductResearchProvider {
           brand: source.brand,
           allowedDomains: source.allowedDomains,
           allowedHosts: source.allowedHosts,
+          allowedSubdomainRoots: source.allowedSubdomainRoots ?? [],
           researchStages: ['MODEL_DISCOVERY', 'VARIANT_RESOLUTION'],
           searchHints: source.searchHints,
           researchedAt: new Date().toISOString(),
