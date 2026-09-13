@@ -1,5 +1,32 @@
 # Changelog
 
+## Sprint 19A.1 ? Official Discovery Resolution + Legacy Naming (2026-09-13)
+
+Discovery ? Resolution ? matching determin?stico em um agente. Nomenclatura
+oficial preservada em officialVersionLabel, com trim/powertrain/motor/propuls?o/
+transmiss?o separados. Parser hist?rico conservador; modos EXACT_OFFICIAL e
+LEGACY_NAMING exigem correspond?ncia ?nica. Modelo novo pode ter vers?o null.
+Taxonomia evita tratar landing pages como modelos; registry inclui media Toyota.
+Fixture: oito matches hist?ricos, um NEW_MODEL, um NEW_VERSION e um AMBIGUOUS.
+Zero escrita can?nica e zero renomea??o. Pr?ximo smoke OpenAI 19A.1 **PENDENTE**
+de autoriza??o manual; o smoke anterior foi informado pelo operador.
+
+Decis?es, limites e futura normaliza??o: [manual](docs/agents/NEW_PRODUCT_CHECK_AGENT.md).
+Gates e testes: [valida??o](docs/agents/SPRINT_19A_VALIDATION.md).
+
+## Sprint 19A ? New Product Check Agent / READ-ONLY (2026-09-13)
+
+Agente local Toyota/BR: core com matching determin?stico e contratos de leitura,
+adapter-openai com Responses/web search/schema strict e CLI em scripts/agents.
+Registry oficial revalidado no core, fixture offline, deduplica??o/fingerprint,
+relat?rios JSON/Markdown locais ignorados e telemetria sem secrets. Reutiliza
+leitura administrativa paginada incluindo Private/Inactive. Sem escrita
+can?nica, migrations, UI ou scheduler. OPENAI_AGENT_MODEL obrigat?rio.
+
+Documenta??o e limita??es: [New Product Check Agent](docs/agents/NEW_PRODUCT_CHECK_AGENT.md).
+Gates e compara??o com main: [valida??o 19A](docs/agents/SPRINT_19A_VALIDATION.md).
+**PENDENTE:** smoke OpenAI e cat?logo real; execu??o validada com fixture.
+
 ## 2026-09-11 — Product State Invariant + Compare Eligibility Row-Limit Fix (Sprint 17R.1)
 
 - refina a regra para **Public requires Active**, substituindo a permissão dos quatro estados da 17R;

@@ -1,0 +1,22 @@
+{
+  "name": "@compra-car/agents",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dry-run": "tsx cli.ts",
+    "lint": "eslint . --max-warnings=0",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@compra-car/core": "workspace:*",
+    "@compra-car/adapter-openai": "workspace:*",
+    "@compra-car/adapter-supabase": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "tsx": "4.20.6",
+    "vitest": "4.1.10"
+  }
+}

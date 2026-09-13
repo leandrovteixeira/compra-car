@@ -25,7 +25,8 @@
     "./segmented-extraction-orchestrator": "./src/import/segmented-extraction-orchestrator.ts",
     "./commercial-import-contract": "./src/import/commercial-import-contract.ts",
     "./commercial-import-xlsx-parser": "./src/import/commercial-import-xlsx-parser.ts",
-    "./commercial-import-structural-validator": "./src/import/commercial-import-structural-validator.ts"
+    "./commercial-import-structural-validator": "./src/import/commercial-import-structural-validator.ts",
+    "./agents": "./src/agents/index.ts"
   },
   "types": "./src/index.ts",
   "scripts": {

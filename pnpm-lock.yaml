@@ -103,6 +103,25 @@ importers:
         specifier: 4.1.10
         version: 4.1.10(@types/node@24.13.3)(vite@8.1.5(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.20.6))
 
+  packages/adapter-openai:
+    dependencies:
+      '@compra-car/core':
+        specifier: workspace:*
+        version: link:../core
+      ajv:
+        specifier: 8.20.0
+        version: 8.20.0
+      openai:
+        specifier: 6.49.0
+        version: 6.49.0
+    devDependencies:
+      '@types/node':
+        specifier: 24.13.3
+        version: 24.13.3
+      vitest:
+        specifier: 4.1.10
+        version: 4.1.10(@types/node@24.13.3)(vite@8.1.5(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.20.6))
+
   packages/adapter-supabase:
     dependencies:
       '@compra-car/contracts':
@@ -178,6 +197,28 @@ importers:
   packages/shared: {}
 
   packages/ui: {}
+
+  scripts/agents:
+    dependencies:
+      '@compra-car/adapter-openai':
+        specifier: workspace:*
+        version: link:../../packages/adapter-openai
+      '@compra-car/adapter-supabase':
+        specifier: workspace:*
+        version: link:../../packages/adapter-supabase
+      '@compra-car/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+    devDependencies:
+      '@types/node':
+        specifier: 24.13.3
+        version: 24.13.3
+      tsx:
+        specifier: 4.20.6
+        version: 4.20.6
+      vitest:
+        specifier: 4.1.10
+        version: 4.1.10(@types/node@24.13.3)(vite@8.1.5(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.20.6))
 
 packages:
 
