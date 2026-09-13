@@ -54,6 +54,9 @@ export type ProductMatchMode = 'EXACT_OFFICIAL' | 'LEGACY_NAMING';
 export type NewProductFindingType =
   'NEW_MODEL' | 'NEW_VERSION' | 'POSSIBLE_YEAR_CHANGE' | 'AMBIGUOUS';
 export interface NewProductFinding {
+  /** Deduplicated official variants for a model-level finding; empty for other types. */
+  readonly variants: readonly OfficialProductCandidate[];
+  readonly warnings: readonly ExtractionWarning[];
   readonly fingerprint: string;
   readonly type: NewProductFindingType;
   readonly candidate: OfficialProductCandidate;
@@ -94,7 +97,7 @@ export interface RejectedProductCandidate {
   readonly reason: 'INVALID_CANDIDATE' | 'OUT_OF_SCOPE' | 'NO_OFFICIAL_EVIDENCE';
 }
 export interface NewProductCheckResult {
-  readonly schemaVersion: '19A.1';
+  readonly schemaVersion: '19A.2';
   readonly runId: string;
   readonly startedAt: string;
   readonly completedAt: string;

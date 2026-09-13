@@ -1,6 +1,9 @@
 import { vehicleTextComparisonKey as key } from '../admin/vehicle-text-normalization';
 import { officialCandidateIdentity } from './product-candidate-matcher';
-import { transmissionComparisonKey } from './legacy-product-version-parser';
+import {
+  transmissionComparisonKey,
+  powertrainComparisonKey,
+} from './product-component-normalization';
 import { officialCandidateTextFields } from './official-product-candidate-validation';
 import type {
   AgentMarketScope,
@@ -31,7 +34,12 @@ function merge(a: OfficialProductCandidate, b: OfficialProductCandidate): Offici
       right = b[field];
     if (left === null || right === null) return false;
     if (typeof left === 'string' && typeof right === 'string') {
-      const compare = field === 'transmission' ? transmissionComparisonKey : key;
+      const compare =
+        field === 'transmission'
+          ? (value: string) => transmissionComparisonKey(value, a.propulsion ?? b.propulsion)
+          : field === 'powertrainLabel'
+            ? powertrainComparisonKey
+            : key;
       return compare(left) !== compare(right);
     }
     return left !== right;
@@ -81,7 +89,8 @@ export function deduplicateOfficialCandidates(
           (candidate.propulsion === null || candidate.propulsion === other.propulsion) &&
           (candidate.powertrainLabel === null ||
             (other.powertrainLabel !== null &&
-              key(candidate.powertrainLabel) === key(other.powertrainLabel))),
+              powertrainComparisonKey(candidate.powertrainLabel) ===
+                powertrainComparisonKey(other.powertrainLabel))),
       );
     if (matches.length === 1) {
       const { other, index } = matches[0]!;

@@ -6,3 +6,12 @@ export * from './administrative-product-catalog-reader';
 export * from './new-product-check-fixture';
 export * from './legacy-product-version-parser';
 export * from './official-product-candidate-deduplication';
+
+export {
+  normalizeTransmissionFamily,
+  normalizeEngineDisplacement,
+  normalizePropulsionFamily,
+  normalizePowertrainComponents,
+  powertrainComparisonKey,
+} from './product-component-normalization';
+export { aggregateProductFindings } from './product-finding-aggregation';

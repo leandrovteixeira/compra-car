@@ -1,5 +1,5 @@
 import type { AdministrativeVehicle } from '../admin/administrative-vehicle';
-import { vehicleTextComparisonKey as key } from '../admin/vehicle-text-normalization';
+export { transmissionComparisonKey } from './product-component-normalization';
 import type { ProductPropulsion } from './new-product-check-types';
 
 export interface LegacyParsedProduct {
@@ -29,14 +29,6 @@ const drivetrains = new Set(['4X4', '4X2', 'AWD', 'FWD', 'RWD', '2WD', '4WD']);
 const displacement = (token: string) => /^\d\.[0-9]$/u.test(token) && Number(token) > 0;
 const powertrain = (token: string) => /^T\d{3}$/u.test(token);
 const engine = (token: string) => token === 'TGDI';
-
-/** Small explicit equivalence, never fuzzy. Published value remains intact in reports. */
-export function transmissionComparisonKey(value: string): string {
-  const normalized = key(value);
-  return normalized === 'direct shift cvt' || normalized === 'direct-shift cvt'
-    ? 'cvt'
-    : normalized;
-}
 
 export function parseLegacyProductVersion(product: AdministrativeVehicle): LegacyParsedProduct {
   const tokens = product.version.trim().split(/\s+/u);

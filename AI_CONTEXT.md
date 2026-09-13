@@ -1,5 +1,24 @@
 # Contexto para agentes de IA
 
+## Sprint 19A.2 — Deterministic Reconciliation + Finding Aggregation (2026-09-13)
+
+NEW_MODEL agregado por mercado/marca/modelo, com variantes, evidências, maior
+confidence relevante e warnings preservados. NEW_VERSION continua por variante.
+Matching intersecta trim, propulsão, cilindrada, família de transmissão e tração;
+relatórios mostram apenas correspondências sobreviventes. CVT/AT/MT/DHT e
+Hybrid Transaxle para HEV têm compatibilidade explícita, sem alterar rótulos.
+Alias/pacote informativos permitem NEW_VERSION; identidade incerta exige revisão.
+
+Fixture: 21 candidatos, oito LEGACY_NAMING, três NEW_MODEL agregados, dois
+NEW_VERSION com warnings e um AMBIGUOUS. Provider, prompt, modelo e domains
+preservados. Zero chamadas OpenAI nesta Sprint, escrita canônica e renomeação.
+19A/19A.1 já estão na base c1a27e6; 19A.2 fica sem commit e sem staging.
+A divergência PY 2026/2025 no relatório real anterior não deve ser ocultada pelo
+matching: anos explícitos continuam gerando POSSIBLE_YEAR_CHANGE.
+
+Decisões e limites: [manual](docs/agents/NEW_PRODUCT_CHECK_AGENT.md).
+Testes e gates: [validação](docs/agents/SPRINT_19A_VALIDATION.md).
+
 ## Sprint 19A.1 ? Official Discovery Resolution + Legacy Naming (2026-09-13)
 
 Discovery ? Resolution ? matching determin?stico em um agente. Nomenclatura

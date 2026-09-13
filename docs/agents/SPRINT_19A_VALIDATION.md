@@ -1,6 +1,165 @@
-# Sprint 19A / 19A.1 — validação e entrega
+# Sprint 19A / 19A.1 / 19A.2 — validação e entrega
 
-## Entrega atual: 19A.1
+## Entrega atual: 19A.2 — reconciliação determinística e agregação
+
+Worktree: `C:\Dev\compra-car-agent1`. Branch:
+`sprint-19-new-product-agent`. Base observada: **c1a27e6**, contendo 19A/19A.1
+já commitadas pelo operador. A descrição anterior de worktree sem commit estava
+desatualizada. Nesta entrega, **sem commit e sem staging**.
+
+### Mudanças verificadas
+
+Discovery → Resolution → candidatos estruturados → validação/deduplicação →
+reconciliação por interseção de componentes → classificação → agregação.
+
+NEW_MODEL passou a representar mercado/marca/modelo, com variantes deduplicadas,
+evidências válidas unidas, maior confidence relevante e warnings preservados.
+NEW_VERSION permanece por variante. O fingerprint NEW_MODEL v3 não inclui versão.
+O relatório JSON agora usa schemaVersion 19A.2.
+
+Matching filtra trim, propulsão, cilindrada, família de transmissão e tração;
+zero correspondências seguras sinaliza NEW_VERSION, uma permite match e múltiplas
+exigem revisão. O relatório mostra somente os registros sobreviventes. Famílias
+CVT/AT/MT/DHT, Hybrid Transaxle com HEV, aliases inequívocos de propulsão e
+cilindrada numérica não reescrevem rótulos oficiais. EXACT_OFFICIAL continua
+exigindo igualdade do rótulo inteiro; os oito casos da fixture são LEGACY_NAMING.
+
+POSSIBLE_ALIAS/POSSIBLE_PACKAGE permitem NEW_VERSION quando não impedem a
+identidade. Aliases com possível produto existente, pacote ainda não resolvido,
+fatos contraditórios, múltiplos sobreviventes e evidência insuficiente continuam
+em AMBIGUOUS. Em modelo ausente explicitamente identificado, a incerteza das
+variantes fica anexada ao NEW_MODEL. O contrato atual não informa a quais campos
+CONFLICTING_SOURCES/INSUFFICIENT_EVIDENCE se referem; em modelos conhecidos esses
+avisos ainda exigem revisão conservadora. Regras completas no [manual](NEW_PRODUCT_CHECK_AGENT.md).
+
+### Fixture executada
+
+Comando exclusivamente offline:
+
+```powershell
+pnpm agent:new-products:dry-run -- --brand Toyota --provider fixture
+```
+
+Run final: **6aa3e364-01dd-4ac7-90ea-ff441d2f8a5e**.
+JSON e Markdown:
+`.local-reports/agents/new-product-check/6aa3e364-01dd-4ac7-90ea-ff441d2f8a5e.{json,md}`.
+A primeira fixture da revisão, 2179b5e3-de53-4631-9222-ca8b3e31afae, também foi
+preservada; a final inclui warnings agregados no cabeçalho de cada modelo.
+
+| Estado | Resultado |
+| --- | --- |
+| Modelos descobertos / variantes resolvidas | 5 / 20 |
+| Candidatos pesquisados / aceitos | 21 / 21 |
+| Produtos administrativos conhecidos | 8 |
+| EXACT_OFFICIAL / LEGACY_NAMING | 0 / 8 |
+| NEW_MODEL | 3: Corolla (5 variantes), SW4 (3), RAV4 (2) |
+| NEW_VERSION | 2: GRS com POSSIBLE_ALIAS; GRS Dualtone com POSSIBLE_PACKAGE |
+| AMBIGUOUS | 1: Corolla Cross sem variante resolvida |
+| POSSIBLE_YEAR_CHANGE | 0; PY/MY ausentes na fixture |
+| Rejeitados / fontes externas rejeitadas | 0 / 0 |
+
+Os oito ids reconciliados são 895, 896, 615, 897, 1015, 1016, 1018 e 1017.
+Ids e registros são uma fixture sintética do cenário de aceitação, não uma
+leitura do banco. Cada match contém apenas seu registro canônico.
+
+### Testes e gates
+
+| Verificação | Resultado |
+| --- | --- |
+| Core: new-product-check-agent + legacy-product-version-parser + product-reconciliation | **158 passed** |
+| CLI/report: new-product-check-cli | **11 passed** |
+| Adapter OpenAI: product-research-provider, transporte simulado | **16 passed** |
+| Total direcionado, sem contar repetições | **185 passed** |
+| Suíte completa core no gate global | **814 passed** |
+| Typecheck core e scripts/agents direcionados | exit 0 |
+| pnpm lint | exit 0 |
+| pnpm typecheck | exit 1; mesmos cinco TS2554 da 19A.1 |
+| pnpm test | exit 1; mesma falha de preços públicos da 19A.1 |
+| pnpm format:check | exit 1; mesmos 15 arquivos da 19A.1 |
+| pnpm build | exit 0 |
+| git diff --check | exit 0 |
+
+A pequena revisão final do Markdown foi novamente validada com os 11 testes,
+lint de scripts/agents e a fixture final. Código alterado formatado com Prettier;
+Markdown é ignorado pela configuração existente. Nenhuma dependência adicionada.
+
+Cobertura dos 28 critérios: famílias CVT/AT/MT/DHT e transaxle HEV; litros textuais
+versus numéricos; 1.8 diferente de 2.0; ICE/HEV eliminando incompatíveis; oito ids
+Toyota; um modelo para cinco variantes; preservação de variantes/evidências/
+confidence/warnings; alias e pacote sem bloqueio automático; múltiplos candidatos;
+correspondências sobreviventes; ausência de fuzzy; leitura sem mutação; JSON e
+Markdown agregados. Também foram testados os modelos Hilux/Hiace separados,
+deduplicação por família, propulsões MHEV/PHEV/BEV, taxonomia, fontes inválidas,
+anos explícitos, falhas operacionais e redação de secrets nas variantes anexadas.
+
+Comandos direcionados:
+
+```powershell
+pnpm --filter @compra-car/core exec vitest run test/new-product-check-agent.test.ts test/legacy-product-version-parser.test.ts test/product-reconciliation.test.ts
+pnpm --filter @compra-car/agents test
+pnpm --filter @compra-car/adapter-openai exec vitest run test/product-research-provider.test.ts
+pnpm --filter @compra-car/core --filter @compra-car/agents typecheck
+pnpm --filter @compra-car/agents lint
+```
+
+Logs dos cinco gates: `validation/19a2/final-*.log`, no diretório local de
+reports. Comparação automatizada com logs 19A.1:
+`validation/19a2/diagnostic-comparison.json`, **sameAs19A1=true** para typecheck,
+teste e formatação. Os diagnósticos e os 15 caminhos preexistentes estão
+preservados no histórico abaixo. O Turbo pode encerrar tarefas após uma falha;
+as suítes do escopo foram executadas separadamente.
+
+Os gates desabilitaram explicitamente as flags RUN_SUPABASE_INTEGRATION_TESTS,
+RUN_OPENAI_IMPORT_SMOKE, RUN_OPENAI_SCHEMA_PROBE,
+RUN_SEGMENTED_OPENAI_IMPORT_SMOKE, RUN_STAGING_IMPORT_SMOKE e
+RUN_JEEP_GOLDEN_BENCHMARK no processo. Ambiente: Node 24.18.0 / pnpm 10.34.5,
+com warning conhecido de Node 22.x declarado pelo projeto.
+
+### Arquivos e auditoria de escopo
+
+Criados:
+
+- `packages/core/src/agents/product-component-normalization.ts`
+- `packages/core/src/agents/product-finding-aggregation.ts`
+- `packages/core/test/product-reconciliation.test.ts`
+
+Alterados:
+
+- `packages/core/src/agents/index.ts`
+- `packages/core/src/agents/legacy-product-version-parser.ts`
+- `packages/core/src/agents/new-product-check-agent.ts`
+- `packages/core/src/agents/new-product-check-fixture.ts`
+- `packages/core/src/agents/new-product-check-types.ts`
+- `packages/core/src/agents/official-product-candidate-deduplication.ts`
+- `packages/core/src/agents/product-candidate-matcher.ts`
+- `packages/core/test/new-product-check-agent.test.ts`
+- `scripts/agents/report-writer.ts`
+- `scripts/agents/test/new-product-check-cli.test.ts`
+- `docs/agents/NEW_PRODUCT_CHECK_AGENT.md`
+- `docs/agents/SPRINT_19A_VALIDATION.md`
+- `AI_CONTEXT.md`
+- `CHANGELOG.md`
+
+Git revisado: 14 modificados + 3 novos, índice vazio. Provider OpenAI, prompt,
+modelo, registry/domains, adapters de banco, dependências, lockfile e Legacy
+sem diff. Sem mudança de UI, migrations, scheduler ou taxonomia global.
+**Zero chamadas OpenAI nesta Sprint, zero escritas canônicas e zero renomeações
+de produtos.** Escrita somente em código/documentação e reports locais ignorados.
+
+### Limitações e pendências
+
+**PENDENTE:** correção das falhas globais preexistentes e revisão humana dos
+findings, fora desta Sprint. Nenhuma consulta remota foi executada para conferir
+disponibilidade ou cobertura. Parser e convenção histórica ICE seguem limitados
+aos padrões documentados.
+
+O relatório real anterior 64682aee-12c8-49f1-92d0-e6efd3ccf431 foi apenas lido
+localmente para inspecionar os fatos; não foi reexecutado. Seus oito candidatos
+conhecidos informam PY 2026 versus PY 2025 nos registros administrativos salvos.
+A reconciliação de identidade deve preservar esse possível year change, sem
+alterar anos para transformar artificialmente os oito casos em matches simples.
+
+## Histórico da entrega 19A.1
 
 Worktree: `C:\Dev\compra-car-agent1`
 Branch: `sprint-19-new-product-agent`

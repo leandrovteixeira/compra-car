@@ -71,15 +71,37 @@ describe('CLI and local reports', () => {
       'utf8',
     );
     const result = JSON.parse(json);
-    expect(result.researchedCandidates).toBe(11);
+    expect(result.researchedCandidates).toBe(21);
     expect(result.matchedCandidates).toHaveLength(8);
-    expect(result.findings).toHaveLength(3);
-    expect(result.schemaVersion).toBe('19A.1');
+    expect(result.findings).toHaveLength(6);
+    expect(result.schemaVersion).toBe('19A.2');
     expect(
       result.matchedCandidates.every((m: { matchMode: string }) => m.matchMode === 'LEGACY_NAMING'),
     ).toBe(true);
     expect(result.matchedCandidates[0].candidate.officialVersionLabel).toBe('XR');
     expect(md).toContain('XR 2.0 CVT');
+    expect(md).toContain('## New models');
+    expect(md).toContain('Warnings: POSSIBLE_ALIAS');
+    expect(md).toContain('## New versions');
+    expect(md.match(/^### Toyota Corolla$/gm)).toHaveLength(1);
+    expect(md).toContain('Altis Hybrid Premium');
+    expect(md).toContain('SRX Platinum 5S');
+    expect(md).toContain('POSSIBLE_ALIAS');
+    expect(md).toContain('POSSIBLE_PACKAGE');
+    expect(md).toContain('Direct Shift (CVT)');
+    const corolla = result.findings.find(
+      (f: { type: string; candidate: { model: string } }) =>
+        f.type === 'NEW_MODEL' && f.candidate.model === 'Corolla',
+    );
+    expect(corolla.variants).toHaveLength(5);
+    expect(corolla.candidate.officialVersionLabel).toBeNull();
+    expect(corolla.warnings).toContain('POSSIBLE_ALIAS');
+    expect(
+      result.matchedCandidates.find(
+        (m: { candidate: { officialVersionLabel: string } }) =>
+          m.candidate.officialVersionLabel === 'XRX Hybrid',
+      ).matchedProductIds,
+    ).toEqual(['615']);
     expect(md).toContain('| Official version | XR |');
     expect(md).toContain('| Propulsion | HEV |');
     expect(md).toContain('| Matched legacy naming | 8 |');

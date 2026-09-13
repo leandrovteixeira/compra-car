@@ -1,6 +1,7 @@
 import { vehicleTextComparisonKey as key } from '../admin/vehicle-text-normalization';
 import { officialBrandSource, officialEvidenceUrl } from './official-product-sources';
 import { ProductCandidateMatcher, isResolvedOfficialVariant } from './product-candidate-matcher';
+import { aggregateProductFindings } from './product-finding-aggregation';
 import { deduplicateOfficialCandidates } from './official-product-candidate-deduplication';
 import { isOfficialProductCandidate } from './official-product-candidate-validation';
 import type {
@@ -91,7 +92,7 @@ export class NewProductCheckAgent {
       matcher.match(normalizedScope, candidate, catalog),
     );
     const result: NewProductCheckResult = {
-      schemaVersion: '19A.1',
+      schemaVersion: '19A.2',
       runId,
       startedAt,
       completedAt: now().toISOString(),
@@ -107,7 +108,11 @@ export class NewProductCheckAgent {
       variantsResolved: candidates.filter(isResolvedOfficialVariant).length,
       knownProducts: catalog.length,
       matchedCandidates: matches.flatMap((m) => ('matched' in m ? [m.matched] : [])),
-      findings: matches.flatMap((m) => ('finding' in m ? [m.finding] : [])),
+      findings: aggregateProductFindings(
+        normalizedScope,
+        matches.flatMap((m) => ('finding' in m ? [m.finding] : [])),
+        accepted,
+      ),
       rejectedCandidates,
       rejectedExternalSources,
       researchMetadata: research.metadata,

@@ -2,9 +2,9 @@
 
 ## Escopo e direção canônica
 
-Sprint 19A.1, sobre a 19A ainda sem commit, no worktree
+Sprint 19A.2 no worktree
 `C:\Dev\compra-car-agent1`, branch `sprint-19-new-product-agent`.
-Base Git: `4d4840c33276845ddd62748847588e7e3b47073f`.
+Base Git: `c1a27e6` (19A e 19A.1 já commitadas pelo operador).
 
 **Official naming is authoritative. Legacy Compra-Car naming is transitional.**
 O agente aprende/extrai a linguagem comercial oficial e pode reconciliá-la com
@@ -32,7 +32,8 @@ flowchart LR
   Core --> Match[Matching determinístico]
   Reader[Catálogo administrativo completo] --> Parser[Parser de nomenclatura histórica]
   Parser --> Match
-  Match --> Reports[Matches / Findings / AMBIGUOUS]
+  Match --> Aggregate[Agregação NEW_MODEL]
+  Aggregate --> Reports[Matches / New models / New versions / Ambiguous]
   Reports --> Writer[JSON + Markdown locais]
 ```
 
@@ -156,73 +157,112 @@ e unicidade decide a compatibilidade, sem tradução do nome comercial.
 
 ## Regras de matching e precedência
 
-Confidence representa extração. Menor que 0.65 ou warnings de fonte/alias/pacote/
-evidência geram AMBIGUOUS; não há threshold de escrita automática.
+1. Validar estrutura, escopo e evidência oficial; candidato sem URL oficial é
+   rejeitado. MODEL/VARIANT devem identificar um modelo base; as demais taxonomias
+   não estabelecem sozinhas a existência de um modelo.
+2. Modelo explícito ausente → **NEW_MODEL antes da incerteza de variante**.
+   Alias, pacote, conflito de nomes, versão incompleta ou confidence baixa da
+   variante permanecem anexados, sem ocultar a descoberta do modelo.
+3. Para modelo conhecido, começar com todos os produtos da mesma marca/modelo e
+   intersectar as restrições disponíveis: trim → propulsão → cilindrada →
+   família de transmissão → tração. Códigos explícitos de powertrain também
+   eliminam incompatíveis; descrições opacas divergentes exigem revisão.
+4. Campo oficial ausente não filtra. Campo histórico ausente não é conflito.
+   Valores conhecidos incompatíveis eliminam o registro, sem reapresentá-lo nas
+   correspondências do relatório.
+5. Com identidade oficial suficiente: zero sobreviventes → **NEW_VERSION**;
+   um sobrevivente seguro → match; mais de um → **AMBIGUOUS**. Nunca escolher
+   por ordem, ano ou visibilidade. Variante não resolvida continua AMBIGUOUS.
 
-1. Taxonomia incerta ou evidência/extração insuficiente → AMBIGUOUS
-   (ausência de URL oficial já foi rejeitada na aplicação).
-2. Modelo explicitamente identificado e ausente por comparação normalizada
-   → **NEW_MODEL, mesmo com officialVersionLabel e trim null**.
-3. Modelo conhecido e variante não resolvida → AMBIGUOUS, reason:
-   `Model is known, but official variant could not be resolved.`
-4. VARIANT com officialVersionLabel ou trim explícito → reconciliação.
-5. Compare rótulo oficial direto ou trim literal com registros históricos.
-   Todos os componentes presentes em ambos os lados devem ser compatíveis.
-   Ausência não é conflito; divergência explícita é conflito.
-6. Exatamente um registro compatível e nenhuma alternativa ainda incerta
-   → match; mais de um → AMBIGUOUS.
-7. Correspondência parcial com conflito → AMBIGUOUS. Nenhuma variante
-   reconciliável, nenhuma suspeita de nomenclatura e evidência suficiente
-   → NEW_VERSION.
+Warnings de extração são distintos da classificação:
 
-Modos:
+- POSSIBLE_ALIAS é informativo quando nenhum registro corresponde: GRS pode ser
+  NEW_VERSION. Se a evidência mencionar literalmente outro trim canônico possível,
+  essa correspondência permanece para revisão; não há mapa GRS → GR-Sport.
+- POSSIBLE_PACKAGE com evidência estruturada (ficha, documento de versões,
+  lista de preços ou configurador) pode gerar NEW_VERSION. GRS Dualtone em linha
+  comercial própria preserva o warning. Se ainda houver um produto do mesmo trim,
+  ou faltar evidência estruturada, a identidade do pacote exige revisão.
+- CONFLICTING_SOURCES e INSUFFICIENT_EVIDENCE não trazem escopo de atributo no
+  contrato atual. Em modelo conhecido, são tratados conservadoramente como fatos
+  de identidade ainda não resolvidos, assim como confidence < 0.65, contradições
+  entre fatos estruturados e nomes históricos não interpretáveis. Em modelo
+  ausente explicitamente identificado, ficam nas variantes do NEW_MODEL.
+- Um warning de alias não impede um match único comprovado pelos componentes.
 
-- **EXACT_OFFICIAL:** rótulo oficial igual à versão canônica normalizada,
-  com componentes compatíveis e unicidade.
-- **LEGACY_NAMING:** trim/composição histórica compatíveis, com unicidade.
-  O catálogo e o rótulo oficial continuam intactos.
+EXACT_OFFICIAL exige igualdade normalizada do **rótulo inteiro** com a versão
+canônica, compatibilidade e unicidade. LEGACY_NAMING usa decomposição histórica
+compatível; nomes oficiais e canônicos permanecem intactos. Prefixos e pontuação
+podem levantar suspeita, nunca estabelecer equivalência. Não há fuzzy matching,
+Levenshtein, embeddings ou decisão de identidade pelo LLM.
 
-Apenas `Direct Shift CVT` / `Direct-Shift CVT` têm equivalência explícita a CVT
-na comparação. Prefixos e pontuação podem levantar suspeita para AMBIGUOUS,
-mas nunca declarar match. Não há Levenshtein, embeddings, similaridade semântica
-ou julgamento do LLM para resolver identidade.
+### Famílias de componentes
+
+A normalização existe somente para comparação e deduplicação; `transmission`
+continua contendo o rótulo oficial bruto.
+
+| Entrada explícita | Família de comparação |
+| --- | --- |
+| CVT, Direct Shift CVT, Direct Shift (CVT), CVT Multidrive, CVT Multidrive sequencial | CVT |
+| AT, Automática, Automática de 6 velocidades, com ou sem sequencial | AT |
+| MT, Manual, Manual de 6 velocidades | MT |
+| DHT | DHT |
+| Hybrid Transaxle, Hybrid Transaxle (CVT), somente com HEV | CVT, **legacy transmission compatibility** |
+| Hybrid, Híbrido | HEV |
+| ICE, MHEV, HEV, PHEV, BEV explícitos | Respectiva família, sem colapsar MHEV/PHEV |
+| Electric, EV, Elétrico | BEV somente com contexto explícito puramente elétrico |
+| 2.0L, 2 L, 2.0 | Número 2; nunca equivalente a 1.8 |
+
+O schema do provider continua exigindo propulsão enum e cilindrada numérica.
+Aliases de propulsão e litros textuais são interpretados no powertrain explícito
+durante a comparação. Isso não reescreve o candidato. Códigos como T270 não
+implicam cilindrada. Famílias desconhecidas ou contraditórias não são adivinhadas.
 
 Anos só são comparados **depois da reconciliação única**. Divergência explícita
-gera POSSIBLE_YEAR_CHANGE com matchMode e registro correspondente. Anos ausentes
-permanecem null; data de documento/PDF/URL/execução não é ano do produto.
-Anos não desempatarão múltiplos registros compatíveis, inclusive históricos.
+gera POSSIBLE_YEAR_CHANGE com matchMode e apenas o registro reconciliado.
+Ausência permanece null; data de documento, URL ou execução não é ano do produto.
+Anos não desempatarão múltiplos registros históricos.
 
-## Deduplicação e relatório
+## Deduplicação, agregação e relatório
 
-Identidade oficial normalizada: mercado, marca, modelo, officialVersionLabel,
-trim quando não existe label, propulsão e powertrainLabel. Engine, transmission
-e anos não são obrigatórios na chave. Fingerprint usa tupla JSON versionada
-`new-product-check:v2`, acrescida do finding type.
+A identidade de variante continua incluindo mercado, marca, modelo, rótulo
+oficial (ou trim quando não há label), propulsão e powertrain normalizados.
+Observações repetidas unem campos complementares e evidências. Conflitos
+mantêm o primeiro valor não nulo e CONFLICTING_SOURCES para revisão; confidence
+da variante deduplicada é o menor valor observado. Ausência de propulsão/powertrain
+pode unir-se a uma única identidade mais completa, nunca unir ICE e HEV distintos.
 
-Observações com a mesma identidade unem evidências e campos complementares.
-Divergências de componentes/anos geram CONFLICTING_SOURCES; a primeira observação
-não nula é mantida para exibição, com todas as evidências disponíveis para revisão.
-Uma observação sem propulsão/powertrain pode unir-se a uma única identidade mais
-completa. Se houver ICE e HEV possíveis, ela permanece AMBIGUOUS, sem unir os grupos.
-Repetições exatas de evidências são deduplicadas; trechos distintos na mesma URL
-são preservados para auditoria.
+Depois da classificação, NEW_MODEL é agregado por **mercado + marca normalizada +
+modelo normalizado**. Seu fingerprint v3 não inclui versão. NEW_VERSION e demais
+findings continuam com fingerprint de variante. Hilux Cabine Dupla/Simples e
+Hiace/Hiace Furgão preservam identidades separadas conforme extraídas.
 
-O JSON `schemaVersion: 19A.1` mantém matches, findings, ids e nomes históricos
-dos produtos considerados, candidatos oficiais, evidências e telemetria.
-O Markdown mostra contagens e seções Matches / Findings / AMBIGUOUS.
-Cada resultado tem tabela vertical de atributos e correspondências canônicas,
-evitando uma tabela excessivamente larga.
+O finding NEW_MODEL contém um `candidate` de nível MODEL, sem atributos de
+variante inventados, e `variants` com todas as variantes deduplicadas, inclusive
+observações incompletas para revisão. Evidências válidas de todas as observações
+do modelo são unidas e deduplicadas. Confidence do modelo é o **maior valor
+relevante** entre suas observações MODEL/VARIANT; não estima novidade. Warnings
+ficam nas variantes e no campo `warnings` agregado. Uma observação de taxonomia
+incerta só é anexada quando outra observação estabelece aquele modelo.
+
+O JSON `schemaVersion: 19A.2` mantém candidatos brutos, evidências, telemetria,
+ids e versões canônicas apenas dos sobreviventes, além de `variants` e `warnings`.
+Nos findings que não são NEW_MODEL, `variants` é vazio. O Markdown separa Matches,
+New models (uma entrada por modelo, com variantes), New versions, Possible year
+changes e Ambiguous. Avisos aparecem também em matches para auditoria.
 
 `modelsDiscovered` conta modelos normalizados distintos em candidatos aceitos
-MODEL/VARIANT. `variantsResolved` conta candidatos VARIANT com label ou trim;
-não significa que todos foram reconciliados. Demais estados são contados por
-matchMode e finding type. Rejeitados não entram nessas contagens.
+MODEL/VARIANT. `variantsResolved` conta VARIANT com label ou trim e não significa
+reconciliação. Contagens de findings já refletem a agregação. Rejeitados não
+entram nessas contagens. Evidências iguais colapsam; trechos distintos na mesma
+URL são preservados para auditoria.
 
 Relatórios exclusivos por run ID:
 `.local-reports/agents/new-product-check/<run-id>.{json,md}`, ignorados pelo Git.
 Sem HTML completo; excerpts de até 300 caracteres. Secrets conhecidos são
-removidos antes dos dois formatos. Erros brutos do SDK/banco não são impressos.
-Erro ao escrever gera exit != 0; falha no segundo arquivo pode deixar o primeiro.
+removidos antes dos dois formatos, inclusive das variantes anexadas. Erros
+brutos do SDK/banco não são impressos. Falha no segundo arquivo pode deixar o
+primeiro; exit != 0 informa erro de escrita.
 
 ## Execução e validação
 
@@ -232,11 +272,11 @@ Na raiz do worktree:
 pnpm agent:new-products:dry-run -- --brand Toyota --provider fixture
 ```
 
-Fixture sintética: 8 registros administrativos, 11 candidatos, 3 modelos,
-9 variantes resolvidas, 8 matches LEGACY_NAMING, SW4 como NEW_MODEL,
-GR-Sport como NEW_VERSION e Corolla Cross sem variante como AMBIGUOUS.
-POSSIBLE_YEAR_CHANGE é coberto em teste separado, sem duplicar artificialmente
-o mesmo candidato no fixture principal.
+Fixture sintética: 8 registros administrativos, 21 candidatos, 5 modelos,
+20 variantes resolvidas, 8 matches LEGACY_NAMING, 3 NEW_MODEL agregados
+(Corolla: 5 variantes; SW4: 3; RAV4: 2), 2 NEW_VERSION (GRS e GRS Dualtone)
+com warnings e 1 AMBIGUOUS (Corolla Cross sem variante). PY/MY ausentes na
+fixture; POSSIBLE_YEAR_CHANGE é coberto por testes próprios.
 
 OpenAI exige OPENAI_API_KEY, OPENAI_AGENT_MODEL, SUPABASE_URL e SUPABASE_SERVER_KEY
 no ambiente do processo; o CLI não carrega .env automaticamente. Não há modelo
@@ -246,16 +286,19 @@ Telemetria opcional preservada: provider/model/responseId/tokens/webSearchCount.
 Não há cálculo monetário.
 
 **Nesta entrega, somente fixture. Não executar o provider OpenAI automaticamente.**
-O próximo smoke real da revisão 19A.1 depende de autorização manual posterior.
+Não há chamada OpenAI real autorizada no escopo 19A.2.
 Nenhuma chamada real é feita pelos testes da Sprint; transporte simulado e rede
 bloqueada nesses testes. Gates e evidência real da fixture:
 [SPRINT_19A_VALIDATION.md](SPRINT_19A_VALIDATION.md).
 
 ## Limitações e futuro
 
-- **PENDENTE:** smoke real 19A.1 autorizado após revisão. O smoke anterior,
-  informado pelo operador, descobriu 16 candidatos apenas de modelo; não prova
-  que a nova resolução encontrará todas as variantes.
+- O smoke 19A.1 informado pelo operador (run 64682aee-12c8-49f1-92d0-e6efd3ccf431)
+  já forneceu 36 variantes em 11 modelos. Foi consultado somente como arquivo
+  local. Seus oito produtos conhecidos têm PY 2026 contra PY 2025 no catálogo
+  salvo: compatibilidade de identidade não remove POSSIBLE_YEAR_CHANGE.
+- **PENDENTE:** gates globais preexistentes e revisão humana dos findings.
+  Nenhuma nova consulta remota ou validação de disponibilidade nesta Sprint.
 - Taxonomia, atualidade e fatos são extraídos pelo provider. URL oficial válida
   não prova fidelidade, cobertura completa, conteúdo atual ou ausência de redirects.
   A Sprint não baixa nem verifica páginas independentemente.

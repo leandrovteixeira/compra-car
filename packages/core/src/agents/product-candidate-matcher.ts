@@ -2,9 +2,14 @@ import { vehicleTextComparisonKey as key } from '../admin/vehicle-text-normaliza
 import type { AdministrativeVehicle } from '../admin/administrative-vehicle';
 import {
   parseLegacyProductVersion,
-  transmissionComparisonKey,
   type LegacyParsedProduct,
 } from './legacy-product-version-parser';
+import {
+  normalizeEngineDisplacement,
+  normalizePowertrainComponents,
+  normalizeTransmissionFamily,
+  powertrainComparisonKey,
+} from './product-component-normalization';
 import type {
   AgentMarketScope,
   NewProductFinding,
@@ -26,7 +31,7 @@ export function officialCandidateIdentity(
     normalized(candidate.officialVersionLabel),
     candidate.officialVersionLabel === null ? normalized(candidate.trim) : null,
     candidate.propulsion,
-    normalized(candidate.powertrainLabel),
+    candidate.powertrainLabel === null ? null : powertrainComparisonKey(candidate.powertrainLabel),
   ];
 }
 export function findingFingerprint(
@@ -34,8 +39,16 @@ export function findingFingerprint(
   candidate: OfficialProductCandidate,
   type: NewProductFindingType,
 ): string {
+  if (type === 'NEW_MODEL')
+    return JSON.stringify([
+      'new-product-check:v3',
+      scope.country,
+      key(scope.brand),
+      key(candidate.model),
+      type,
+    ]);
   return JSON.stringify([
-    'new-product-check:v2',
+    'new-product-check:v3',
     ...officialCandidateIdentity(scope, candidate),
     type,
   ]);
@@ -46,177 +59,249 @@ export function isResolvedOfficialVariant(candidate: OfficialProductCandidate): 
     Boolean(candidate.officialVersionLabel?.trim() || candidate.trim?.trim())
   );
 }
-function textConflict(a: string | null, b: string | null, normalize = key): boolean {
-  return a !== null && b !== null && normalize(a) !== normalize(b);
+type Compatibility = 'COMPATIBLE' | 'CONFLICT' | 'UNKNOWN';
+function knownValues(a: string | number | null, b: string | number | null): Compatibility {
+  if (a === null || b === null) return 'COMPATIBLE';
+  return a === b ? 'COMPATIBLE' : 'CONFLICT';
 }
-function componentConflicts(
-  candidate: OfficialProductCandidate,
-  legacy: LegacyParsedProduct,
-): readonly string[] {
-  const fields: string[] = [];
-  if (textConflict(candidate.trim, legacy.trim)) fields.push('trim');
-  if (
-    candidate.engineDisplacement !== null &&
-    legacy.engineDisplacement !== null &&
-    candidate.engineDisplacement !== legacy.engineDisplacement
-  )
-    fields.push('engineDisplacement');
-  if (textConflict(candidate.propulsion, legacy.propulsion)) fields.push('propulsion');
-  if (textConflict(candidate.transmission, legacy.transmission, transmissionComparisonKey))
-    fields.push('transmission');
-  if (textConflict(candidate.drivetrain, legacy.drivetrain)) fields.push('drivetrain');
-  if (textConflict(candidate.engineLabel, legacy.engineLabel)) fields.push('engineLabel');
-  if (textConflict(candidate.powertrainLabel, legacy.powertrainLabel))
-    fields.push('powertrainLabel');
-  return fields;
+function namedComponent(a: string | null, b: string | null): Compatibility {
+  if (a === null || b === null || key(a) === key(b)) return 'COMPATIBLE';
+  // Opaque marketing text is not proof of a technical conflict.
+  return 'UNKNOWN';
 }
-/** Only raises suspicion, never resolves identity. */
+/** Only raises uncertainty, never declares a match or resolves an alias. */
 function namingUncertain(left: string, right: string): boolean {
   const a = key(left),
     b = key(right);
   const compact = (value: string) => value.replace(/[^\p{L}\p{N}]/gu, '');
   return compact(a) === compact(b) || a.startsWith(b + ' ') || b.startsWith(a + ' ');
 }
-
+function evidenceNamesTrim(candidate: OfficialProductCandidate, trim: string): boolean {
+  // Literal phrase in an official excerpt/title can flag an existing alias for review.
+  const words = (text: string) => ' ' + key(text).replace(/[^\p{L}\p{N}]+/gu, ' ') + ' ';
+  return candidate.evidence.some((e) =>
+    words([e.title, e.excerpt].filter(Boolean).join(' ')).includes(words(trim)),
+  );
+}
+function hasCommercialVariantEvidence(candidate: OfficialProductCandidate): boolean {
+  return candidate.evidence.some((e) =>
+    ['TECHNICAL_SHEET', 'VERSION_DOCUMENT', 'PRICE_LIST', 'CONFIGURATOR'].includes(
+      e.evidenceType ?? '',
+    ),
+  );
+}
+interface Survivor {
+  readonly legacy: LegacyParsedProduct;
+  readonly unknown: readonly string[];
+}
 export class ProductCandidateMatcher {
   match(
     scope: AgentMarketScope,
     candidate: OfficialProductCandidate,
     catalog: readonly AdministrativeVehicle[],
   ): { readonly matched: MatchedProductCandidate } | { readonly finding: NewProductFinding } {
-    const brand = catalog.filter((p) => key(p.brand) === key(scope.brand));
-    const models = brand.filter((p) => key(p.model) === key(candidate.model));
+    const models = catalog.filter(
+      (p) => key(p.brand) === key(scope.brand) && key(p.model) === key(candidate.model),
+    );
+    const warnings = [...new Set(candidate.extractionWarnings ?? [])];
     const finding = (
       type: NewProductFindingType,
       reason: string,
-      products: readonly AdministrativeVehicle[] = models,
+      products: readonly AdministrativeVehicle[] = [],
       matchMode: ProductMatchMode | null = null,
     ) => ({
       finding: {
         fingerprint: findingFingerprint(scope, candidate, type),
         type,
         candidate,
+        variants: [],
+        warnings,
         matchedProductIds: products.map((p) => p.id).sort(),
         matchedProducts: products,
         matchMode,
         reason,
       },
     });
-    if (key(candidate.brand) !== key(scope.brand))
-      return finding('AMBIGUOUS', 'Candidate brand is outside the requested scope.', []);
+    if (key(candidate.brand) !== key(scope.brand) || !candidate.evidence.length)
+      return finding('AMBIGUOUS', 'Official model evidence is insufficient for this scope.');
     if (candidate.taxonomy !== 'MODEL' && candidate.taxonomy !== 'VARIANT') {
       return finding(
         'AMBIGUOUS',
         'Taxonomy does not establish a distinct base model or resolved variant.',
       );
     }
-    if (
-      !candidate.evidence.length ||
-      candidate.confidence < 0.65 ||
-      candidate.extractionWarnings?.length
-    ) {
-      return finding(
-        'AMBIGUOUS',
-        'Extraction uncertainty: ' +
-          (candidate.extractionWarnings?.join(', ') ||
-            (!candidate.evidence.length ? 'insufficient evidence' : 'confidence below 0.65')) +
-          '.',
-      );
-    }
-    // A known brand and explicit base model do not require a resolved trim.
+    // Variant uncertainty does not negate an explicitly identified absent base model.
     if (!models.length)
       return finding(
         'NEW_MODEL',
-        'Official base model is absent from the administrative brand catalog.',
-        [],
+        'Official base model is absent; variant warnings remain attached for review.',
       );
-    if (!isResolvedOfficialVariant(candidate)) {
-      return finding('AMBIGUOUS', 'Model is known, but official variant could not be resolved.');
-    }
-    const identityTrim = candidate.trim ?? candidate.officialVersionLabel!;
-    const parsed = models.map(parseLegacyProductVersion);
-    const considered = parsed.filter(
-      (p) =>
-        (candidate.officialVersionLabel !== null &&
-          key(p.product.version) === key(candidate.officialVersionLabel)) ||
-        (p.trim !== null && key(p.trim) === key(identityTrim)),
+    const officialPowertrain = normalizePowertrainComponents(
+      candidate.powertrainLabel,
+      candidate.propulsion === 'BEV',
     );
-    const compatible = considered.filter(
-      (p) =>
-        !p.conflictingTokens && !p.uncertainNaming && componentConflicts(candidate, p).length === 0,
-    );
-    const unresolved = considered.filter(
-      (p) =>
-        (p.conflictingTokens || p.uncertainNaming) && componentConflicts(candidate, p).length === 0,
-    );
-    if (unresolved.length)
-      return finding(
-        'AMBIGUOUS',
-        'Legacy tokens leave a possible identity unresolved.',
-        [...compatible, ...unresolved].map((p) => p.product),
-      );
-    // Years never select between identities; reconciliation must first yield exactly one record.
-    if (compatible.length > 1)
-      return finding(
-        'AMBIGUOUS',
-        'Multiple canonical products are compatible with the available official components.',
-        compatible.map((p) => p.product),
-      );
-    if (compatible.length === 1) {
-      const product = compatible[0]!.product;
-      const matchMode: ProductMatchMode =
-        candidate.officialVersionLabel !== null &&
-        key(product.version) === key(candidate.officialVersionLabel)
-          ? 'EXACT_OFFICIAL'
-          : 'LEGACY_NAMING';
+    const officialEngine = normalizeEngineDisplacement(candidate.engineDisplacement);
+    const contradictoryFacts =
+      knownValues(officialPowertrain.displacement, officialEngine) === 'CONFLICT' ||
+      knownValues(officialPowertrain.propulsion, candidate.propulsion) === 'CONFLICT';
+    const displacement = officialEngine ?? officialPowertrain.displacement;
+    const propulsion = candidate.propulsion ?? officialPowertrain.propulsion;
+    const officialTransmission = normalizeTransmissionFamily(candidate.transmission, propulsion);
+    const identityTrim = candidate.trim ?? candidate.officialVersionLabel;
+    let survivors: Survivor[] = models
+      .map(parseLegacyProductVersion)
+      .map((legacy) => ({ legacy, unknown: [] }));
+    const constrain = (
+      field: string,
+      present: boolean,
+      compare: (legacy: LegacyParsedProduct) => Compatibility,
+    ) => {
+      if (!present) return;
+      survivors = survivors.flatMap((s) => {
+        const compatibility = compare(s.legacy);
+        if (compatibility === 'CONFLICT') return [];
+        return [{ ...s, unknown: compatibility === 'UNKNOWN' ? [...s.unknown, field] : s.unknown }];
+      });
+    };
+    constrain('trim', identityTrim !== null, (legacy) => {
       if (
-        (candidate.productionYear !== null &&
-          candidate.productionYear !== product.productionYear) ||
-        (candidate.modelYear !== null && candidate.modelYear !== product.modelYear)
-      ) {
-        return finding(
-          'POSSIBLE_YEAR_CHANGE',
-          'Explicit official year differs after unique variant reconciliation.',
-          [product],
-          matchMode,
-        );
-      }
-      return {
-        matched: {
-          candidate,
-          matchedProductIds: [product.id],
-          matchedProducts: [product],
-          matchMode,
-          reason:
-            matchMode === 'EXACT_OFFICIAL'
-              ? 'Unique exact official label with no component conflict.'
-              : 'Unique legacy trim reconciliation; every available comparable component is compatible.',
-        },
-      };
-    }
-    if (considered.length) {
-      const conflicts = [...new Set(considered.flatMap((p) => componentConflicts(candidate, p)))];
+        candidate.officialVersionLabel !== null &&
+        key(legacy.product.version) === key(candidate.officialVersionLabel)
+      )
+        return 'COMPATIBLE';
+      if (legacy.trim === null) return 'UNKNOWN';
+      if (key(legacy.trim) === key(identityTrim!)) return 'COMPATIBLE';
+      if (
+        namingUncertain(identityTrim!, legacy.trim) ||
+        (warnings.includes('POSSIBLE_ALIAS') && evidenceNamesTrim(candidate, legacy.trim))
+      )
+        return 'UNKNOWN';
+      return 'CONFLICT';
+    });
+    constrain('propulsion', propulsion !== null, (legacy) =>
+      knownValues(propulsion, legacy.propulsion),
+    );
+    constrain('engineDisplacement', displacement !== null, (legacy) =>
+      knownValues(displacement, legacy.engineDisplacement),
+    );
+    constrain('transmission', candidate.transmission !== null, (legacy) => {
+      if (legacy.transmission === null) return 'COMPATIBLE';
+      const family = normalizeTransmissionFamily(legacy.transmission, legacy.propulsion);
+      if (officialTransmission !== null && family !== null)
+        return knownValues(officialTransmission, family);
+      return namedComponent(candidate.transmission, legacy.transmission);
+    });
+    constrain('drivetrain', candidate.drivetrain !== null, (legacy) =>
+      knownValues(
+        candidate.drivetrain === null ? null : key(candidate.drivetrain),
+        legacy.drivetrain === null ? null : key(legacy.drivetrain),
+      ),
+    );
+    constrain('powertrain', candidate.powertrainLabel !== null, (legacy) => {
+      const parsed = normalizePowertrainComponents(legacy.powertrainLabel);
+      if (officialPowertrain.code !== null && parsed.code !== null)
+        return knownValues(officialPowertrain.code, parsed.code);
+      // Recognized engine/propulsion constraints have already been intersected.
+      if (
+        officialPowertrain.displacement !== null ||
+        officialPowertrain.propulsion !== null ||
+        officialPowertrain.code !== null
+      )
+        return 'COMPATIBLE';
+      return namedComponent(candidate.powertrainLabel, legacy.powertrainLabel);
+    });
+    constrain('engineLabel', candidate.engineLabel !== null, (legacy) =>
+      namedComponent(candidate.engineLabel, legacy.engineLabel),
+    );
+    const products = survivors.map((s) => s.legacy.product);
+    if (!isResolvedOfficialVariant(candidate))
       return finding(
         'AMBIGUOUS',
-        'Partial identity with conflicting or uncertain components: ' +
-          (conflicts.join(', ') || 'legacy tokens') +
+        'Model is known, but official variant could not be resolved.',
+        products,
+      );
+    if (
+      contradictoryFacts ||
+      warnings.includes('CONFLICTING_SOURCES') ||
+      warnings.includes('INSUFFICIENT_EVIDENCE') ||
+      candidate.confidence < 0.65
+    ) {
+      return finding(
+        'AMBIGUOUS',
+        'Identity facts remain conflicting or insufficient after component narrowing.',
+        products,
+      );
+    }
+    if (
+      warnings.includes('POSSIBLE_PACKAGE') &&
+      !hasCommercialVariantEvidence(candidate) &&
+      !products.some(
+        (p) =>
+          candidate.officialVersionLabel !== null &&
+          key(p.version) === key(candidate.officialVersionLabel),
+      )
+    ) {
+      return finding(
+        'AMBIGUOUS',
+        'Possible package has no structured official evidence of a distinct commercial variant.',
+        products,
+      );
+    }
+    if (!survivors.length) {
+      const reason = warnings.includes('POSSIBLE_ALIAS')
+        ? 'Official sources have naming variation; no existing administrative variant reconciles.'
+        : warnings.includes('POSSIBLE_PACKAGE')
+          ? 'Official structured source identifies a commercial variant; no existing administrative variant reconciles.'
+          : 'No administrative variant survives the available official component constraints.';
+      return finding('NEW_VERSION', reason);
+    }
+    if (survivors.length > 1)
+      return finding(
+        'AMBIGUOUS',
+        'Multiple canonical products remain after all available component constraints.',
+        products,
+      );
+    const survivor = survivors[0]!,
+      product = survivor.legacy.product;
+    const exact =
+      candidate.officialVersionLabel !== null &&
+      key(product.version) === key(candidate.officialVersionLabel);
+    if (
+      survivor.unknown.length ||
+      survivor.legacy.conflictingTokens ||
+      survivor.legacy.uncertainNaming ||
+      (warnings.includes('POSSIBLE_PACKAGE') && !exact)
+    ) {
+      return finding(
+        'AMBIGUOUS',
+        'Surviving identity needs review: ' +
+          (survivor.unknown.join(', ') || 'unresolved legacy naming or commercial package') +
           '.',
-        considered.map((p) => p.product),
+        products,
       );
     }
-    const uncertain = parsed.filter(
-      (p) => p.trim === null || p.conflictingTokens || namingUncertain(identityTrim, p.trim),
-    );
-    if (uncertain.length)
+    const matchMode: ProductMatchMode = exact ? 'EXACT_OFFICIAL' : 'LEGACY_NAMING';
+    if (
+      (candidate.productionYear !== null && candidate.productionYear !== product.productionYear) ||
+      (candidate.modelYear !== null && candidate.modelYear !== product.modelYear)
+    ) {
       return finding(
-        'AMBIGUOUS',
-        'Unresolved legacy naming or package requires review.',
-        uncertain.map((p) => p.product),
+        'POSSIBLE_YEAR_CHANGE',
+        'Explicit official year differs after unique variant reconciliation.',
+        products,
+        matchMode,
       );
-    return finding(
-      'NEW_VERSION',
-      'Official variant is resolved and no administrative variant can be reconciled.',
-      [],
-    );
+    }
+    return {
+      matched: {
+        candidate,
+        matchedProductIds: [product.id],
+        matchedProducts: products,
+        matchMode,
+        reason: exact
+          ? 'Unique exact official label after component constraints.'
+          : 'Unique legacy correspondence after component constraints.',
+      },
+    };
   }
 }

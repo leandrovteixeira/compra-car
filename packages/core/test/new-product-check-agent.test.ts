@@ -97,7 +97,7 @@ describe('discovery precedence and official naming', () => {
   });
   it('matches literal official label to legacy trim when decomposition is unavailable', () => {
     expect(match({ trim: null })).toMatchObject({
-      matched: { matchMode: 'LEGACY_NAMING', matchedProductIds: ['cc-xr'] },
+      matched: { matchMode: 'LEGACY_NAMING', matchedProductIds: ['895'] },
     });
   });
   it('can reconcile an explicit trim without manufacturing an officialVersionLabel', () => {
@@ -105,20 +105,18 @@ describe('discovery precedence and official naming', () => {
       matched: { candidate: { officialVersionLabel: null }, matchMode: 'LEGACY_NAMING' },
     });
   });
-  it.each([
-    'POSSIBLE_ALIAS',
-    'POSSIBLE_PACKAGE',
-    'CONFLICTING_SOURCES',
-    'INSUFFICIENT_EVIDENCE',
-  ] as const)('respects extraction warning %s', (warning) => {
-    expect(match({ extractionWarnings: [warning] })).toMatchObject({
-      finding: { type: 'AMBIGUOUS' },
-    });
-  });
-  it('does not promote uncertain model discovery just because trim is null', () =>
+  it.each(['POSSIBLE_PACKAGE', 'CONFLICTING_SOURCES', 'INSUFFICIENT_EVIDENCE'] as const)(
+    'respects extraction warning %s',
+    (warning) => {
+      expect(match({ extractionWarnings: [warning] })).toMatchObject({
+        finding: { type: 'AMBIGUOUS' },
+      });
+    },
+  );
+  it('keeps explicit absent model discovery independent of variant confidence', () =>
     expect(
       matcher.match(scope, { ...modelOnly('SW4'), confidence: 0.6 }, toyotaFixtureCatalog),
-    ).toMatchObject({ finding: { type: 'AMBIGUOUS' } }));
+    ).toMatchObject({ finding: { type: 'NEW_MODEL' } }));
   it('accepts the 0.65 extraction boundary', () =>
     expect(match({ confidence: 0.65 })).toHaveProperty('matched'));
 });
@@ -144,7 +142,7 @@ describe('component reconciliation, uniqueness and years', () => {
   it('requires a unique compatible canonical record', () => {
     expect(
       match({}, [...toyotaFixtureCatalog, { ...toyotaFixtureCatalog[0]!, id: 'duplicate' }]),
-    ).toMatchObject({ finding: { type: 'AMBIGUOUS', matchedProductIds: ['cc-xr', 'duplicate'] } });
+    ).toMatchObject({ finding: { type: 'AMBIGUOUS', matchedProductIds: ['895', 'duplicate'] } });
   });
   it('does not use years to choose between multiple compatible products', () => {
     expect(
@@ -171,18 +169,20 @@ describe('component reconciliation, uniqueness and years', () => {
     { engineLabel: 'OTHER', drivetrain: 'AWD' },
   ])('rejects available conflicting components %j', (patch) => {
     const catalog = [{ ...toyotaFixtureCatalog[0]!, version: 'XR 2.0 TGDI CVT 4x2' }];
-    expect(match(patch, catalog)).toMatchObject({ finding: { type: 'AMBIGUOUS' } });
+    expect(match(patch, catalog)).toMatchObject({
+      finding: { type: 'NEW_VERSION', matchedProductIds: [], matchedProducts: [] },
+    });
   });
   it('enforces powertrain label conflicts when both sides provide one', () => {
     expect(
       match({ officialVersionLabel: 'XR T270', powertrainLabel: 'T270' }, [
         { ...toyotaFixtureCatalog[0]!, version: 'XR T200 2.0 CVT' },
       ]),
-    ).toMatchObject({ finding: { type: 'AMBIGUOUS' } });
+    ).toMatchObject({ finding: { type: 'NEW_VERSION', matchedProductIds: [] } });
   });
   it('does not let exact label override an explicit component conflict', () => {
     expect(match({ officialVersionLabel: 'XR 2.0 CVT', propulsion: 'HEV' })).toMatchObject({
-      finding: { type: 'AMBIGUOUS' },
+      finding: { type: 'NEW_VERSION' },
     });
   });
   it('does not treat missing official or legacy fields as conflicts', () => {
@@ -209,7 +209,7 @@ describe('component reconciliation, uniqueness and years', () => {
       finding: {
         type: 'POSSIBLE_YEAR_CHANGE',
         matchMode: 'LEGACY_NAMING',
-        matchedProductIds: ['cc-xr'],
+        matchedProductIds: ['895'],
       },
     });
   });
@@ -358,8 +358,10 @@ describe('validated evidence and structured deduplication', () => {
     expect(result.matchedCandidates).toHaveLength(1);
   });
   it('never bridges distinct HEV and ICE through a sparse observation', async () => {
-    const sparse = { ...toyotaFixtureCandidates[2]!, engineDisplacement: null, propulsion: null };
-    const result = await run([sparse, toyotaFixtureCandidates[2]!, toyotaFixtureCandidates[3]!]);
+    const hev = { ...toyotaFixtureCandidates[2]!, officialVersionLabel: 'XRX' };
+    const ice = { ...toyotaFixtureCandidates[3]!, officialVersionLabel: 'XRX' };
+    const sparse = { ...hev, engineDisplacement: null, propulsion: null, transmission: null };
+    const result = await run([sparse, hev, ice]);
     expect(result.acceptedCandidates).toBe(3);
     expect(result.matchedCandidates).toHaveLength(2);
     expect(result.findings).toHaveLength(1);
@@ -419,11 +421,11 @@ describe('read-only fixture application', () => {
       reports: { write: async () => {} },
     }).run(scope, 'fixture-test');
     expect(result).toMatchObject({
-      schemaVersion: '19A.1',
-      modelsDiscovered: 3,
-      variantsResolved: 9,
-      researchedCandidates: 11,
-      acceptedCandidates: 11,
+      schemaVersion: '19A.2',
+      modelsDiscovered: 5,
+      variantsResolved: 20,
+      researchedCandidates: 21,
+      acceptedCandidates: 21,
       knownProducts: 8,
       rejectedExternalSources: 0,
     });
@@ -432,6 +434,9 @@ describe('read-only fixture application', () => {
     expect(result.findings.map((f) => f.type).sort()).toEqual([
       'AMBIGUOUS',
       'NEW_MODEL',
+      'NEW_MODEL',
+      'NEW_MODEL',
+      'NEW_VERSION',
       'NEW_VERSION',
     ]);
   });

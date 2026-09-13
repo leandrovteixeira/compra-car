@@ -61,6 +61,10 @@ function details(item: MatchedProductCandidate | NewProductFinding): string {
         ['PY/MY', String(c.productionYear ?? '—') + '/' + String(c.modelYear ?? '—')],
         ['Match mode', item.matchMode],
         ['Confidence', c.confidence.toFixed(2)],
+        [
+          'Warnings',
+          ('warnings' in item ? item.warnings : (c.extractionWarnings ?? [])).join(', ') || null,
+        ],
         ['Reason', item.reason],
       ] as const
     ).map(([label, value]) => '| ' + label + ' | ' + cell(value) + ' |'),
@@ -105,6 +109,48 @@ function details(item: MatchedProductCandidate | NewProductFinding): string {
     '',
   ].join('\n');
 }
+
+function modelDetails(item: NewProductFinding): string {
+  return [
+    '### ' + cell(identity(item.candidate)),
+    '',
+    'Confidence: ' + item.candidate.confidence.toFixed(2),
+    '',
+    'Warnings: ' + cell(item.warnings.join(', ') || null),
+    '',
+    'Resolved official variants (unresolved observations retain their warnings):',
+    '',
+    '| Official version | Trim | Powertrain | Engine (L) | Propulsion | Transmission | Drivetrain | PY/MY | Confidence | Warnings |',
+    '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |',
+    ...item.variants.map(
+      (c) =>
+        '| ' +
+        [
+          c.officialVersionLabel,
+          c.trim,
+          c.powertrainLabel,
+          c.engineDisplacement,
+          c.propulsion,
+          c.transmission,
+          c.drivetrain,
+          String(c.productionYear ?? '—') + '/' + String(c.modelYear ?? '—'),
+          c.confidence.toFixed(2),
+          (c.extractionWarnings ?? []).join(', ') || null,
+        ]
+          .map(cell)
+          .join(' | ') +
+        ' |',
+    ),
+    '',
+    'Evidence:',
+    '',
+    ...item.candidate.evidence.map(
+      (e) =>
+        '- ' + [e.evidenceType, e.url, e.title, e.excerpt].filter(Boolean).map(cell).join(' — '),
+    ),
+    '',
+  ].join('\n');
+}
 export function renderMarkdownReport(result: NewProductCheckResult): string {
   return [
     '# New Product Check Agent — READ-ONLY dry run',
@@ -140,9 +186,17 @@ export function renderMarkdownReport(result: NewProductCheckResult): string {
     '',
     ...result.matchedCandidates.map(details),
     '',
-    '## Findings requiring review',
+    '## New models',
     '',
-    ...result.findings.filter((f) => f.type !== 'AMBIGUOUS').map(details),
+    ...result.findings.filter((f) => f.type === 'NEW_MODEL').map(modelDetails),
+    '',
+    '## New versions',
+    '',
+    ...result.findings.filter((f) => f.type === 'NEW_VERSION').map(details),
+    '',
+    '## Possible year changes',
+    '',
+    ...result.findings.filter((f) => f.type === 'POSSIBLE_YEAR_CHANGE').map(details),
     '',
     '## Ambiguous — manual review',
     '',
