@@ -1,5 +1,13 @@
 # Changelog
 
+## Sprint 19B.1 — versão alinhada ao Staging
+
+O operador confirmou a aplicação bem-sucedida no Compra Car Staging, registrada
+como 20260913224216_sprint_19b_agent_platform. O arquivo local foi renomeado para
+essa versão, com SQL byte a byte preservado e referências atualizadas. Nenhuma
+migration nova ou operação remota foi executada nesta correção. Os registros
+da 19B abaixo descrevem o estado anterior à aplicação informada pelo operador.
+
 ## Sprint 19B — Agent Platform (2026-09-13)
 
 Run/Finding/Evidence/Review genéricos, migration local com RLS sem acesso de

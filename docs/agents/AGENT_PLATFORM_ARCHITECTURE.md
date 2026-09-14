@@ -3,8 +3,9 @@
 ## Estado atual — Sprint 19B
 
 A reconciliação MMV e a plataforma operacional **Runs + Findings + Evidence +
-Human Review** estão implementadas no código. A migration 19B é local, ainda
-não aplicada. Os outros quatro agentes e o scheduler permanecem futuros.
+Human Review** estão implementadas no código. O operador confirmou a aplicação
+da migration 19B no Staging; a versão local foi alinhada na 19B.1. Os outros
+quatro agentes e o scheduler permanecem futuros.
 Decisões de review não executam ações canônicas. Detalhes e validação:
 [AGENT_PLATFORM_19B.md](AGENT_PLATFORM_19B.md).
 
@@ -178,7 +179,8 @@ A 19B implementa a base operacional compartilhada:
 
 Migration local versionada, contratos/core, adapter dedicado e Admin Review
 estão implementados. RLS não concede acesso ao browser; o guard administrativo
-protege o repository privilegiado no servidor. A migration ainda não foi aplicada.
+protege o repository privilegiado no servidor. O operador confirmou a aplicação
+no Staging; versão local 20260913224216.
 O MMV permanece JSON/Markdown local por default; --persist-findings habilita
 somente persistência operacional. COMPLETED congela observações; reviews são
 append-only e Accept não executa proposal.

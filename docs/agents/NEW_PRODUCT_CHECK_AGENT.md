@@ -13,7 +13,8 @@ qual PY/MY precisa ser cadastrado; isso pertence ao futuro Product Year Agent.
 Default READ-ONLY: reports locais e zero escrita no banco. A Sprint 19B
 adicionou --persist-findings como opt-in exclusivo de dados operacionais,
 com o mesmo UUID do report e revisão Admin sem executar ações canônicas.
-Migration local ainda não aplicada. [Plataforma 19B](AGENT_PLATFORM_19B.md).
+Migration aplicada no Staging conforme informado pelo operador; versão local
+20260913224216 alinhada na 19B.1. [Plataforma 19B](AGENT_PLATFORM_19B.md).
 Sem aliases table ou scheduler. Blueprint canônico dos cinco agentes:
 [AGENT_PLATFORM_ARCHITECTURE.md](AGENT_PLATFORM_ARCHITECTURE.md).
 

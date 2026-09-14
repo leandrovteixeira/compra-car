@@ -1,5 +1,20 @@
 # Sprint 19B — Agent Platform
 
+## Sprint 19B.1 — versão alinhada ao Staging
+
+O operador confirmou a aplicação bem-sucedida no Compra Car Staging, registrada
+como 20260913224216_sprint_19b_agent_platform. O arquivo local foi renomeado para
+essa versão, com SQL byte a byte preservado e referências atualizadas. Nenhuma
+migration nova ou operação remota foi executada nesta correção. Os registros
+da 19B abaixo descrevem o estado anterior à aplicação informada pelo operador.
+
+Validação local 19B.1: 107 testes passaram (14 adapter/migration estática,
+44 core/mapper, 31 Admin/navegação e 18 CLI); git diff --check passou.
+SQL antes/depois: 4.397 bytes idênticos; SHA-256
+7d519f6425745d09fcb14ca5419b6069df787c51bd59aa9aac1bbe3a1f1352c2.
+Busca completa: nenhuma referência antiga em código/testes/documentação;
+somente a auditoria histórica ignorada em .local-reports conserva a versão antiga.
+
 ## Entrega e fronteira
 
 Worktree C:\Dev\compra-car-agent-platform, branch sprint-19b-agent-platform.
@@ -14,7 +29,7 @@ Não existe botão Execute, canonical action, agente futuro, scheduler ou worker
 ## Schema e migration
 
 Arquivo gerado com Supabase CLI 2.117.0, recuperado do cache local sem instalar
-dependência: supabase/migrations/20260913220406_sprint_19b_agent_platform.sql.
+dependência: supabase/migrations/20260913224216_sprint_19b_agent_platform.sql.
 **Não aplicada a nenhum banco.** Não há backfill nem seed automático.
 
 | Tabela | Conteúdo | Identidade / relações |
@@ -305,7 +320,7 @@ Criados (23):
 - packages/core/src/agents/mmv-platform-mapper.ts
 - packages/core/test/agent-platform.test.ts
 - packages/core/test/mmv-platform-mapper.test.ts
-- supabase/migrations/20260913220406_sprint_19b_agent_platform.sql
+- supabase/migrations/20260913224216_sprint_19b_agent_platform.sql
 
 Modificados (11):
 
@@ -374,7 +389,7 @@ git status --short --untracked-files=all:
 ?? packages/core/src/agents/mmv-platform-mapper.ts
 ?? packages/core/test/agent-platform.test.ts
 ?? packages/core/test/mmv-platform-mapper.test.ts
-?? supabase/migrations/20260913220406_sprint_19b_agent_platform.sql
+?? supabase/migrations/20260913224216_sprint_19b_agent_platform.sql
 ```
 
 Índice vazio, HEAD preservado. Nenhum git add/commit/push. Legacy, lockfile,
