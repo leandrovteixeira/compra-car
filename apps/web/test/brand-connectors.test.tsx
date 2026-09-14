@@ -131,6 +131,7 @@ describe('Brand Admin authorization and actions', () => {
       />,
     );
     expect(html).toContain('Domínios propostos');
+    expect(html).toContain('Nome oficial observado (informativo): Volkswagen');
     expect(html).toContain('Accept registra a revisão');
     expect(html).not.toContain('href="http://127.0.0.1');
   });

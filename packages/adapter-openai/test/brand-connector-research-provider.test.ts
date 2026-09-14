@@ -1,6 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { Response } from 'openai/resources/responses/responses';
-import { FixtureBrandConnectorResearchProvider } from '@compra-car/core/agents';
+import {
+  BrandConnectorAgent,
+  FixtureBrandConnectorResearchProvider,
+} from '@compra-car/core/agents';
 import { OpenAIBrandConnectorResearchProvider } from '../src';
 const input = { brand: 'Volkswagen', market: 'BR', mode: 'discover' as const };
 async function response(patch: Partial<Response> = {}): Promise<Response> {
@@ -25,6 +28,48 @@ async function response(patch: Partial<Response> = {}): Promise<Response> {
   } as Response;
 }
 describe('Brand connector provider with injected transport only', () => {
+  it('sends internal target unchanged and returns a separate observed label through the structured schema', async () => {
+    const transport = vi.fn(async () => response());
+    const provider = new OpenAIBrandConnectorResearchProvider({
+      apiKey: 'synthetic',
+      model: 'mock',
+      prompt: 'generic',
+      transport,
+    });
+    const bundle = await new BrandConnectorAgent(provider).run(
+      { brand: 'VW', market: 'BR', mode: 'discover' },
+      undefined,
+      'openai',
+    );
+    expect(bundle.findings[0]!.finding).toMatchObject({
+      proposal: { brand: 'VW', market: 'BR' },
+      payload: { observedBrandLabel: 'Volkswagen' },
+    });
+    expect(transport).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: JSON.stringify({ brand: 'VW', market: 'BR', mode: 'discover' }),
+      }),
+    );
+  });
+  it('rejects research that attempts to return canonical brand or target id fields', async () => {
+    const valid = await response();
+    const provider = new OpenAIBrandConnectorResearchProvider({
+      apiKey: 'synthetic',
+      model: 'mock',
+      prompt: 'generic',
+      transport: async () => ({
+        ...valid,
+        output_text: JSON.stringify({
+          ...JSON.parse(valid.output_text),
+          brand: 'forged',
+          target_id: 'forged',
+        }),
+      }),
+    });
+    await expect(provider.researchConnector(input)).rejects.toThrow(
+      'CONNECTOR_RESEARCH_INVALID_OUTPUT',
+    );
+  });
   it('uses independent structured schema and broad discovery search without trusting domains', async () => {
     const transport = vi.fn(async () => response());
     const provider = new OpenAIBrandConnectorResearchProvider({

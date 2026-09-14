@@ -94,6 +94,87 @@ describe('Brand connector definitions and URL boundary', () => {
   });
 });
 describe('Brand Connector Agent and platform integration', () => {
+  it.each([
+    ['VW', 'Volkswagen'],
+    ['GM', 'Chevrolet'],
+    ['Internal Code', 'Observed Manufacturer'],
+  ])('preserves internal identity %s with observed label %s', async (brand, observedBrandLabel) => {
+    const research = await new FixtureBrandConnectorResearchProvider().researchConnector({
+      brand: 'Volkswagen',
+      market: 'BR',
+      mode: 'discover',
+    });
+    const provider = {
+      researchConnector: vi.fn(async () => ({
+        ...research,
+        observedBrandLabel,
+        brand: 'forged identity',
+        targetId: 'forged target',
+      })),
+    };
+    const bundle = await new BrandConnectorAgent(provider).run({
+      brand,
+      market: 'BR',
+      mode: 'discover',
+    });
+    const finding = bundle.findings[0]!.finding;
+    expect(finding).toMatchObject({
+      findingType: 'NEW_BRAND_CONNECTOR',
+      requiresReview: true,
+      subject: { brand, market: 'BR' },
+      proposal: { brand, market: 'BR' },
+      payload: { observedBrandLabel },
+    });
+    expect(bundle.run).toMatchObject({ brand, market: 'BR', input: { brand, market: 'BR' } });
+    expect(finding.proposal).not.toHaveProperty('targetId');
+    expect(finding.proposal).not.toHaveProperty('observedBrandLabel');
+    expect(finding.payload.connectorFingerprint).toBe(
+      connectorFingerprint({ ...definition, brand }),
+    );
+    const repo = new StoredAgentPlatformRepository(new InMemoryAgentPlatformStore());
+    await repo.persistRunBundle(bundle);
+    await repo.addReview({
+      findingId: finding.id,
+      decision: 'ACCEPT',
+      note: null,
+      reviewedBy: platformFixtureId(100),
+    });
+    expect(acceptedConnectorProposal((await repo.getFinding(finding.id))!)).toMatchObject({
+      brand,
+      market: 'BR',
+    });
+  });
+  it.each(['market', 'evidence', 'sources', 'verification'])(
+    'different observed label does not bypass %s validation',
+    async (boundary) => {
+      const result = await new FixtureBrandConnectorResearchProvider().researchConnector({
+        brand: 'Volkswagen',
+        market: 'BR',
+        mode: 'discover',
+      });
+      const research = {
+        ...result,
+        observedBrandLabel: 'Volkswagen',
+        ...(boundary === 'market' ? { market: 'US' } : {}),
+        ...(boundary === 'evidence' ? { evidence: [] } : {}),
+        ...(boundary === 'sources'
+          ? {
+              sourceEntries: [
+                { type: 'MODEL_INDEX' as const, url: 'https://attacker.com.br/', priority: 1 },
+              ],
+            }
+          : {}),
+        ...(boundary === 'verification' ? { verificationSummary: '' } : {}),
+      };
+      await expect(
+        new BrandConnectorAgent({ researchConnector: async () => research }).run({
+          brand: 'VW',
+          market: 'BR',
+          mode: 'discover',
+        }),
+      ).rejects.toThrow();
+    },
+  );
   it('reports drift without an activatable replacement when no official domain can be proposed', async () => {
     const input = {
       brand: 'Volkswagen',

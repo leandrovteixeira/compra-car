@@ -62,7 +62,8 @@ export interface ConnectorEvidence {
   readonly excerpt: string;
 }
 export interface BrandConnectorResearch {
-  readonly brand: string;
+  /** Informational manufacturer label; never the operational target identity. */
+  readonly observedBrandLabel: string;
   readonly market: string;
   readonly candidateDomains: readonly string[];
   readonly sourceEntries: readonly ConnectorSourceEntry[];

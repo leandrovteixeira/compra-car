@@ -2,6 +2,11 @@
 
 Base: `3c7a82c256985f70d3fee641230f2d6c0764c026`, branch `sprint-19c-brand-connector-agent`.
 
+Atualização 19C.2: [runtime, ambiente compartilhado e identidade interna](SPRINT_19C2_RUNTIME_HARDENING.md).
+O contrato de pesquisa retorna `observedBrandLabel` separado; a identidade de run/subject/proposal
+vem exclusivamente da entrada. Um rótulo oficial diferente não renomeia o target e não causa
+rejeição por comparação textual. Mercado, evidências e todas as validações de ativação permanecem.
+
 ## Responsabilidade e fronteiras
 
 O connector responde como pesquisar uma marca em um mercado. Contém domínios, entry points, termos de busca e terminologia de navegação. Não faz matching MMV, PY/MY, extração final de specs ou preços. Nenhum comando desta capability modifica o catálogo. Adicionar uma marca manual não cria Product.
@@ -43,7 +48,7 @@ O SHA-256 usa definição normalizada, brand key e arrays deduplicados/ordenados
 
 ## Bootstrap e MMV
 
-A migration `20260914162551_sprint_19c_brand_connectors.sql` inclui targets Toyota/Jeep e v1 com exatamente os domínios e hints dos registries 19A. Não inventa source entries ou termos. O bloco de dados é idempotente e não substitui histórico existente. Testes comparam o JSON SQL com a exportação dos built-ins e seus fingerprints.
+A migration `20260914172157_sprint_19c_brand_connectors.sql` inclui targets Toyota/Jeep e v1 com exatamente os domínios e hints dos registries 19A. Não inventa source entries ou termos. O bloco de dados é idempotente e não substitui histórico existente. Testes comparam o JSON SQL com a exportação dos built-ins e seus fingerprints.
 
 O runtime MMV prefere ACTIVE persistido e usa fallback explícito built-in quando ausente. Falha de persistência não é tratada como ausência. Definições iguais ao bootstrap mantêm exatamente a política de hostnames 19A, inclusive a restrição de subdomínios Toyota. Connectors novos usam a semântica declarada de domínio/subdomínio. Não há alteração no matcher nem branching de marca nele.
 
@@ -60,6 +65,13 @@ pnpm agent:brand-connector:dry-run -- --brand Volkswagen --market BR --mode heal
 Sem `--persist-findings`: somente `.local-reports/agents/brand-connector/<UUID>.json` e `.md`, zero DB writes. O modo fixture não precisa de banco. Com opt-in, apenas Agent Platform recebe dados; não cria targets nem ativa propostas. O UUID da run é preservado e replay usa idempotência da plataforma.
 
 O provider OpenAI exige configuração explícita `OPENAI_API_KEY`, `OPENAI_AGENT_MODEL`, `SUPABASE_URL` e `SUPABASE_SERVER_KEY`; não há modelo default. O banco é consultado para resolver o modo/connector. Não executar pesquisa real sem autorização manual. **Zero chamadas OpenAI e zero writes Supabase remotos durante implementação e testes.**
+
+Desde a 19C.2, os dois CLIs carregam `<repo-root>/apps/web/.env.local` antes de validar essa
+configuração. `COMPRA_CAR_AGENT_ENV_FILE` escolhe outro arquivo; caminhos relativos são
+resolvidos na raiz. Valores já definidos no ambiente, inclusive vazios, têm prioridade.
+O loader usa a sintaxe nativa Node, não expande referências entre variáveis, não modifica
+`process.env` e não escreve no arquivo nem no hard link. Arquivos opcionais indisponíveis
+não impedem fixtures; configuração real ausente gera código seguro antes de qualquer cliente.
 
 Admin: `/admin/agents/brands`, criação manual, sincronização, pausa/enable, ACTIVE/version, última run e detalhe/histórico. Findings de connector apresentam domínios, fontes, hints, avisos e evidências estruturados. O redesenho geral de UX fica para Sprint 24.
 

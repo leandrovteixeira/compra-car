@@ -1,12 +1,64 @@
 # Contexto para agentes de IA
 
+## Sprint 19C — fechamento real validado
+
+**COMPLETE / REAL CROSS-BRAND ONBOARDING VALIDATED**, conforme resultados fornecidos
+pelo operador. VW/BR foi descoberto, revisado e ativado como ACTIVE v1; observed label
+Volkswagen do Brasil, domínios `vw.com.br` e `vwnews.com.br`. MMV real concluiu em
+aproximadamente 4m12s, com 25 findings persistidos e 64/64 evidências nos domínios
+permitidos; catálogo canônico preservado. Runs e métricas completas no
+[relatório final](docs/agents/SPRINT_19C_VALIDATION.md).
+Runtime Node 24.15.0; warning de engine conhecido não bloqueou a validação funcional.
+Smoke Node 22 permanece pendente. FAILED-run persistence é follow-up de
+Agent Platform/Orchestration; UX de agentes provisória, com redesign posterior.
+Registros de implementação abaixo são históricos; fechamento sem novas chamadas remotas.
+
+## Sprint 19C.4 — MMV background e polling
+
+Provider MMV cria Responses com `background:true` e `store:false`; consulta a mesma
+resposta a cada 2s até estado terminal. `OPENAI_AGENT_MAX_WAIT_MS` limita o prazo total
+(padrão 600000, faixa 60000–1800000); operações HTTP têm teto de 60s, reduzido ao saldo.
+Retries explícitos somente no retrieve para timeout/conexão/429/5xx, sem recriar pesquisa.
+Estados cancelled/incomplete/failed têm códigos seguros. Pesquisa, matcher e connectors
+preservados. Armazenamento temporário de background segue a API, sem habilitar store:true.
+Validação e limites: [19C.4](docs/agents/SPRINT_19C4_BACKGROUND_RESEARCH.md).
+
+## Sprint 19C.3 — diagnósticos de transporte MMV
+
+Falhas do SDK OpenAI no provider MMV agora são classificadas por tipos oficiais/status,
+sem preservar o erro original. CLI expõe código controlado, status HTTP válido e duração
+monotônica em milissegundos; omite campos textuais da API. Requisição e segurança de
+connectors permanecem iguais. Runs que falham antes do mapeamento ainda não são
+persistidas: registrar FAILED pela plataforma é follow-up, sem mudança de semântica 19B.
+Detalhes e validação: [19C.3](docs/agents/SPRINT_19C3_TRANSPORT_DIAGNOSTICS.md).
+
+## Sprint 19C.2 — runtime dos agentes
+
+Brand Connector e MMV usam `scripts/agents/agent-environment.ts`: parser nativo Node,
+arquivo padrão `apps/web/.env.local`, override `COMPRA_CAR_AGENT_ENV_FILE` e prioridade
+dos valores já presentes no ambiente. Não altera `process.env` nem o arquivo/hard link;
+arquivo opcional ausente/inválido não derruba fixtures. Configuração real continua obrigatória.
+Pesquisa Brand Connector retorna `observedBrandLabel` informativo; identidade de run,
+subject e proposal vem de input.brand/input.market. Sem aliases hardcoded ou fuzzy.
+CLIs emitem apenas códigos de uma allowlist; erros desconhecidos não expõem detalhes.
+Migration aplicada permanece em `20260914172157`, SQL preservado. Nenhum acesso remoto
+ou chamada OpenAI foi realizado na implementação. Detalhes: [19C.2](docs/agents/SPRINT_19C2_RUNTIME_HARDENING.md).
+
+## Sprint 19C.1 — migration alinhada ao Staging
+
+O operador confirmou a aplicação da 19C no Compra Car Staging, registrada como
+`20260914172157_sprint_19c_brand_connectors`. O arquivo local e suas referências
+foram alinhados a essa versão, com SQL byte a byte preservado. Nenhuma migration
+adicional ou acesso remoto foi realizado nesta correção. Os registros da 19C
+abaixo descrevem a validação local anterior à aplicação informada pelo operador.
+
 ## Sprint 19C — Brand Connector (2026-09-14, local)
 
 Registry operacional, sync explícito de marcas do catálogo, discovery/health-check,
 propostas revisáveis e ativação explícita versionada em `/admin/agents/brands`.
 Accept continua apenas review. Novo target manual não cria Product. Resolver MMV
 prefere ACTIVE persistido com fallback controlado Toyota/Jeep; matcher preservado.
-Migration local `20260914162551_sprint_19c_brand_connectors.sql`, com RLS,
+Migration local `20260914172157_sprint_19c_brand_connectors.sql`, com RLS,
 ativação transacional e bootstrap equivalente aos built-ins. Validada em PostgreSQL
 15 descartável com dados sintéticos; não aplicada remotamente. Zero OpenAI,
 writes remotos/canônicos/specs/preços, scheduler ou mudanças em Legacy.

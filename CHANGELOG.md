@@ -1,5 +1,50 @@
 # Changelog
 
+## Sprint 19C — fechamento real end-to-end
+
+- **COMPLETE / REAL CROSS-BRAND ONBOARDING VALIDATED**: operador confirmou discovery,
+  review e ativação VW/BR ACTIVE v1 e MMV real COMPLETED em aproximadamente 4m12s.
+- 25 findings persistidos, 64/64 evidências nos domínios permitidos e catálogo canônico
+  preservado; métricas e runs no [relatório final](docs/agents/SPRINT_19C_VALIDATION.md).
+- Node 22 smoke pendente; execução Node 24.15.0 com warning de engine conhecido,
+  sem bloqueio funcional. FAILED-run persistence e redesign da UX seguem como follow-ups.
+
+## Sprint 19C.4 — execução MMV longa em background
+
+- Responses background com polling da mesma resposta, intervalo de 2s e deadline total
+  configurável via ambiente; timeout HTTP de 60s limitado pelo tempo restante.
+- Retry explícito de falhas transitórias apenas no retrieve, estados terminais distintos
+  e diagnósticos seguros preservados; sem alterar retenção solicitada (`store:false`).
+- Transporte, relógio e sleeper injetáveis; regressões offline de deadline, retries,
+  semântica da pesquisa e resolução operacional VW. Brand Connector continua foreground.
+
+## Sprint 19C.3 — diagnósticos de transporte MMV
+
+- Classificação segura de rejeição de request, autenticação/acesso, rate limit, timeout,
+  conexão e erro de servidor pelo SDK oficial OpenAI; fallback genérico preservado.
+- CLI inclui somente status HTTP validado e elapsed_ms quando disponíveis, sem campos
+  textuais da API, mensagens originais, headers, corpo ou cause.
+- Testes com erros sintéticos do SDK e regressão de logs do CLI; nenhuma chamada OpenAI,
+  operação remota, alteração de request, matcher, connector ou migration.
+
+## Sprint 19C.2 — runtime hardening dos agentes
+
+- Loader compartilhado de ambiente para CLIs Brand Connector/MMV, usando `node:util.parseEnv`,
+  arquivo padrão da aplicação web, override opcional e precedência do ambiente existente.
+- Identidade interna preservada a partir da entrada; nome oficial observado separado em
+  `observedBrandLabel`, sem tabela de equivalências e sem alteração do matcher.
+- Diagnósticos por códigos controlados, validação de configuração antes dos clientes reais,
+  remoção de segredos nos reports e apresentação informativa do nome observado no Admin.
+- Regressões offline para identidade, escopo, ambiente, hard link e diagnósticos.
+  Sem mudanças de schema/SQL, chamadas OpenAI ou operações remotas.
+
+## Sprint 19C.1 — migration alinhada ao Staging
+
+Migration Brand Connector renomeada para `20260914172157_sprint_19c_brand_connectors.sql`
+conforme a aplicação em Staging confirmada pelo operador. Referências de código,
+testes e documentação atualizadas; SQL preservado byte a byte, sem nova migration
+ou acesso remoto nesta correção.
+
 ## Sprint 19C — Brand Connector Agent (2026-09-14)
 
 - Registry por marca/mercado, criação manual, sync paginado explícito e pausa de monitoramento.

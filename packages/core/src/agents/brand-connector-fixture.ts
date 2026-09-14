@@ -42,7 +42,7 @@ export class FixtureBrandConnectorResearchProvider implements BrandConnectorRese
     )
       throw new Error('CONNECTOR_FIXTURE_NOT_AVAILABLE');
     return {
-      brand: definition.brand,
+      observedBrandLabel: definition.brand,
       market: definition.market,
       candidateDomains: definition.allowedDomains,
       sourceEntries: definition.sourceEntries,

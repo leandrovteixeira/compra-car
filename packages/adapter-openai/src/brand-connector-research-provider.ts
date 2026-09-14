@@ -21,7 +21,7 @@ function object(properties: Record<string, unknown>) {
   };
 }
 export const brandConnectorResearchSchema = object({
-  brand: string,
+  observedBrandLabel: string,
   market: string,
   candidateDomains: strings,
   sourceEntries: {

@@ -357,11 +357,13 @@ describe('CLI and local reports', () => {
   it('returns nonzero without exposing raw arguments or environment on operational errors', async () => {
     const log = vi.fn(),
       secret = 'synthetic-error-secret';
+    const root = await temporaryRoot();
     expect(
       await runNewProductCheckCli(
         ['--brand', secret, '--provider', 'fixture'],
         { OPENAI_API_KEY: secret },
         log,
+        root,
       ),
     ).toBe(1);
     expect(
@@ -369,6 +371,7 @@ describe('CLI and local reports', () => {
         ['--brand', 'Toyota', '--provider', 'openai'],
         { OPENAI_API_KEY: secret },
         log,
+        root,
       ),
     ).toBe(1);
     expect(JSON.stringify(log.mock.calls)).not.toContain(secret);

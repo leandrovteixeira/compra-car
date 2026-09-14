@@ -54,23 +54,35 @@ export function mapBrandConnectorRun(
   provider: string,
   startedAt: string,
 ): AgentRunBundle {
+  const brand = connectorText(input.brand, 100),
+    market = connectorMarket(input.market);
+  const observedBrandLabel = connectorText(result.observedBrandLabel, 100);
+  if (
+    input.activeConnector &&
+    (brandKey(input.activeConnector.brand) !== brandKey(brand) ||
+      input.activeConnector.market !== market)
+  )
+    throw new Error('CONNECTOR_SCOPE_MISMATCH');
   const noReplacement =
     input.mode === 'health-check' &&
     Array.isArray(result.candidateDomains) &&
     result.candidateDomains.length === 0;
   const proposal = validateConnectorDefinition(
     noReplacement
-      ? input.activeConnector
+      ? { ...input.activeConnector, brand, market }
       : {
-          ...result,
+          brand,
+          market,
           allowedDomains: result.candidateDomains,
+          sourceEntries: result.sourceEntries,
+          searchHints: result.searchHints,
+          terminologyHints: result.terminologyHints,
         },
   );
   if (
-    brandKey(result.brand) !== brandKey(input.brand) ||
-    result.market !== input.market ||
-    brandKey(proposal.brand) !== brandKey(input.brand) ||
-    proposal.market !== input.market ||
+    result.market !== market ||
+    brandKey(proposal.brand) !== brandKey(brand) ||
+    proposal.market !== market ||
     !Number.isFinite(result.confidence) ||
     result.confidence < 0 ||
     result.confidence > 1 ||
@@ -122,6 +134,7 @@ export function mapBrandConnectorRun(
   const completedAt = new Date().toISOString(),
     findingId = randomUUID();
   const payload: AgentObject = {
+    observedBrandLabel,
     warnings,
     verificationSummary,
     candidateDomains: noReplacement ? [] : proposal.allowedDomains,
@@ -142,7 +155,7 @@ export function mapBrandConnectorRun(
       market: proposal.market,
       provider,
       runMode: input.mode,
-      schemaVersion: '19C.1',
+      schemaVersion: '19C.2',
       startedAt,
       completedAt,
       input: { brand: proposal.brand, market: proposal.market, mode: input.mode },

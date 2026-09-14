@@ -1,3 +1,5 @@
+import OpenAI from 'openai';
+import { ProductResearchProviderError } from '../src';
 import { readFile } from 'node:fs/promises';
 import type { Response } from 'openai/resources/responses/responses';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
@@ -221,5 +223,58 @@ describe('OpenAI research adapter (mock transport only)', () => {
     }).run(scope, 'provider-test');
     expect(result.rejectedExternalSources).toBe(1);
     expect(result.findings).toHaveLength(0);
+  });
+});
+
+describe('safe transport classification', () => {
+  it.each([
+    [400, 'BAD_REQUEST'],
+    [422, 'BAD_REQUEST'],
+    [401, 'AUTH'],
+    [403, 'AUTH'],
+    [408, 'TIMEOUT'],
+    [429, 'RATE_LIMIT'],
+    [500, 'SERVER_ERROR'],
+    [503, 'SERVER_ERROR'],
+    [404, 'FAILED'],
+    ['timeout', 'TIMEOUT'],
+    ['connection', 'CONNECTION'],
+    ['unknown', 'FAILED'],
+  ] as const)('classifies %s without retaining SDK content', async (kind, suffix) => {
+    const privateText = 'sk-synthetic-key private-body private-header private-prompt';
+    const raw =
+      typeof kind === 'number'
+        ? OpenAI.APIError.generate(
+            kind,
+            { message: privateText, code: privateText, param: privateText },
+            privateText,
+            new Headers({ authorization: privateText, 'x-request-id': privateText }),
+          )
+        : kind === 'timeout'
+          ? new OpenAI.APIConnectionTimeoutError({ message: privateText })
+          : kind === 'connection'
+            ? new OpenAI.APIConnectionError({ message: privateText, cause: new Error(privateText) })
+            : new Error(privateText);
+    const provider = new OpenAIProductResearchProvider({
+      apiKey: privateText,
+      model: 'test',
+      prompt: privateText,
+      transport: async () => {
+        throw raw;
+      },
+    });
+    const failure = await provider.researchProducts(scope).catch((error: unknown) => error);
+    expect(failure).toBeInstanceOf(ProductResearchProviderError);
+    expect(failure).toMatchObject({
+      code: 'OPENAI_RESEARCH_' + suffix,
+      elapsedMs: expect.any(Number),
+    });
+    expect((failure as ProductResearchProviderError).status).toBe(
+      typeof kind === 'number' ? kind : undefined,
+    );
+    expect((failure as ProductResearchProviderError).elapsedMs).toBeGreaterThanOrEqual(0);
+    for (const field of ['cause', 'headers', 'error', 'body', 'apiCode', 'param', 'requestId'])
+      expect(failure).not.toHaveProperty(field);
+    expect(String(failure) + JSON.stringify(failure)).not.toContain(privateText);
   });
 });

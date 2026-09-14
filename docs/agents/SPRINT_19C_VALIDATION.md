@@ -1,4 +1,93 @@
-# Sprint 19C — entrega e validação local
+# Sprint 19C — Brand Connector Agent
+
+## Fechamento técnico — COMPLETE / REAL CROSS-BRAND ONBOARDING VALIDATED
+
+Workspace: `C:\Dev\compra-car-brand-connector`.
+Branch: `sprint-19c-brand-connector-agent`.
+
+Validação real end-to-end da VW confirmada pelo operador e registrada neste fechamento.
+Os resultados abaixo foram fornecidos pelo operador; não houve nova execução OpenAI
+nem consulta/escrita Supabase para conferi-los durante o fechamento documental.
+
+### Brand Connector real
+
+| Campo | Resultado |
+| --- | --- |
+| Run | `0495db0d-13dd-45d8-9097-2e3b9fb40758` |
+| Resultado | `NEW_BRAND_CONNECTOR` |
+| Canonical target | `VW / BR` |
+| Observed label | `Volkswagen do Brasil` |
+| Connector | `VW / BR ACTIVE v1` |
+| Allowed domains | `vw.com.br`, `vwnews.com.br` |
+| Finding de origem | `2e6c609a-99a1-40d5-97c2-6c232f6b54a3` |
+
+### MMV real
+
+Run `36c6d79b-45ca-49a6-abaa-66bd86d81d95`: **COMPLETED**, duração aproximada **4m12s**.
+
+| Métrica | Total |
+| --- | ---: |
+| Models discovered | 14 |
+| Variants resolved | 33 |
+| Researched candidates | 36 |
+| Canonical product rows | 32 |
+| Known MMV identities | 17 |
+| Matched candidates | 8 |
+| Exact | 0 |
+| Legacy naming | 8 |
+| NEW_MODEL | 10 |
+| NEW_VERSION | 0 |
+| POSSIBLE_YEAR_CHANGE | 0 |
+| AMBIGUOUS_MMV | 7 |
+| Rejected candidates | 0 |
+| Rejected external sources | 0 |
+
+Agent Platform: **25 findings persistidos**, dos quais **17 exigem review** e
+**8 são informativos MMV_MATCHED**. Evidence: **64 evidências**, **64/64 dentro dos
+domínios permitidos pelo connector**. Total de connectors ativos após a validação: **3**.
+
+Catálogo canônico preservado:
+
+| Tabela | Linhas |
+| --- | ---: |
+| products | 277 |
+| specs | 321 |
+| product_specs | 37,949 |
+| product_public_prices | 818 |
+
+### Runtime, gates e follow-ups
+
+A execução real foi realizada no ambiente local **Node 24.15.0**. O warning de engine
+é conhecido e não bloqueou a validação funcional. **Node 22 runtime smoke permanece
+PENDENTE**. Persistência de runs FAILED antes do mapeamento continua follow-up para
+**Agent Platform/Orchestration**. A UX atual de agentes é provisória e será redesenhada
+posteriormente.
+
+Os gates reportados na [19C.4](SPRINT_19C4_BACKGROUND_RESEARCH.md) permanecem como
+evidência técnica: 289 testes direcionados passaram; lint, build (cache), typechecks
+direcionados e formatação dos arquivos alterados passaram. Gates globais mantêm
+pendências preexistentes de tipos, timeout comercial e formatação. Neste fechamento,
+somente documentação foi atualizada e `git diff --check` foi repetido.
+
+Escopo consolidado: [19C.2](SPRINT_19C2_RUNTIME_HARDENING.md),
+[19C.3](SPRINT_19C3_TRANSPORT_DIAGNOSTICS.md) e [19C.4](SPRINT_19C4_BACKGROUND_RESEARCH.md).
+Migration alinhada a `20260914172157_sprint_19c_brand_connectors.sql`, sem mudança
+de SQL; SHA-256 antes/depois:
+
+```text
+740f0f0cab9e13ae42d6e714b1df8f91d873b28f30b9c977719d3519b6fb0411
+```
+
+Fechamento autorizado para commit `feat(agent): harden connector runtime and MMV research`
+e push apenas da branch de sprint, sem merge para main. Sem novos calls OpenAI,
+acesso Supabase, migration, alteração funcional, matcher ou connectors ativos.
+Arquivos de ambiente, secrets, reports locais e artefatos temporários/cache ficam fora do commit.
+
+## Registro histórico — implementação e validação local inicial
+
+As seções abaixo preservam o relatório da implementação inicial, anterior à aplicação
+em Staging e à validação real acima. Referências a pendências de primeira execução,
+índice vazio e ausência de commit/push descrevem exclusivamente aquela etapa histórica.
 
 Workspace: `C:\Dev\compra-car-brand-connector`.
 Branch: `sprint-19c-brand-connector-agent`.
@@ -11,7 +100,7 @@ e suas alterações preexistentes foram preservados. Sem staging, commit ou push
 | Item solicitado | Entrega |
 | --- | --- |
 | 1. HEAD inicial | `3c7a82c256985f70d3fee641230f2d6c0764c026` |
-| 2. Migration | `20260914162551_sprint_19c_brand_connectors.sql`, criada via CLI, aplicada apenas em PostgreSQL local descartável |
+| 2. Migration | `20260914172157_sprint_19c_brand_connectors.sql`, criada via CLI, aplicada apenas em PostgreSQL local descartável |
 | 3. Brand target | Identidade `(market, brand_key)`, origens CATALOG/MANUAL, enabled e autoria |
 | 4. Catalog sync | Leitura paginada por id, avanço pelo tamanho recebido, upserts idempotentes, targets manuais/pausados preservados |
 | 5. Connector schema | Domínios, source entries tipadas, search hints e terminology hints |
@@ -149,7 +238,7 @@ de validação foi encerrado/removido após os testes.
 - `scripts/agents/export-brand-connector-bootstrap.ts`
 - `scripts/agents/run-brand-connector.ts`
 - `scripts/agents/test/brand-connector-cli.test.ts`
-- `supabase/migrations/20260914162551_sprint_19c_brand_connectors.sql`
+- `supabase/migrations/20260914172157_sprint_19c_brand_connectors.sql`
 - `supabase/tests/brand_connector_19c_local.sql`
 
 ### Arquivos modificados
@@ -236,6 +325,6 @@ de validação foi encerrado/removido após os testes.
 ?? scripts/agents/export-brand-connector-bootstrap.ts
 ?? scripts/agents/run-brand-connector.ts
 ?? scripts/agents/test/brand-connector-cli.test.ts
-?? supabase/migrations/20260914162551_sprint_19c_brand_connectors.sql
+?? supabase/migrations/20260914172157_sprint_19c_brand_connectors.sql
 ?? supabase/tests/brand_connector_19c_local.sql
 ```

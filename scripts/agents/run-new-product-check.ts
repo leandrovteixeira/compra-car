@@ -17,9 +17,11 @@ import {
 } from '@compra-car/core/agents';
 import {
   OpenAIProductResearchProvider,
-  ProductResearchProviderError,
+  productResearchMaxWaitMs,
 } from '@compra-car/adapter-openai';
 import { LocalProductReportWriter, redactSecrets } from './report-writer';
+import { loadAgentEnvironment } from './agent-environment';
+import { safeAgentFailure } from './agent-diagnostics';
 
 export function parseAgentArguments(args: readonly string[]) {
   const values = args[0] === '--' ? args.slice(1) : [...args];
@@ -60,29 +62,17 @@ export async function runNewProductCheckCli(
   repositoryRoot = fileURLToPath(new URL('../../', import.meta.url)),
   persistence?: Pick<AgentPlatformRepository, 'persistRunBundle'>,
 ): Promise<number> {
-  let stage = 'arguments';
   try {
     const { scope, provider, persistFindings } = parseAgentArguments(args);
-    stage = 'configuration';
-    if (
-      provider === 'openai' &&
-      (!env.OPENAI_API_KEY?.trim() ||
-        !env.OPENAI_AGENT_MODEL?.trim() ||
-        !env.SUPABASE_URL?.trim() ||
-        !env.SUPABASE_SERVER_KEY?.trim())
-    ) {
-      log(
-        'Configuration required: OPENAI_API_KEY, OPENAI_AGENT_MODEL, SUPABASE_URL, SUPABASE_SERVER_KEY.',
-      );
-      return 1;
+    env = await loadAgentEnvironment(repositoryRoot, env);
+    if (provider === 'openai' && (!env.OPENAI_API_KEY?.trim() || !env.OPENAI_AGENT_MODEL?.trim())) {
+      throw new Error('OPENAI_AGENT_CONFIG_REQUIRED');
     }
     if (
-      persistFindings &&
-      !persistence &&
+      (provider === 'openai' || (persistFindings && !persistence)) &&
       (!env.SUPABASE_URL?.trim() || !env.SUPABASE_SERVER_KEY?.trim())
     ) {
-      log('Persistence configuration required: SUPABASE_URL, SUPABASE_SERVER_KEY.');
-      return 1;
+      throw new Error('SUPABASE_AGENT_CONFIG_REQUIRED');
     }
     const secrets = [env.OPENAI_API_KEY ?? '', env.SUPABASE_SERVER_KEY ?? ''];
     const reports = new LocalProductReportWriter(repositoryRoot, secrets);
@@ -109,6 +99,7 @@ export async function runNewProductCheckCli(
         : new OpenAIProductResearchProvider({
             apiKey: env.OPENAI_API_KEY!,
             model: env.OPENAI_AGENT_MODEL!,
+            maxWaitMs: productResearchMaxWaitMs(env.OPENAI_AGENT_MAX_WAIT_MS),
             prompt: await readFile(
               resolve(repositoryRoot, 'docs/agents/prompts/new-product-check-agent-v1.md'),
               'utf8',
@@ -132,7 +123,6 @@ export async function runNewProductCheckCli(
           })();
     const runId = randomUUID();
     log('Run: ' + runId);
-    stage = 'research/catalog/matching/report';
     const result = await new NewProductCheckAgent({
       research,
       catalog,
@@ -176,7 +166,6 @@ export async function runNewProductCheckCli(
       log('Fixture benchmark: ' + JSON.stringify(benchmark));
     }
     if (persistFindings) {
-      stage = 'operational persistence';
       const repository =
         persistence ??
         (await (async () => {
@@ -196,14 +185,7 @@ export async function runNewProductCheckCli(
     log('Reports: .local-reports/agents/new-product-check/' + runId + '.{json,md}');
     return 0;
   } catch (error) {
-    // Never print error.message, cause, headers, environment or provider output.
-    log(
-      error instanceof ProductResearchProviderError
-        ? error.code
-        : error instanceof Error && error.message === 'BRAND_CONNECTOR_REQUIRED'
-          ? 'BRAND_CONNECTOR_REQUIRED'
-          : 'NEW_PRODUCT_CHECK_FAILED (' + stage + ')',
-    );
+    log(safeAgentFailure('NEW_PRODUCT_CHECK_FAILED', error));
     return 1;
   }
 }

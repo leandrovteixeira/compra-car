@@ -163,7 +163,7 @@ describe('Brand target adapter, real SDK and offline transport', () => {
 describe('19C migration structural safety', () => {
   const sql = readFileSync(
     new URL(
-      '../../../supabase/migrations/20260914162551_sprint_19c_brand_connectors.sql',
+      '../../../supabase/migrations/20260914172157_sprint_19c_brand_connectors.sql',
       import.meta.url,
     ),
     'utf8',

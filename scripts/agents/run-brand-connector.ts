@@ -14,6 +14,8 @@ import {
 import type { AgentPlatformRepository } from '@compra-car/core/agent-platform';
 import { OpenAIBrandConnectorResearchProvider } from '@compra-car/adapter-openai';
 import { redactSecrets } from './report-writer';
+import { loadAgentEnvironment } from './agent-environment';
+import { safeAgentFailure } from './agent-diagnostics';
 export function parseBrandConnectorArguments(args: readonly string[]) {
   const values = args[0] === '--' ? args.slice(1) : args,
     options = new Map<string, string>();
@@ -61,12 +63,21 @@ export async function runBrandConnectorCli(
 ): Promise<number> {
   try {
     const options = parseBrandConnectorArguments(args);
+    env = await loadAgentEnvironment(root, env);
+    if (
+      options.provider === 'openai' &&
+      !dependencies.research &&
+      (!env.OPENAI_API_KEY?.trim() || !env.OPENAI_AGENT_MODEL?.trim())
+    )
+      throw new Error('OPENAI_AGENT_CONFIG_REQUIRED');
     let repository = dependencies.repository,
       persistence = dependencies.persistence;
     if (
       (options.provider === 'openai' && !repository) ||
       (options.persistFindings && !persistence)
     ) {
+      if (!env.SUPABASE_URL?.trim() || !env.SUPABASE_SERVER_KEY?.trim())
+        throw new Error('SUPABASE_AGENT_CONFIG_REQUIRED');
       const { AgentPlatformSupabaseAdapter, createLegacySupabaseClient } =
         await import('@compra-car/adapter-supabase');
       const { BrandConnectorSupabaseAdapter } =
@@ -120,8 +131,9 @@ export async function runBrandConnectorCli(
       [
         '# Brand Connector',
         '',
-        'Brand: ' + cell(bundle.run.brand),
-        'Market: ' + cell(bundle.run.market),
+        'Brand: ' + cell(clean.run.brand),
+        'Market: ' + cell(clean.run.market),
+        'Observed manufacturer label: ' + cell(finding.payload.observedBrandLabel),
         'Mode: ' + options.mode,
         'Provider: ' +
           options.provider +
@@ -156,8 +168,8 @@ export async function runBrandConnectorCli(
         '.{json,md}',
     );
     return 0;
-  } catch {
-    log('BRAND_CONNECTOR_FAILED: confira argumentos, configuração, connector ativo e evidências.');
+  } catch (error) {
+    log(safeAgentFailure('BRAND_CONNECTOR_FAILED', error));
     return 1;
   }
 }

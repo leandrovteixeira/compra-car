@@ -243,6 +243,9 @@ export function AgentFindingDetailView({ detail }: { readonly detail: AgentFindi
       {['NEW_BRAND_CONNECTOR', 'CONNECTOR_DRIFT'].includes(finding.findingType) ? (
         <>
           <BrandConnectorView value={finding.proposal} />
+          {typeof finding.payload.observedBrandLabel === 'string' ? (
+            <p>Nome oficial observado (informativo): {finding.payload.observedBrandLabel}</p>
+          ) : null}
           <section>
             <h2 className="text-lg font-semibold">Avisos</h2>
             <ul>
