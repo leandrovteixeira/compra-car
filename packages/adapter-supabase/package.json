@@ -5,7 +5,8 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./brand-connectors": "./src/brand-connector-supabase-adapter.ts"
   },
   "types": "./src/index.ts",
   "scripts": {

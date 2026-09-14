@@ -60,6 +60,12 @@ export default async function AgentsPage({
           >
             Runs
           </Link>
+          <Link
+            href="/admin/agents/brands"
+            className="ui-button ui-button--secondary ui-button--action"
+          >
+            Marcas
+          </Link>
         </nav>
         <form className="flex flex-wrap items-end gap-3">
           <input type="hidden" name="tab" value={runs ? 'runs' : 'queue'} />

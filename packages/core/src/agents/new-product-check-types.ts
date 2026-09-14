@@ -87,7 +87,10 @@ export interface ResearchMetadata {
 }
 export interface ProductResearchProvider {
   /** Discovery then resolution, in one structured response or multiple provider calls. */
-  researchProducts(scope: AgentMarketScope): Promise<{
+  researchProducts(
+    scope: AgentMarketScope,
+    source?: OfficialBrandSource,
+  ): Promise<{
     readonly candidates: readonly OfficialProductCandidate[];
     readonly metadata: ResearchMetadata;
   }>;

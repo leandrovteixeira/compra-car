@@ -9,7 +9,9 @@ import {
   AdministrativeProductCatalogReader,
   FixtureProductCatalogReader,
   FixtureProductResearchProvider,
-  officialBrandSource,
+  BuiltInBrandConnectorResolver,
+  OperationalBrandConnectorResolver,
+  connectorText,
   productCheckFixture,
   benchmarkProductFixture,
 } from '@compra-car/core/agents';
@@ -44,8 +46,11 @@ export function parseAgentArguments(args: readonly string[]) {
   const provider = options.get('--provider');
   if (!brand || (provider !== 'fixture' && provider !== 'openai'))
     throw new Error('INVALID_AGENT_ARGUMENTS');
-  const scope = officialBrandSource({ country: 'BR', brand });
-  return { scope: { country: scope.country, brand: scope.brand }, provider, persistFindings };
+  return {
+    scope: { country: 'BR' as const, brand: connectorText(brand, 100) },
+    provider,
+    persistFindings,
+  };
 }
 
 export async function runNewProductCheckCli(
@@ -81,6 +86,23 @@ export async function runNewProductCheckCli(
     }
     const secrets = [env.OPENAI_API_KEY ?? '', env.SUPABASE_SERVER_KEY ?? ''];
     const reports = new LocalProductReportWriter(repositoryRoot, secrets);
+    const connectorResolver =
+      provider === 'fixture'
+        ? new BuiltInBrandConnectorResolver()
+        : await (async () => {
+            const { createLegacySupabaseClient } = await import('@compra-car/adapter-supabase');
+            const { BrandConnectorSupabaseAdapter } =
+              await import('@compra-car/adapter-supabase/brand-connectors');
+            return new OperationalBrandConnectorResolver(
+              new BrandConnectorSupabaseAdapter(
+                createLegacySupabaseClient({
+                  url: env.SUPABASE_URL!,
+                  serverKey: env.SUPABASE_SERVER_KEY!,
+                }),
+              ),
+              new BuiltInBrandConnectorResolver(),
+            );
+          })();
     const research =
       provider === 'fixture'
         ? new FixtureProductResearchProvider()
@@ -111,7 +133,12 @@ export async function runNewProductCheckCli(
     const runId = randomUUID();
     log('Run: ' + runId);
     stage = 'research/catalog/matching/report';
-    const result = await new NewProductCheckAgent({ research, catalog, reports }).run(scope, runId);
+    const result = await new NewProductCheckAgent({
+      research,
+      catalog,
+      reports,
+      connectorResolver,
+    }).run(scope, runId);
     log(
       'Provider: ' +
         provider +
@@ -173,7 +200,9 @@ export async function runNewProductCheckCli(
     log(
       error instanceof ProductResearchProviderError
         ? error.code
-        : 'NEW_PRODUCT_CHECK_FAILED (' + stage + ')',
+        : error instanceof Error && error.message === 'BRAND_CONNECTOR_REQUIRED'
+          ? 'BRAND_CONNECTOR_REQUIRED'
+          : 'NEW_PRODUCT_CHECK_FAILED (' + stage + ')',
     );
     return 1;
   }

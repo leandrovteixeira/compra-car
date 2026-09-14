@@ -1,5 +1,21 @@
 # Agent Platform Architecture — referência canônica
 
+## Sprint 19C — conectores operacionais
+
+O Brand Connector acrescenta targets por marca/mercado e configuração versionada
+ACTIVE/SUPERSEDED. Propostas permanecem em findings até review e **ativação explícita**;
+Accept continua sem executar proposta. A ativação usa transação com bloqueio por target,
+revalidação da última review e índice parcial de ACTIVE único. Um advisory lock por finding,
+compartilhado com um trigger INSERT de reviews, evita corrida entre decisão e ativação.
+Reviews continuam append-only; o trigger apenas coordena concorrência.
+
+O resolver MMV lê ACTIVE por port, com fallback controlado ao registry 19A. Nenhum
+branch de marca é adicionado ao matcher. Registry e sync explícito não escrevem produtos,
+specs ou preços. Health check periódico é capability; scheduler apenas na Sprint 23.
+UI 19C adiciona Marcas e proposta estruturada, mantendo o redesign geral para Sprint 24.
+
+Especificação, segurança, bootstrap e operação: [Brand Connector 19C](BRAND_CONNECTOR_AGENT_19C.md).
+
 ## Estado atual — Sprint 19B
 
 A reconciliação MMV e a plataforma operacional **Runs + Findings + Evidence +

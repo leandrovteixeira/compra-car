@@ -29,3 +29,8 @@ export {
 export * from './jeep-captured-mmv-fixture';
 
 export * from './mmv-platform-mapper';
+export * from './brand-connector-types';
+export * from './brand-connector-validation';
+export * from './brand-connector-agent';
+export * from './brand-connector-fixture';
+export * from './brand-connector-resolver';

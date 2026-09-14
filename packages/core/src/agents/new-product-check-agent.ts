@@ -1,4 +1,5 @@
 import { projectCatalogMmvIdentities } from './catalog-mmv-identity';
+import type { BrandConnectorResolver } from './brand-connector-resolver';
 import { vehicleTextComparisonKey as key } from '../admin/vehicle-text-normalization';
 import { officialBrandSource, officialEvidenceUrl } from './official-product-sources';
 import { ProductCandidateMatcher, isResolvedOfficialVariant } from './product-candidate-matcher';
@@ -25,15 +26,18 @@ export class NewProductCheckAgent {
       readonly reports: ReportWriter;
       readonly matcher?: ProductCandidateMatcher;
       readonly now?: () => Date;
+      readonly connectorResolver?: BrandConnectorResolver;
     },
   ) {}
   async run(scope: AgentMarketScope, runId: string): Promise<NewProductCheckResult> {
     if (!/^[a-zA-Z0-9-]{1,100}$/u.test(runId)) throw new Error('INVALID_RUN_ID');
-    const source = officialBrandSource(scope);
+    const source = this.dependencies.connectorResolver
+      ? await this.dependencies.connectorResolver.resolve(scope)
+      : officialBrandSource(scope);
     const normalizedScope: AgentMarketScope = { country: source.country, brand: source.brand };
     const now = this.dependencies.now ?? (() => new Date());
     const startedAt = now().toISOString();
-    const research = await this.dependencies.research.researchProducts(normalizedScope);
+    const research = await this.dependencies.research.researchProducts(normalizedScope, source);
     if (!Array.isArray(research.candidates) || research.candidates.length > 1000)
       throw new Error('INVALID_RESEARCH_RESULT');
     const catalog = (await this.dependencies.catalog.readProducts(normalizedScope)).filter(

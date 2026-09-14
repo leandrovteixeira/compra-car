@@ -9,6 +9,7 @@ import {
   type AgentMarketScope,
   type OfficialProductCandidate,
   type ProductResearchProvider,
+  type OfficialBrandSource,
 } from '@compra-car/core/agents';
 import { productResearchSchema } from './product-research-schema';
 
@@ -50,8 +51,8 @@ export class OpenAIProductResearchProvider implements ProductResearchProvider {
       : new OpenAI({ apiKey: options.apiKey, timeout: 120_000, maxRetries: 0, logLevel: 'off' });
     this.transport = options.transport ?? ((request) => client!.responses.create(request));
   }
-  async researchProducts(scope: AgentMarketScope) {
-    const source = officialBrandSource(scope);
+  async researchProducts(scope: AgentMarketScope, resolvedSource?: OfficialBrandSource) {
+    const source = resolvedSource ?? officialBrandSource(scope);
     let response: Response;
     try {
       response = await this.transport({

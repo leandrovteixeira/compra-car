@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { safeConnectorUrl } from '@compra-car/core/agents';
+import { BrandConnectorView } from './brand-connector-view';
 import {
   safeAgentSourceUrl,
   type AgentFindingListItem,
@@ -238,8 +240,27 @@ export function AgentFindingDetailView({ detail }: { readonly detail: AgentFindi
         Run {run.agentType} · {agentDate(run.startedAt)}
       </Link>
       <AgentDetails title="Identidade observada" value={finding.subject} />
-      <AgentDetails title="Ação proposta (informativa)" value={finding.proposal} />
-      <AgentDetails title="Avisos e detalhes" value={finding.payload} />
+      {['NEW_BRAND_CONNECTOR', 'CONNECTOR_DRIFT'].includes(finding.findingType) ? (
+        <>
+          <BrandConnectorView value={finding.proposal} />
+          <section>
+            <h2 className="text-lg font-semibold">Avisos</h2>
+            <ul>
+              {Array.isArray(finding.payload.warnings)
+                ? finding.payload.warnings
+                    .filter((w) => typeof w === 'string')
+                    .map((w, i) => <li key={i}>{String(w)}</li>)
+                : null}
+            </ul>
+            <p>Accept registra a revisão. Ativar connector é uma ação separada.</p>
+          </section>
+        </>
+      ) : (
+        <>
+          <AgentDetails title="Ação proposta (informativa)" value={finding.proposal} />
+          <AgentDetails title="Avisos e detalhes" value={finding.payload} />
+        </>
+      )}
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Evidências</h2>
         {!evidence.length ? (
@@ -247,7 +268,10 @@ export function AgentFindingDetailView({ detail }: { readonly detail: AgentFindi
         ) : (
           <ul className="divide-y divide-border">
             {evidence.map((e) => {
-              const url = safeAgentSourceUrl(e.sourceUrl);
+              const url =
+                run.agentType === 'BRAND_CONNECTOR'
+                  ? safeConnectorUrl(e.sourceUrl)
+                  : safeAgentSourceUrl(e.sourceUrl);
               return (
                 <li key={e.id} className="space-y-2 py-3">
                   <p className="text-xs text-text-muted">

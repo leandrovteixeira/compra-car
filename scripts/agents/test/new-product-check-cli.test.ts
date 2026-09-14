@@ -235,14 +235,13 @@ describe('CLI and local reports', () => {
     ['--brand', 'Toyota', '--provider', 'invalid'],
     ['--brand', 'Toyota', '--provider', 'fixture', '--write', 'yes'],
     ['--brand', 'Toyota', '--brand', 'Toyota', '--provider', 'fixture'],
-    ['--brand', 'Other', '--provider', 'fixture'],
   ])('rejects invalid arguments %j', (...args) =>
     expect(() => parseAgentArguments(args)).toThrow(),
   );
   it('supports pnpm argument separator', () =>
     expect(
       parseAgentArguments(['--', '--brand', ' toyota ', '--provider', 'fixture']),
-    ).toMatchObject({ provider: 'fixture', scope: { brand: 'Toyota' } }));
+    ).toMatchObject({ provider: 'fixture', scope: { brand: 'toyota' } }));
   it('executes fixture end to end, writes JSON and Markdown with separate ambiguity section, never accesses network', async () => {
     vi.stubGlobal('fetch', () => {
       throw new Error('Network forbidden');

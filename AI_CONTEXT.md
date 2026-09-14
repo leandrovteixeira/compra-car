@@ -1,5 +1,20 @@
 # Contexto para agentes de IA
 
+## Sprint 19C — Brand Connector (2026-09-14, local)
+
+Registry operacional, sync explícito de marcas do catálogo, discovery/health-check,
+propostas revisáveis e ativação explícita versionada em `/admin/agents/brands`.
+Accept continua apenas review. Novo target manual não cria Product. Resolver MMV
+prefere ACTIVE persistido com fallback controlado Toyota/Jeep; matcher preservado.
+Migration local `20260914162551_sprint_19c_brand_connectors.sql`, com RLS,
+ativação transacional e bootstrap equivalente aos built-ins. Validada em PostgreSQL
+15 descartável com dados sintéticos; não aplicada remotamente. Zero OpenAI,
+writes remotos/canônicos/specs/preços, scheduler ou mudanças em Legacy.
+Health check é capability manual/programática; scheduling somente na Sprint 23.
+Detalhes e limites: [Brand Connector 19C](docs/agents/BRAND_CONNECTOR_AGENT_19C.md).
+Gates e comparação com baseline: [validação 19C](docs/agents/SPRINT_19C_VALIDATION.md).
+
+
 ## Sprint 19B.1 — versão alinhada ao Staging
 
 O operador confirmou a aplicação bem-sucedida no Compra Car Staging, registrada

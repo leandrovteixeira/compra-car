@@ -1,5 +1,16 @@
 # Changelog
 
+## Sprint 19C — Brand Connector Agent (2026-09-14)
+
+- Registry por marca/mercado, criação manual, sync paginado explícito e pausa de monitoramento.
+- Discovery e health-check com provider próprio, fixtures sintéticas, reports JSON/Markdown e persistência opt-in na Agent Platform.
+- Propostas com validação de domínio/URL e fingerprint determinístico; ACCEPT separado da ativação admin transacional, idempotente e versionada.
+- Migration local com RLS, grants mínimos, um ACTIVE por target e bootstrap Toyota/Jeep; nenhuma aplicação remota.
+- Resolver operacional para MMV com fallback built-in, parser independente do registry e matcher preservado.
+- Admin Marcas, histórico de connectors e visualização estruturada de propostas/evidências.
+- Testes locais com mocks e PostgreSQL descartável; limitações dos gates globais registradas na validação 19C. Sem OpenAI real, alterações canônicas, scheduler ou Sprints 20–24.
+
+
 ## Sprint 19B.1 — versão alinhada ao Staging
 
 O operador confirmou a aplicação bem-sucedida no Compra Car Staging, registrada
