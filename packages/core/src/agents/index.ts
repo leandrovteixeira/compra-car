@@ -34,3 +34,15 @@ export * from './brand-connector-validation';
 export * from './brand-connector-agent';
 export * from './brand-connector-fixture';
 export * from './brand-connector-resolver';
+
+export * from './model-year-types';
+
+export * from './model-year-discovery-reader';
+
+export * from './model-year-agent';
+
+export * from './model-year-fixture';
+
+export * from './model-year-evidence';
+
+export * from './model-year-structured';

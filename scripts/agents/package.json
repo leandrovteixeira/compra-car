@@ -12,7 +12,8 @@
   "dependencies": {
     "@compra-car/core": "workspace:*",
     "@compra-car/adapter-openai": "workspace:*",
-    "@compra-car/adapter-supabase": "workspace:*"
+    "@compra-car/adapter-supabase": "workspace:*",
+    "@compra-car/adapter-webmotors": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "24.13.3",

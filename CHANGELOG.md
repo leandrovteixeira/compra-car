@@ -1,5 +1,27 @@
 # Changelog
 
+## Checkpoint consolidado — Sprint 20 / 20.1 / 20.2
+
+**SPRINT 20.2 IMPLEMENTED · REAL WEBMOTORS PARSER GATE VALIDATED · END-TO-END STRUCTURED CLI SMOKE PENDING.**
+
+[Estado final, validações históricas, exclusões e próximo gate](docs/agents/SPRINT_20_CHECKPOINT.md). O smoke completo structured/monitor/persist-findings ainda não foi executado. Seções com estado local/sem commit abaixo registram o histórico anterior a este checkpoint.
+
+## Gate Webmotors real — Sprint 20.2
+
+Dois GETs públicos pelo transport existente retornaram 200. Corrigida leitura do título dos cards de anos; respostas reais geram 2027–2021 e quatro matches Nivus MY 2027 com FIPE. Sem OpenAI/Supabase, alteração arquitetural ou banco. Ver [gate real](docs/agents/SPRINT_20_2_WEBMOTORS_REAL_GATE.md).
+
+## Sprint 20.2 — Structured MY & FIPE bridge (local)
+
+Descoberta por modelo via Webmotors, sem LLM no parsing. MONITOR padrão; BASELINE limitado; fallback oficial somente para alvos não resolvidos, dealers com opt-in. Pesquisa ampla de publicações removida. FIPE codes são candidatos em JSON, sem escrita canônica. Nenhuma migration, chamada remota, stage/commit/push. Gate posterior confirmou as duas páginas Nivus reais e adicionou fragmentos mínimos de regressão; a implementação inicial usou fixtures sintéticas. Ver [relatório 20.2](docs/agents/SPRINT_20_2_STRUCTURED_MY_FIPE_BRIDGE.md).
+
+## Sprint 20 — Model Year Agent (local)
+
+- Pesquisa MY explícito para MMV_MATCHED resolvido e connector ACTIVE.
+- Reconciliação positiva: MODEL_YEAR_MATCHED informativo e NEW_MODEL_YEAR revisável.
+- Provider dedicado, transporte background compartilhado, CLI e fixtures VW/Toyota/Jeep.
+- Migration forward-only de vocabulário operacional; sem materialização ou operações remotas.
+
+
 ## Sprint 19C — fechamento real end-to-end
 
 - **COMPLETE / REAL CROSS-BRAND ONBOARDING VALIDATED**: operador confirmou discovery,

@@ -22,7 +22,8 @@
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",
     "agent:new-products:dry-run": "pnpm --filter @compra-car/agents dry-run",
-    "agent:brand-connector:dry-run": "pnpm --filter @compra-car/agents exec tsx brand-connector-cli.ts"
+    "agent:brand-connector:dry-run": "pnpm --filter @compra-car/agents exec tsx brand-connector-cli.ts",
+    "agent:model-year:dry-run": "pnpm --filter @compra-car/agents exec tsx model-year-cli.ts"
   },
   "devDependencies": {
     "eslint": "9.39.5",

@@ -1,247 +1,153 @@
 # Agent Platform Architecture — referência canônica
 
-## Sprint 19C — conectores operacionais
+## Checkpoint consolidado — Sprint 20 / 20.1 / 20.2
 
-O Brand Connector acrescenta targets por marca/mercado e configuração versionada
-ACTIVE/SUPERSEDED. Propostas permanecem em findings até review e **ativação explícita**;
-Accept continua sem executar proposta. A ativação usa transação com bloqueio por target,
-revalidação da última review e índice parcial de ACTIVE único. Um advisory lock por finding,
-compartilhado com um trigger INSERT de reviews, evita corrida entre decisão e ativação.
-Reviews continuam append-only; o trigger apenas coordena concorrência.
+**SPRINT 20.2 IMPLEMENTED · REAL WEBMOTORS PARSER GATE VALIDATED · END-TO-END STRUCTURED CLI SMOKE PENDING.**
 
-O resolver MMV lê ACTIVE por port, com fallback controlado ao registry 19A. Nenhum
-branch de marca é adicionado ao matcher. Registry e sync explícito não escrevem produtos,
-specs ou preços. Health check periódico é capability; scheduler apenas na Sprint 23.
-UI 19C adiciona Marcas e proposta estruturada, mantendo o redesign geral para Sprint 24.
+[Estado final, validações históricas, exclusões e próximo gate](SPRINT_20_CHECKPOINT.md). O smoke completo structured/monitor/persist-findings ainda não foi executado. Seções com estado local/sem commit abaixo registram o histórico anterior a este checkpoint.
 
-Especificação, segurança, bootstrap e operação: [Brand Connector 19C](BRAND_CONNECTOR_AGENT_19C.md).
+## Roadmap atual
 
-## Estado atual — Sprint 19B
+| Sprint | Componente | Estado |
+| --- | --- | --- |
+| 19A | MMV Discovery | Completo |
+| 19B | Agent Platform | Completo |
+| 19C | Brand Connector | Completo; cross-brand VW validado |
+| 20 | Model Year Agent | Checkpoint atual; parser real validado, smoke CLI pendente |
+| 21 | Spec Intelligence | Futuro |
+| 22 | Price Intelligence | Futuro |
+| 23 | FIPE Search Agent | Futuro; não implementado |
+| 24 | Orchestration / Scheduler | Futuro |
+| 25 | Agent Operator UX | Futuro |
 
-A reconciliação MMV e a plataforma operacional **Runs + Findings + Evidence +
-Human Review** estão implementadas no código. O operador confirmou a aplicação
-da migration 19B no Staging; a versão local foi alinhada na 19B.1. Os outros
-quatro agentes e o scheduler permanecem futuros.
-Decisões de review não executam ações canônicas. Detalhes e validação:
-[AGENT_PLATFORM_19B.md](AGENT_PLATFORM_19B.md).
+## Identidade e catálogo
 
-`New Product Check Agent` é o nome histórico do código/CLI. Sua responsabilidade
-atual corresponde a **MMV Discovery Agent**. Não se renomeiam diretórios nem
-comandos nesta Sprint.
+MMV = Brand + Model + Version. O catálogo físico atual conserva ocorrências
+MMV + Production Year + Model Year. CatalogMmvIdentity é uma projeção virtual,
+agrupada por labels canônicos normalizados; anos, Active/Public e número de linhas
+não determinam identidade. Labels diferentes não se fundem por similaridade.
+Não são criadas tabelas de MMV, versões canônicas ou aliases nesta fase.
 
-### Identidade e ocorrência
+Official naming is authoritative. Legacy Compra-Car naming is transitional.
+A pesquisa preserva o nome oficial, enquanto a reconciliação preserva a identidade
+do catálogo. Não há renomeação automática. O nome histórico do CLI New Product Check
+corresponde a MMV Discovery. [Contrato MMV](NEW_PRODUCT_CHECK_AGENT.md).
 
-```text
-MMV = Brand + Model + Version identity
-Product occurrence = MMV + Production Year + Model Year
-```
+## Agentes especializados
 
-No catálogo atual, a separação é virtual:
-`CatalogMmvIdentity` agrupa linhas por marca, modelo e versão canônica
-normalizados. Cada identidade contém componentes históricos e todas as
-`productRows`, com ids, PY/MY, isActive e isPublic. Nem ano nem visibilidade
-participam da chave. Rótulos canônicos diferentes não são fundidos por
-similaridade.
-
-A tabela física atual continua intacta. Não se criam mmv, vehicle_variants,
-canonical_variants ou aliases. Uma entidade física futura dependerá de revisão
-própria; não é pré-requisito para a projeção.
-
-Exemplo: Commander Longitude 1.3 TGDI AT nas linhas 960 (2025/2025),
-996 (2025/2026), 1064 (2026/2026) e 1128 (2026/2027) é **uma MMV**.
-O candidato oficial COMMANDER LONGITUDE T270 7L reconcilia essa MMV e expõe
-as quatro ocorrências. Nenhum ano é escolhido como a identidade correta.
-
-## Cinco agentes especializados
-
-| Tipo futuro | Responsabilidade | Saída proposta | Fronteira |
+| Tipo | Pergunta / responsabilidade | Findings | Fronteira |
 | --- | --- | --- | --- |
-| BRAND_CONNECTOR | Propor configuração de fontes oficiais por marca/mercado | NEW_BRAND_CONNECTOR + connector, fixture e benchmark | Não altera catálogo |
-| MMV_DISCOVERY | Descobrir modelos/versões oficiais e reconciliar MMVs | NEW_MODEL, NEW_VERSION, AMBIGUOUS_MMV | Não decide necessidade de PY/MY |
-| PRODUCT_YEAR | Comparar PY/MY oficiais de uma MMV aprovada com ocorrências existentes | NEW_PRODUCT_YEAR | Não redefine versão/MMV |
-| SPEC_INTELLIGENCE | Extrair specs e mapear ao master existente | UNMATCHED_SPEC, SPEC_CHANGE | Não cria spec master arbitrariamente |
-| PRICE_INTELLIGENCE | Propor preço público com proveniência e referência temporal | NEW_PRICE, PRICE_CHANGE | Não mistura fontes oficiais/externas nem publica automaticamente |
+| BRAND_CONNECTOR | Onde e como pesquisar fontes oficiais da marca/mercado? | NEW_BRAND_CONNECTOR, CONNECTOR_HEALTHY, CONNECTOR_DRIFT | Não altera catálogo |
+| MMV_DISCOVERY | Quais marcas, modelos e versões existem oficialmente e no catálogo? | MMV_MATCHED, NEW_MODEL, NEW_VERSION, AMBIGUOUS_MMV | Não decide anos |
+| MODEL_YEAR | For this resolved MMV, which official Model Years are observable? | MODEL_YEAR_MATCHED, NEW_MODEL_YEAR | Sem Production Year ou materialização |
+| SPEC_INTELLIGENCE | Quais specs oficiais correspondem ao master existente? | UNMATCHED_SPEC, SPEC_CHANGE | Não cria spec master arbitrariamente |
+| PRICE_INTELLIGENCE | Qual preço público é suportado por fonte e referência temporal? | NEW_PRICE, PRICE_CHANGE | Não publica nem altera preço automaticamente |
 
-A plataforma centraliza esses cinco AgentTypes e dez finding types, incluindo
-MMV_MATCHED informativo. O MMV atual ainda emite AMBIGUOUS, mapeado para
-AMBIGUOUS_MMV na persistência. POSSIBLE_YEAR_CHANGE permanece por compatibilidade
-histórica e não é emitido. Nenhum agente futuro foi implementado.
+FIPE Search Agent está reservado à Sprint 23. Ainda não há contrato operacional
+implementado ou tipo central de FIPE Search nesta Sprint; códigos FIPE são apenas candidatos observados pelo Model Year Agent.
 
-### 1. Brand Connector Agent — futuro
+### Brand Connector — 19C
 
-Lê marcas existentes, identifica as que não possuem connector e propõe fontes
-oficiais, allowedDomains, source types, search hints e terminology hints.
-Gera fixture e executa benchmark antes de propor connector para review.
+Targets de marca/mercado e configurações versionadas ACTIVE/SUPERSEDED. Propostas
+ficam em findings até review e ativação explícita; Accept nunca ativa sozinho.
+Ativação usa transação, bloqueio por target, advisory lock por finding compartilhado
+com INSERT de reviews, revalidação da última review e índice de ACTIVE único.
+Reviews são append-only. Sync explícito não modifica produtos, specs ou preços.
 
-Estrutura declarativa proposta:
+OperationalBrandConnectorResolver obtém ACTIVE por port; compatibilidade MMV mantém
+fallback controlado Toyota/Jeep. O Model Year CLI real exige ACTIVE. Domínios, hosts,
+subdomínios autorizados, fontes e hints são declarativos; marcas novas não adicionam
+branches ao matcher. Termos comerciais não autorizam equivalências técnicas implícitas.
+[Brand Connector 19C](BRAND_CONNECTOR_AGENT_19C.md).
 
-```typescript
-interface BrandConnector {
-  brand: string;
-  market: string;
-  allowedDomains: readonly string[];
-  sourceTypes: readonly string[];
-  searchHints: readonly string[];
-  terminologyHints: readonly string[];
-}
-```
+### MMV Discovery — 19A
 
-Políticas adicionais, como hosts exatos e subdomínios autorizados, seguem
-declarativas. Um domínio externo do mesmo grupo automotivo não se torna oficial
-implicitamente. Domínios novos precisam de evidência e review.
+Discovery de modelos, resolução de variantes, validação de evidências, projeção do
+catálogo e matching determinístico. Restrições estruturais incluem trim, propulsão,
+cilindrada na precisão comum, transmissão e tração. Nomes comerciais são preservados;
+ausência de dados não prova equivalência. NEW_MODEL é agregado por modelo;
+NEW_VERSION é por variante. Ambiguidade é sobre identidades, não sobre product rows.
+PY/MY históricos podem aparecer no report MMV, mas não classificam nem desempatam MMV.
+POSSIBLE_YEAR_CHANGE é compatibilidade histórica e não é emitido.
 
-Adicionar marca deve exigir connector + fixture + benchmark, sem novo matcher.
-Terminology hints ajudam pesquisa/decomposição, não autorizam equivalências
-enciclopédicas como T270 = 1.3 ou Hurricane = 2.0. Toyota e Jeep são os únicos
-connectors atuais; a terceira marca será um gate futuro.
+### Model Year Agent — Sprint 20
 
-### 2. MMV Discovery Agent — atual, READ-ONLY
+Recebe catálogo atual, MMV_MATCHED da última run MMV_DISCOVERY COMPLETED da marca/BR
+e connector ACTIVE. Só pesquisa identidade ainda existente e única no catálogo,
+sem última decisão REJECT/DEFER. NEW_MODEL/NEW_VERSION, mesmo ACCEPTed, e
+AMBIGUOUS_MMV não liberam pesquisa automaticamente. Skips são métricas.
 
-Pergunta: **quais Marca + Modelo + Versão existem oficialmente e já existem na base?**
+MY é a dimensão canônica de pesquisa. Production Year permanece dado legado fora
+do contrato, schema, busca, comparação e decisão. knownModelYears é distinct MY.
+ano/modelo 2026/2027 contribui apenas MY 2027. Um ano isolado sem marcador explícito
+não é interpretado como par. URL, data, copyright e lançamento não provam MY.
 
-Executa model discovery, variant resolution, preservação da nomenclatura oficial,
-validação de evidências, projeção do catálogo e reconciliação de MMVs. Produz
-NEW_MODEL agregado por modelo, NEW_VERSION por variante e ambiguidades reais
-de identidade. Não usa número de product rows como número de identidades.
+Na Sprint 20.2, a coleta estruturada agrupa MMVs por marca/modelo. O adapter Webmotors resolve páginas compartilhadas por ano; o core vincula versões deterministicamente. Tiers: STRUCTURED_AUTOMOTIVE_DATA, MANUFACTURER_OFFICIAL e AUTHORIZED_DEALER. Fallback oficial só atende alvos não resolvidos; concessionárias exigem opt-in e prova oficial de autorização. Pesquisa ampla de publicações foi removida por custo e baixa cobertura. Rejeições e limites de orçamento permanecem auditáveis sem virar findings.
 
-Restrições disponíveis: trim, propulsão, cilindrada na precisão comum,
-família de transmissão e tração. Engine labels e nomes comerciais de powertrain
-são observações. Fatos explícitos estruturados podem contribuir, sem traduzir
-nomes oficiais para nomes históricos.
+FIPE code candidates são evidência em JSON, associados à identidade MMV/MY. Futuro fluxo: MMV ↔ FIPE code mapping com proveniência/histórico → MY → mês de referência → valor FIPE. Não pertencem inerentemente a uma linha de produto/PY. A Sprint 23 será responsável por canonicalização e histórico mensal; nenhuma tabela/escrita foi adicionada na 20.2. Detalhes e limites: [Sprint 20.2](SPRINT_20_2_STRUCTURED_MY_FIPE_BRIDGE.md).
 
-PY/MY pode aparecer no candidato e no report. Não altera a existência da MMV,
-não desempata MMVs e não gera conclusão operacional de ano. Múltiplas observações
-de anos são preservadas como pares, sem inventar combinações novas.
+Reconciliação apenas positiva: MODEL_YEAR_MATCHED é informativo, proposal=null;
+NEW_MODEL_YEAR exige review e propõe somente mmvIdentity + modelYear. Múltiplos MYs
+são independentes, deduplicados por MMV + MY. Ausência de evidência explícita gera
+métricas, sem finding/review item. Ausência de MY histórico não é conclusão negativa.
+Accept confirma a observação, sem materializar produto ou preencher Production Year.
+[Model Year Agent 20](MODEL_YEAR_AGENT_20.md).
 
-### 3. Product Year Agent — futuro
+### Spec Intelligence — futuro
 
-Pergunta: **para esta MMV conhecida e aprovada, quais PY/MY oficiais existem?**
+Pesquisa fichas, configuradores e documentos para produto/MMV aprovado e aplicabilidade
+adequada. Mapeia ao master de tipos binary/scale/numeric e unidades existentes,
+com proveniência e conversão auditável. Spec sem correspondência gera UNMATCHED_SPEC;
+mudança relevante pode gerar SPEC_CHANGE. Não presume aplicabilidade a todos os anos
+ou versões, nem cria códigos arbitrários.
 
-Recebe identidade MMV aprovada, evidências e ocorrências associadas. Compara
-pares PY/MY oficiais com product rows existentes e pode propor NEW_PRODUCT_YEAR.
-É este agente que poderá indicar a necessidade de uma nova linha física.
+### Price Intelligence — futuro
 
-Não infere ano de URL, publicação, copyright ou data de execução. Ausência ou
-contradição de PY/MY exige revisão. A proposta de criação passa por review e
-revalidação; o agente não cadastra uma row por conta própria.
+Prioriza montadora, configurador, lista oficial e fonte estruturada explicitamente
+aprovada. Proposta preserva produto/MMV, valor/moeda, referência temporal, fonte,
+confidence e capturedAt. Captura não substitui data de referência; fontes oficiais
+e externas não se misturam silenciosamente. Não sobrescreve histórico ou preço canônico.
 
-### 4. Spec Intelligence Agent — futuro
+## Plataforma compartilhada e review
 
-Entrada: Product/MMV aprovado, com aplicabilidade de ano quando necessária.
-Pesquisa fichas técnicas, configuradores e documentos oficiais.
+Agent → Finding → Evidence → Review. Ação canônica, quando existir, será separada,
+concreta e revalidada contra catálogo atual. Nenhum agente aprova a própria alteração.
 
-Extrai e normaliza conforme o master existente: tipos binary, scale e numeric,
-spec codes e unidades já definidos. Mantém evidência, unidade de origem e
-conversão auditável quando existir regra aprovada. Spec sem correspondência
-produz UNMATCHED_SPEC → review. Mudança relevante pode gerar SPEC_CHANGE.
+agent_runs guarda execução, escopo, estado, configuração e métricas; agent_findings
+guarda sujeito, proposta, payload e fingerprint; agent_evidence preserva proveniência;
+agent_reviews registra decisões humanas append-only. COMPLETED congela observações
+na aplicação. Persistência usa opt-in --persist-findings e mantém UUID do report.
+Replay equivalente é idempotente; conteúdo divergente é conflito. Accept não executa
+proposal nem altera catálogo. [Plataforma 19B](AGENT_PLATFORM_19B.md).
 
-Não cria códigos canônicos arbitrários e não presume que uma ficha se aplica
-a todos os anos/versões. Mapeamento de uma spec e aprovação da sua aplicação
-são decisões distintas.
+A migration 20 amplia somente CHECK de agent_type. PRODUCT_YEAR continua aceito no
+banco para histórico; código novo emite MODEL_YEAR. finding_type já aceita texto não
+vazio. RLS, grants e isolamento service-role permanecem; browser não ganha policies.
+Não se presume ausência de registros legados sem consulta autorizada.
 
-### 5. Price Intelligence Agent — futuro
+## Fronteiras e limitações
 
-Pesquisa preço público atual com prioridade conceitual:
+Core contém contratos, projeções e regras determinísticas. adapter-openai pesquisa;
+adapter-supabase isola acesso a dados; scripts/agents faz composição operacional.
+UI consome contratos, sem nomes de tabelas legadas. Capabilities de leitura e
+persistRunBundle não autorizam operações canônicas. Parser e matcher MMV são preservados.
 
-1. montadora oficial;
-2. configurador oficial;
-3. lista oficial de preços;
-4. fonte automotiva estruturada explicitamente aprovada.
+Leituras de catálogo/reviews não são snapshot transacional. Persistência de bundle
+pressupõe um writer por run; futura orquestração precisará transação/lease para
+concorrência. Identidades e fingerprints dependem de normalização versionada.
+Evidência textual não substitui validação independente de conteúdo de páginas.
 
-Proposta contém product/MMV, amount, moeda/unidade aplicável, reference date,
-source, source type, confidence e capturedAt. Preço observado e data de captura
-não substituem a data de referência. Oficial e externo precisam de proveniência
-distinta; não há mistura silenciosa.
+## Orquestração e evolução — futuras
 
-Produz NEW_PRICE ou PRICE_CHANGE para review. Não sobrescreve histórico nem
-altera preço canônico sem workflow aprovado. Regras comerciais e monetárias
-serão especificadas na Sprint do agente, não implementadas neste blueprint.
+Dependência conceitual: Brand Connector ACTIVE → MMV resolvida → observação MY →
+Specs → Preços. Cada etapa pode exigir review e bloquear downstream; aceitar uma
+etapa não autoriza alterações canônicas posteriores. Scheduler, retries entre agentes,
+leases, idempotência distribuída e UX completa pertencem ao roadmap futuro.
 
-## Orchestrator / Scheduler — infraestrutura futura
+Production Year pode tornar-se obsoleto no modelo canônico. Direção a avaliar:
+MMV → MY → revisão de configuração válida a partir de data X, permitindo mudanças
+de specs dentro do mesmo MY. Nenhum schema dessa direção é criado na Sprint 20.
 
-Orquestração não é um sexto agente especialista.
+## Roadmap de agentes
 
-```mermaid
-flowchart TD
-  B[Brand Connector] --> R1[Review do connector]
-  R1 --> M[MMV Discovery]
-  M --> R2[Review da MMV]
-  R2 --> Y[Product Year]
-  Y --> R3[Review de ocorrência]
-  R3 --> S[Spec Intelligence]
-  S --> R4[Review de specs]
-  R4 --> P[Price Intelligence]
-  P --> R5[Review de preço]
-```
-
-Cada etapa pode produzir findings, exigir revisão e interromper a execução
-downstream. Rejeição, evidência insuficiente ou identidade ainda ambígua não
-liberam a etapa seguinte. Essa sequência descreve dependências conceituais;
-agendamento, retries e paralelismo serão especificados depois.
-
-O futuro orchestrator deverá registrar versões de connector/matcher, entradas
-aprovadas e idempotência. Mudança do catálogo após um finding exige revalidar a
-ação proposta. Nenhuma dessas capacidades de execução foi criada na 19A.4.
-
-## Shared platform — Sprint 19B, implementada localmente
-
-A 19B implementa a base operacional compartilhada:
-
-- `agent_runs`: execução, tipo do agente, escopo, estado, configuração/versionamento
-  e métricas;
-- `agent_findings`: proposta, identidade alvo, tipo e fingerprint versionado;
-- `agent_evidence`: proveniência, referência e associação aos fatos/findings;
-- `agent_reviews`: decisão humana, responsável, justificativa e auditoria.
-
-Migration local versionada, contratos/core, adapter dedicado e Admin Review
-estão implementados. RLS não concede acesso ao browser; o guard administrativo
-protege o repository privilegiado no servidor. O operador confirmou a aplicação
-no Staging; versão local 20260913224216.
-O MMV permanece JSON/Markdown local por default; --persist-findings habilita
-somente persistência operacional. COMPLETED congela observações; reviews são
-append-only e Accept não executa proposal.
-
-Tipos centrais: BRAND_CONNECTOR, MMV_DISCOVERY, PRODUCT_YEAR,
-SPEC_INTELLIGENCE, PRICE_INTELLIGENCE. Finding types centrais:
-MMV_MATCHED, NEW_BRAND_CONNECTOR, NEW_MODEL, NEW_VERSION, AMBIGUOUS_MMV, NEW_PRODUCT_YEAR,
-UNMATCHED_SPEC, SPEC_CHANGE, NEW_PRICE, PRICE_CHANGE.
-
-MMV virtual e fingerprint dependem de normalização versionada. A persistência
-guarda subject, candidate, warnings, product rows e proveniência para review,
-sem assumir que uma mudança do matcher preservará automaticamente as chaves.
-
-## Review humano e fronteira de autonomia
-
-```text
-Agent → Finding → Evidence → Review → Canonical Action
-```
-
-**Nenhum agente aprova a própria alteração canônica.** Nas primeiras fases,
-review humano é obrigatório. Aprovar evidência/identidade não equivale a
-autorizar qualquer alteração posterior: a ação deve ser concreta, rastreável e
-revalidada contra o estado atual.
-
-Até a Sprint 23, agentes podem pesquisar, extrair, comparar, propor e gerar
-evidence e persistir findings operacionais mediante opt-in explícito.
-Não podem autonomamente publicar veículo, criar spec master, apagar produto,
-alterar histórico, alterar preço canônico sem workflow aprovado ou modificar
-matcher silenciosamente.
-
-A 19A.4 tem limite mais estrito: somente leitura e reports locais; nenhuma
-ação canônica, migration, run OpenAI ou novo agente especialista.
-
-## Fronteiras de implementação
-
-O core contém projeções, regras determinísticas e contratos. Adapters fazem
-acesso a providers/dados; Supabase permanece isolado em adapter-supabase.
-Aplicação recebe capacidades explícitas de leitura e report, não um cliente
-de banco com poderes canônicos. A integração 19B recebe a capability operacional
-persistRunBundle. UI consome contratos, sem tabelas legadas expostas.
-
-Mudanças de regras precisam de testes de regressão por marca, revisão e
-documentação. O benchmark distingue MMVs de ocorrências e não exige
-artificialmente zero ambiguidades em pesquisas reais.
-
-Implementação atual e limites: [MMV Discovery](NEW_PRODUCT_CHECK_AGENT.md).
-Métricas: [benchmark](CROSS_BRAND_BENCHMARK.md).
-Evidência de execução: [validação](SPRINT_19A_VALIDATION.md).
+19A MMV Discovery ✅ → 19B Agent Platform ✅ → 19C Brand Connector ✅ → **20 Model Year Agent (atual)** → 21 Spec Intelligence → 22 Price Intelligence → 23 FIPE Search Agent → 24 Orchestration / Scheduler → 25 Agent Operator UX. Model Year pode produzir candidatos de código FIPE; FIPE Search Agent possui a canonicalização de identidade e valor.

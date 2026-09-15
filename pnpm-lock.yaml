@@ -144,6 +144,19 @@ importers:
         specifier: 4.1.10
         version: 4.1.10(@types/node@24.13.3)(vite@8.1.5(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.20.6))
 
+  packages/adapter-webmotors:
+    dependencies:
+      '@compra-car/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/node':
+        specifier: 24.13.3
+        version: 24.13.3
+      vitest:
+        specifier: 4.1.10
+        version: 4.1.10(@types/node@24.13.3)(vite@8.1.5(@types/node@24.13.3)(jiti@2.7.0)(tsx@4.20.6))
+
   packages/contracts:
     dependencies:
       '@compra-car/core':
@@ -206,6 +219,9 @@ importers:
       '@compra-car/adapter-supabase':
         specifier: workspace:*
         version: link:../../packages/adapter-supabase
+      '@compra-car/adapter-webmotors':
+        specifier: workspace:*
+        version: link:../../packages/adapter-webmotors
       '@compra-car/core':
         specifier: workspace:*
         version: link:../../packages/core

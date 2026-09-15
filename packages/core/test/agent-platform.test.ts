@@ -94,7 +94,7 @@ describe('Agent Platform domain and persistence', () => {
     expect(AGENT_TYPES).toEqual([
       'BRAND_CONNECTOR',
       'MMV_DISCOVERY',
-      'PRODUCT_YEAR',
+      'MODEL_YEAR',
       'SPEC_INTELLIGENCE',
       'PRICE_INTELLIGENCE',
     ]);

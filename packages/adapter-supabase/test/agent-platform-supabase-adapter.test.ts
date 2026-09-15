@@ -189,3 +189,36 @@ describe('Agent Platform Supabase adapter with real SDK and mocked HTTP', () => 
     await expect(repo.listRuns()).rejects.toThrow('PERSISTENCE_FAILED');
   });
 });
+
+describe('Model Year integration through existing Supabase adapter (offline SDK)', () => {
+  it('loads completed MMV context and persists MY evidence and review without canonical tables', async () => {
+    const { ModelYearAgent, modelYearFixture, PlatformMmvDiscoveryReader } =
+      await import('@compra-car/core/agents');
+    const { repo, tables, requests } = setup(),
+      f = modelYearFixture('VW');
+    await repo.persistRunBundle({ run: f.context.run, findings: f.context.findings });
+    const discovery = new PlatformMmvDiscoveryReader(repo);
+    const { bundle } = await new ModelYearAgent({ ...f, discovery }).run(
+      { brand: 'VW', country: 'BR' },
+      'fixture',
+    );
+    await repo.persistRunBundle(bundle);
+    const novel = bundle.findings.find((f) => f.finding.findingType === 'NEW_MODEL_YEAR')!;
+    await repo.addReview({
+      findingId: novel.finding.id,
+      decision: 'ACCEPT',
+      note: null,
+      reviewedBy: null,
+    });
+    expect((await repo.getFinding(novel.finding.id))?.evidence).toHaveLength(1);
+    expect(tables.agent_runs).toHaveLength(2);
+    expect(
+      requests.every((r) =>
+        ['agent_runs', 'agent_findings', 'agent_evidence', 'agent_reviews'].includes(r.table),
+      ),
+    ).toBe(true);
+    expect(
+      requests.filter((r) => r.method === 'PATCH').every((r) => r.table === 'agent_runs'),
+    ).toBe(true);
+  });
+});

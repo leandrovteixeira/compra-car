@@ -288,3 +288,26 @@ describe('Agents Admin presentation', () => {
     expect(formSource).not.toContain('SUPABASE_SERVER_KEY');
   });
 });
+
+describe('Model Year generic Admin views', () => {
+  it('displays both new types with informational/review distinction', async () => {
+    const { ModelYearAgent, modelYearFixture } = await import('@compra-car/core/agents');
+    const { bundle } = await new ModelYearAgent(modelYearFixture('VW')).run(
+      { brand: 'VW', country: 'BR' },
+      'fixture',
+    );
+    const html = renderToStaticMarkup(
+      <AgentFindingTable
+        items={bundle.findings.map(({ finding }) => ({
+          finding,
+          run: bundle.run,
+          latestReview: null,
+        }))}
+      />,
+    );
+    expect(html).toContain('MODEL_YEAR_MATCHED');
+    expect(html).toContain('NEW_MODEL_YEAR');
+    expect(html).toContain('Informativo');
+    expect(html).toContain('Aberto');
+  });
+});

@@ -8,7 +8,8 @@ Sprint 19A.4, worktree `C:\Dev\compra-car-agent1`, branch
 
 **Official naming is authoritative. Legacy Compra-Car naming is transitional.**
 Rótulos oficiais e canônicos permanecem preservados. O agente não responde
-qual PY/MY precisa ser cadastrado; isso pertence ao futuro Product Year Agent.
+quais MY oficiais estão observáveis; isso pertence ao Model Year Agent (Sprint 20).
+Production Year fica fora da pesquisa desse agente downstream.
 
 Default READ-ONLY: reports locais e zero escrita no banco. A Sprint 19B
 adicionou --persist-findings como opt-in exclusivo de dados operacionais,
@@ -142,7 +143,7 @@ Todos os valores brutos continuam no report.
 
 PY/MY não participa do agrupamento, filtros, desempate, classificação ou
 fingerprint MMV. O agente **não emite POSSIBLE_YEAR_CHANGE**; o enum permanece
-temporariamente para compatibilidade. NEW_PRODUCT_YEAR será do agente futuro.
+temporariamente para compatibilidade. MODEL_YEAR_MATCHED e NEW_MODEL_YEAR pertencem ao Model Year Agent.
 
 Candidatos preservam seus campos PY/MY. Observações repetidas são unidas com
 `yearObservations` contendo pares originais; diferenças apenas de ano não

@@ -2,6 +2,8 @@ import { ProductResearchProviderError } from '@compra-car/adapter-openai';
 
 // Exact allowlist only. Never return a raw message, stack, cause, SDK body or arbitrary .code.
 const SAFE_AGENT_ERROR_CODES = [
+  'MODEL_YEAR_CONNECTOR_SCOPE',
+  'MODEL_YEAR_FIXTURE_NOT_AVAILABLE',
   'INVALID_AGENT_ARGUMENTS',
   'INVALID_CONNECTOR_ARGUMENTS',
   'OPENAI_AGENT_CONFIG_REQUIRED',
@@ -41,7 +43,7 @@ const SAFE_AGENT_ERROR_CODES = [
 ] as const;
 
 export function safeAgentFailure(
-  prefix: 'BRAND_CONNECTOR_FAILED' | 'NEW_PRODUCT_CHECK_FAILED',
+  prefix: 'MODEL_YEAR_FAILED' | 'BRAND_CONNECTOR_FAILED' | 'NEW_PRODUCT_CHECK_FAILED',
   error: unknown,
 ): string {
   const code =
