@@ -1,10 +1,17 @@
 # Sprint 20.2 — Real Webmotors parser gate
 
-## Checkpoint consolidado — Sprint 20 / 20.1 / 20.2
+## Correção da cobertura de targets — Sprint 20.2.1
 
-**SPRINT 20.2 IMPLEMENTED · REAL WEBMOTORS PARSER GATE VALIDATED · END-TO-END STRUCTURED CLI SMOKE PENDING.**
+O gate original abaixo usava `transmission: null` nos targets e, portanto, não validava
+a identidade persistida com “Automática de 6 velocidades”. A regressão offline agora
+usa a mesma fixture de targets MMV Discovery do teste de runtime.
+[Correção e validação 20.2.1](SPRINT_20_2_1_TRANSMISSION_MATCHING.md).
 
-[Estado final, validações históricas, exclusões e próximo gate](SPRINT_20_CHECKPOINT.md). O smoke completo structured/monitor/persist-findings ainda não foi executado. Seções com estado local/sem commit abaixo registram o histórico anterior a este checkpoint.
+## Fechamento final — Sprint 20 / 20.1 / 20.2 / 20.2.1
+
+**SPRINT 20 — MODEL YEAR AGENT: COMPLETE / REAL STRUCTURED END-TO-END VALIDATED.**
+
+[Estado final, smoke real, validações e exclusões](SPRINT_20_CHECKPOINT.md). Smoke real COMPLETED, run `97ebfdad-4882-45fd-ae78-638cfa440ba7`, conforme evidência fornecida pelo operador: oito MMVs com MY, oito MODEL_YEAR_MATCHED, quatro NEW_MODEL_YEAR e zero OpenAI. Seções locais/sem commit abaixo são históricas; Spec Intelligence (21) é o próximo passo.
 
 Gate executado em 2026-09-15T20:12:37.116Z. Resultado: **PASSED após correção mínima do parser de anos**.
 

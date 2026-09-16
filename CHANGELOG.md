@@ -1,10 +1,20 @@
 # Changelog
 
-## Checkpoint consolidado — Sprint 20 / 20.1 / 20.2
+## Sprint 20.2.1 — Structured Transmission Matching Fix e fechamento final
 
-**SPRINT 20.2 IMPLEMENTED · REAL WEBMOTORS PARSER GATE VALIDATED · END-TO-END STRUCTURED CLI SMOKE PENDING.**
+O matcher structured reutiliza `normalizeTransmissionFamily()` para target e label observado.
+Corrige “Automática de 6/8 velocidades” versus “Automático”, preservando comparação
+entre famílias conhecidas e fallback literal para target desconhecido. Fixture compartilhada
+entre runtime e gate real cobre Nivus 4/4, Taos 2/2 e Tera 2/2.
+[Escopo e validação](docs/agents/SPRINT_20_2_1_TRANSMISSION_MATCHING.md).
+Smoke real posterior informado pelo operador: 12 observações aceitas, oito matches de MY
+existentes e quatro novos MY 2027 Nivus com review; zero OpenAI e escrita canônica.
 
-[Estado final, validações históricas, exclusões e próximo gate](docs/agents/SPRINT_20_CHECKPOINT.md). O smoke completo structured/monitor/persist-findings ainda não foi executado. Seções com estado local/sem commit abaixo registram o histórico anterior a este checkpoint.
+## Fechamento final — Sprint 20 / 20.1 / 20.2 / 20.2.1
+
+**SPRINT 20 — MODEL YEAR AGENT: COMPLETE / REAL STRUCTURED END-TO-END VALIDATED.**
+
+[Estado final, smoke real, validações e exclusões](docs/agents/SPRINT_20_CHECKPOINT.md). Smoke real COMPLETED, run `97ebfdad-4882-45fd-ae78-638cfa440ba7`, conforme evidência fornecida pelo operador: oito MMVs com MY, oito MODEL_YEAR_MATCHED, quatro NEW_MODEL_YEAR e zero OpenAI. Seções locais/sem commit abaixo são históricas; Spec Intelligence (21) é o próximo passo.
 
 ## Gate Webmotors real — Sprint 20.2
 

@@ -1,10 +1,21 @@
 # Contexto para agentes de IA
 
-## Checkpoint consolidado — Sprint 20 / 20.1 / 20.2
+## Sprint 20.2.1 — normalização de transmissão structured
 
-**SPRINT 20.2 IMPLEMENTED · REAL WEBMOTORS PARSER GATE VALIDATED · END-TO-END STRUCTURED CLI SMOKE PENDING.**
+Corrigido parser local inferior: target e Webmotors usam `normalizeTransmissionFamily()`.
+A regressão reproduz os campos MMV Discovery informados para o run
+`efabe25f-34c9-4c8f-b419-0ac6090242ed`, incluindo “Automática de 6 velocidades”
+e “Automática de 8 velocidades”. O gate real agora compartilha esses targets com runtime.
+Smoke posterior em Staging concluído conforme relato do operador: 12/14 linhas matched,
+8/8 MMVs cobertos e 12 candidatos FIPE, sem escrita canônica. Validação local: 179 testes
+dirigidos, lint e build passaram; limitações globais permanecem registradas no relatório.
+[Detalhes e limites](docs/agents/SPRINT_20_2_1_TRANSMISSION_MATCHING.md).
 
-[Estado final, validações históricas, exclusões e próximo gate](docs/agents/SPRINT_20_CHECKPOINT.md). O smoke completo structured/monitor/persist-findings ainda não foi executado. Seções com estado local/sem commit abaixo registram o histórico anterior a este checkpoint.
+## Fechamento final — Sprint 20 / 20.1 / 20.2 / 20.2.1
+
+**SPRINT 20 — MODEL YEAR AGENT: COMPLETE / REAL STRUCTURED END-TO-END VALIDATED.**
+
+[Estado final, smoke real, validações e exclusões](docs/agents/SPRINT_20_CHECKPOINT.md). Smoke real COMPLETED, run `97ebfdad-4882-45fd-ae78-638cfa440ba7`, conforme evidência fornecida pelo operador: oito MMVs com MY, oito MODEL_YEAR_MATCHED, quatro NEW_MODEL_YEAR e zero OpenAI. Seções locais/sem commit abaixo são históricas; Spec Intelligence (21) é o próximo passo.
 
 ## Gate Webmotors real — Sprint 20.2
 
@@ -22,7 +33,7 @@ MODEL_YEAR_MATCHED / NEW_MODEL_YEAR. Accept só registra review, sem produto.
 Worktree compra-car-model-year, sem stage/commit/push. Migration
 20260915163527_sprint_20_model_year.sql aplicada anteriormente ao Staging segundo o operador. Ver
 [SPRINT_20_VALIDATION](docs/agents/SPRINT_20_VALIDATION.md).
-Roadmap: 21 Specs, 22 Price, 23 FIPE, 24 Orchestration, 25 Operator UX.
+Roadmap: 19A MMV Discovery ✅ → 19B Agent Platform ✅ → 19C Brand Connector ✅ → 20 Model Year Agent ✅ → **21 Spec Intelligence ← NEXT** → 22 Price Intelligence → 23 FIPE Search Agent → 24 Orchestration / Scheduler → 25 Agent Operator UX.
 
 
 ## Sprint 19C — fechamento real validado

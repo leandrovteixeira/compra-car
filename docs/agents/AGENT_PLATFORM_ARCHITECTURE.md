@@ -1,20 +1,20 @@
 # Agent Platform Architecture — referência canônica
 
-## Checkpoint consolidado — Sprint 20 / 20.1 / 20.2
+## Fechamento final — Sprint 20 / 20.1 / 20.2 / 20.2.1
 
-**SPRINT 20.2 IMPLEMENTED · REAL WEBMOTORS PARSER GATE VALIDATED · END-TO-END STRUCTURED CLI SMOKE PENDING.**
+**SPRINT 20 — MODEL YEAR AGENT: COMPLETE / REAL STRUCTURED END-TO-END VALIDATED.**
 
-[Estado final, validações históricas, exclusões e próximo gate](SPRINT_20_CHECKPOINT.md). O smoke completo structured/monitor/persist-findings ainda não foi executado. Seções com estado local/sem commit abaixo registram o histórico anterior a este checkpoint.
+[Estado final, smoke real, validações e exclusões](SPRINT_20_CHECKPOINT.md). Smoke real COMPLETED, run `97ebfdad-4882-45fd-ae78-638cfa440ba7`, conforme evidência fornecida pelo operador: oito MMVs com MY, oito MODEL_YEAR_MATCHED, quatro NEW_MODEL_YEAR e zero OpenAI. Seções locais/sem commit abaixo são históricas; Spec Intelligence (21) é o próximo passo.
 
 ## Roadmap atual
 
 | Sprint | Componente | Estado |
 | --- | --- | --- |
-| 19A | MMV Discovery | Completo |
-| 19B | Agent Platform | Completo |
-| 19C | Brand Connector | Completo; cross-brand VW validado |
-| 20 | Model Year Agent | Checkpoint atual; parser real validado, smoke CLI pendente |
-| 21 | Spec Intelligence | Futuro |
+| 19A | MMV Discovery | ✅ |
+| 19B | Agent Platform | ✅ |
+| 19C | Brand Connector | ✅ |
+| 20 | Model Year Agent | ✅ COMPLETE / REAL STRUCTURED END-TO-END VALIDATED |
+| 21 | Spec Intelligence | ← NEXT |
 | 22 | Price Intelligence | Futuro |
 | 23 | FIPE Search Agent | Futuro; não implementado |
 | 24 | Orchestration / Scheduler | Futuro |
@@ -150,4 +150,4 @@ de specs dentro do mesmo MY. Nenhum schema dessa direção é criado na Sprint 2
 
 ## Roadmap de agentes
 
-19A MMV Discovery ✅ → 19B Agent Platform ✅ → 19C Brand Connector ✅ → **20 Model Year Agent (atual)** → 21 Spec Intelligence → 22 Price Intelligence → 23 FIPE Search Agent → 24 Orchestration / Scheduler → 25 Agent Operator UX. Model Year pode produzir candidatos de código FIPE; FIPE Search Agent possui a canonicalização de identidade e valor.
+19A MMV Discovery ✅ → 19B Agent Platform ✅ → 19C Brand Connector ✅ → 20 Model Year Agent ✅ → **21 Spec Intelligence ← NEXT** → 22 Price Intelligence → 23 FIPE Search Agent → 24 Orchestration / Scheduler → 25 Agent Operator UX. Model Year pode produzir candidatos de código FIPE; FIPE Search Agent possui a canonicalização de identidade e valor.

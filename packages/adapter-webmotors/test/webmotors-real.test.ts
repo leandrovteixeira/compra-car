@@ -3,7 +3,7 @@ import { createRequire } from 'node:module';
 import { expect, it } from 'vitest';
 import { parseWebmotorsYears, parseWebmotorsRows, type HtmlParser } from '../src';
 import { groupModelYearTargets, matchStructuredRows } from '@compra-car/core/agents';
-import { coverageTarget } from '../../core/test/fixtures/model-year-coverage';
+import { mmvDiscoveryNivusTargets as targets } from '../../core/test/fixtures/model-year-mmv-discovery';
 const require = createRequire(new URL('../../../apps/web/package.json', import.meta.url));
 const parse = (require('next/dist/compiled/node-html-parser') as { parse: HtmlParser }).parse;
 const root = 'https://www.webmotors.com.br/tabela-fipe/carros/volkswagen/nivus';
@@ -15,11 +15,6 @@ const yearHtml = readFileSync(
   new URL('./fixtures/nivus-2027-real-minimal.html', import.meta.url),
   'utf8',
 );
-const targets = ['Comfortline', 'Highline', 'Sense', 'GTS'].map((trim) => {
-  const powertrainLabel = trim === 'GTS' ? '250 TSI' : '200 TSI';
-  const t = coverageTarget('VW', 'Nivus', trim + ' ' + powertrainLabel, trim);
-  return { ...t, structuredIdentity: { ...t.structuredIdentity, powertrainLabel } };
-});
 const group = groupModelYearTargets(targets)[0]!;
 it('extracts real year cards with a separate price subtitle', () =>
   expect(parseWebmotorsYears(rootHtml, root, parse)).toEqual([

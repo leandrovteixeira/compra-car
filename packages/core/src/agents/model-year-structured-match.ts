@@ -1,4 +1,5 @@
 import type { ModelYearResearchTarget, StructuredModelYearRow } from './model-year-types';
+import { normalizeTransmissionFamily } from './product-component-normalization';
 export const myTokens = (text: string) =>
   text
     .normalize('NFKD')
@@ -10,14 +11,6 @@ export const myTokens = (text: string) =>
     .filter(Boolean);
 const contains = (text: string, value: string) =>
   myTokens(value).every((t) => myTokens(text).includes(t));
-const family = (s: string) =>
-  /cvt/iu.test(s)
-    ? 'cvt'
-    : /automatic|automático|at\b|dsg/iu.test(s)
-      ? 'automatic'
-      : /manual|mt\b/iu.test(s)
-        ? 'manual'
-        : null;
 export function structuredVersionMatches(
   row: StructuredModelYearRow,
   target: ModelYearResearchTarget,
@@ -43,8 +36,8 @@ export function structuredVersionMatches(
     Number(displacement.replace(',', '.')) !== identity.engineDisplacement
   )
     return false;
-  const observedTransmission = family(row.versionLabel),
-    expectedTransmission = identity.transmission ? family(identity.transmission) : null;
+  const observedTransmission = normalizeTransmissionFamily(row.versionLabel),
+    expectedTransmission = normalizeTransmissionFamily(identity.transmission);
   if (expectedTransmission && observedTransmission && expectedTransmission !== observedTransmission)
     return false;
   if (
