@@ -10,10 +10,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@compra-car/core": "workspace:*",
     "@compra-car/adapter-openai": "workspace:*",
     "@compra-car/adapter-supabase": "workspace:*",
-    "@compra-car/adapter-webmotors": "workspace:*"
+    "@compra-car/adapter-webmotors": "workspace:*",
+    "@compra-car/core": "workspace:*",
+    "pdfjs-dist": "6.3.289"
   },
   "devDependencies": {
     "@types/node": "24.13.3",

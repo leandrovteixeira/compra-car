@@ -60,3 +60,6 @@ pricing-snapshot-tmp/
 
 # TypeScript build cache
 *.tsbuildinfo
+
+# User-provided document intelligence source and independent Golden
+.local-fixtures/

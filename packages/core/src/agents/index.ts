@@ -46,3 +46,26 @@ export * from './model-year-fixture';
 export * from './model-year-evidence';
 
 export * from './model-year-structured';
+
+export * from './spec-source-types';
+export * from './spec-source';
+
+export * from './spec-source-discovery';
+
+export * from './spec-source-evidence';
+
+export * from './spec-source-roles';
+export * from './spec-source-quality';
+export * from './spec-source-identity';
+
+export * from './document-intelligence-types';
+export * from './document-intelligence-schema';
+export * from './document-intelligence-cost';
+export * from './document-intelligence-validator';
+export * from './document-intelligence';
+export * from './spec-source-policy';
+
+export * from './document-intelligence-scope';
+
+export * from './document-intelligence-grounding';
+export * from './document-intelligence-census';

@@ -4,7 +4,7 @@
 
 **SPRINT 20 — MODEL YEAR AGENT: COMPLETE / REAL STRUCTURED END-TO-END VALIDATED.**
 
-[Estado final, smoke real, validações e exclusões](SPRINT_20_CHECKPOINT.md). Smoke real COMPLETED, run `97ebfdad-4882-45fd-ae78-638cfa440ba7`, conforme evidência fornecida pelo operador: oito MMVs com MY, oito MODEL_YEAR_MATCHED, quatro NEW_MODEL_YEAR e zero OpenAI. Seções locais/sem commit abaixo são históricas; Spec Intelligence (21) é o próximo passo.
+[Estado final, smoke real, validações e exclusões](SPRINT_20_CHECKPOINT.md). Smoke real COMPLETED, run `97ebfdad-4882-45fd-ae78-638cfa440ba7`, conforme evidência fornecida pelo operador: oito MMVs com MY, oito MODEL_YEAR_MATCHED, quatro NEW_MODEL_YEAR e zero OpenAI. Seções locais/sem commit abaixo são históricas; Spec Source (21) é a etapa atual.
 
 ## Roadmap atual
 
@@ -14,11 +14,12 @@
 | 19B | Agent Platform | ✅ |
 | 19C | Brand Connector | ✅ |
 | 20 | Model Year Agent | ✅ COMPLETE / REAL STRUCTURED END-TO-END VALIDATED |
-| 21 | Spec Intelligence | ← NEXT |
-| 22 | Price Intelligence | Futuro |
-| 23 | FIPE Search Agent | Futuro; não implementado |
-| 24 | Orchestration / Scheduler | Futuro |
-| 25 | Agent Operator UX | Futuro |
+| 21 | Spec Source | ← CURRENT |
+| 22 | Spec Reconciliation | Futuro |
+| 23 | Price Intelligence | Futuro |
+| 24 | FIPE Search Agent | Futuro; não implementado |
+| 25 | Orchestration / Scheduler | Futuro |
+| 26 | Agent Operator UX | Futuro |
 
 ## Identidade e catálogo
 
@@ -40,10 +41,11 @@ corresponde a MMV Discovery. [Contrato MMV](NEW_PRODUCT_CHECK_AGENT.md).
 | BRAND_CONNECTOR | Onde e como pesquisar fontes oficiais da marca/mercado? | NEW_BRAND_CONNECTOR, CONNECTOR_HEALTHY, CONNECTOR_DRIFT | Não altera catálogo |
 | MMV_DISCOVERY | Quais marcas, modelos e versões existem oficialmente e no catálogo? | MMV_MATCHED, NEW_MODEL, NEW_VERSION, AMBIGUOUS_MMV | Não decide anos |
 | MODEL_YEAR | For this resolved MMV, which official Model Years are observable? | MODEL_YEAR_MATCHED, NEW_MODEL_YEAR | Sem Production Year ou materialização |
-| SPEC_INTELLIGENCE | Quais specs oficiais correspondem ao master existente? | UNMATCHED_SPEC, SPEC_CHANGE | Não cria spec master arbitrariamente |
+| Spec Source (21, local) | O que o fabricante afirmou para MMV + MY? | SpecObservation, sem findings persistidos | Sem Spec Master |
+| Spec Reconciliation (22, futura) | O que a observação significa no modelo canônico? | Reconciliação futura | Fora da Sprint 21 |
 | PRICE_INTELLIGENCE | Qual preço público é suportado por fonte e referência temporal? | NEW_PRICE, PRICE_CHANGE | Não publica nem altera preço automaticamente |
 
-FIPE Search Agent está reservado à Sprint 23. Ainda não há contrato operacional
+FIPE Search Agent está reservado à Sprint 24. Ainda não há contrato operacional
 implementado ou tipo central de FIPE Search nesta Sprint; códigos FIPE são apenas candidatos observados pelo Model Year Agent.
 
 ### Brand Connector — 19C
@@ -84,7 +86,7 @@ não é interpretado como par. URL, data, copyright e lançamento não provam MY
 
 Na Sprint 20.2, a coleta estruturada agrupa MMVs por marca/modelo. O adapter Webmotors resolve páginas compartilhadas por ano; o core vincula versões deterministicamente. Tiers: STRUCTURED_AUTOMOTIVE_DATA, MANUFACTURER_OFFICIAL e AUTHORIZED_DEALER. Fallback oficial só atende alvos não resolvidos; concessionárias exigem opt-in e prova oficial de autorização. Pesquisa ampla de publicações foi removida por custo e baixa cobertura. Rejeições e limites de orçamento permanecem auditáveis sem virar findings.
 
-FIPE code candidates são evidência em JSON, associados à identidade MMV/MY. Futuro fluxo: MMV ↔ FIPE code mapping com proveniência/histórico → MY → mês de referência → valor FIPE. Não pertencem inerentemente a uma linha de produto/PY. A Sprint 23 será responsável por canonicalização e histórico mensal; nenhuma tabela/escrita foi adicionada na 20.2. Detalhes e limites: [Sprint 20.2](SPRINT_20_2_STRUCTURED_MY_FIPE_BRIDGE.md).
+FIPE code candidates são evidência em JSON, associados à identidade MMV/MY. Futuro fluxo: MMV ↔ FIPE code mapping com proveniência/histórico → MY → mês de referência → valor FIPE. Não pertencem inerentemente a uma linha de produto/PY. A Sprint 24 será responsável por canonicalização e histórico mensal; nenhuma tabela/escrita foi adicionada na 20.2. Detalhes e limites: [Sprint 20.2](SPRINT_20_2_STRUCTURED_MY_FIPE_BRIDGE.md).
 
 Reconciliação apenas positiva: MODEL_YEAR_MATCHED é informativo, proposal=null;
 NEW_MODEL_YEAR exige review e propõe somente mmvIdentity + modelYear. Múltiplos MYs
@@ -93,13 +95,15 @@ métricas, sem finding/review item. Ausência de MY histórico não é conclusã
 Accept confirma a observação, sem materializar produto ou preencher Production Year.
 [Model Year Agent 20](MODEL_YEAR_AGENT_20.md).
 
-### Spec Intelligence — futuro
+### Spec Source — Sprint 21
 
-Pesquisa fichas, configuradores e documentos para produto/MMV aprovado e aplicabilidade
-adequada. Mapeia ao master de tipos binary/scale/numeric e unidades existentes,
-com proveniência e conversão auditável. Spec sem correspondência gera UNMATCHED_SPEC;
-mudança relevante pode gerar SPEC_CHANGE. Não presume aplicabilidade a todos os anos
-ou versões, nem cria códigos arbitrários.
+Extrai fatos atômicos com evidência e applicability por MMV + MY. Não acessa Spec Master.
+[Contratos, adaptadores e limites](SPEC_SOURCE_AGENT_21.md).
+
+### Spec Reconciliation — Sprint 22, futura
+
+Interpretará as observações no modelo canônico, com revisão e materialização separadas.
+Não implementada neste slice.
 
 ### Price Intelligence — futuro
 
@@ -150,4 +154,9 @@ de specs dentro do mesmo MY. Nenhum schema dessa direção é criado na Sprint 2
 
 ## Roadmap de agentes
 
-19A MMV Discovery ✅ → 19B Agent Platform ✅ → 19C Brand Connector ✅ → 20 Model Year Agent ✅ → **21 Spec Intelligence ← NEXT** → 22 Price Intelligence → 23 FIPE Search Agent → 24 Orchestration / Scheduler → 25 Agent Operator UX. Model Year pode produzir candidatos de código FIPE; FIPE Search Agent possui a canonicalização de identidade e valor.
+19A MMV Discovery ✅ → 19B Agent Platform ✅ → 19C Brand Connector ✅ → 20 Model Year Agent ✅ → **21 Spec Source ← CURRENT** → 22 Spec Reconciliation → 23 Price Intelligence → 24 FIPE Search Agent → 25 Orchestration / Scheduler → 26 Agent Operator UX. Model Year pode produzir candidatos de código FIPE; FIPE Search Agent possui a canonicalização de identidade e valor.
+
+
+## Spec Source — decisão Sprint 21.5
+
+Discovery → política central (OWNER MANUAL excluído) → router → Terra Document Intelligence → validação determinística → Sol opcional (máximo1, capUSD1/documento) → inventário → aplicabilidade → SpecObservations. Sem persistência Agent Platform/Supabase neste slice. Spec Master apenas na Sprint22. Fonte vigente: SPEC_SOURCE_AGENT_21.md.

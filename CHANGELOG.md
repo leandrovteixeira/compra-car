@@ -1,5 +1,24 @@
 # Changelog
 
+## Sprint 21.3 — extração técnica e ranking (gate parcial encerrado)
+
+Ranking explicável, prosa/cards, PDF.js local com páginas técnicas limitadas e aplicabilidade conservadora. [Design e limites](docs/agents/SPEC_SOURCE_TECHNICAL_21_3.md). Smoke único: Manual Nivus MY2026 lido; 8 saídas PDF, 4 fatos úteis, 2 designações truncadas, 1 definição de sigla e 1 provável remissão de índice. Zero acessórios; modelo sem binding; configurador MAX_SOURCES. Gates scoped/build passaram (148 testes agents, 96 provider completo). Parar para revisão; sem nova pesquisa/correção funcional. [Relatório e bloqueios](docs/agents/SPRINT_21_3_REAL_GATE.md). Preservar 21.1/21.2.
+
+## Sprint 21.2 — Official Spec Source Discovery Gate (local)
+
+Descoberta separada da extração, grafo limitado, fixture derivada do índice real VW e busca oficial de no máximo uma chamada. factEvidence/applicabilityEvidence preservam proveniência entre fontes com identidade e MY explícitos. Sem dependências novas ou escrita no banco. [Detalhes](docs/agents/SPEC_SOURCE_DISCOVERY_21_2.md).
+
+
+Gate real parcial: 5 fontes HTTP 200, página Nivus descoberta por 1 busca oficial, zero observações técnicas. Identificada limitação de priorização de acessórios versus literatura; sem correção funcional após o smoke. 119 testes dirigidos, lint e build passaram. [Fechamento](docs/agents/SPRINT_21_2_REAL_GATE.md).
+
+## Sprint 21.1 — Spec Source Agent (local, sem commit)
+
+Contratos MMV + MY, snapshots em memória, HTML/DOM/JSON determinísticos, GET oficial seguro,
+fallback semântico limitado e CLI somente de leitura. Sem Spec Master, escrita no banco ou migration.
+Fixture Jeep testa isolamento T270/1.3 contra motor 1.995 de outra versão.
+[Arquitetura e limitações](docs/agents/SPEC_SOURCE_AGENT_21.md). Gates scoped e build aprovados (93 testes). Smoke único VW: HTTP 200 no índice, zero observações/zero OpenAI; lacuna de descoberta técnica. [Fechamento e limitações](docs/agents/SPRINT_21_1_REAL_SMOKE.md).
+
+
 ## Sprint 20.2.1 — Structured Transmission Matching Fix e fechamento final
 
 O matcher structured reutiliza `normalizeTransmissionFamily()` para target e label observado.
@@ -2123,3 +2142,25 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 # Unreleased
 
 - Adiciona o núcleo determinístico e somente leitura do dry-run da matriz de veículos/specs, com transpose por código, parsing conservador, matching normalizado, relatório e testes.
+
+
+## Sprint 21.4 — implementação de qualidade
+
+Papéis de fonte e seleção por cobertura, contexto de modelo/seção, relações de identidade com evidência explícita e qualidade PDF com texto bruto/posições/grupos. Sem reconciliação canônica. Design: docs/agents/SPEC_SOURCE_QUALITY_21_4.md. 318 testes offline e gates scoped passaram. Smoke único 2026-09-17: 5 GETs200, 1 descoberta OpenAI, 6 saídas MODEL_SHARED/MY unresolved; gate NÃO aprovado: sem manual e leakage de prosa GTS. Nenhum ajuste funcional após smoke. Relatório completo: docs/agents/SPRINT_21_4_REAL_GATE.md. Aguardar revisão.
+
+
+## Sprint 21 — benchmark Document Intelligence CS55 Prime
+
+Benchmark sem alteração funcional: Terra + única reparação Sol, PDF direto, Golden somente avaliação. 104/104 itens, 73/73 presenças; Terra13/14 seções, Sol14/14 após normalização. Custo totalUSD0,280700. RecomendaçãoB HYBRID_VIABLE por ambiguidade do heading de cores e diferenças de estrutura/kind. Decisão: OWNER MANUAL = EXCLUDED (documentada, ainda não implementada no agente). Relatório: docs/agents/SPRINT_21_DOCUMENT_INTELLIGENCE_BENCHMARK.md. Encerrado sem stage/commit/push.
+
+
+## Sprint 21.5 — Document Intelligence Provider
+
+Fluxo Terra → validator → Sol condicional implementado em core/adapter-openai/runtime. OWNER MANUAL = EXCLUDED; orçamento máximoUSD1 por documento; inventário separado de observações; replay offline e promptv1. Parsers21.1–21.4 preservados como apoio. Zero novas chamadas reais. ReplayCS55 requer revisão por evidência/contrato histórico; custos medidos preservados. Próximo21.6: grounding e repair hardening. Ver docs/agents/SPEC_SOURCE_AGENT_21.md e SPRINT_21_5_IMPLEMENTATION.md.
+
+## Sprint 21.6 — Document Intelligence grounding/completeness
+
+- Evidência v2 e grounding normalizado/janelas limitadas, identidade e defeitos de saída reparáveis, censo estrutural independente de Golden, isolamento de contexto HTML/PDF.
+- Preservados budget USD1, Terra primária, Sol no máximo uma vez, GTS/Comfortline e exclusão de manuais.
+- 413 testes offline e gates scoped/build aprovados. Benchmark real e avaliação Golden pendentes: revisão automática rejeitou a execução antes de iniciar qualquer processo/API.
+- Checkpoint e bloqueio: docs/agents/SPRINT_21_6_REAL_GATE.md.
