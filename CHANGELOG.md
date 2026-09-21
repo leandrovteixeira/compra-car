@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-21 — Product Price Tool V.74 Specs QA Connector (Sprint 18.0)
+
+- adiciona parser read-only de XLSM/OpenXML para a aba `Spec DB`, sem converter ou regravar o arquivo-fonte;
+- introduz perfil explícito V.74 para preservar a semântica atual do catálogo: AT `PW_0016 → PW_1045`, tilt-down Left/Both, câmera 360 e normalizações legadas conhecidas;
+- exclui aliases redundantes de torque em kgfm e audita divergências contra os valores canônicos em Nm;
+- adiciona dry-run contra `specs`/`products` atuais, com DE-PARA, blockers, warnings e artefato JSON antes de qualquer escrita;
+- cobre a normalização com testes unitários; nenhuma alteração de schema, catálogo ou `product_specs` é executada por este conector.
+
 ## 2026-09-11 — Product State Invariant + Compare Eligibility Row-Limit Fix (Sprint 17R.1)
 
 - refina a regra para **Public requires Active**, substituindo a permissão dos quatro estados da 17R;
