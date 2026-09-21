@@ -1,0 +1,322 @@
+id,code,group_name,equipment_group,spec_set,detail,type,unit,value_direction,unit_perceived_value,relative_value,is_baseline,notes,is_active,commercial_category
+292,AD_0001,Safety,ADAS,ROA (Rear Occupant Alert),ROA (Rear Occupant Alert),binary,,,400.00,0.00,false,vs. none,true,Seguranca
+636,AD_0002,Safety,ADAS,FCW (Front Collision Warning),FCW (Front Collision Warning),binary,,,1200.00,0.00,false,vs. none,true,Seguranca
+294,AD_0003,Safety,ADAS,FCW Advanced (Front Collision Warning),FCW Advanced (Front Collision Warning),binary,,,1500.00,0.00,false,,true,Seguranca
+295,AD_0004,Safety,ADAS,AEB (Autonomous Emergency Braking),AEB (Autonomous Emergency Braking),binary,,,500.00,0.00,false,vs. FCW,true,Seguranca
+639,AD_0005,Safety,ADAS,AEB Junction Turning (JT),AEB Junction Turning (JT),binary,,,250.00,0.00,false,vs. AEB,true,Seguranca
+640,AD_0006,Safety,ADAS,RCW (Rear Collision Warning System),RCW (Rear Collision Warning System),binary,,,500.00,0.00,false,vs. none,true,Seguranca
+298,AD_0007,Safety,ADAS,RCTA (Rear Cross Traffic Alert),RCTA (Rear Cross Traffic Alert),binary,,,500.00,0.00,false,vs. none,true,Seguranca
+642,AD_0008,Safety,ADAS,RCTB (Rear Cross Traffic Braking),RCTB (Rear Cross Traffic Braking),binary,,,500.00,0.00,false,vs. RCTB,true,Seguranca
+300,AD_0009,Safety,ADAS,ACC (Adaptative Cruise Control),ACC (Adaptative Cruise Control),binary,,,1000.00,0.00,false,vs. none,true,Seguranca
+301,AD_0010,Safety,ADAS,DAI (DAI Leaving Reminder System),DAI (DAI Leaving Reminder System),binary,,,250.00,0.00,false,vs. ACC,true,Seguranca
+645,AD_0011,Safety,ADAS,TJA (Traffic Jam Assist),TJA (Traffic Jam Assist),binary,,,250.00,0.00,false,vs. ACC,true,Seguranca
+646,AD_0012,Safety,ADAS,CSA (Curve Speed-control Assist),CSA (Curve Speed-control Assist),binary,,,250.00,0.00,false,vs. ACC,true,Seguranca
+304,AD_0013,Safety,ADAS,LDW  (Lane Departure Warning System),LDW  (Lane Departure Warning System),binary,,,550.00,0.00,false,vs. none,true,Seguranca
+305,AD_0014,Safety,ADAS,LKA  (Lane Keep Assistance),LKA  (Lane Keep Assistance),binary,,,500.00,0.00,false,vs. LKA,true,Seguranca
+306,AD_0015,Safety,ADAS,LFA (Lane Following Assistance),LFA (Lane Following Assistance),binary,,,250.00,0.00,false,vs. LKA,true,Seguranca
+650,AD_0016,Safety,ADAS,ELK (Emergency lane keeping),ELK (Emergency lane keeping),binary,,,250.00,0.00,false,vs. LKA,true,Seguranca
+308,AD_0017,Safety,ADAS,LCA (Lane Change Assist),LCA (Lane Change Assist),binary,,,250.00,0.00,false,vs. LKA,true,Seguranca
+309,AD_0018,Safety,ADAS,BSD (BSD blind spot monitoring),BSD (BSD blind spot monitoring),binary,,,1000.00,0.00,false,vs. none,true,Seguranca
+653,AD_0019,Safety,ADAS,BCA (Blind Spot Collision Avoidance Assist),BCA (Blind Spot Collision Avoidance Assist),binary,,,500.00,0.00,false,vs. BSD,true,Seguranca
+654,AD_0020,Safety,ADAS,BSM (Blind Spot Monitor),BSM (Blind Spot Monitor),binary,,,500.00,0.00,false,vs. none,true,Seguranca
+312,AD_0021,Safety,ADAS,DOW (Door Open Warning),DOW (Door Open Warning),binary,,,250.00,0.00,false,vs. none,true,Seguranca
+313,AD_0022,Safety,ADAS,SLA (Speed Limit Assist),SLA (Speed Limit Assist),binary,,,1000.00,0.00,false,vs. None,true,Seguranca
+657,AD_0023,Safety,ADAS,DMS (Driver Monitoring System),DMS (Driver Monitoring System),binary,,,500.00,0.00,false,vs. none,true,Seguranca
+187,CO_0001,Convenience,TGS Knob,TGS Knob,SBW (shift by wire),scale,,,0.00,300.00,false,vs. regular,true,Dirigibilidade
+659,CO_0002,Convenience,TGS Knob,TGS Knob,Steering column shift,scale,,,0.00,500.00,false,vs. regular,true,Dirigibilidade
+660,CO_0003,Convenience,TGS Knob,Paddle shifts,Paddle shifts,binary,,,290.00,0.00,false,vs. none,true,Dirigibilidade
+190,CO_0004,Convenience,Drive mode select,Drive mode select,Drive mode select,binary,,,110.00,0.00,false,vs. none,true,Tecnologia
+191,CO_0005,Convenience,Conectivity,Voice recognition control,Voice recognition control,binary,,,240.00,0.00,false,vs. none,true,Audio & Conectividade
+663,CO_0006,Convenience,Conectivity,Multi-zone voice assistant,Multi-zone voice assistant,binary,,,250.00,0.00,false,vs. none,true,Audio & Conectividade
+193,CO_0007,Convenience,Conectivity,Bluetooth,Bluetooth,binary,,,200.00,0.00,false,vs. none,true,Audio & Conectividade
+194,CO_0008,Convenience,Conectivity,Telematics,Telematics,binary,,,1000.00,0.00,false,vs. none,true,Audio & Conectividade
+195,CO_0009,Convenience,Conectivity,Wi-Fi,Wi-Fi,binary,,,500.00,0.00,false,vs. none,true,Audio & Conectividade
+196,CO_0010,Convenience,USB port (Type A),FR,FR,numeric,unit,Positive,90.00,0.00,false,per each,true,Audio & Conectividade
+197,CO_0011,Convenience,USB port (Type A),RR,RR,numeric,unit,Positive,90.00,0.00,false,per each,true,Audio & Conectividade
+200,CO_0012,Convenience,Power Outlet 12V,Central console,Central console,numeric,unit,Positive,60.00,0.00,false,per each,true,Conforto
+201,CO_0013,Convenience,Power Outlet 12V,Luggage ,Luggage ,numeric,unit,Positive,70.00,0.00,false,per each,true,Conforto
+671,CO_0014,Convenience,Wireless Charging Pad,Wireless Charger,Conventional,scale,,,0.00,400.00,false,vs. none,true,Tecnologia
+204,CO_0015,Convenience,Wireless Charging Pad,Wireless Charger,Dual,scale,,,0.00,780.00,false,vs. none,true,Tecnologia
+205,CO_0016,Convenience,Wireless Charging Pad,With cooling,With cooling,binary,,,550.00,0.00,false,vs. none,true,Tecnologia
+206,CO_0017,Convenience,Cluster,Cluster Size,Cluster Size,numeric,inch,Positive,190.00,0.00,false,per inch,true,Tecnologia
+207,CO_0018,Convenience,Cluster,HUD,HUD,binary,,,1610.00,0.00,false,vs. none,true,Tecnologia
+208,CO_0019,Convenience,Touch screen display,Display Screen size,Display Screen size,numeric,inch,Positive,200.00,0.00,false,per inch,true,Audio & Conectividade
+677,CO_0020,Convenience,Touch screen display,Sliding screen,Sliding screen,binary,,,200.00,0.00,false,vs. none,true,Audio & Conectividade
+210,CO_0021,Convenience,Touch screen display,Rotating screen,Rotating screen,binary,,,200.00,0.00,false,vs. none,true,Audio & Conectividade
+679,CO_0022,Convenience,Touch screen display,Multimedia connection,CarPlay/ Android Auto (USB),scale,,,0.00,260.00,false,vs. none,true,Audio & Conectividade
+213,CO_0023,Convenience,Touch screen display,Multimedia connection,CarPlay/ Android Auto (Wireless),scale,,,0.00,320.00,false,vs. none,true,Audio & Conectividade
+214,CO_0024,Convenience,Touch screen display,Built-In Navigation (GPS),Built-In Navigation (GPS),binary,,,2970.00,0.00,false,vs. none,true,Audio & Conectividade
+215,CO_0025,Convenience,Touch screen display,OTA (Over-the-Air),OTA (Over-the-Air),binary,,,800.00,0.00,false,vs. none,true,Audio & Conectividade
+216,CO_0026,Convenience,Sound system,Premium sound,Premium sound,binary,,,1710.00,0.00,false,vs. none,true,Audio & Conectividade
+217,CO_0027,Convenience,Sound system,Speakers,Speakers,numeric,unit,Positive,50.00,0.00,false,per each,true,Audio & Conectividade
+218,CO_0028,Convenience,Sound system,Tweeters,Tweeters,numeric,unit,Positive,50.00,0.00,false,per each,true,Audio & Conectividade
+219,CO_0029,Convenience,Sound system,Subwoofer,Subwoofer,numeric,unit,Positive,200.00,0.00,false,per each,true,Audio & Conectividade
+687,CO_0030,Convenience,Sound system,Exterior amplifier,Exterior amplifier,numeric,unit,Positive,600.00,0.00,false,per each,true,Audio & Conectividade
+688,CO_0031,Convenience,Sound system,Four Audio Zones(Voice command),Four Audio Zones(Voice command),binary,,,100.00,0.00,false,vs. none,true,Audio & Conectividade
+223,CO_0032,Convenience,Cruise Control,Cruise Control,Cruise control,binary,,,0.00,350.00,false,vs. none,true,Conforto
+224,CO_0033,Convenience,Cruise Control,Speed limitation system,Speed limitation system,binary,,,0.00,190.00,false,vs. none,true,Conforto
+691,CO_0034,Convenience,Air Conditioner,A/C Type,Manual,scale,,,0.00,3300.00,false,vs. none,true,Conforto
+227,CO_0035,Convenience,Air Conditioner,A/C Type,Full Auto,scale,,,0.00,4040.00,false,vs. none,true,Conforto
+228,CO_0036,Convenience,Air Conditioner,A/C Type,Full Auto Dual Zone,scale,,,0.00,4590.00,false,vs. none,true,Conforto
+694,CO_0037,Convenience,Air Conditioner,A/C Type,Full Auto Tri-Zone,scale,,,0.00,4570.00,false,vs. none,true,Conforto
+695,CO_0038,Convenience,Air Conditioner,A/C Type,Full Auto Quad-Zone,scale,,,0.00,5390.00,false,vs. none,true,Conforto
+231,CO_0039,Convenience,Air Conditioner,Cabin air filter,Cabin air filter,binary,,,50.00,0.00,false,vs. none,true,Conforto
+232,CO_0040,Convenience,Air Conditioner,Air ionizer,Air ionizer,binary,,,50.00,0.00,false,vs. none,true,Conforto
+234,CO_0041,Convenience,Air Conditioner,Rear air vent,Rear air vent,binary,,,260.00,0.00,false,vs. none,true,Conforto
+699,CO_0042,Convenience,Auto Rear Window Defogger,Auto Rear Window Defogger,Auto Rear Window Defogger,binary,,,100.00,0.00,false,vs. none,true,Conforto
+236,CO_0043,Convenience,Power windows,Power,Power,numeric,,Positive,150.00,0.00,false,vs. manual (Power 150 each/ one-touch 100 each),true,Conforto
+701,CO_0044,Convenience,Power windows,One-touch down,One-touch down,numeric,unit,Positive,50.00,0.00,false,vs. manual (Power 150 each/ one-touch 100 each),true,Conforto
+238,CO_0045,Convenience,Power windows,One-touch up & down,One-touch up & down,numeric,unit,Positive,110.00,0.00,false,vs. manual (Power 150 each/ one-touch 100 each),true,Conforto
+239,CO_0046,Convenience,Keyless entry,Smart Key,Smart Key,binary,,,900.00,0.00,false,vs. none,true,Tecnologia
+240,CO_0047,Convenience,Keyless entry,NFC card,NFC card,binary,,,100.00,0.00,false,vs. none,true,Tecnologia
+241,CO_0048,Convenience,Keyless entry,Button Start,Button Start,binary,,,200.00,0.00,false,vs. none,true,Tecnologia
+242,CO_0049,Convenience,Keyless entry,Contactless Power-On,Contactless Power-On,binary,,,400.00,0.00,false,vs. none,true,Tecnologia
+243,CO_0050,Convenience,Keyless entry,E/G Remote Control,E/G Remote Control,binary,,,370.00,0.00,false,vs. none,true,Tecnologia
+244,CO_0051,Convenience,Fuel Filler Power Release,Fuel Filler Power Release,Fuel Filler Power Release,binary,,,100.00,0.00,false,vs. none,true,Tecnologia
+245,CO_0052,Convenience,Retractable trunk cover,Retractable trunk cover,Retractable trunk cover,binary,,,50.00,0.00,false,vs. none,true,Carga
+198,CO_0053,Convenience,USB port (Type C),FR,FR,numeric,unit,Positive,130.00,0.00,false,per each,true,Audio & Conectividade
+711,CO_0054,Convenience,USB port (Type C),RR,RR,numeric,unit,Positive,130.00,0.00,false,per each,true,Audio & Conectividade
+712,CO_0055,Convenience,Air Conditioner,Fragrance System,Fragrance System,binary,,,200.00,0.00,false,,true,Conforto
+713,CO_1000,Convenience,Air Conditioner,A/C Type,None,scale,,,0.00,0.00,true,vs. none,true,Conforto
+714,CO_1003,Convenience,Touch screen display,Multimedia connection,None,scale,,,0.00,0.00,true,vs. none,true,Audio & Conectividade
+715,CO_1010,Convenience,Cruise Control,Cruise Control,None,scale,,,0.00,0.00,true,vs. none,true,Conforto
+716,CO_1011,Convenience,TGS Knob,TGS Knob,Regular,scale,,,0.00,0.00,true,vs. regular,true,Dirigibilidade
+717,CO_1014,Convenience,Wireless Charging Pad,Wireless Charger,None,scale,,,0.00,0.00,true,vs. none,true,Tecnologia
+1,DM_0001,Dimensions,Length (mm),Length,Length,numeric,mm,Positive,0.00,0.00,false,,true,Espaco
+2,DM_0002,Dimensions,Width (mm),Width,Width,numeric,mm,Positive,0.00,0.00,false,,true,Espaco
+3,DM_0003,Dimensions,Height (mm),Height,Height,numeric,mm,Positive,0.00,0.00,false,,true,Espaco
+4,DM_0004,Dimensions,Wheelbase (mm),Wheelbase,Wheelbase,numeric,mm,Positive,0.00,0.00,false,,true,Espaco
+5,DM_0005,Dimensions,Ground clearance (mm),Ground clearance,Ground clearance,numeric,mm,Positive,0.00,0.00,false,,true,Dirigibilidade
+6,DM_0006,Dimensions,Cargo space,Trunk,Trunk,numeric,L,Positive,0.00,0.00,false,,true,Carga
+724,DM_0007,Dimensions,Cargo space,Total,Total,numeric,L,Positive,0.00,0.00,false,,true,Carga
+8,DM_0008,Dimensions,Weight,Curb weight,Curb weight,numeric,kg,Negative,0.00,0.00,false,,true,Dirigibilidade
+9,DM_0009,Dimensions,Weight,Gross vehicle weight,Gross vehicle weight,numeric,kg,Negative,0.00,0.00,false,,true,Dirigibilidade
+10,DM_0010,Dimensions,Weight,Load capacity,Load capacity,numeric,kg,Positive,0.00,0.00,false,,true,Dirigibilidade
+728,DM_0011,Dimensions,Weight,Maximum towing capacity,Maximum towing capacity,numeric,kg,Positive,0.00,0.00,false,,true,Dirigibilidade
+65,EX_0001,Exterior,Rims,Alloy Wheels,Alloy Wheels,binary,,,720.00,0.00,false,vs. Steel,true,Design
+66,EX_0002,Exterior,Rims,Wheels diameter,Wheels diameter,numeric,inch,Positive,270.00,0.00,false,per inch,true,Design
+67,EX_0003,Exterior,Tires,Tires width,Tires width,numeric,mm,Positive,20.00,0.00,false,per mm,true,Seguranca
+732,EX_0004,Exterior,Tires,Ratio,Ratio,numeric,mm,Negative,0.00,0.00,false,,true,Design
+70,EX_0005,Exterior,Spare tire,Spare tire,Temporary,scale,,,0.00,200.00,false,vs. Kit,true,Seguranca
+734,EX_0006,Exterior,Spare tire,Spare tire,Full Size,scale,,,0.00,410.00,false,vs. temporary,true,Seguranca
+735,EX_0007,Exterior,Front illumination,Projection headlamp,Projection headlamp,binary,,,220.00,0.00,false,vs. conventional,true,Seguranca
+736,EX_0008,Exterior,Front illumination,LED headlamps,Partial,scale,,,0.00,2180.00,false,vs. conventional,true,Seguranca
+75,EX_0009,Exterior,Front illumination,LED headlamps,Full,scale,,,0.00,2630.00,false,vs. conventional,true,Seguranca
+76,EX_0010,Exterior,Front illumination,Welcome function,Welcome function,binary,,,50.00,0.00,false,vs. none,true,Seguranca
+77,EX_0011,Exterior,Front illumination,Auto Light Control,Auto Light Control,binary,,,120.00,0.00,false,vs. none,true,Seguranca
+78,EX_0012,Exterior,Front illumination,IHC (Intelligent high beam control),IHC (Intelligent high beam control),binary,,,410.00,0.00,false,vs. none,true,Seguranca
+79,EX_0013,Exterior,Front illumination,Electric height adjustment,Electric height adjustment,binary,,,50.00,0.00,false,vs. Manual,true,Seguranca
+742,EX_0014,Exterior,Front illumination,DRL,Bulb,scale,,,0.00,140.00,false,vs. none,true,Seguranca
+82,EX_0015,Exterior,Front illumination,DRL,LED,scale,,,0.00,480.00,false,vs. none,true,Seguranca
+744,EX_0016,Exterior,Front illumination,LED decorative lights,LED decorative lights,binary,,,200.00,0.00,false,vs. none,true,Seguranca
+745,EX_0017,Exterior,Front illumination,Fog lamps,Bulb,scale,,,0.00,420.00,false,vs. none,true,Seguranca
+746,EX_0018,Exterior,Front illumination,Fog lamps,LED,scale,,,0.00,680.00,false,vs. none,true,Seguranca
+87,EX_0019,Exterior,Front illumination,LED side turn signal lamp,LED side turn signal lamp,binary,,,200.00,0.00,false,vs. none,true,Seguranca
+748,EX_0020,Exterior,Front illumination,FR dynamic turn signals,FR dynamic turn signals,binary,,,50.00,0.00,false,vs. conventional,true,Seguranca
+89,EX_0021,Exterior,Front illumination,Door courtesy lamp,Door courtesy lamp,binary,,,60.00,0.00,false,vs. none,true,Seguranca
+90,EX_0022,Exterior,Rear illumination,LED rear lamps,LED rear lamps,binary,,,640.00,0.00,false,vs. none,true,Seguranca
+751,EX_0023,Exterior,Rear illumination,Fog lamps,Bulb,scale,,,0.00,420.00,false,vs. none,true,Seguranca
+93,EX_0024,Exterior,Rear illumination,Fog lamps,LED,scale,,,0.00,680.00,false,vs. none,true,Seguranca
+94,EX_0025,Exterior,Rear illumination,LED brake light,LED brake light,binary,,,50.00,0.00,false,vs. none,true,Seguranca
+95,EX_0026,Exterior,Rear illumination,RR dynamic turn signals ,RR dynamic turn signals ,binary,,,50.00,0.00,false,vs. conventional,true,Seguranca
+97,EX_0027,Exterior,O/S mirror,Power mirrors,Power mirrors,binary,,,170.00,0.00,false,vs. manual,true,Conforto
+98,EX_0028,Exterior,O/S mirror,Electric folding,Electric folding,binary,,,270.00,0.00,false,vs. manual,true,Conforto
+757,EX_0029,Exterior,O/S mirror,Memory function,Memory function,binary,,,100.00,0.00,false,vs. manual,true,Conforto
+758,EX_0030,Exterior,O/S mirror,Tilt down,Right,scale,,,0.00,130.00,false,vs. manual,true,Conforto
+759,EX_0031,Exterior,O/S mirror,Tilt down,Both,scale,,,0.00,130.00,false,vs. manual,true,Conforto
+104,EX_0032,Exterior,O/S mirror,Heated,Heated,binary,,,110.00,0.00,false,vs. none,true,Conforto
+761,EX_0033,Exterior,O/S mirror,O/S electrochromic mirror (ECM),O/S electrochromic mirror (ECM),binary,,,320.00,0.00,false,vs. none,true,Conforto
+762,EX_0034,Exterior,O/S handles,Flush type,Flush type,binary,,,300.00,0.00,false,vs. conventional,true,Design
+763,EX_0035,Exterior,Sunroof,Sunroof,Power compact,scale,,,0.00,2760.00,false,vs. none,true,Design
+764,EX_0036,Exterior,Sunroof,Sunroof,Fixed glass roof,scale,,,0.00,3420.00,false,vs. none,true,Design
+110,EX_0037,Exterior,Sunroof,Sunroof,Power panorama,scale,,,0.00,4040.00,false,vs. none,true,Design
+111,EX_0038,Exterior,Roof rack,Roof rack,Roof rack,binary,,,450.00,0.00,false,vs. none,true,Carga
+112,EX_0039,Exterior,Rear spoiler,Rear spoiler,Rear spoiler,binary,,,350.00,0.00,false,vs. none,true,Design
+113,EX_0040,Exterior,Shark antenna,Shark antenna,Shark antenna,binary,,,50.00,0.00,false,vs. conventional,true,Design
+114,EX_0041,Exterior,Tailgate,Power,Power,binary,,,2000.00,0.00,false,vs. none,true,Carga
+115,EX_0042,Exterior,Tailgate,Hands Free,Hands Free,binary,,,550.00,0.00,false,vs. none,true,Carga
+116,EX_0043,Exterior,Dual exhaust pipes,Dual exhaust pipes,Dual exhaust pipes,binary,,,290.00,0.00,false,vs. conventional,true,Design
+772,EX_0044,Exterior,Rear illumination,Corner Window Charging Indicator Light,Corner Window Charging Indicator Light,binary,,,200.00,0.00,false,vs. none,true,Design
+773,EX_1001,Exterior,Front illumination,Fog lamps,None,scale,,,0.00,0.00,true,vs. none,true,Seguranca
+774,EX_1002,Exterior,Front illumination,DRL,None,scale,,,0.00,0.00,true,vs. none,true,Seguranca
+775,EX_1006,Exterior,O/S mirror,Tilt down,Left,scale,,,0.00,130.00,false,vs. manual,true,Conforto
+776,EX_1007,Exterior,Spare tire,Spare tire,Repair kit,scale,,,0.00,0.00,true,vs. Kit,true,Seguranca
+777,EX_1009,Exterior,Sunroof,Sunroof,None,scale,,,0.00,0.00,true,vs. none,true,Design
+778,EX_1012,Exterior,O/S mirror,Tilt down,None,scale,,,0.00,0.00,true,vs. manual,true,Conforto
+779,EX_1016,Exterior,Front illumination,LED headlamps,None,scale,,,0.00,0.00,true,vs. conventional,true,Seguranca
+780,EX_1018,Exterior,Rear illumination,Fog lamps,None,scale,,,0.00,0.00,true,vs. none,true,Seguranca
+781,IN_0001,Interior,Seat Material,Seat Material,Fabric,scale,,,0.00,0.00,true,,true,Acabamento
+782,IN_0002,Interior,Seat Material,Seat Material,Fabric + artificial leather,scale,,,0.00,730.00,false,vs. fabric,true,Acabamento
+119,IN_0003,Interior,Seat Material,Seat Material,Artificial leather,scale,,,0.00,1710.00,false,vs. fabric,true,Acabamento
+784,IN_0004,Interior,Seat Material,Seat Material,Leather,scale,,,0.00,3190.00,false,vs. fabric,true,Acabamento
+121,IN_0005,Interior,Door panel finish,Soft-touch (FR),Soft-touch (FR),binary,,,100.00,0.00,false,vs. plastic,true,Acabamento
+122,IN_0006,Interior,Door panel finish,Soft-touch (RR),Soft-touch (RR),binary,,,100.00,0.00,false,vs. plastic,true,Acabamento
+123,IN_0007,Interior,Dashboard finish,Soft-Touch,Soft-Touch,binary,,,100.00,0.00,false,vs. plastic,true,Acabamento
+124,IN_0008,Interior,FR seat adjustament,Power seat (Driver),Power seat (Driver),binary,,,600.00,0.00,false,vs. none,true,Conforto
+125,IN_0009,Interior,FR seat adjustament,Power seat (Passenger),Power seat (Passenger),binary,,,600.00,0.00,false,vs. none,true,Conforto
+790,IN_0010,Interior,FR seat adjustament,Manual lumbar adjusment (Driver),Manual lumbar adjusment (Driver),binary,,,80.00,0.00,false,vs. none,true,Conforto
+791,IN_0011,Interior,FR seat adjustament,Manual lumbar adjusment (passenger),Manual lumbar adjusment (passenger),binary,,,50.00,0.00,false,vs. none,true,Conforto
+792,IN_0012,Interior,FR seat adjustament,Electric lumbar adjusment (Driver),Electric lumbar adjusment (Driver),binary,,,150.00,0.00,false,vs. none,true,Conforto
+793,IN_0013,Interior,FR seat adjustament,Electric lumbar adjusment (passenger),Electric lumbar adjusment (passenger),binary,,,150.00,0.00,false,vs. none,true,Conforto
+132,IN_0014,Interior,FR seat adjustament,Leg power adjustment (driver),Leg power adjustment (driver),binary,,,150.00,0.00,false,vs. none,true,Conforto
+795,IN_0015,Interior,FR seat adjustament,Leg power adjustment (passenger),Leg power adjustment (passenger),binary,,,150.00,0.00,false,vs. none,true,Conforto
+796,IN_0016,Interior,FR seat adjustament,Memory function (Driver),Memory function (Driver),binary,,,300.00,0.00,false,vs. none,true,Conforto
+797,IN_0017,Interior,FR seat adjustament,Memory function (Passenger),Memory function (Passenger),binary,,,300.00,0.00,false,vs. none,true,Conforto
+798,IN_0018,Interior,FR seat adjustament,Welcome function (Driver),Welcome function (Driver),binary,,,100.00,0.00,false,vs. none,true,Conforto
+138,IN_0019,Interior,Headrest adjustment,Front row headrest adjustment,Front row headrest adjustment,binary,,,20.00,0.00,false,vs. none,true,Conforto
+139,IN_0020,Interior,Headrest adjustment,Second row headrest adjustment,Second row headrest adjustment,binary,,,20.00,0.00,false,vs. none,true,Conforto
+140,IN_0021,Interior,RR seat adjustment,Reclining,Reclining,binary,,,260.00,0.00,false,vs. none,true,Conforto
+141,IN_0022,Interior,RR seat adjustment,Split bench (60/40),Split bench (60/40),binary,,,350.00,0.00,false,vs. fixed bench,true,Conforto
+803,IN_0023,Interior,RR seat adjustment,Split bench (4/2/4),Split bench (4/2/4),binary,,,270.00,0.00,false,vs. fixed bench,true,Conforto
+143,IN_0024,Interior,RR seat adjustment,Luggage flat floor,Luggage flat floor,binary,,,570.00,0.00,false,vs. fixed bench,true,Carga
+144,IN_0025,Interior,Seat heating,Heated (Driver),Heated (Driver),binary,,,550.00,0.00,false,vs. none,true,Conforto
+145,IN_0026,Interior,Seat heating,Heated (Passenger),Heated (Passenger),binary,,,550.00,0.00,false,vs. none,true,Conforto
+807,IN_0027,Interior,Seat heating,Heating (RR seat),Heating (RR seat),binary,,,860.00,0.00,false,vs. none,true,Conforto
+147,IN_0028,Interior,Seat ventilation,Ventilated (Driver),Ventilated (Driver),binary,,,600.00,0.00,false,vs. none,true,Conforto
+148,IN_0029,Interior,Seat ventilation,Ventilated (Passenger),Ventilated (Passenger),binary,,,600.00,0.00,false,vs. none,true,Conforto
+810,IN_0030,Interior,Seat massage,Massage (driver),Massage (driver),binary,,,250.00,0.00,false,vs. none,true,Conforto
+811,IN_0031,Interior,Seat massage,Massage (Passenger),Massage (Passenger),binary,,,250.00,0.00,false,vs. none,true,Conforto
+812,IN_0032,Interior,Seat massage,VIP seat (Passenger),VIP seat (Passenger),binary,,,250.00,0.00,false,vs. none,true,Conforto
+154,IN_0033,Interior,Steering Wheel,Power Steering (EPS),Power Steering (EPS),binary,,,1080.00,0.00,false,vs power steering,true,Conforto
+814,IN_0034,Interior,Steering Wheel,Steering Wheel,Tilt,scale,,,0.00,110.00,false,vs. none,true,Conforto
+157,IN_0035,Interior,Steering Wheel,Steering Wheel,Tilt & Telescopic,scale,,,0.00,330.00,false,vs. none,true,Conforto
+816,IN_0036,Interior,Steering Wheel,Steering Wheel,Electric tilt & Telescopic,scale,,,0.00,570.00,false,vs. none,true,Conforto
+159,IN_0037,Interior,Steering Wheel,Leather steering wheel,Leather steering wheel,binary,,,260.00,0.00,false,vs. PVC,true,Acabamento
+818,IN_0038,Interior,Steering Wheel,Heated,Heated,binary,,,570.00,0.00,false,vs. none,true,Conforto
+161,IN_0039,Interior,Steering Wheel,Audio remote control,Audio remote control,binary,,,170.00,0.00,false,vs. none,true,Audio & Conectividade
+162,IN_0040,Interior,Interior lighting,Ambient light,Ambient light,binary,,,100.00,0.00,false,vs. none,true,Design
+821,IN_0041,Interior,Interior lighting,Reading lamps,Bulb,scale,,,0.00,40.00,false,vs. none,true,Design
+165,IN_0042,Interior,Interior lighting,Reading lamps,LED,scale,,,0.00,60.00,false,vs. Bulb,true,Design
+823,IN_0043,Interior,Interior lighting,Luggage lamp,Bulb,scale,,,0.00,40.00,false,vs. none,true,Design
+168,IN_0044,Interior,Interior lighting,Luggage lamp,LED,scale,,,0.00,30.00,false,vs. none,true,Design
+825,IN_0045,Interior,Sunvisor,Illumination,Bulb,scale,,,0.00,40.00,false,vs. none,true,Conforto
+171,IN_0046,Interior,Sunvisor,Illumination,LED,scale,,,0.00,50.00,false,vs. none,true,Conforto
+172,IN_0047,Interior,Sunvisor,Vanity mirror,Vanity mirror,binary,,,50.00,0.00,false,vs. none,true,Conforto
+828,IN_0048,Interior,Sunglasses holder,Sunglasses holder,Sunglasses holder,binary,,,30.00,0.00,false,vs. none,true,Conforto
+176,IN_0049,Interior,Inside Mirror,I/S electrochromic mirror (ECM),I/S electrochromic mirror (ECM),binary,,,310.00,0.00,false,vs. day & night,true,Tecnologia
+830,IN_0050,Interior,Inside Mirror,Digital,Digital,binary,,,860.00,0.00,false,vs. day & night,true,Tecnologia
+831,IN_0051,Interior,Glove box,Cooling,Cooling,binary,,,140.00,0.00,false,vs. none,true,Conforto
+179,IN_0052,Interior,Glove box,Illuminated,Illuminated,binary,,,20.00,0.00,false,vs. none,true,Conforto
+833,IN_0053,Interior,Glove box,Damped,Damped,binary,,,50.00,0.00,false,vs. none,true,Conforto
+181,IN_0054,Interior,Front armrest,FR armrest,FR armrest,binary,,,210.00,0.00,false,vs. none,true,Conforto
+182,IN_0055,Interior,Front armrest,RR armrest,RR armrest,binary,,,210.00,0.00,false,vs. none,true,Conforto
+183,IN_0056,Interior,Storage box,Storage box,Storage box,binary,,,50.00,0.00,false,,true,Conforto
+837,IN_0057,Interior,Storage box,Illuminated,Illuminated,binary,,,20.00,0.00,false,vs. none,true,Conforto
+838,IN_0058,Interior,Storage box,Cooling,Cooling,binary,,,110.00,0.00,false,vs. none,true,Conforto
+839,IN_0059,Interior,Seat ventilation,Ventilated (RR),Ventilated (RR),binary,,,600.00,0.00,false,vs. none,true,Conforto
+840,IN_0060,Interior,I/S door handles,Electric handles (FR),Electric handles (FR),binary,,,200.00,0.00,false,vs. none,true,Conforto
+841,IN_0061,Interior,I/S door handles,Electric handles (RR),Electric handles (RR),binary,,,200.00,0.00,false,vs. none,true,Conforto
+842,IN_0062,Interior,FR seat adjustament,Power seat (RR left),Power seat (RR left),binary,,,600.00,0.00,false,,true,Conforto
+843,IN_0063,Interior,FR seat adjustament,Power seat (RR right),Power seat (RR right),binary,,,600.00,0.00,false,,true,Conforto
+844,IN_0064,Interior,FR seat adjustament,Memory function (RR),Memory function (RR),binary,,,600.00,0.00,false,,true,Conforto
+845,IN_0065,Interior,Seat massage,Massage (RR),Massage (RR),binary,,,500.00,0.00,false,,true,Conforto
+846,IN_1004,Interior,Interior lighting,Reading lamps,None,scale,,,0.00,0.00,true,vs. none,true,Design
+847,IN_1005,Interior,Interior lighting,Luggage lamp,None,scale,,,0.00,0.00,true,vs. none,true,Design
+848,IN_1013,Interior,Steering Wheel,Steering Wheel,Fixed,scale,,,0.00,0.00,true,vs. none,true,Conforto
+849,IN_1019,Interior,Sunvisor,Illumination,None,scale,,,0.00,0.00,true,vs. none,true,Conforto
+55,OW_0001,Ownership,Inmetro,FE,FE,numeric,MJ/Km,Negative,0.00,0.00,false,,true,Ownership
+56,OW_0002,Ownership,Inmetro,Urban (gasoline),Urban (gasoline),numeric,km/L,Positive,0.00,0.00,false,,true,Ownership
+57,OW_0003,Ownership,Inmetro,Road (gasoline),Road (gasoline),numeric,km/L,Positive,0.00,0.00,false,,true,Ownership
+853,OW_0004,Ownership,Inmetro,Urban (ethanol),Urban (ethanol),numeric,km/L,Positive,0.00,0.00,false,,true,Ownership
+854,OW_0005,Ownership,Inmetro,Road (ethanol),Road (ethanol),numeric,km/L,Positive,0.00,0.00,false,,true,Ownership
+60,OW_0006,Ownership,Fuel tank,Fuel tank,Fuel tank,numeric,L,Positive,0.00,0.00,false,,true,Ownership
+61,OW_0007,Ownership,Autonomy,E-Range,E-Range,numeric,km,Positive,0.00,0.00,false,,true,Ownership
+62,OW_0008,Ownership,Autonomy,TTL autonomy,TTL autonomy,numeric,km,Positive,0.00,0.00,false,,true,Ownership
+63,OW_0009,Ownership,Total warranty,Total warranty,Total warranty,numeric,years,Positive,0.00,860.00,false,,true,Ownership
+64,OW_0010,Ownership,Electric system warranty,Electric system warranty,Electric system warranty,numeric,years,Positive,0.00,0.00,false,,true,Ownership
+860,PW_0001,Powertrain,Engine type,Engine tech,MHEV,scale,,,0.00,7130.00,false,vs. conventional,true,Performance
+861,PW_0002,Powertrain,Engine type,Engine tech,HEV,scale,,,0.00,14250.00,false,vs. conventional,true,Performance
+15,PW_0003,Powertrain,Engine type,Engine tech,PHEV,scale,,,0.00,28500.00,false,vs. conventional,true,Performance
+16,PW_0004,Powertrain,Engine type,Engine tech,EV,scale,,,0.00,34200.00,false,vs. conventional,true,Performance
+17,PW_0005,Powertrain,Combustion engine,Displacement,Displacement,numeric,cc,Positive,0.00,0.00,false,,true,Performance
+865,PW_0006,Powertrain,Combustion engine,Turbocharger,Turbocharger,scale,,,0.00,2600.00,false,vs. conventional,true,Performance
+20,PW_0007,Powertrain,Combustion engine,Turbocharger,Turbocharger with direct fuel injection,scale,,,0.00,2600.00,false,vs. conventional,true,Performance
+21,PW_0008,Powertrain,Combustion engine,Cylinders,Cylinders,numeric,unit,Positive,0.00,0.00,false,,true,Performance
+22,PW_0009,Powertrain,Combustion engine,Engine type,Inline cylinders,scale,,,0.00,0.00,true,,true,Performance
+869,PW_0010,Powertrain,Combustion engine,Engine type,V cylinders,scale,,,0.00,50.00,false,,true,Performance
+24,PW_0011,Powertrain,Combustion engine,Max power,Max power,numeric,cv,Positive,0.00,30.00,false,,true,Performance
+25,PW_0012,Powertrain,Combustion engine,Max torque,Max torque,numeric,Nm,Positive,0.00,20.00,false,,true,Performance
+26,PW_0014,Powertrain,Combustion engine,Rotation max power,Rotation max power,numeric,RPM,Negative,0.00,0.00,false,,true,Performance
+27,PW_0015,Powertrain,Combustion engine,Rotation max torque,Rotation max torque,numeric,RPM,Negative,0.00,0.00,false,,true,Performance
+874,PW_0016,Powertrain,Transmission,Transmission type,MT,scale,,,0.00,0.00,true,vs. MT (4AT 4000/ 500 per speed),true,Dirigibilidade
+875,PW_0017,Powertrain,Transmission,Transmission type,DCT,scale,,,0.00,5990.00,false,vs. MT (6DCT 6000/ 500 per speed),true,Dirigibilidade
+876,PW_0018,Powertrain,Transmission,Transmission type,CVT,scale,,,0.00,5180.00,false,vs. MT,true,Dirigibilidade
+32,PW_0019,Powertrain,Transmission,Transmission type,DHT,scale,,,0.00,7000.00,false,vs. MT,true,Dirigibilidade
+33,PW_0020,Powertrain,Transmission,# of Speed,# of Speed,numeric,unit,Positive,500.00,0.00,false,R$500 per speed,true,Dirigibilidade
+34,PW_0021,Powertrain,Electric engine,Permanent Magnet Synchronous Motor (PMSM),Permanent Magnet Synchronous Motor (PMSM),binary,,,0.00,0.00,false,,true,Performance
+35,PW_0022,Powertrain,Electric engine,FR Max power,FR Max power,numeric,cv,Positive,0.00,0.00,false,,true,Performance
+36,PW_0023,Powertrain,Electric engine,FR Max torque,FR Max torque,numeric,Nm,Positive,0.00,0.00,false,,true,Performance
+882,PW_0025,Powertrain,Electric engine,RR Max power,RR Max power,numeric,cv,Positive,0.00,0.00,false,,true,Performance
+883,PW_0026,Powertrain,Electric engine,RR Max torque,RR Max torque,numeric,Nm,Positive,0.00,0.00,false,,true,Performance
+39,PW_0028,Powertrain,Battery,Battery capacity,Battery capacity,numeric,kWh,Positive,500.00,0.00,false,,true,Ownership
+40,PW_0029,Powertrain,Battery,Max charger AC,Max charger AC,numeric,kW,Positive,0.00,10.00,false,,true,Ownership
+41,PW_0030,Powertrain,Battery,Max charger DC,Max charger DC,numeric,kW,Positive,0.00,10.00,false,,true,Ownership
+42,PW_0031,Powertrain,Battery,V2L function,V2L function,binary,,,100.00,0.00,false,,true,Ownership
+43,PW_0032,Powertrain,Combined performance,Total max power,Total max power,numeric,cv,Positive,30.00,0.00,false,,true,Performance
+44,PW_0033,Powertrain,Combined performance,Total max torque,Total max torque,numeric,Nm,Positive,20.00,0.00,false,,true,Performance
+45,PW_0035,Powertrain,Combined performance,Power x weight,Power x weight,numeric,kg/cv,Negative,0.00,0.00,false,,true,Performance
+46,PW_0036,Powertrain,Combined performance,Torque x weight,Torque x weight,numeric,kg/Nm,Negative,0.00,0.00,false,,true,Performance
+47,PW_0037,Powertrain,Combined performance,0-100 km/h acceleration,0-100 km/h acceleration,numeric,s,Negative,0.00,0.00,false,,true,Performance
+48,PW_0038,Powertrain,Combined performance,Max speed,Max speed,numeric,km/h,Positive,0.00,0.00,false,,true,Performance
+49,PW_0039,Powertrain,Traction,Traction,FWD,scale,,,0.00,0.00,true,,true,Performance
+895,PW_0040,Powertrain,Traction,Traction,RWD,scale,,,0.00,2850.00,false,vs. 2WD,true,Performance
+896,PW_0041,Powertrain,Traction,Traction,AWD,scale,,,0.00,8100.00,false,vs. 2WD,true,Performance
+52,PW_0042,Powertrain,Suspension,FR Suspension,FR McPherson,scale,,,0.00,0.00,false,,true,Dirigibilidade
+898,PW_0043,Powertrain,Suspension,RR Suspension,RR McPherson,scale,,,0.00,0.00,true,,true,Dirigibilidade
+54,PW_0044,Powertrain,Suspension,RR Suspension,RR Multilink,scale,,,0.00,500.00,false,,true,Dirigibilidade
+900,PW_0045,Powertrain,Engine type,Engine tech,REEV,scale,,,0.00,4280.00,false,Override candidato: PW_0045 realocado de AT para REEV; não persistido.,true,Dirigibilidade
+901,PW_1008,Powertrain,Combustion engine,Turbocharger,Aspirated,scale,,,0.00,0.00,true,baseline,true,Performance
+902,PW_1015,Powertrain,Engine type,Engine tech,ICE,scale,,,0.00,0.00,true,,true,Performance
+903,PW_1045,Powertrain,Transmission,Transmission type,AT,scale,,,0.00,4280.00,false,Código candidato para AT deslocado de PW_0045; não persistido.,true,Dirigibilidade
+904,PW_FUEL_001,Powertrain,Fuel,Fuel type,Gasoline,scale,,,0.00,0.00,true,baseline,true,Ownership
+905,PW_FUEL_002,Powertrain,Fuel,Fuel type,Etanol,scale,,,0.00,0.00,false,,true,Ownership
+906,PW_FUEL_003,Powertrain,Fuel,Fuel type,Flex,scale,,,0.00,0.00,false,,true,Ownership
+907,PW_FUEL_004,Powertrain,Fuel,Fuel type,Diesel,scale,,,0.00,0.00,false,,true,Ownership
+908,PW_FUEL_005,Powertrain,Fuel,Fuel type,Hidrogen,scale,,,0.00,0.00,false,,true,Ownership
+909,PW_FUEL_006,Powertrain,Fuel,Fuel type,Electric,scale,,,0.00,0.00,false,,true,Ownership
+246,SF_0001,Safety,Child safety lock,Child Lock,Mechanical,scale,,,0.00,0.00,true,vs. none,true,Seguranca
+247,SF_0002,Safety,Child safety lock,Child Lock,Electronic,scale,,,0.00,100.00,false,vs. none,true,Seguranca
+912,SF_0003,Safety,Seat belt,Second Row Height-Adjustable,Second Row Height-Adjustable,binary,,,170.00,0.00,false,vs. none,true,Seguranca
+249,SF_0004,Safety,Seat belt,Front Row Load-Limiting,Front Row Load-Limiting,binary,,,20.00,0.00,false,vs. none,true,Seguranca
+250,SF_0005,Safety,Seat belt,Second Row Load-Limiting,Second Row Load-Limiting,binary,,,20.00,0.00,false,vs. none,true,Seguranca
+251,SF_0006,Safety,Seat belt,Front Row Pretensioner ,Front Row Pretensioner ,binary,,,20.00,0.00,false,vs. none,true,Seguranca
+252,SF_0007,Safety,Seat belt,Second Row Pretensioner,Second Row Pretensioner,binary,,,20.00,0.00,false,vs. none,true,Seguranca
+253,SF_0008,Safety,Seat belt,ISOFIX Interface,ISOFIX Interface,binary,,,50.00,0.00,false,vs. none,true,Seguranca
+254,SF_0009,Safety,Seat belt,Front row seat belt reminder,Front row seat belt reminder,binary,,,100.00,0.00,false,vs. none,true,Seguranca
+255,SF_0010,Safety,Seat belt,Second row seat belt reminder,Second row seat belt reminder,binary,,,100.00,0.00,false,vs. none,true,Seguranca
+256,SF_0011,Safety,Airbags,Front airbags,Front airbags,binary,,,1500.00,0.00,false,vs. none,true,Seguranca
+257,SF_0012,Safety,Airbags,Side airbags (FR),Side airbags (FR),binary,,,640.00,0.00,false,vs. none,true,Seguranca
+922,SF_0013,Safety,Airbags,Side airbags (RR),Side airbags (RR),binary,,,540.00,0.00,false,vs. none,true,Seguranca
+923,SF_0014,Safety,Airbags,Central side airbags (FR),Central side airbags (FR),binary,,,550.00,0.00,false,vs. none,true,Seguranca
+260,SF_0015,Safety,Airbags,Curtain airbags,Curtain airbags,binary,,,1450.00,0.00,false,vs. none,true,Seguranca
+925,SF_0016,Safety,Airbags,Knee airbag (driver),Knee airbag (driver),binary,,,550.00,0.00,false,vs. none,true,Seguranca
+262,SF_0017,Safety,TCS (Traction Control System),TCS (Traction Control System),TCS (Traction Control System),binary,,,480.00,0.00,false,vs. ABS,true,Seguranca
+263,SF_0018,Safety,Brakes,ABS (Anti-lock Braking System),ABS (Anti-lock Braking System),binary,,,1430.00,0.00,false,vs. none,true,Seguranca
+264,SF_0019,Safety,Brakes,EBD (Electronic Brakeforce Distribution),EBD (Electronic Brakeforce Distribution),binary,,,50.00,0.00,false,vs. none,true,Seguranca
+265,SF_0020,Safety,Brakes,BAS (Brake Assist System),BAS (Brake Assist System),binary,,,50.00,0.00,false,vs. none,true,Seguranca
+266,SF_0021,Safety,Brakes,BOS (Brake Override System),BOS (Brake Override System),binary,,,50.00,0.00,false,vs. none,true,Seguranca
+267,SF_0022,Safety,Brakes,VSC (Vehicle Stability Control),VSC (Vehicle Stability Control),binary,,,990.00,0.00,false,vs. ABS,true,Seguranca
+268,SF_0023,Safety,Brakes,Hill Assist Control (HAC),Hill Assist Control (HAC),binary,,,110.00,0.00,false,vs. none,true,Seguranca
+269,SF_0024,Safety,Brakes,Hill Descent Control (HDC),Hill Descent Control (HDC),binary,,,190.00,0.00,false,vs. none,true,Seguranca
+270,SF_0025,Safety,Brakes,Rear Disc Brake,Rear Disc Brake,binary,,,260.00,0.00,false,vs. drum,true,Seguranca
+271,SF_0026,Safety,Brakes,Front ventilated disc brakes,Front ventilated disc brakes,binary,,,0.00,0.00,false,,true,Seguranca
+272,SF_0027,Safety,Brakes,Rear solid disc brakes,Rear solid disc brakes,binary,,,0.00,0.00,false,,true,Seguranca
+937,SF_0028,Safety,Brakes,Rear drum brakes,Rear drum brakes,binary,,,0.00,0.00,false,,true,Seguranca
+274,SF_0029,Safety,Brakes,Eletronic Parking Brake,Eletronic Parking Brake,binary,,,480.00,0.00,false,vs. hand type,true,Seguranca
+275,SF_0030,Safety,Brakes,Auto hold,Auto hold,binary,,,50.00,0.00,false,vs. none,true,Seguranca
+276,SF_0031,Safety,Parking assist,Front Warning System,Front Warning System,binary,,,630.00,0.00,false,vs. none,true,Tecnologia
+277,SF_0032,Safety,Parking assist,Back Warning System,Back Warning System,binary,,,630.00,0.00,false,vs. none,true,Tecnologia
+942,SF_0033,Safety,Parking assist,Auto Parking,Auto Parking,binary,,,890.00,0.00,false,vs. none,true,Tecnologia
+943,SF_0034,Safety,Parking assist,Camera,RVM,scale,,,0.00,770.00,false,vs. none,true,Tecnologia
+281,SF_0035,Safety,Parking assist,Camera,360�,scale,,,0.00,2280.00,false,vs. none,true,Tecnologia
+945,SF_0036,Safety,Parking assist,Camera,540�,scale,,,0.00,2850.00,false,vs. none,true,Tecnologia
+283,SF_0037,Safety,Crash-Activated Door Unlock,Crash-Activated Door Unlock,Crash-Activated Door Unlock,binary,,,20.00,0.00,false,vs. none,true,Seguranca
+284,SF_0038,Safety,Central Door Lock,Central Door Lock,Central Door Lock,binary,,,420.00,0.00,false,vs. none,true,Tecnologia
+285,SF_0039,Safety,Automatic Door Lock,Automatic Door Lock,Automatic Door Lock,binary,,,50.00,0.00,false,vs. none,true,Tecnologia
+949,SF_0040,Safety,EDR (Event data recorder),EDR (Event data recorder),EDR (Event data recorder),binary,,,100.00,0.00,false,vs. none,true,Seguranca
+287,SF_0041,Safety,Dashcam,Dashcam,Dashcam,binary,,,570.00,0.00,false,vs. none,true,Seguranca
+288,SF_0042,Safety,TPMS (Tire Pressure Monitor System),TPMS (Tire Pressure Monitor System),TPMS (Tire Pressure Monitor System),binary,,,380.00,0.00,false,vs. none,true,Seguranca
+289,SF_0043,Safety,Rain Sensor,Rain Sensor,Rain Sensor,binary,,,310.00,0.00,false,vs. none,true,Conforto
+290,SF_0044,Safety,Anti Theft Alarm,Anti Theft Alarm,Anti Theft Alarm,binary,,,320.00,0.00,false,vs. none,true,Seguranca
+291,SF_0045,Safety,Immobilizer,Immobilizer,Immobilizer,binary,,,290.00,0.00,false,vs. none,true,Seguranca
+955,SF_1017,Safety,Parking assist,Camera,None,scale,,,0.00,0.00,true,vs. none,true,Tecnologia
