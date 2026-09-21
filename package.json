@@ -20,7 +20,8 @@
     "pricing:snapshot:test": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pricing/tests/pricing-snapshot-scripts.test.ps1",
     "start": "pnpm --filter @compra-car/web start",
     "test": "turbo run test",
-    "typecheck": "turbo run typecheck"
+    "typecheck": "turbo run typecheck",
+    "specs:v74:dry-run": "pnpm --filter @compra-car/core exec tsx ../../scripts/data-refresh/run-product-price-tool-v74-dry-run.ts"
   },
   "devDependencies": {
     "eslint": "9.39.5",
