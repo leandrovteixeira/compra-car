@@ -43,17 +43,19 @@ function createComparisonData(vehicleCount: 2 | 3 | 4): ComparisonPageViewModel 
     Array.from({ length: vehicleCount }, (_, index) => ({
       type: 'binary' as const,
       displayValue: (index === 0 ? referencePresent : !referencePresent) ? '●' : '—',
-      comparison:
-        index === 0
-          ? ('not-applicable' as const)
-          : referencePresent
-            ? ('tie' as const)
-            : ('disadvantage' as const),
+      comparison: referencePresent
+        ? index === 0
+          ? ('advantage' as const)
+          : ('disadvantage' as const)
+        : index === 0
+          ? ('disadvantage' as const)
+          : ('advantage' as const),
     }));
   const numericValues = Array.from({ length: vehicleCount }, (_, index) => ({
     type: 'numeric' as const,
     displayValue: `${150 + index * 25} cv`,
-    comparison: index === 0 ? ('advantage' as const) : ('disadvantage' as const),
+    comparison:
+      index === vehicleCount - 1 ? ('advantage' as const) : ('disadvantage' as const),
   }));
 
   return {

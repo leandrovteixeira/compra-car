@@ -46,15 +46,23 @@ function preferredText(
   return requiredText(localized?.trim() || fallback, field, rowId);
 }
 
-function optionalSortOrder(value: string | number | null | undefined, rowId: unknown): number | null {
+function optionalFiniteNumber(
+  value: string | number | null | undefined,
+  field: string,
+  rowId: unknown,
+): number | null {
   if (value === null || value === undefined || String(value).trim() === '') return null;
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) {
     throw new LegacyAdapterMappingError(
-      `Ordem de exibição inválida para specs.id ${String(rowId)}.`,
+      `Número inválido em ${field} para specs.id ${String(rowId)}.`,
     );
   }
   return parsed;
+}
+
+function optionalSortOrder(value: string | number | null | undefined, rowId: unknown): number | null {
+  return optionalFiniteNumber(value, 'display_order', rowId);
 }
 
 export function mapLegacySpecToComparisonItem(row: LegacySpecRow): ComparisonItem {
@@ -96,6 +104,19 @@ export function mapLegacySpecToComparisonItem(row: LegacySpecRow): ComparisonIte
         ? preferredText(row.detail_pt, row.detail, 'specs.detail_pt', row.id)
         : null,
     unit: row.type === 'numeric' && row.unit?.trim() ? row.unit.trim() : null,
+    displayUnit: row.type === 'numeric' ? row.display_unit_pt?.trim() || null : null,
+    displayMultiplier:
+      row.type === 'numeric'
+        ? (optionalFiniteNumber(row.display_multiplier, 'display_multiplier', row.id) ?? 1)
+        : 1,
+    displayDecimals:
+      row.type === 'numeric'
+        ? optionalFiniteNumber(row.display_decimals, 'display_decimals', row.id)
+        : null,
+    relativeValue:
+      row.type === 'scale'
+        ? optionalFiniteNumber(row.relative_value, 'relative_value', row.id)
+        : null,
     valueDirection,
     sortOrder: optionalSortOrder(row.display_order, row.id),
   });

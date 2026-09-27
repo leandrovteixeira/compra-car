@@ -7,6 +7,11 @@ import type {
 } from '@compra-car/contracts';
 
 import {
+  rankBinaryValues,
+  rankNumericValues,
+  rankScaleRelativeValues,
+} from './comparison-global-advantage';
+import {
   formatComparisonNumber,
   type ComparisonNumberMetadata,
 } from './comparison-number-formatter';
@@ -92,17 +97,27 @@ function standardPresentationRow(row: ComparisonRow, result: ComparisonResult) {
     if (!value) throw new Error('Resultado de comparação incompleto.');
     return value;
   });
-  const values = rawValues.map((value, index) => {
-    const vehicle = result.vehicles[index];
-    if (!vehicle) throw new Error('Resultado de comparação incompleto.');
-    const comparison = row.comparisonByVehicle[String(vehicle.id)];
-    if (!comparison) throw new Error('Resultado de comparação incompleto.');
-    return toComparisonCell(value, comparison, {
+
+  const comparisons =
+    row.item.type === 'numeric'
+      ? rankNumericValues(
+          rawValues.map((value) => (value.type === 'numeric' ? value.value : null)),
+          row.item.valueDirection,
+        )
+      : rankBinaryValues(
+          rawValues.map((value) => (value.type === 'binary' ? value.present : null)),
+        );
+
+  const values = rawValues.map((value, index) =>
+    toComparisonCell(value, comparisons[index] ?? 'unknown', {
       code: String(row.item.code),
       label: row.item.label,
       specSet: row.item.specSet,
-    });
-  });
+      displayUnit: row.item.displayUnit,
+      displayMultiplier: row.item.displayMultiplier,
+      displayDecimals: row.item.displayDecimals,
+    }),
+  );
 
   return {
     order: rowOrder(row),
@@ -111,7 +126,7 @@ function standardPresentationRow(row: ComparisonRow, result: ComparisonResult) {
       label: row.item.label,
       equipmentGroup: row.item.equipmentGroup,
       specSet: row.item.specSet,
-      hasReferenceAdvantage: row.hasReferenceAdvantage,
+      hasReferenceAdvantage: comparisons[0] === 'advantage',
       hasDifference: rowHasDifference(rawValues),
       values,
     }),
@@ -126,7 +141,7 @@ function scalePresentationRow(rows: readonly ComparisonRow[], result: Comparison
   if (!first) throw new Error('Grupo scale vazio.');
 
   const selectedCodes: Array<string | null> = [];
-  const values = result.vehicles.map((vehicle) => {
+  const selectedRows = result.vehicles.map((vehicle) => {
     const selected = members.filter((row) => {
       const value = row.valuesByVehicle[String(vehicle.id)];
       return value?.type === 'scale' && value.present === true;
@@ -139,12 +154,19 @@ function scalePresentationRow(rows: readonly ComparisonRow[], result: Comparison
 
     const selectedRow = selected[0] ?? null;
     selectedCodes.push(selectedRow ? String(selectedRow.item.code) : null);
-    return Object.freeze({
+    return selectedRow;
+  });
+
+  const comparisons = rankScaleRelativeValues(
+    selectedRows.map((row) => row?.item.relativeValue ?? null),
+  );
+  const values = selectedRows.map((selectedRow, index) =>
+    Object.freeze({
       type: 'scale' as const,
       displayValue: selectedRow ? (selectedRow.item.optionLabel ?? selectedRow.item.label) : '—',
-      comparison: 'not-applicable' as const,
-    });
-  });
+      comparison: comparisons[index] ?? 'unknown',
+    }),
+  );
 
   const referenceCode = selectedCodes[0] ?? null;
   const hasDifference = selectedCodes.slice(1).some((code) => code !== referenceCode);
@@ -156,7 +178,7 @@ function scalePresentationRow(rows: readonly ComparisonRow[], result: Comparison
       label: first.item.label,
       equipmentGroup: first.item.equipmentGroup,
       specSet: first.item.specSet,
-      hasReferenceAdvantage: false,
+      hasReferenceAdvantage: comparisons[0] === 'advantage',
       hasDifference,
       values,
     }),

@@ -30,6 +30,7 @@ const vehicles = [
 function scaleRow(
   code: string,
   optionLabel: string,
+  relativeValue: number,
   selectedByVehicle: readonly [boolean | null, boolean | null],
 ): ComparisonRow {
   const item = createComparisonItem({
@@ -42,6 +43,7 @@ function scaleRow(
     label: 'Conexão multimídia (Android Auto / Carplay)',
     optionLabel,
     unit: null,
+    relativeValue,
     sortOrder: 1870,
   });
   const values = vehicles.map(
@@ -118,8 +120,8 @@ describe('seller localized comparison presentation', () => {
         {
           category: 'Conveniência',
           rows: [
-            scaleRow('CO_0023', 'Sem fio', [null, true]),
-            scaleRow('CO_0022', 'USB', [true, null]),
+            scaleRow('CO_0023', 'Sem fio', 320, [null, true]),
+            scaleRow('CO_0022', 'USB', 260, [true, null]),
             numericRow(),
           ],
         },
@@ -140,6 +142,10 @@ describe('seller localized comparison presentation', () => {
       hasReferenceAdvantage: false,
     });
     expect(rows[1]?.values.map((value) => value.displayValue)).toEqual(['USB', 'Sem fio']);
+    expect(rows[1]?.values.map((value) => value.comparison)).toEqual([
+      'disadvantage',
+      'advantage',
+    ]);
   });
 
   it('uses em dash only for missing scale data, preserving an explicit baseline label', () => {
@@ -148,7 +154,7 @@ describe('seller localized comparison presentation', () => {
       categories: [
         {
           category: 'Conveniência',
-          rows: [scaleRow('CO_1003', '-', [true, null])],
+          rows: [scaleRow('CO_1003', '-', 0, [true, null])],
         },
       ],
     };

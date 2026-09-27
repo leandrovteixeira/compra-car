@@ -1,5 +1,19 @@
 # Contexto para agentes de IA
 
+## Global Advantage + Numeric Presentation Metadata (2026-09-27)
+
+Seller comparison advantage is global per visible row: numeric ranks all known values by
+`value_direction`, binary ranks true over false, and grouped scale ranks the selected alternatives
+by `relative_value` (never by digits embedded in `detail_pt`). Equal best values share the marker;
+if the whole row is equal there is no marker. Any unknown value suppresses an objective winner for
+that row. Advantages mode remains reference-only.
+
+Staging `specs` now also carries `display_unit_pt`, `display_multiplier` and
+`display_decimals`. Canonical numeric storage remains untouched except PW_0005, whose 290 values
+were already liters (1.0–2.4) while metadata incorrectly said cc; unit/input_unit were corrected to
+L. Torque specs remain stored in Nm and render in kgfm through display metadata. OW_0001 renders two
+decimals; inch/years localize to pol/anos.
+
 ## Seller PT-BR Comparison Presentation (2026-09-27)
 
 Branch `seller-pt-comparison` refatora a apresentação do Comparar para consumir a camada localizada

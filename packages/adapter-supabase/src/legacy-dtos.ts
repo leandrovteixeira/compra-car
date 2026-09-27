@@ -23,6 +23,10 @@ export interface LegacySpecRow {
   readonly detail_pt?: string | null;
   readonly display_pt?: string | null;
   readonly display_order?: string | number | null;
+  readonly display_unit_pt?: string | null;
+  readonly display_multiplier?: string | number | null;
+  readonly display_decimals?: string | number | null;
+  readonly relative_value?: string | number | null;
   readonly unit: string | null;
   readonly value_direction: string | null;
   readonly is_active: boolean | null;
