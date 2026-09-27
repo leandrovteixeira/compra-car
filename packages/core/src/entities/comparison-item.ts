@@ -17,7 +17,7 @@ export interface ComparisonItem {
   readonly equipmentGroup: string;
   readonly specSet: string;
   readonly label: string;
-  readonly optionLabel: string | null;
+  readonly optionLabel?: string | null;
   readonly unit: string | null;
   readonly valueDirection: ValueDirection | null;
   readonly sortOrder: number | null;
