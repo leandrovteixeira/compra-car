@@ -37,6 +37,26 @@ export function mapLegacyProductToVehicle(row: LegacyProductRow): Vehicle {
   });
 }
 
+function preferredText(
+  localized: string | null | undefined,
+  fallback: string | null,
+  field: string,
+  rowId: unknown,
+): string {
+  return requiredText(localized?.trim() || fallback, field, rowId);
+}
+
+function optionalSortOrder(value: string | number | null | undefined, rowId: unknown): number | null {
+  if (value === null || value === undefined || String(value).trim() === '') return null;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    throw new LegacyAdapterMappingError(
+      `Ordem de exibição inválida para specs.id ${String(rowId)}.`,
+    );
+  }
+  return parsed;
+}
+
 export function mapLegacySpecToComparisonItem(row: LegacySpecRow): ComparisonItem {
   if (row.type !== 'binary' && row.type !== 'scale' && row.type !== 'numeric') {
     throw new UnknownLegacySpecTypeError(row.type, row.id);
@@ -57,13 +77,27 @@ export function mapLegacySpecToComparisonItem(row: LegacySpecRow): ComparisonIte
     id: requiredText(row.id, 'specs.id', row.id),
     code: requiredText(row.code, 'specs.code', row.id),
     type: row.type,
-    category: requiredText(row.group_name, 'specs.group_name', row.id),
-    equipmentGroup: requiredText(row.equipment_group, 'specs.equipment_group', row.id),
-    specSet: requiredText(row.spec_set, 'specs.spec_set', row.id),
-    label: requiredText(row.detail, 'specs.detail', row.id),
+    category: preferredText(row.group_name_pt, row.group_name, 'specs.group_name', row.id),
+    equipmentGroup: preferredText(
+      row.equipment_group_pt,
+      row.equipment_group,
+      'specs.equipment_group',
+      row.id,
+    ),
+    specSet: preferredText(row.spec_set_pt, row.spec_set, 'specs.spec_set', row.id),
+    label: preferredText(
+      row.display_pt,
+      row.detail_pt?.trim() || row.detail,
+      'specs.display_pt',
+      row.id,
+    ),
+    optionLabel:
+      row.type === 'scale'
+        ? preferredText(row.detail_pt, row.detail, 'specs.detail_pt', row.id)
+        : null,
     unit: row.type === 'numeric' && row.unit?.trim() ? row.unit.trim() : null,
     valueDirection,
-    sortOrder: null,
+    sortOrder: optionalSortOrder(row.display_order, row.id),
   });
 }
 

@@ -17,6 +17,7 @@ export interface ComparisonItem {
   readonly equipmentGroup: string;
   readonly specSet: string;
   readonly label: string;
+  readonly optionLabel: string | null;
   readonly unit: string | null;
   readonly valueDirection: ValueDirection | null;
   readonly sortOrder: number | null;
@@ -30,6 +31,7 @@ export interface CreateComparisonItemInput {
   readonly equipmentGroup: string;
   readonly specSet: string;
   readonly label: string;
+  readonly optionLabel?: string | null;
   readonly unit: string | null;
   readonly valueDirection?: string | null;
   readonly sortOrder?: number | null;
@@ -53,6 +55,10 @@ export function createComparisonItem(input: CreateComparisonItemInput): Comparis
     throw new DomainValidationError('sortOrder deve ser um número finito ou null.');
   }
 
+  const optionLabel =
+    input.type === 'scale'
+      ? requiredText(input.optionLabel ?? input.label, 'optionLabel')
+      : null;
   const unit = input.unit === null ? null : requiredText(input.unit, 'unit');
   if (input.type !== 'numeric' && unit !== null) {
     throw new DomainValidationError('Itens binary e scale não podem possuir unidade.');
@@ -76,6 +82,7 @@ export function createComparisonItem(input: CreateComparisonItemInput): Comparis
     equipmentGroup: requiredText(input.equipmentGroup, 'equipmentGroup'),
     specSet: requiredText(input.specSet, 'specSet'),
     label: requiredText(input.label, 'label'),
+    optionLabel,
     unit,
     valueDirection,
     sortOrder,

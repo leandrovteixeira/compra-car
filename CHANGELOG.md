@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-09-27 — Seller PT-BR Comparison Presentation
+
+- comparison now consumes the localized spec hierarchy and `display_pt` from the adapter boundary;
+- numeric and binary remain one row per spec; scale alternatives collapse into one seller row and
+  render the selected `detail_pt` in each vehicle cell;
+- comparison rows and category sequence follow catalog `display_order`, with canonical English
+  fields as rollout fallback;
+- PDF inherits the same normalized presentation without direct database coupling;
+- focused regressions cover localized mapping, scale collapsing, explicit baseline versus missing
+  data, and ordering.
+
+# Changelog
+
 ## 2026-09-11 — Product State Invariant + Compare Eligibility Row-Limit Fix (Sprint 17R.1)
 
 - refina a regra para **Public requires Active**, substituindo a permissão dos quatro estados da 17R;
