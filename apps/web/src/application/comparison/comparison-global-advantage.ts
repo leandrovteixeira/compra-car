@@ -23,7 +23,9 @@ function rankNumbers(
   const best =
     direction === 'positive' ? Math.max(...numericValues) : Math.min(...numericValues);
   return Object.freeze(
-    numericValues.map((value) => (value === best ? 'advantage' : 'disadvantage') as const),
+    numericValues.map(
+      (value): ComparisonOutcome => (value === best ? 'advantage' : 'disadvantage'),
+    ),
   );
 }
 
@@ -53,6 +55,8 @@ export function rankBinaryValues(
   }
 
   return Object.freeze(
-    binaryValues.map((value) => (value ? 'advantage' : 'disadvantage') as const),
+    binaryValues.map(
+      (value): ComparisonOutcome => (value ? 'advantage' : 'disadvantage'),
+    ),
   );
 }
