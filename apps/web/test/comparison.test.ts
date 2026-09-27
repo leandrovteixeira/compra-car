@@ -186,8 +186,14 @@ describe('apresentação dos valores', () => {
 });
 
 describe('formatação numérica da comparação', () => {
-  it('formata displacement com milhar brasileiro sem alterar a escala', () => {
-    expect(formatComparisonNumber(2000, 'cc', { code: 'PW_0005' })).toBe('2.000 cc');
+  it('exibe displacement na unidade canônica correta em litros', () => {
+    expect(
+      formatComparisonNumber(1.5, 'L', {
+        code: 'PW_0005',
+        displayUnit: 'L',
+        displayDecimals: 1,
+      }),
+    ).toBe('1,5 L');
   });
 
   it.each([
@@ -199,10 +205,32 @@ describe('formatação numérica da comparação', () => {
   });
 
   it.each([
-    ['CO_0017', 5, '5,00 inch'],
-    ['CO_0019', 12.3, '12,30 inch'],
-  ] as const)('usa duas casas para %s', (code, value, expected) => {
+    ['CO_0017', 5, '5,00 pol'],
+    ['CO_0019', 12.3, '12,30 pol'],
+  ] as const)('usa duas casas e localiza polegadas para %s', (code, value, expected) => {
     expect(formatComparisonNumber(value, 'inch', { code })).toBe(expected);
+  });
+
+  it('usa duas casas em eficiência energética e localiza years', () => {
+    expect(
+      formatComparisonNumber(1.876, 'MJ/Km', {
+        code: 'OW_0001',
+        displayUnit: 'MJ/km',
+        displayDecimals: 2,
+      }),
+    ).toBe('1,88 MJ/km');
+    expect(formatComparisonNumber(5, 'years', { code: 'OW_0009' })).toBe('5 anos');
+  });
+
+  it('converte torque canônico em Nm para kgfm apenas na apresentação', () => {
+    expect(
+      formatComparisonNumber(310.1, 'Nm', {
+        code: 'PW_0023',
+        displayUnit: 'kgfm',
+        displayMultiplier: 0.101971621297793,
+        displayDecimals: 1,
+      }),
+    ).toBe('31,6 kgfm');
   });
 
   it('formata rotation max torque como inteiro com arredondamento do Intl', () => {
@@ -268,8 +296,8 @@ describe('representação visual das células', () => {
 
   it('coloca o check no veículo presente quando a referência binary está ausente', () => {
     expect(shouldShowAdvantageCheck(0, false, 'not-applicable')).toBe(false);
-    expect(shouldShowAdvantageCheck(1, false, 'disadvantage')).toBe(true);
-    expect(shouldShowAdvantageCheck(1, true, 'advantage')).toBe(false);
+    expect(shouldShowAdvantageCheck(1, false, 'disadvantage')).toBe(false);
+    expect(shouldShowAdvantageCheck(1, true, 'advantage')).toBe(true);
     expect(shouldShowAdvantageCheck(1, false, 'tie')).toBe(false);
   });
 });
@@ -367,9 +395,10 @@ describe('filtro e erros públicos', () => {
     expect(shouldShowAdvantageCheckForMode('advantages', 2, true, 'disadvantage')).toBe(false);
     expect(shouldShowAdvantageCheckForMode('advantages', 0, false, 'not-applicable')).toBe(false);
     expect(shouldShowAdvantageCheckForMode('differences', 0, true, 'not-applicable')).toBe(true);
-    expect(shouldShowAdvantageCheckForMode('differences', 1, false, 'disadvantage')).toBe(true);
+    expect(shouldShowAdvantageCheckForMode('differences', 1, false, 'advantage')).toBe(true);
+    expect(shouldShowAdvantageCheckForMode('differences', 1, false, 'disadvantage')).toBe(false);
     expect(shouldShowAdvantageCheckForMode('differences', 1, false, 'tie')).toBe(false);
-    expect(shouldShowAdvantageCheckForMode('complete', 1, false, 'disadvantage')).toBe(true);
+    expect(shouldShowAdvantageCheckForMode('complete', 1, false, 'advantage')).toBe(true);
   });
 
   it('compara valores brutos por semantica, nao pelas strings formatadas', () => {
