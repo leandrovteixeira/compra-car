@@ -17,6 +17,10 @@ const base: LegacySpecRow = {
   detail_pt: 'USB',
   display_pt: 'Conexão multimídia (Android Auto / Carplay)',
   display_order: 1870,
+  display_unit_pt: null,
+  display_multiplier: 1,
+  display_decimals: null,
+  relative_value: 260,
   unit: null,
   value_direction: null,
   is_active: true,
@@ -32,6 +36,8 @@ describe('localized comparison spec mapping', () => {
       specSet: 'Conexão multimídia',
       label: 'Conexão multimídia (Android Auto / Carplay)',
       optionLabel: 'USB',
+      relativeValue: 260,
+      displayMultiplier: 1,
       sortOrder: 1870,
     });
   });
