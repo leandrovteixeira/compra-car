@@ -46,9 +46,7 @@ export function rankScaleRelativeValues(
 export function rankBinaryValues(
   values: readonly (boolean | null)[],
 ): readonly ComparisonOutcome[] {
-  if (values.some((value) => value === null)) return unknownOutcomes(values.length);
-
-  const binaryValues = values as readonly boolean[];
+  const binaryValues = values.map((value) => value === true);
   const first = binaryValues[0];
   if (first === undefined || binaryValues.every((value) => value === first)) {
     return Object.freeze(binaryValues.map(() => 'tie' as const));
