@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-09-27 — Global Advantage + Numeric Presentation Metadata
+
+- Seller checks now identify the globally best known value across all compared vehicles rather than
+  pairwise wins against the reference;
+- numeric uses `value_direction` (Positive=max, Negative=min), binary uses true>false, and scale
+  uses the selected alternative's `relative_value`; equal best values may share a check, while an
+  entirely equal row has none;
+- incomplete rows with unknown values do not claim an objective winner;
+- numeric display consumes catalog metadata for localized unit, multiplier and decimals; torque
+  remains canonical in Nm and renders in kgfm, energy efficiency uses 2 decimals, and English
+  `inch`/`years` labels render as `pol`/`anos`;
+- displacement is corrected to liters in Staging because all 290 persisted values are 1.0–2.4 L,
+  not cc.
+
 ## 2026-09-27 — Seller PT-BR Comparison Presentation
 
 - comparison now consumes the localized spec hierarchy and `display_pt` from the adapter boundary;
