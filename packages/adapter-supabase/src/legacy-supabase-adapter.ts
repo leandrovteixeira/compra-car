@@ -44,7 +44,7 @@ import {
 
 const PRODUCT_COLUMNS = 'id,brand,model,version,model_year,production_year,is_active,is_public';
 const SPEC_COLUMNS =
-  'id,code,type,group_name,equipment_group,spec_set,detail,unit,value_direction,is_active';
+  'id,code,type,group_name,equipment_group,spec_set,detail,group_name_pt,equipment_group_pt,spec_set_pt,detail_pt,display_pt,display_order,unit,value_direction,is_active';
 const PRODUCT_SPEC_COLUMNS = 'product_id,equipment_id,value,is_present,input_unit';
 const CATALOG_PAGE_SIZE = 500;
 
@@ -558,7 +558,9 @@ export class LegacySupabaseAdapter
       .from('specs')
       .select(SPEC_COLUMNS)
       .eq('is_active', true)
-      .in('id', equipmentIds);
+      .in('id', equipmentIds)
+      .order('display_order')
+      .order('id');
     if (specError) throw queryError('specs da comparação', specError);
 
     const specs = (specData ?? []) as unknown as LegacySpecRow[];

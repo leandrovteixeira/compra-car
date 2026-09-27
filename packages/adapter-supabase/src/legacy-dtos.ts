@@ -17,6 +17,12 @@ export interface LegacySpecRow {
   readonly equipment_group: string | null;
   readonly spec_set: string | null;
   readonly detail: string | null;
+  readonly group_name_pt?: string | null;
+  readonly equipment_group_pt?: string | null;
+  readonly spec_set_pt?: string | null;
+  readonly detail_pt?: string | null;
+  readonly display_pt?: string | null;
+  readonly display_order?: string | number | null;
   readonly unit: string | null;
   readonly value_direction: string | null;
   readonly is_active: boolean | null;

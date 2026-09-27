@@ -1,5 +1,18 @@
 # Contexto para agentes de IA
 
+## Seller PT-BR Comparison Presentation (2026-09-27)
+
+Branch `seller-pt-comparison` refatora a apresentação do Comparar para consumir a camada localizada
+já existente em `public.specs`: group/equipment/spec_set PT-BR, `display_pt`, `detail_pt` e
+`display_order`. O adapter preserva fallback canônico EN durante rollout. Numeric e binary continuam
+uma linha por spec. Scale é consolidado na camada de presentation em uma única linha por conjunto,
+com label `display_pt` e valor da célula igual ao `detail_pt` selecionado; ausência sem associação é
+`—`, distinta do baseline explícito `-`. Rows e categorias passam a respeitar `display_order`.
+O engine de vantagem para scale permanece fora deste escopo; score por relative_value não é
+reimplementado no frontend. PDF reutiliza o mesmo view model.
+
+# Contexto para agentes de IA
+
 ## Sprint 17R.1 — Product State Invariant + Compare Row-Limit Fix (2026-09-11)
 
 Hotfix incremental no worktree C:/Dev/compra-car-17r, branch sprint-17r-catalog-visibility,
