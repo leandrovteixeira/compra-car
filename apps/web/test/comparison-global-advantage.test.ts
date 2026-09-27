@@ -49,13 +49,21 @@ describe('global comparison advantage', () => {
     expect(rankBinaryValues([true, true, true])).toEqual(['tie', 'tie', 'tie']);
   });
 
-  it('does not claim a global winner when any compared value is unknown', () => {
+  it('treats missing binary association as absent, matching seller dot/dash semantics', () => {
+    expect(rankBinaryValues([true, null, false])).toEqual([
+      'advantage',
+      'disadvantage',
+      'disadvantage',
+    ]);
+    expect(rankBinaryValues([null, false, null])).toEqual(['tie', 'tie', 'tie']);
+  });
+
+  it('does not claim a global winner for unknown numeric or scale values', () => {
     expect(rankNumericValues([100, null, 90], 'positive')).toEqual([
       'unknown',
       'unknown',
       'unknown',
     ]);
-    expect(rankBinaryValues([true, null, false])).toEqual(['unknown', 'unknown', 'unknown']);
     expect(rankScaleRelativeValues([2850, null, 2280])).toEqual([
       'unknown',
       'unknown',
