@@ -33,6 +33,12 @@ export default function AdminPage() {
             title="Preços públicos"
           />
           <ModuleCard
+            description="Cadastre as marcas brasileiras que entram automaticamente no monitoramento do Brand Connector."
+            href="/admin/brands"
+            status="Disponível"
+            title="Marcas monitoradas"
+          />
+          <ModuleCard
             description="Organização de equipamentos e categorias será definida em etapa posterior."
             status="Em breve"
             title="Catálogo auxiliar"
