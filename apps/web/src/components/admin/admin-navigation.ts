@@ -13,7 +13,7 @@ export const adminNavigationItems: readonly AdminNavigationItem[] = [
   { href: '/admin/prices/policies/input', label: 'Criar políticas', status: 'active' },
   { label: 'Equipamentos', status: 'planned' },
   { label: 'Categorias', status: 'planned' },
-  { label: 'Marcas', status: 'planned' },
+  { href: '/admin/agents/brands', label: 'Marcas', status: 'active' },
   {
     label: 'Importações',
     status: 'active',
