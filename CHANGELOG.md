@@ -1,5 +1,16 @@
 # Changelog
 
+## Sprint 20E.1 — canonical MMV registry / Option A (2026-10-01)
+
+- Option A implemented: year-independent `catalog_mmvs` is now the canonical MMV bank, while `products` remains the MMVY occurrence table.
+- Staging-only migration `20261001184015_sprint_20e_canonical_mmv_registry` creates the server-only MMV registry, nullable `products.mmv_id`, indexes and transactional `apply_catalog_mmvs` RPC.
+- Migration is additive: zero backfill, zero existing Product mutation, nullable relationship and ON DELETE RESTRICT.
+- Apply RPC rechecks COMPLETED MMV_DISCOVERY run, latest ACCEPT review, exact proposal/fingerprint, allowed reason class, market, identity shape and newer-finding staleness under the same advisory lock used by reviews.
+- Staging transactional smoke validated apply, idempotent reapply and stale-proposal rejection; smoke rows were rolled back. Registry remains empty and no Product is linked.
+- Core/adapter/Admin now expose canonical MMV read/apply contracts. NEW_MODEL findings may stage multiple resolved MMVs atomically; Apply remains separate from review and never creates Product/PY/MY.
+- Production was read-only audited and remains unchanged. Production migration history contains two 2026-09-29 entries absent from this Git branch/Staging; production migration promotion is blocked until history is reconciled.
+- No QA/Staging data will be copied to Production.
+
 ## Sprint 20E — Review / Apply contract (2026-10-01)
 
 - Added explicit separation between discovery finding, human review and canonical apply.
