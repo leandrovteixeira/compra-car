@@ -12,28 +12,33 @@ function setup() {
     );
     if (url.origin !== 'https://offline.invalid') throw Error('Network forbidden');
     if (url.pathname.endsWith('/catalog_mmvs') && (init?.method ?? 'GET') === 'GET') {
+      const offset = Number(url.searchParams.get('offset') ?? 0);
       return new Response(
-        JSON.stringify([
-          {
-            id: randomUUID(),
-            market: 'BR',
-            identity_key: 'read-identity',
-            brand: 'Jeep',
-            model: 'Commander',
-            official_version_label: 'Overland',
-            body_style: null,
-            powertrain_label: 'T270 MHEV',
-            propulsion: 'MHEV',
-            engine_displacement: '1.300',
-            status: 'ACTIVE',
-            visibility: 'PRIVATE',
-            source_finding_id: randomUUID(),
-            last_confirmed_finding_id: randomUUID(),
-            created_by: null,
-            created_at: '2026-10-01T18:00:00Z',
-            updated_at: '2026-10-01T18:00:00Z',
-          },
-        ]),
+        JSON.stringify(
+          offset > 0
+            ? []
+            : [
+                {
+                  id: randomUUID(),
+                  market: 'BR',
+                  identity_key: 'read-identity',
+                  brand: 'Jeep',
+                  model: 'Commander',
+                  official_version_label: 'Overland',
+                  body_style: null,
+                  powertrain_label: 'T270 MHEV',
+                  propulsion: 'MHEV',
+                  engine_displacement: '1.300',
+                  status: 'ACTIVE',
+                  visibility: 'PRIVATE',
+                  source_finding_id: randomUUID(),
+                  last_confirmed_finding_id: randomUUID(),
+                  created_by: null,
+                  created_at: '2026-10-01T18:00:00Z',
+                  updated_at: '2026-10-01T18:00:00Z',
+                },
+              ],
+        ),
         { headers: { 'content-type': 'application/json' } },
       );
     }
