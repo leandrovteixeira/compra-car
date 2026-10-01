@@ -84,6 +84,19 @@ describe('MMV platform mapping', () => {
     expect(body.evidence.length).toBeGreaterThan(0);
   });
 
+  it('stages directly applicable MMV identity proposals without creating products', async () => {
+    const bundle = mapMmvRunToPlatform(await result(), { provider: 'fixture' });
+    const proposal = bundle.findings.find(
+      (item) => item.finding.proposal?.action === 'STAGE_MMV_IDENTITY',
+    );
+    expect(proposal).toBeDefined();
+    expect(proposal!.finding.requiresReview).toBe(true);
+    expect(proposal!.finding.proposal).toMatchObject({
+      action: 'STAGE_MMV_IDENTITY',
+      brand: 'Jeep',
+    });
+  });
+
   it('persists validation-only evidence readiness alongside reason codes', async () => {
     const bundle = mapMmvRunToPlatform(await result(), { provider: 'fixture' });
     const reviewable = bundle.findings.find(
