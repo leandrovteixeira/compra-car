@@ -1,8 +1,5 @@
 import { vehicleTextComparisonKey as key } from '../admin/vehicle-text-normalization';
-import {
-  normalizePowertrainComponents,
-  normalizeTransmissionFamily,
-} from './product-component-normalization';
+import { normalizePowertrainComponents } from './product-component-normalization';
 import type { MmvDiscoveryReasonCode } from './mmv-discovery-contract';
 import type { OfficialProductCandidate } from './new-product-check-types';
 
@@ -96,21 +93,6 @@ export function classifyMmvVersionChange(
     };
   }
 
-  // Transmission family alone is explicitly non-identifying in Sprint 20.
-  if (
-    labelChanged &&
-    previous.transmission !== null &&
-    next.transmission !== null &&
-    normalizeTransmissionFamily(previous.transmission, previous.propulsion) !== null &&
-    normalizeTransmissionFamily(previous.transmission, previous.propulsion) ===
-      normalizeTransmissionFamily(next.transmission, next.propulsion)
-  ) {
-    return {
-      reasonCode: 'DESCRIPTOR_ONLY_VARIATION',
-      requiresReview: true,
-      explanation: 'Transmission wording changed without a distinct commercial powertrain identity.',
-    };
-  }
 
   return {
     reasonCode: 'POSSIBLE_RENAME',
