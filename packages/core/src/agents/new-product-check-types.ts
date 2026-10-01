@@ -1,3 +1,4 @@
+import type { MmvBodyModelResolutionProposal } from './mmv-discovery-contract';
 import type { CatalogMmvIdentity } from './catalog-mmv-identity';
 import type { AdministrativeVehicle } from '../admin/administrative-vehicle';
 
@@ -112,6 +113,8 @@ export interface CurrentMmvDiscoverySnapshot {
   readonly observations: readonly OfficialProductCandidate[];
   /** Deduplicated current commercial candidates. */
   readonly candidates: readonly OfficialProductCandidate[];
+  /** Review-only proposals when explicit body evidence suggests distinct marketed models. */
+  readonly bodyModelProposals: readonly MmvBodyModelResolutionProposal[];
   readonly rejectedCandidates: readonly RejectedProductCandidate[];
   readonly rejectedExternalSources: number;
   readonly researchMetadata: ResearchMetadata;
