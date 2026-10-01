@@ -55,6 +55,16 @@ describe('MMV apply eligibility contract', () => {
     ).toEqual({ eligible: false, code: 'REVIEW_ONLY_REASON' });
   });
 
+  it('blocks malformed staging proposals before Apply is offered', () => {
+    expect(
+      mmvApplyEligibility(
+        detail({
+          proposal: { action: 'STAGE_MMV_IDENTITIES', market: 'BR', identities: [] },
+        }),
+      ),
+    ).toEqual({ eligible: false, code: 'INVALID_PROPOSAL' });
+  });
+
   it('blocks stale accepted proposals by fingerprint', () => {
     expect(mmvApplyEligibility(detail(), { expectedFingerprint: 'newer-fingerprint' })).toEqual({
       eligible: false,
