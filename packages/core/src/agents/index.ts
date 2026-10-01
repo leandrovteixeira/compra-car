@@ -38,3 +38,5 @@ export * from './mmv-discovery-contract';
 export * from './fipe-mmv-lookup';
 export * from './current-mmv-discovery-agent';
 export * from './mmv-discovery-identity';
+export * from './mmv-body-model-resolver';
+export * from './mmv-version-change-classifier';
