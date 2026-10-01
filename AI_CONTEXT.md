@@ -1,5 +1,13 @@
 # Contexto para agentes de IA
 
+## Sprint 20C.1 — reason codes in Agent Platform
+
+Candidate validation was corrected so only `bodyStyle` is optional for historical fixture compatibility; existing MMV candidate fields remain strict.
+
+Reconciliation schema is now `20C.2`. `NEW_VERSION` findings carry deterministic `reasonCode`; body/model splits are mapped to review-required `AMBIGUOUS_MMV` findings with evidence and structured `REVIEW_MODEL_BODY_SPLIT` proposal. Admin displays the reason code. Human ACCEPT remains review-only and does not create/rename/deactivate catalog records.
+
+No database migration is required because existing finding `payload`/`proposal` JSONB is reused.
+
 ## Sprint 20C — body intelligence & reason classification
 
 Product research structured output is now `official_product_candidates_v3` with explicit nullable `bodyStyle`. The provider must preserve `model` unchanged; core emits review-only `POSSIBLE_BODY_SPLIT` proposals when explicit body evidence suggests a distinct marketed model (for example A3 + Sedan -> A3 Sedan).
