@@ -1,5 +1,14 @@
 # Changelog
 
+## Sprint 20C — body intelligence & reason classification (2026-10-01)
+
+- Product research schema v3 now captures explicit nullable `bodyStyle` without allowing the provider to rewrite the model name.
+- Current discovery snapshot advanced to `20C.1` and emits review-only `POSSIBLE_BODY_SPLIT` proposals such as `A3 + Sedan -> A3 Sedan`.
+- Added deterministic MMV change reasons for `SAME_LABEL_DISTINCT_POWERTRAIN`, `NEW_COMMERCIAL_VARIANT`, `DESCRIPTOR_ONLY_VARIATION` and `POSSIBLE_RENAME`.
+- Kept transmission, drivetrain and engine-label wording non-identifying by default; all new body/version classifications remain review-required.
+- Added body-aware discovery identity and strict OpenAI v3 fixtures; historical core fixtures remain compatible through null normalization.
+- No migration, canonical catalog mutation, provider call or Production write.
+
 ## Sprint 20B.1 — discovery snapshot compatibility fix (2026-10-01)
 
 - Preserved validated pre-dedup observations alongside deduplicated current candidates in `CurrentMmvDiscoverySnapshot`.
