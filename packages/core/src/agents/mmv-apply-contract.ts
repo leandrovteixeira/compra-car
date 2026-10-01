@@ -85,3 +85,34 @@ export function mmvApplyEligibility(
  * The current canonical product record requires PY/MY, which belongs to Sprint 21.
  */
 export const MMV_PRODUCT_APPLY_BLOCKED_UNTIL_PRODUCT_YEAR = true as const;
+
+
+export interface CanonicalMmv {
+  readonly id: string;
+  readonly market: string;
+  readonly identityKey: string;
+  readonly brand: string;
+  readonly model: string;
+  readonly officialVersionLabel: string;
+  readonly bodyStyle: string | null;
+  readonly powertrainLabel: string | null;
+  readonly propulsion: string | null;
+  readonly engineDisplacement: number | null;
+  readonly status: 'ACTIVE' | 'INACTIVE';
+  readonly visibility: 'PRIVATE' | 'PUBLIC';
+  readonly sourceFindingId: string;
+  readonly lastConfirmedFindingId: string;
+  readonly createdBy: string | null;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export interface CanonicalMmvRepository {
+  applyAcceptedProposal(input: {
+    readonly findingId: string;
+    readonly actor: string;
+    readonly proposal: AgentObject;
+    readonly expectedFingerprint: string;
+  }): Promise<readonly CanonicalMmv[]>;
+}
+
