@@ -40,3 +40,4 @@ export * from './current-mmv-discovery-agent';
 export * from './mmv-discovery-identity';
 export * from './mmv-body-model-resolver';
 export * from './mmv-version-change-classifier';
+export * from './mmv-evidence-confidence';
