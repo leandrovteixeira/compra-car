@@ -1,5 +1,14 @@
 # Changelog
 
+## Sprint 20C.1 — Agent Platform reason codes & body review (2026-10-01)
+
+- Fixed candidate validation so only new `bodyStyle` may be omitted; legacy required fields such as `trim` remain strict.
+- Reconciliation output advanced to `20C.2` because findings now carry deterministic MMV reason codes and body-model proposals.
+- `NEW_VERSION` findings now persist proposal reason classes such as `NEW_COMMERCIAL_VARIANT`, `DESCRIPTOR_ONLY_VARIATION`, `SAME_LABEL_DISTINCT_POWERTRAIN` and `POSSIBLE_RENAME`.
+- Body split proposals are persisted as review-required `AMBIGUOUS_MMV` findings with structured proposal + evidence; Accept still performs no canonical mutation.
+- Admin queue/detail surfaces the reason code to the operator.
+- No migration or Production write.
+
 ## Sprint 20C — body intelligence & reason classification (2026-10-01)
 
 - Product research schema v3 now captures explicit nullable `bodyStyle` without allowing the provider to rewrite the model name.
