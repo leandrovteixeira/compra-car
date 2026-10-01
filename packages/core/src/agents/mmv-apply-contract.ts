@@ -33,6 +33,7 @@ export type MmvApplyEligibility =
         | 'MISSING_REASON_CODE'
         | 'REVIEW_ONLY_REASON'
         | 'MISSING_PROPOSAL'
+        | 'INVALID_PROPOSAL'
         | 'STALE_PROPOSAL'
         | 'UNSUPPORTED_FINDING';
     };
@@ -68,6 +69,13 @@ export function mmvApplyEligibility(
 
   const proposal = object(detail.finding.proposal);
   if (!proposal) return { eligible: false, code: 'MISSING_PROPOSAL' };
+  if (
+    proposal.action !== 'STAGE_MMV_IDENTITIES' ||
+    !Array.isArray(proposal.identities) ||
+    proposal.identities.length < 1 ||
+    proposal.identities.length > 50
+  )
+    return { eligible: false, code: 'INVALID_PROPOSAL' };
   if (options.expectedFingerprint && options.expectedFingerprint !== detail.finding.fingerprint)
     return { eligible: false, code: 'STALE_PROPOSAL' };
 
