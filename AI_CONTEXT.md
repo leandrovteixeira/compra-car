@@ -1,5 +1,11 @@
 # Contexto para agentes de IA
 
+## Sprint 20C — MMV identity foundation
+
+Current discovery now has a deterministic internal commercial-variant identity key separate from the visible manufacturer version label. Same visible label can remain unchanged while explicit commercial powertrain/propulsion/displacement differentiates distinct identities. Engine label, transmission and drivetrain remain evidence only by default; they do not silently create MMVs.
+
+This is still a discovery/proposal identity and does not replace legacy `CatalogMmvIdentity`. Body-style resolution and descriptor/new-variant reason classification remain next. Details: [MMV_IDENTITY_20C.md](docs/agents/MMV_IDENTITY_20C.md).
+
 ## Sprint 20B — Current MMV Discovery Engine
 
 Current discovery is now a first-class layer independent of the legacy catalog. `CurrentMmvDiscoveryAgent` resolves the active Brand Connector, researches manufacturer sources, validates evidence, strips provider-only fields and deduplicates observations into `CurrentMmvDiscoverySnapshot/20B.1` without reading Products.
