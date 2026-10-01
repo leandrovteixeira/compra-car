@@ -41,6 +41,8 @@ export interface OfficialProductCandidate {
   readonly brand: string;
   /** Manufacturer's base model, never inferred from a URL slug. */
   readonly model: string;
+  /** Explicit body derivative observation when supported by evidence; null/absent means unknown. */
+  readonly bodyStyle?: string | null;
   readonly taxonomy: OfficialProductTaxonomy;
   /** Preserve published spelling; never compose from trim/engine/transmission. */
   readonly officialVersionLabel: string | null;
