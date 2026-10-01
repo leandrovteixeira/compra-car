@@ -3,6 +3,7 @@ const nullableYear = { type: ['integer', 'null'], minimum: 1900, maximum: 2200 }
 const candidateProperties = {
   brand: { type: 'string', minLength: 1, maxLength: 120 },
   model: { type: 'string', minLength: 1, maxLength: 200 },
+  bodyStyle: nullableText,
   taxonomy: { type: 'string', enum: ['MODEL', 'VARIANT', 'POWERTRAIN', 'LANDING_PAGE', 'UNKNOWN'] },
   officialVersionLabel: nullableText,
   trim: nullableText,
