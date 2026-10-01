@@ -31,7 +31,7 @@ After 20B, the flow is layered.
 
 It has **no catalog dependency**.
 
-Snapshot schema: `20B.1`.
+Snapshot schema: `20C.1`.
 
 The snapshot includes:
 - discovered brand/market;
