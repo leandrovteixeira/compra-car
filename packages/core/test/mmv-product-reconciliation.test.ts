@@ -229,7 +229,7 @@ describe('captured Jeep offline regression', () => {
       canonicalProductRows: 16,
       knownMmvIdentities: 13,
       researchedCandidates: 18,
-      schemaVersion: '19A.4',
+      schemaVersion: '20C.2',
     });
     expect(result.matchedCandidates).toHaveLength(13);
     expect(result.findings.map((f) => f.type)).toEqual(['NEW_MODEL', 'NEW_MODEL', 'NEW_MODEL']);
