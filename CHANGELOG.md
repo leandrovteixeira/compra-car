@@ -1,5 +1,16 @@
 # Changelog
 
+## Sprint 20D — Evidence & Confidence (2026-10-01)
+
+- Added source authority semantics for MANUFACTURER, FIPE and SECONDARY evidence.
+- Added corroboration levels from single-primary through cross-primary manufacturer + FIPE support.
+- Added LOW/MEDIUM/HIGH evidence readiness, explicitly separated from provider extraction confidence and from novelty probability.
+- Conflicting/insufficient evidence caps readiness at LOW; high-risk rename/body/successor/discontinuation/ambiguity classes cannot reach HIGH in 20D.
+- Every 20D assessment remains VALIDATION-only with `automationEligible=false`; no readiness level authorizes catalog mutation.
+- Manufacturer discovery evidence is internally tagged as MANUFACTURER; evidence fingerprints advanced to v2 and include source provenance.
+- Agent Platform persists `evidenceAssessment` in existing payload JSONB; Admin surfaces readiness, corroboration and explicit human-validation status.
+- MMV reconciliation schema advanced to `20D.1`. No migration or Production write.
+
 ## Sprint 20C.2 — validation hardening (2026-10-01)
 
 - Fixed numbered transmission normalization so `AT6`/`MT6` resolve to AT/MT families instead of creating matcher uncertainty.
