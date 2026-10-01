@@ -54,6 +54,7 @@ describe('component families preserve raw labels', () => {
   });
   it.each([
     'AT',
+    'AT6',
     'Automática',
     'Automática de 6 velocidades',
     'Automática de 6 velocidades sequencial',
@@ -66,7 +67,7 @@ describe('component families preserve raw labels', () => {
       ]),
     ).toMatchObject({ matched: { matchedProductIds: ['at'], candidate: { transmission } } });
   });
-  it.each(['MT', 'Manual', 'Manual de 6 velocidades'])(
+  it.each(['MT', 'MT6', 'Manual', 'Manual de 6 velocidades'])(
     'normalizes %s to MT and narrows',
     (transmission) => {
       expect(normalizeTransmissionFamily(transmission)).toBe('MT');
