@@ -23,6 +23,49 @@ afterEach(async () => {
   for (const root of roots.splice(0)) await rm(root, { recursive: true, force: true });
 });
 describe('CLI and local reports', () => {
+  it('runs current discovery without reading or reconciling the legacy catalog', async () => {
+    const root = await temporaryRoot();
+    const persistence = { persistRunBundle: vi.fn() };
+    vi.stubGlobal('fetch', () => {
+      throw new Error('Network forbidden');
+    });
+
+    expect(
+      await runNewProductCheckCli(
+        ['--brand', 'Toyota', '--provider', 'fixture', '--discovery-only'],
+        {},
+        vi.fn(),
+        root,
+        persistence,
+      ),
+    ).toBe(0);
+
+    expect(persistence.persistRunBundle).not.toHaveBeenCalled();
+    const directory = join(root, '.local-reports/agents/mmv-current-discovery');
+    const files = await readdir(directory);
+    expect(files).toHaveLength(2);
+    const json = JSON.parse(
+      await readFile(join(directory, files.find((file) => file.endsWith('.json'))!), 'utf8'),
+    );
+    expect(json.schemaVersion).toBe('20B.1');
+    expect(json.candidates).toHaveLength(21);
+    expect(json).not.toHaveProperty('matchedCandidates');
+    expect(json).not.toHaveProperty('knownMmvIdentities');
+  });
+
+  it('does not allow operational finding persistence in current-discovery-only mode', () => {
+    expect(() =>
+      parseAgentArguments([
+        '--brand',
+        'Toyota',
+        '--provider',
+        'fixture',
+        '--discovery-only',
+        '--persist-findings',
+      ]),
+    ).toThrow();
+  });
+
   it('default ignores persistence capability even with credentials present', async () => {
     const persistence = { persistRunBundle: vi.fn() };
     vi.stubGlobal('fetch', () => {
