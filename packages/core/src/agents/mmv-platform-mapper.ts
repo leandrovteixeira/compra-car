@@ -21,7 +21,8 @@ export function mmvEvidenceFingerprint(evidence: ProductEvidence): string {
   return createHash('sha256')
     .update(
       canonicalAgentJson([
-        'mmv-evidence:v1',
+        'mmv-evidence:v2',
+        evidence.sourceKind ?? 'MANUFACTURER',
         evidence.url,
         evidence.evidenceType,
         evidence.title,
