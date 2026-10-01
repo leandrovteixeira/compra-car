@@ -36,3 +36,4 @@ export * from './brand-connector-fixture';
 export * from './brand-connector-resolver';
 export * from './mmv-discovery-contract';
 export * from './fipe-mmv-lookup';
+export * from './current-mmv-discovery-agent';
