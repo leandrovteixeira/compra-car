@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
-import { acceptedConnectorProposal } from '@compra-car/core/agents';
+import { acceptedConnectorProposal, mmvApplyEligibility } from '@compra-car/core/agents';
 import { BrandConnectorForm } from '@/components/admin/brand-connector-form';
+import { MmvApplyForm } from '@/components/admin/mmv-apply-form';
 import { loadAgentFinding } from '@/application/admin/agent-platform';
 import { AgentFindingDetailView } from '@/components/admin/agent-platform-views';
 import { AgentReviewForm } from '@/components/admin/agent-review-form';
@@ -14,12 +15,16 @@ export default async function AgentFindingPage({
   const detail = await loadAgentFinding(id);
   if (!detail) notFound();
   let canActivate = false;
+  let canApplyMmv = false;
   try {
     acceptedConnectorProposal(detail);
     canActivate = true;
   } catch {
     /* Review or proposal is not eligible. */
   }
+  canApplyMmv = mmvApplyEligibility(detail, {
+    expectedFingerprint: detail.finding.fingerprint,
+  }).eligible;
   return (
     <>
       <PageHeader
@@ -33,6 +38,12 @@ export default async function AgentFindingPage({
             operation="activate"
             label="Ativar connector"
             fields={{ findingId: id }}
+          />
+        ) : null}
+        {canApplyMmv ? (
+          <MmvApplyForm
+            findingId={id}
+            expectedFingerprint={detail.finding.fingerprint}
           />
         ) : null}
         {detail.run.status === 'COMPLETED' ? (
