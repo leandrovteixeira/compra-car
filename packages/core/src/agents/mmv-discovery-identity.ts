@@ -47,9 +47,9 @@ export function projectMmvDiscoveryIdentity(
 /**
  * Stable proposal key for current discovery.
  *
- * Transmission and drivetrain are intentionally not identity-forming here: in Sprint 20
- * they are evidence/attributes unless a future reviewed rule explicitly promotes them.
- * This avoids creating new MMVs from descriptors such as AT/AT6 alone.
+ * Engine label, transmission and drivetrain are intentionally not identity-forming here: in
+ * Sprint 20 they are evidence/attributes unless a future reviewed rule explicitly promotes them.
+ * This avoids creating new MMVs from technical wording or descriptors such as AT/AT6 alone.
  */
 export function mmvDiscoveryIdentityKey(candidate: OfficialProductCandidate): string {
   const identity = projectMmvDiscoveryIdentity(candidate);
@@ -67,6 +67,5 @@ export function mmvDiscoveryIdentityKey(candidate: OfficialProductCandidate): st
     powertrain,
     identity.discriminator.propulsion,
     identity.discriminator.engineDisplacement,
-    normalizedOptional(identity.discriminator.engineLabel),
   ]);
 }
