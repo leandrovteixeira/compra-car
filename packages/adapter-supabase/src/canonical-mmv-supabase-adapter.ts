@@ -69,6 +69,32 @@ export class CanonicalMmvSupabaseAdapter implements CanonicalMmvRepository {
     assertLegacyServerRuntime();
   }
 
+  async listCanonicalMmvs(filters: {
+    readonly market?: string;
+    readonly brand?: string;
+    readonly status?: CanonicalMmv['status'];
+    readonly visibility?: CanonicalMmv['visibility'];
+  } = {}): Promise<readonly CanonicalMmv[]> {
+    const rows: Row[] = [];
+    for (;;) {
+      let query = this.client
+        .from('catalog_mmvs')
+        .select('*')
+        .order('brand')
+        .order('model')
+        .order('official_version_label')
+        .range(rows.length, rows.length + 499);
+      if (filters.market) query = query.eq('market', filters.market);
+      if (filters.brand) query = query.eq('brand', filters.brand);
+      if (filters.status) query = query.eq('status', filters.status);
+      if (filters.visibility) query = query.eq('visibility', filters.visibility);
+      const { data, error } = await query;
+      if (error || !data) throw new Error('MMV_CATALOG_READ_FAILED');
+      if (!data.length) return rows.map(canonicalMmv);
+      rows.push(...(data as unknown as Row[]));
+    }
+  }
+
   async applyAcceptedProposal(input: {
     readonly findingId: string;
     readonly actor: string;
