@@ -86,6 +86,56 @@ describe('CurrentMmvDiscoveryAgent', () => {
     });
   });
 
+  it('emits review-only body/model proposals without rewriting discovered model identity', async () => {
+    const base = toyotaFixtureCandidates[0]!;
+    const result = await new CurrentMmvDiscoveryAgent({
+      research: {
+        researchProducts: async () => ({
+          candidates: [
+            {
+              ...base,
+              brand: 'Audi',
+              model: 'A3',
+              bodyStyle: 'Sedan',
+              officialVersionLabel: 'Performance',
+              trim: 'Performance',
+              evidence: [
+                {
+                  url: 'https://toyota.com.br/body-fixture',
+                  title: 'Synthetic body fixture',
+                  excerpt: 'A3 Sedan Performance',
+                  evidenceType: 'MODEL_PAGE' as const,
+                },
+              ],
+            },
+          ],
+          metadata: { provider: 'fake' },
+        }),
+      },
+      connectorResolver: {
+        resolve: async () => ({
+          country: 'BR' as const,
+          brand: 'Audi',
+          allowedDomains: ['toyota.com.br'],
+          allowedHosts: ['toyota.com.br'],
+          searchHints: [],
+        }),
+      },
+    }).run({ country: 'BR', brand: 'Audi' }, 'body-proposal');
+
+    expect(result.candidates[0]?.model).toBe('A3');
+    expect(result.candidates[0]?.bodyStyle).toBe('Sedan');
+    expect(result.bodyModelProposals).toEqual([
+      {
+        reasonCode: 'POSSIBLE_BODY_SPLIT',
+        currentModel: 'A3',
+        bodyStyle: 'Sedan',
+        proposedModel: 'A3 Sedan',
+        requiresReview: true,
+      },
+    ]);
+  });
+
   it('preserves validated observations separately from deduplicated candidates', async () => {
     const base = toyotaFixtureCandidates[0]!;
     const result = await new CurrentMmvDiscoveryAgent({
