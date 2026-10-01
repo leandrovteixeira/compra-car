@@ -325,7 +325,7 @@ describe('CLI and local reports', () => {
     expect(result.researchedCandidates).toBe(21);
     expect(result.matchedCandidates).toHaveLength(8);
     expect(result.findings).toHaveLength(6);
-    expect(result.schemaVersion).toBe('20C.2');
+    expect(result.schemaVersion).toBe('20D.1');
     expect(
       result.matchedCandidates.every((m: { matchMode: string }) => m.matchMode === 'LEGACY_NAMING'),
     ).toBe(true);
