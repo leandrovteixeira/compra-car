@@ -1,5 +1,17 @@
 # Contexto para agentes de IA
 
+## Sprint 20A — MMV Discovery Agent contract
+
+Sprint 20 now owns MMV Discovery before Product Year. Branch `sprint-20-mmv-discovery-agent` starts from Sprint 19C.
+
+Frozen business rules: meaningful commercial version-name changes are candidate new MMVs; packages/options do not create MMV; named special editions do; body derivatives can become distinct marketed models; same-name facelift/generation remains same model; fuzzy similarity never auto-merges. Same model + same visible version label may still be distinct when powertrain differs, so visible version label cannot be the sole canonical identity key.
+
+FIPE is a first-class independent BR discovery/corroboration source, not a manufacturer Brand Connector domain. FIPE-only discoveries may create reviewable MMV proposals. Missing-current-catalog observations do not delete/deactivate immediately; after roughly 7–10 consecutive runs, emit a reviewable discontinuation/deactivation alert while preserving history.
+
+20A audit: reuse Sprint 19A extraction/dedupe/matcher/reporting, Sprint 19B Run→Finding→Evidence→Review platform, and Sprint 19C Brand Connectors. Mandatory gaps are canonical same-label/different-powertrain identity, FIPE source boundary, explicit body observation/model resolution, cross-run absence state, and richer reason codes. Details: [MMV_DISCOVERY_AGENT_20.md](docs/agents/MMV_DISCOVERY_AGENT_20.md).
+
+No migration, provider call, Staging write or Production mutation in 20A.
+
 ## Sprint 19C — fechamento real validado
 
 **COMPLETE / REAL CROSS-BRAND ONBOARDING VALIDATED**, conforme resultados fornecidos
