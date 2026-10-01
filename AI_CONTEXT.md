@@ -1,5 +1,13 @@
 # Contexto para agentes de IA
 
+## Sprint 20C — body intelligence & reason classification
+
+Product research structured output is now `official_product_candidates_v3` with explicit nullable `bodyStyle`. The provider must preserve `model` unchanged; core emits review-only `POSSIBLE_BODY_SPLIT` proposals when explicit body evidence suggests a distinct marketed model (for example A3 + Sedan -> A3 Sedan).
+
+`CurrentMmvDiscoverySnapshot` is now `20C.1` and carries body-model proposals. Deterministic version-change reasons now distinguish same-label/different-powertrain, explicit new commercial powertrain variant, transmission-style descriptor-only naming, and possible rename. All remain validation/review only; no canonical apply or schema migration yet.
+
+Details: [MMV_IDENTITY_20C.md](docs/agents/MMV_IDENTITY_20C.md).
+
 ## Sprint 20B.1 — snapshot compatibility
 
 `CurrentMmvDiscoverySnapshot` now carries both `observations` (validated source observations before deduplication) and `candidates` (deduplicated current candidates). Legacy matching uses `candidates`; model-level finding aggregation uses `observations`. This preserves historical max-confidence/evidence behavior while keeping current discovery independent of the legacy catalog.
