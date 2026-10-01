@@ -84,6 +84,19 @@ describe('MMV platform mapping', () => {
     expect(body.evidence.length).toBeGreaterThan(0);
   });
 
+  it('persists validation-only evidence readiness alongside reason codes', async () => {
+    const bundle = mapMmvRunToPlatform(await result(), { provider: 'fixture' });
+    const reviewable = bundle.findings.find(
+      (item) => item.finding.requiresReview && typeof item.finding.payload.reasonCode === 'string',
+    )!;
+    expect(reviewable.finding.payload.evidenceAssessment).toMatchObject({
+      maturity: 'VALIDATION',
+      automationEligible: false,
+      readiness: expect.any(String),
+      corroborationLevel: expect.any(String),
+    });
+  });
+
   it('preserves canonical MMV and all four associated product rows', async () => {
     const bundle = mapMmvRunToPlatform(await result(true), { provider: 'fixture' });
     const item = bundle.findings.find((i) =>
