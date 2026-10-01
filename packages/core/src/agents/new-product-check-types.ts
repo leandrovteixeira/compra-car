@@ -1,4 +1,7 @@
-import type { MmvBodyModelResolutionProposal } from './mmv-discovery-contract';
+import type {
+  MmvBodyModelResolutionProposal,
+  MmvDiscoveryReasonCode,
+} from './mmv-discovery-contract';
 import type { CatalogMmvIdentity } from './catalog-mmv-identity';
 import type { AdministrativeVehicle } from '../admin/administrative-vehicle';
 
@@ -78,6 +81,8 @@ export interface NewProductFinding {
   readonly matchedProducts: readonly AdministrativeVehicle[];
   readonly matchMode: ProductMatchMode | null;
   readonly reason: string;
+  /** Deterministic proposal explanation class; null for legacy-compatible/informational findings. */
+  readonly reasonCode?: MmvDiscoveryReasonCode | null;
 }
 export interface ResearchMetadata {
   readonly provider: string;
@@ -153,6 +158,7 @@ export interface NewProductCheckResult {
   readonly knownMmvIdentities: number;
   readonly matchedCandidates: readonly MatchedProductCandidate[];
   readonly findings: readonly NewProductFinding[];
+  readonly bodyModelProposals: readonly MmvBodyModelResolutionProposal[];
   readonly rejectedCandidates: readonly RejectedProductCandidate[];
   readonly rejectedExternalSources: number;
   readonly researchMetadata: ResearchMetadata;
