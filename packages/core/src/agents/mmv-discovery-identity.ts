@@ -39,7 +39,7 @@ export function projectMmvDiscoveryIdentity(
     brand: candidate.brand,
     model: candidate.model,
     officialVersionLabel,
-    bodyStyle: null,
+    bodyStyle: candidate.bodyStyle ?? null,
     discriminator: mmvCommercialVariantDiscriminator(candidate),
   };
 }
