@@ -26,7 +26,7 @@ import { loadAgentEnvironment } from './agent-environment';
 import { safeAgentFailure } from './agent-diagnostics';
 
 export function parseAgentArguments(args: readonly string[]) {
-  const values = args[0] === '--' ? args.slice(1) : [...args];
+  const values = args.filter((value) => value !== '--');
   const options = new Map<string, string>();
   let persistFindings = false;
   let discoveryOnly = false;
