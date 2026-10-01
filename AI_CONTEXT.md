@@ -1,5 +1,15 @@
 # Contexto para agentes de IA
 
+## Sprint 20D — Evidence & Confidence
+
+MMV evidence now distinguishes source semantics: MANUFACTURER (primary commercial), FIPE (primary market reference) and SECONDARY (lead-only). Corroboration levels are NO_EVIDENCE, SECONDARY_ONLY, SINGLE_PRIMARY, MULTI_SOURCE_SAME_KIND and CROSS_PRIMARY.
+
+Evidence readiness is LOW/MEDIUM/HIGH and is deliberately not a probability or an automation permission. Extraction confidence remains separate. CONFLICTING_SOURCES/INSUFFICIENT_EVIDENCE force LOW; high-risk rename/body/successor/discontinuation/ambiguity classes cannot reach HIGH in 20D.
+
+All assessments remain `maturity=VALIDATION` and `automationEligible=false`. Agent Platform stores the assessment in existing finding payload JSONB and Admin displays readiness/corroboration with explicit human-validation wording. Evidence fingerprints are now provenance-aware v2. MMV reconciliation schema is `20D.1`.
+
+Details: [MMV_EVIDENCE_CONFIDENCE_20D.md](docs/agents/MMV_EVIDENCE_CONFIDENCE_20D.md).
+
 ## Sprint 20C.2 — validation hardening
 
 Numbered gearbox descriptors such as `AT6` and `MT6` normalize to their transmission families. Transmission-only naming drift is therefore non-identifying and reconciles rather than creating a new MMV.
