@@ -114,7 +114,7 @@ function dependencies(detailValue = detail()) {
   const deps: MmvAdminDependencies = {
     authorize: vi.fn(async () => ({ profile: { id: actor } })),
     platform: () => platform,
-    repository: () => ({ applyAcceptedProposal }),
+    repository: () => ({ listCanonicalMmvs: vi.fn(async () => []), applyAcceptedProposal }),
     revalidate: vi.fn(),
   };
   return { deps, applyAcceptedProposal };
