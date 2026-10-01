@@ -28,6 +28,11 @@ export interface MmvMultiBrandValidationItem {
 export async function runMmvMultiBrandValidation(
   env: Readonly<Record<string, string | undefined>> = process.env,
   root = fileURLToPath(new URL('../../', import.meta.url)),
+  dependencies: {
+    readonly getActiveConnector?: (brand: string) => Promise<unknown | null>;
+    readonly runConnectorDiscovery?: (brand: string, log: (message: string) => void) => Promise<number>;
+    readonly runMmvDiscovery?: (brand: string, log: (message: string) => void) => Promise<number>;
+  } = {},
 ): Promise<{
   readonly exitCode: number;
   readonly items: readonly MmvMultiBrandValidationItem[];
@@ -38,23 +43,23 @@ export async function runMmvMultiBrandValidation(
   if (!env.OPENAI_API_KEY?.trim() || !env.OPENAI_AGENT_MODEL?.trim())
     throw new Error('OPENAI_AGENT_CONFIG_REQUIRED');
 
-  const { createLegacySupabaseClient } = await import('@compra-car/adapter-supabase');
-  const { BrandConnectorSupabaseAdapter } =
-    await import('@compra-car/adapter-supabase/brand-connectors');
-  const connectorRepository = new BrandConnectorSupabaseAdapter(
-    createLegacySupabaseClient({
-      url: env.SUPABASE_URL,
-      serverKey: env.SUPABASE_SERVER_KEY,
-    }),
-  );
-
-  const items: MmvMultiBrandValidationItem[] = [];
-
-  for (const brand of MMV_MULTI_BRAND_VALIDATION_BRANDS) {
-    const logs: string[] = [];
-    const active = await connectorRepository.getActiveConnector(brand, 'BR');
-    if (!active) {
-      const code = await runBrandConnectorCli(
+  let getActiveConnector = dependencies.getActiveConnector;
+  if (!getActiveConnector) {
+    const { createLegacySupabaseClient } = await import('@compra-car/adapter-supabase');
+    const { BrandConnectorSupabaseAdapter } =
+      await import('@compra-car/adapter-supabase/brand-connectors');
+    const connectorRepository = new BrandConnectorSupabaseAdapter(
+      createLegacySupabaseClient({
+        url: env.SUPABASE_URL,
+        serverKey: env.SUPABASE_SERVER_KEY,
+      }),
+    );
+    getActiveConnector = (brand) => connectorRepository.getActiveConnector(brand, 'BR');
+  }
+  const runConnectorDiscovery =
+    dependencies.runConnectorDiscovery ??
+    ((brand, log) =>
+      runBrandConnectorCli(
         [
           '--brand',
           brand,
@@ -67,9 +72,26 @@ export async function runMmvMultiBrandValidation(
           '--persist-findings',
         ],
         env,
-        (message) => logs.push(message),
+        log,
         root,
-      );
+      ));
+  const runMmvDiscovery =
+    dependencies.runMmvDiscovery ??
+    ((brand, log) =>
+      runNewProductCheckCli(
+        ['--brand', brand, '--provider', 'openai', '--persist-findings'],
+        env,
+        log,
+        root,
+      ));
+
+  const items: MmvMultiBrandValidationItem[] = [];
+
+  for (const brand of MMV_MULTI_BRAND_VALIDATION_BRANDS) {
+    const logs: string[] = [];
+    const active = await getActiveConnector(brand);
+    if (!active) {
+      const code = await runConnectorDiscovery(brand, (message) => logs.push(message));
       items.push({
         brand,
         status: code === 0 ? 'CONNECTOR_REVIEW_REQUIRED' : 'FAILED',
@@ -80,18 +102,7 @@ export async function runMmvMultiBrandValidation(
       continue;
     }
 
-    const code = await runNewProductCheckCli(
-      [
-        '--brand',
-        brand,
-        '--provider',
-        'openai',
-        '--persist-findings',
-      ],
-      env,
-      (message) => logs.push(message),
-      root,
-    );
+    const code = await runMmvDiscovery(brand, (message) => logs.push(message));
     items.push({
       brand,
       status: code === 0 ? 'MMV_RUN_COMPLETED' : 'FAILED',
