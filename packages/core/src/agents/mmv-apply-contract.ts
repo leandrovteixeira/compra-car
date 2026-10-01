@@ -1,0 +1,1 @@
+export const MMV_PRODUCT_APPLY_BLOCKED_UNTIL_PRODUCT_YEAR = true as const;
