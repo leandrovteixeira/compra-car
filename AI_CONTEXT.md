@@ -1,5 +1,15 @@
 # Contexto para agentes de IA
 
+## Sprint 20B — Current MMV Discovery Engine
+
+Current discovery is now a first-class layer independent of the legacy catalog. `CurrentMmvDiscoveryAgent` resolves the active Brand Connector, researches manufacturer sources, validates evidence, strips provider-only fields and deduplicates observations into `CurrentMmvDiscoverySnapshot/20B.1` without reading Products.
+
+`NewProductCheckAgent` remains the compatibility reconciler and now consumes that snapshot before projecting/matching legacy MMVs. Existing 19A.4 reconciliation outputs remain intentionally stable.
+
+Pure discovery CLI: `pnpm agent:mmv-discovery:dry-run -- --brand <brand> --provider <fixture|openai>`. It writes to `.local-reports/agents/mmv-current-discovery`, does not read the legacy catalog, cannot combine with `--persist-findings`, and performs no canonical mutation.
+
+FIPE remains a separate targeted lookup source boundary, not a manufacturer Brand Connector domain. Details: [MMV_DISCOVERY_20B.md](docs/agents/MMV_DISCOVERY_20B.md).
+
 ## Sprint 20A — MMV Discovery Agent contract
 
 Sprint 20 now owns MMV Discovery before Product Year. Branch `sprint-20-mmv-discovery-agent` starts from Sprint 19C.
