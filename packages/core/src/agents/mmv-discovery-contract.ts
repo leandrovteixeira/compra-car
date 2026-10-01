@@ -70,3 +70,11 @@ export interface MmvDiscoveryDecisionPolicy {
   readonly minimumConfidence: number | null;
   readonly requireMultipleIndependentSources: boolean;
 }
+
+export interface MmvBodyModelResolutionProposal {
+  readonly reasonCode: 'POSSIBLE_BODY_SPLIT';
+  readonly currentModel: string;
+  readonly bodyStyle: string;
+  readonly proposedModel: string;
+  readonly requiresReview: true;
+}
