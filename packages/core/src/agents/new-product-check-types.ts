@@ -142,7 +142,7 @@ export interface RejectedProductCandidate {
   readonly reason: 'INVALID_CANDIDATE' | 'OUT_OF_SCOPE' | 'NO_OFFICIAL_EVIDENCE';
 }
 export interface NewProductCheckResult {
-  readonly schemaVersion: '19A.4';
+  readonly schemaVersion: '20C.2';
   readonly runId: string;
   readonly startedAt: string;
   readonly completedAt: string;
