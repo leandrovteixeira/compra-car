@@ -107,7 +107,15 @@ export interface CanonicalMmv {
   readonly updatedAt: string;
 }
 
+export interface CanonicalMmvFilters {
+  readonly market?: string;
+  readonly brand?: string;
+  readonly status?: CanonicalMmv['status'];
+  readonly visibility?: CanonicalMmv['visibility'];
+}
+
 export interface CanonicalMmvRepository {
+  listCanonicalMmvs(filters?: CanonicalMmvFilters): Promise<readonly CanonicalMmv[]>;
   applyAcceptedProposal(input: {
     readonly findingId: string;
     readonly actor: string;
