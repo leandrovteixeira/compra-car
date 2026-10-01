@@ -64,7 +64,7 @@ export class NewProductCheckAgent {
       findings: aggregateProductFindings(
         normalizedScope,
         matches.flatMap((match) => ('finding' in match ? [match.finding] : [])),
-        discovery.candidates,
+        discovery.observations,
       ),
       rejectedCandidates: discovery.rejectedCandidates,
       rejectedExternalSources: discovery.rejectedExternalSources,
