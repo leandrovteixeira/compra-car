@@ -1,5 +1,13 @@
 # Contexto para agentes de IA
 
+## Sprint 20C.2 — validation hardening
+
+Numbered gearbox descriptors such as `AT6` and `MT6` normalize to their transmission families. Transmission-only naming drift is therefore non-identifying and reconciles rather than creating a new MMV.
+
+MMV platform matched observations explicitly use `reasonCode: null`, fixing type safety. Captured Jeep regression now expects schema `20C.2`.
+
+Admin REJECT no longer redirects to /admin; all three review decisions remain append-only and return the same review-only action result. No canonical catalog mutation is introduced.
+
 ## Sprint 20C.1 — reason codes in Agent Platform
 
 Candidate validation was corrected so only `bodyStyle` is optional for historical fixture compatibility; existing MMV candidate fields remain strict.
