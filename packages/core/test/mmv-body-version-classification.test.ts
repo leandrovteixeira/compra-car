@@ -89,7 +89,7 @@ describe('MMV matcher reason-code integration', () => {
     });
   });
 
-  it('labels transmission-only naming drift as DESCRIPTOR_ONLY_VARIATION', () => {
+  it('reconciles transmission-only naming drift instead of creating a new MMV', () => {
     const result = matcher.match(
       { country: 'BR', brand: 'Jeep' },
       {
@@ -104,7 +104,7 @@ describe('MMV matcher reason-code integration', () => {
       catalog,
     );
     expect(result).toMatchObject({
-      finding: { type: 'NEW_VERSION', reasonCode: 'DESCRIPTOR_ONLY_VARIATION' },
+      matched: { matchMode: 'LEGACY_NAMING' },
     });
   });
 });
