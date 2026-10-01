@@ -13,6 +13,7 @@ import {
 import { officialCandidateIdentity } from './product-candidate-matcher';
 import { assessMmvEvidence } from './mmv-evidence-confidence';
 import { MMV_DIRECT_APPLY_REASON_CODES } from './mmv-apply-contract';
+import { mmvDiscoveryIdentityKey } from './mmv-discovery-identity';
 import type {
   NewProductCheckResult,
   ProductEvidence,
@@ -38,6 +39,22 @@ function candidateDetails(candidate: OfficialProductCandidate): AgentObject {
   return details as unknown as AgentObject;
 }
 
+function stagedMmvIdentity(candidate: OfficialProductCandidate): AgentObject | null {
+  const officialVersionLabel = candidate.officialVersionLabel ?? candidate.trim;
+  if (!officialVersionLabel?.trim()) return null;
+  return {
+    identityKey: mmvDiscoveryIdentityKey(candidate),
+    brand: candidate.brand,
+    model: candidate.model,
+    bodyStyle: candidate.bodyStyle ?? null,
+    officialVersionLabel,
+    trim: candidate.trim,
+    powertrainLabel: candidate.powertrainLabel,
+    propulsion: candidate.propulsion,
+    engineDisplacement: candidate.engineDisplacement,
+  };
+}
+
 function mmvProposalForObservation(
   observation: {
     readonly type: AgentFindingType;
@@ -54,18 +71,21 @@ function mmvProposalForObservation(
   )
     return null;
 
+  const source =
+    observation.type === 'NEW_MODEL' && observation.variants.length
+      ? observation.variants
+      : [observation.candidate];
+  const identities = source.flatMap((candidate) => {
+    const identity = stagedMmvIdentity(candidate);
+    return identity ? [identity] : [];
+  });
+  if (!identities.length) return null;
+
   return {
-    action: 'STAGE_MMV_IDENTITY',
+    action: 'STAGE_MMV_IDENTITIES',
     reasonCode: observation.reasonCode,
-    brand: observation.candidate.brand,
-    model: observation.candidate.model,
-    bodyStyle: observation.candidate.bodyStyle ?? null,
-    officialVersionLabel: observation.candidate.officialVersionLabel,
-    trim: observation.candidate.trim,
-    powertrainLabel: observation.candidate.powertrainLabel,
-    propulsion: observation.candidate.propulsion,
-    engineDisplacement: observation.candidate.engineDisplacement,
-    variants: observation.variants.map(candidateDetails),
+    market: 'BR',
+    identities,
   };
 }
 
