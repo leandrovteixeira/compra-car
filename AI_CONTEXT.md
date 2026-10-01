@@ -1,5 +1,17 @@
 # Contexto para agentes de IA
 
+## Sprint 20E.1 — canonical MMV registry / Option A
+
+Approved architecture: `catalog_mmvs` is the year-independent canonical identity bank; `products` remains year-aware MMVY. Staging migration `20261001184015_sprint_20e_canonical_mmv_registry` has been applied only to Compra Car Staging. It is additive: new registry + nullable `products.mmv_id`; no legacy backfill or Product mutation.
+
+`apply_catalog_mmvs` is SECURITY INVOKER, service-role-only, review/stale-safe and transactional. NEW_MODEL may stage multiple resolved identities atomically. Core/adapter expose `listCanonicalMmvs` for Sprint 21 and explicit accepted-proposal apply. Admin shows a separate Apply MMV action; review ACCEPT alone still does nothing.
+
+Post-migration Staging state: catalog_mmvs=0 rows and products with mmv_id=0. Production remains without catalog_mmvs/mmv_id.
+
+Important promotion blocker: Production migration history includes `20260929170822_promotion_backup_before_qa_baseline_20260929` and `20260929171848_sync_qa_direct_schema_and_security_20260929`, which are absent from the current Git branch and Staging history. Reconcile migration history/schema before any Production push. Never copy Staging MMV data to Production.
+
+Details: [MMV_REVIEW_APPLY_20E.md](docs/agents/MMV_REVIEW_APPLY_20E.md).
+
 ## Sprint 20E — Review / Apply boundary
 
 Discovery, review and apply are now distinct. ACCEPT never mutates canonical data. Direct apply eligibility is restricted to NEW_MODEL, NEW_COMMERCIAL_VARIANT and SAME_LABEL_DISTINCT_POWERTRAIN, with COMPLETED run + latest ACCEPT + proposal + current fingerprint required. Other reason classes remain review-only.
