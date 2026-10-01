@@ -1,5 +1,13 @@
 # Changelog
 
+## Sprint 20B.1 — discovery snapshot compatibility fix (2026-10-01)
+
+- Preserved validated pre-dedup observations alongside deduplicated current candidates in `CurrentMmvDiscoverySnapshot`.
+- Legacy model-level aggregation now consumes validated observations, restoring the pre-20B confidence/evidence semantics without re-coupling discovery to the legacy catalog.
+- Corrected Brand Connector fixture coverage to use the exact allowed official host.
+- Added regression coverage proving observations remain distinct while current candidates deduplicate.
+- No schema, migration or remote data change.
+
 ## Sprint 20C — MMV identity foundation (2026-10-01)
 
 - Added deterministic current-discovery MMV identity projection that preserves official version labels while distinguishing same-label commercial variants through explicit powertrain/propulsion/displacement evidence.
