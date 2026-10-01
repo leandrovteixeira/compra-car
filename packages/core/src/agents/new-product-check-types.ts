@@ -1,6 +1,7 @@
 import type {
   MmvBodyModelResolutionProposal,
   MmvDiscoveryReasonCode,
+  MmvDiscoverySourceKind,
 } from './mmv-discovery-contract';
 import type { CatalogMmvIdentity } from './catalog-mmv-identity';
 import type { AdministrativeVehicle } from '../admin/administrative-vehicle';
@@ -25,6 +26,8 @@ export type OfficialEvidenceType =
   | 'PRESS_RELEASE'
   | 'OTHER_OFFICIAL';
 export interface ProductEvidence {
+  /** Internal provenance classification; provider output does not control this field. */
+  readonly sourceKind?: MmvDiscoverySourceKind;
   readonly url: string;
   readonly title: string | null;
   readonly excerpt: string | null;
