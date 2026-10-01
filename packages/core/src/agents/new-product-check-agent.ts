@@ -45,11 +45,12 @@ export class NewProductCheckAgent {
       matcher.matchIdentities(normalizedScope, candidate, identities),
     );
 
+    const completedAt = (this.dependencies.now ?? (() => new Date()))().toISOString();
     const result: NewProductCheckResult = {
       schemaVersion: '19A.4',
       runId: discovery.runId,
       startedAt: discovery.startedAt,
-      completedAt: discovery.completedAt,
+      completedAt,
       brand: discovery.brand,
       market: discovery.market,
       researchedCandidates: discovery.researchedCandidates,
