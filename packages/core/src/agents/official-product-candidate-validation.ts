@@ -29,7 +29,10 @@ export function isOfficialProductCandidate(value: unknown): value is OfficialPro
     text(c.brand, 120) &&
     text(c.model, 200) &&
     ['MODEL', 'VARIANT', 'POWERTRAIN', 'LANDING_PAGE', 'UNKNOWN'].includes(c.taxonomy) &&
-    officialCandidateTextFields.every((field) => c[field] === undefined || c[field] === null || text(c[field], 200)) &&
+    (c.bodyStyle === undefined || c.bodyStyle === null || text(c.bodyStyle, 200)) &&
+    officialCandidateTextFields
+      .filter((field) => field !== 'bodyStyle')
+      .every((field) => c[field] === null || text(c[field], 200)) &&
     (c.engineDisplacement === null ||
       (Number.isFinite(c.engineDisplacement) &&
         c.engineDisplacement > 0 &&
