@@ -2,6 +2,7 @@ import { vehicleTextComparisonKey as key } from '../admin/vehicle-text-normaliza
 import type { BrandConnectorResolver } from './brand-connector-resolver';
 import { deduplicateOfficialCandidates } from './official-product-candidate-deduplication';
 import { isOfficialProductCandidate } from './official-product-candidate-validation';
+import { proposeBodyModelResolution } from './mmv-body-model-resolver';
 import { officialBrandSource, officialEvidenceUrl } from './official-product-sources';
 import { isResolvedOfficialVariant } from './product-candidate-matcher';
 import type {
@@ -91,6 +92,10 @@ export class CurrentMmvDiscoveryAgent {
     });
 
     const candidates = deduplicateOfficialCandidates(normalizedScope, accepted);
+    const bodyModelProposals = candidates.flatMap((candidate) => {
+      const proposal = proposeBodyModelResolution(candidate);
+      return proposal ? [proposal] : [];
+    });
     return {
       schemaVersion: '20B.1',
       runId,
@@ -108,6 +113,7 @@ export class CurrentMmvDiscoveryAgent {
       variantsResolved: candidates.filter(isResolvedOfficialVariant).length,
       observations: accepted,
       candidates,
+      bodyModelProposals,
       rejectedCandidates,
       rejectedExternalSources,
       researchMetadata: research.metadata,
