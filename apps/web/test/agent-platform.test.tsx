@@ -197,6 +197,27 @@ describe('Agents Admin presentation', () => {
     ])
       expect(html).toContain(text);
   });
+  it('surfaces MMV reason codes in the review detail', async () => {
+    const { repo, bundle } = await setup();
+    const detail = (await repo.getFinding(bundle.findings[1]!.finding.id))!;
+    const html = renderToStaticMarkup(
+      <AgentFindingDetailView
+        detail={{
+          ...detail,
+          finding: {
+            ...detail.finding,
+            payload: {
+              ...detail.finding.payload,
+              reasonCode: 'NEW_COMMERCIAL_VARIANT',
+            },
+          },
+        }}
+      />,
+    );
+    expect(html).toContain('Motivo:');
+    expect(html).toContain('NEW_COMMERCIAL_VARIANT');
+  });
+
   it('renders escaped evidence, safe external links and no executable proposal action', async () => {
     const { repo, bundle } = await setup();
     const detail = (await repo.getFinding(bundle.findings[1]!.finding.id))!;
