@@ -46,6 +46,7 @@ describe('MMV body/model proposals', () => {
       bodyStyle: 'Sedan',
       proposedModel: 'A3 Sedan',
       requiresReview: true,
+      evidence: expect.any(Array),
     });
   });
 
