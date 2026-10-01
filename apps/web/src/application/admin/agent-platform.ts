@@ -10,7 +10,6 @@ import {
   type AgentReviewDecision,
 } from '@compra-car/core/agent-platform';
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
 import { requireRole } from '@/auth/authorization';
 import { createPrivilegedAdminClient } from '@/auth/admin-client';
 export interface AgentAdminDependencies {
@@ -100,8 +99,5 @@ export async function reviewAgentFinding(
         'Decisão registrada. Recarregue a página para atualizar o histórico. Esta decisão não altera o catálogo.',
     };
   }
-  const decision = data.get('decision');
-  if (decision === 'REJECT') redirect('/admin');
-
   return { status: 'success', message: 'Decisão registrada. Esta decisão não altera o catálogo.' };
 }
