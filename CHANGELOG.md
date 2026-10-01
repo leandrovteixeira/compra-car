@@ -1,5 +1,15 @@
 # Changelog
 
+## Sprint 20A — MMV Discovery contract & audit (2026-10-01)
+
+- Sprint 20 opened on `sprint-20-mmv-discovery-agent`, based on validated Sprint 19C agent stack.
+- Frozen MMV business contract: commercial version changes create reviewable new-MMV candidates; packages do not; named special editions do; body derivatives may resolve into distinct models; facelift with same model remains same model; fuzzy matching only proposes.
+- FIPE promoted to first-class independent BR discovery/corroboration source, separate from manufacturer Brand Connector domains.
+- Lifecycle fixed to preserve history and raise possible deactivation only after approximately 7–10 consecutive missing runs; no automatic deletion.
+- Audit found two mandatory architecture gaps: legacy canonical MMV grouping by brand+model+version cannot represent same visible label with distinct powertrains, and current source contract is manufacturer-only.
+- Added `docs/agents/MMV_DISCOVERY_AGENT_20.md` and pure core contract types for source kinds, decision maturity, reason codes, body observations and internal commercial-variant discriminator.
+- No migration, remote database write, provider call or Production mutation in 20A.
+
 ## Sprint 19C — fechamento real end-to-end
 
 - **COMPLETE / REAL CROSS-BRAND ONBOARDING VALIDATED**: operador confirmou discovery,
