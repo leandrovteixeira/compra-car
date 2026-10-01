@@ -66,6 +66,7 @@ export class NewProductCheckAgent {
         matches.flatMap((match) => ('finding' in match ? [match.finding] : [])),
         discovery.observations,
       ),
+      bodyModelProposals: discovery.bodyModelProposals,
       rejectedCandidates: discovery.rejectedCandidates,
       rejectedExternalSources: discovery.rejectedExternalSources,
       researchMetadata: discovery.researchMetadata,
