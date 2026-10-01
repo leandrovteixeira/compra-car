@@ -418,7 +418,7 @@ describe('read-only fixture application', () => {
       reports: { write: async () => {} },
     }).run(scope, 'fixture-test');
     expect(result).toMatchObject({
-      schemaVersion: '19A.4',
+      schemaVersion: '20C.2',
       modelsDiscovered: 5,
       variantsResolved: 20,
       researchedCandidates: 21,
