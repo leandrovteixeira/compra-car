@@ -160,7 +160,7 @@ describe('background MMV execution', () => {
           text: {
             format: {
               type: 'json_schema',
-              name: 'official_product_candidates_v2',
+              name: 'official_product_candidates_v3',
               strict: true,
               schema: productResearchSchema,
             },
