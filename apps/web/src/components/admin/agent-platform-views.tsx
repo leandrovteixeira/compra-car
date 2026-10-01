@@ -26,6 +26,11 @@ export function agentDate(value: string | null): string {
       }).format(new Date(value))
     : '—';
 }
+function asAgentObject(value: unknown): AgentObject | null {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? (value as AgentObject)
+    : null;
+}
 const confidence = (value: number | null) =>
   value === null
     ? '—'
@@ -225,6 +230,7 @@ export function AgentRunDetail({ bundle }: { readonly bundle: AgentRunBundle }) 
 }
 export function AgentFindingDetailView({ detail }: { readonly detail: AgentFindingDetail }) {
   const { finding, run, evidence, reviews, latestReview } = detail;
+  const evidenceAssessment = asAgentObject(finding.payload.evidenceAssessment);
   return (
     <div className="space-y-6">
       <p className="text-sm">
@@ -239,18 +245,14 @@ export function AgentFindingDetailView({ detail }: { readonly detail: AgentFindi
       {typeof finding.payload.reasonCode === 'string' ? (
         <p className="text-sm">Motivo: <strong>{finding.payload.reasonCode}</strong></p>
       ) : null}
-      {finding.payload.evidenceAssessment &&
-      typeof finding.payload.evidenceAssessment === 'object' &&
-      !Array.isArray(finding.payload.evidenceAssessment) ? (
+      {evidenceAssessment ? (
         <p className="text-sm">
           Evidência:{' '}
-          <strong>{String(finding.payload.evidenceAssessment.readiness ?? '—')}</strong>
+          <strong>{String(evidenceAssessment.readiness ?? '—')}</strong>
           {' · '}
-          {String(finding.payload.evidenceAssessment.corroborationLevel ?? '—')}
+          {String(evidenceAssessment.corroborationLevel ?? '—')}
           {' · '}
-          {finding.payload.evidenceAssessment.automationEligible === false
-            ? 'validação humana'
-            : '—'}
+          {evidenceAssessment.automationEligible === false ? 'validação humana' : '—'}
         </p>
       ) : null}
       <Link
