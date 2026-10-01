@@ -34,3 +34,4 @@ export * from './brand-connector-validation';
 export * from './brand-connector-agent';
 export * from './brand-connector-fixture';
 export * from './brand-connector-resolver';
+export * from './mmv-discovery-contract';
