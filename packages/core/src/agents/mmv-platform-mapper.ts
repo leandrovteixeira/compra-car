@@ -128,6 +128,7 @@ export function mapMmvRunToPlatform(
         proposal: null,
         payload: {
           matchMode: observation.matchMode,
+          reasonCode: observation.reasonCode ?? null,
           warnings: observation.warnings,
           associatedProductRows: observation.matchedProducts as unknown as AgentObject[],
           structuredCandidate: candidateDetails(candidate),
@@ -139,6 +140,75 @@ export function mapMmvRunToPlatform(
       evidence,
     };
   });
+  const bodyFindings: AgentFindingBundle[] = result.bodyModelProposals.map((proposal) => {
+    const id = uuid();
+    const fingerprint = canonicalAgentJson([
+      'mmv-body-split:v1',
+      result.market,
+      result.brand,
+      proposal.currentModel,
+      proposal.bodyStyle,
+      proposal.proposedModel,
+    ]);
+    const evidence = proposal.evidence.map((e) => {
+      const evidenceFingerprint = mmvEvidenceFingerprint(e);
+      const url = safeAgentSourceUrl(e.url);
+      if (!url) throw new AgentPlatformError('INVALID_INPUT');
+      return {
+        id: uuid(),
+        findingId: id,
+        sourceType: e.evidenceType ?? 'OTHER_OFFICIAL',
+        sourceUrl: e.url,
+        sourceDomain: new URL(url).hostname,
+        title: e.title?.slice(0, 500) ?? null,
+        excerpt: e.excerpt?.slice(0, 1000) ?? null,
+        evidenceFingerprint,
+        metadata: {
+          excerptTruncated: (e.excerpt?.length ?? 0) > 1000,
+          titleTruncated: (e.title?.length ?? 0) > 500,
+        },
+        capturedAt: result.completedAt,
+        createdAt: result.completedAt,
+      };
+    });
+    return {
+      finding: {
+        id,
+        runId: result.runId,
+        findingType: 'AMBIGUOUS_MMV',
+        fingerprint,
+        subjectKey: canonicalAgentJson([
+          result.market,
+          result.brand,
+          proposal.currentModel,
+          proposal.bodyStyle,
+        ]),
+        title: [result.brand, proposal.currentModel, proposal.bodyStyle].filter(Boolean).join(' '),
+        summary: 'Explicit body evidence suggests a distinct marketed model; operator validation is required.',
+        confidence: null,
+        requiresReview: true,
+        subject: {
+          brand: result.brand,
+          model: proposal.currentModel,
+          bodyStyle: proposal.bodyStyle,
+        },
+        proposal: {
+          action: 'REVIEW_MODEL_BODY_SPLIT',
+          currentModel: proposal.currentModel,
+          bodyStyle: proposal.bodyStyle,
+          proposedModel: proposal.proposedModel,
+        },
+        payload: {
+          reasonCode: proposal.reasonCode,
+          requiresReview: true,
+        },
+        createdAt: result.completedAt,
+        updatedAt: result.completedAt,
+      },
+      evidence,
+    };
+  });
+  findings.push(...bodyFindings);
   return {
     run: {
       id: result.runId,
@@ -160,6 +230,7 @@ export function mapMmvRunToPlatform(
         matchedCandidates: result.matchedCandidates.length,
         rejectedCandidates: result.rejectedCandidates.length,
         rejectedExternalSources: result.rejectedExternalSources,
+        bodyModelProposals: result.bodyModelProposals.length,
       },
       configSnapshot: {
         platformSchemaVersion: '19B.1',
