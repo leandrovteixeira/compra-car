@@ -150,8 +150,9 @@ export function mapMmvRunToPlatform(
       proposal.bodyStyle,
       proposal.proposedModel,
     ]);
-    const evidence = proposal.evidence.map((e) => {
-      const evidenceFingerprint = mmvEvidenceFingerprint(e);
+    const evidence = [
+      ...new Map(proposal.evidence.map((e) => [mmvEvidenceFingerprint(e), e])).entries(),
+    ].map(([evidenceFingerprint, e]) => {
       const url = safeAgentSourceUrl(e.url);
       if (!url) throw new AgentPlatformError('INVALID_INPUT');
       return {
