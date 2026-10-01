@@ -72,6 +72,7 @@ export class CurrentMmvDiscoveryAgent {
       accepted.push({
         brand: raw.brand,
         model: raw.model,
+        bodyStyle: raw.bodyStyle ?? null,
         taxonomy: raw.taxonomy,
         officialVersionLabel: raw.officialVersionLabel,
         trim: raw.trim,
