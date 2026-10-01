@@ -70,6 +70,12 @@ describe('MMV current discovery identity', () => {
     expect(projectMmvDiscoveryIdentity(diesel).officialVersionLabel).toBe('Overland');
   });
 
+  it('does not create a different identity from technical engine-label wording alone', () => {
+    expect(mmvDiscoveryIdentityKey({ ...base, engineLabel: '1.3 Turbo' })).toBe(
+      mmvDiscoveryIdentityKey({ ...base, engineLabel: 'T270' }),
+    );
+  });
+
   it('does not create a different identity from transmission descriptors alone', () => {
     const automatic = { ...base, transmission: 'AT' };
     const automaticSix = { ...base, transmission: 'AT6' };
