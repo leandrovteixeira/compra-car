@@ -176,7 +176,8 @@ export class ProductCandidateMatcher {
       reason: string,
       identities: readonly CatalogMmvIdentity[] = [],
       matchMode: ProductMatchMode | null = null,
-      reasonCode: NewProductFinding['reasonCode'] = null,
+      reasonCode: NewProductFinding['reasonCode'] =
+        type === 'NEW_MODEL' ? 'NEW_MODEL' : type === 'AMBIGUOUS' ? 'AMBIGUOUS_IDENTITY' : null,
     ) => ({
       finding: {
         fingerprint: findingFingerprint(scope, candidate, type),
