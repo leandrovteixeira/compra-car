@@ -1,4 +1,4 @@
-import type { ProductPropulsion } from './new-product-check-types';
+import type { ProductEvidence, ProductPropulsion } from './new-product-check-types';
 
 export const MMV_DISCOVERY_MATURITY_MODES = ['VALIDATION', 'ASSISTED', 'AUTO'] as const;
 export type MmvDiscoveryMaturityMode = (typeof MMV_DISCOVERY_MATURITY_MODES)[number];
@@ -77,4 +77,5 @@ export interface MmvBodyModelResolutionProposal {
   readonly bodyStyle: string;
   readonly proposedModel: string;
   readonly requiresReview: true;
+  readonly evidence: readonly ProductEvidence[];
 }
