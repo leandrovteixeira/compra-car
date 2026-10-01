@@ -47,7 +47,7 @@ export class NewProductCheckAgent {
 
     const completedAt = (this.dependencies.now ?? (() => new Date()))().toISOString();
     const result: NewProductCheckResult = {
-      schemaVersion: '19A.4',
+      schemaVersion: '20C.2',
       runId: discovery.runId,
       startedAt: discovery.startedAt,
       completedAt,
