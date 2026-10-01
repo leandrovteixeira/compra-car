@@ -1,5 +1,14 @@
 # Changelog
 
+## Sprint 20E — Review / Apply contract (2026-10-01)
+
+- Added explicit separation between discovery finding, human review and canonical apply.
+- Directly stageable MMV classes are NEW_MODEL, NEW_COMMERCIAL_VARIANT and SAME_LABEL_DISTINCT_POWERTRAIN; rename/body/successor/discontinuation/package/ambiguity remain review-only.
+- Applicable findings now carry `STAGE_MMV_IDENTITY` proposals and are gated by COMPLETED run, latest ACCEPT review, supported reason class, proposal presence and current fingerprint.
+- Added stale-proposal protection and an explicit core block preventing Sprint 20 from creating year-aware `products` rows without PY/MY.
+- Documented the remaining architecture decision: dedicated canonical MMV registry vs keeping accepted MMVs only in Agent Platform until Sprint 21. Recommendation: dedicated MMV registry.
+- No migration or remote mutation performed.
+
 ## Sprint 20D — Evidence & Confidence (2026-10-01)
 
 - Added source authority semantics for MANUFACTURER, FIPE and SECONDARY evidence.
