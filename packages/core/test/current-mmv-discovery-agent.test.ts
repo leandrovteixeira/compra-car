@@ -86,6 +86,25 @@ describe('CurrentMmvDiscoveryAgent', () => {
     });
   });
 
+  it('preserves validated observations separately from deduplicated candidates', async () => {
+    const base = toyotaFixtureCandidates[0]!;
+    const result = await new CurrentMmvDiscoveryAgent({
+      research: {
+        researchProducts: async () => ({
+          candidates: [
+            { ...base, confidence: 0.7 },
+            { ...base, confidence: 0.98 },
+          ],
+          metadata: { provider: 'fake' },
+        }),
+      },
+    }).run(scope, 'observation-preservation');
+
+    expect(result.observations).toHaveLength(2);
+    expect(result.observations.map((candidate) => candidate.confidence)).toEqual([0.7, 0.98]);
+    expect(result.candidates).toHaveLength(1);
+  });
+
   it('uses the resolved Brand Connector source without reading the legacy catalog', async () => {
     const resolve = vi.fn(async () => ({
       country: 'BR' as const,
