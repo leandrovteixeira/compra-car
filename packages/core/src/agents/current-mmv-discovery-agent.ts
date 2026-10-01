@@ -105,6 +105,7 @@ export class CurrentMmvDiscoveryAgent {
           .map((candidate) => key(candidate.model)),
       ).size,
       variantsResolved: candidates.filter(isResolvedOfficialVariant).length,
+      observations: accepted,
       candidates,
       rejectedCandidates,
       rejectedExternalSources,
