@@ -29,5 +29,6 @@ export function proposeBodyModelResolution(
     bodyStyle,
     proposedModel: (candidate.model + ' ' + bodyStyle).trim(),
     requiresReview: true,
+    evidence: candidate.evidence,
   };
 }
