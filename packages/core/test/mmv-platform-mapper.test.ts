@@ -140,6 +140,9 @@ describe('MMV platform mapping', () => {
       evidenceType: 'MODEL_PAGE' as const,
     };
     expect(mmvEvidenceFingerprint(e)).not.toBe(mmvEvidenceFingerprint({ ...e, excerpt: 'Two' }));
+    expect(mmvEvidenceFingerprint(e)).not.toBe(
+      mmvEvidenceFingerprint({ ...e, sourceKind: 'FIPE' }),
+    );
   });
   it('uses an allowlisted config and input, excluding provider raw metadata', async () => {
     const input = await result();
