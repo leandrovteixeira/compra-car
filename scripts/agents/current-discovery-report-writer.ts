@@ -38,6 +38,14 @@ export function renderCurrentDiscoveryMarkdown(result: CurrentMmvDiscoverySnapsh
     '| Rejected | ' + result.rejectedCandidates.length + ' |',
     '| Rejected external sources | ' + result.rejectedExternalSources + ' |',
     '',
+    '## Body/model review proposals',
+    '',
+    ...(result.bodyModelProposals.length
+      ? result.bodyModelProposals.flatMap((proposal) => [
+          '- ' + cell(proposal.currentModel) + ' + ' + cell(proposal.bodyStyle) + ' → ' + cell(proposal.proposedModel) + ' (' + proposal.reasonCode + ')',
+        ])
+      : ['- None']),
+    '',
     '## Current discovered candidates',
     '',
     ...result.candidates.flatMap((candidate) => [
@@ -46,6 +54,7 @@ export function renderCurrentDiscoveryMarkdown(result: CurrentMmvDiscoverySnapsh
       '| Attribute | Discovered value |',
       '| --- | --- |',
       '| Model | ' + cell(candidate.model) + ' |',
+      '| Body style | ' + cell(candidate.bodyStyle ?? null) + ' |',
       '| Official version | ' + cell(candidate.officialVersionLabel) + ' |',
       '| Trim | ' + cell(candidate.trim) + ' |',
       '| Taxonomy | ' + cell(candidate.taxonomy) + ' |',
