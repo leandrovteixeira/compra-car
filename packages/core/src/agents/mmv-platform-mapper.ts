@@ -12,6 +12,7 @@ import {
 } from '../agent-platform/rules';
 import { officialCandidateIdentity } from './product-candidate-matcher';
 import { assessMmvEvidence } from './mmv-evidence-confidence';
+import { MMV_DIRECT_APPLY_REASON_CODES } from './mmv-apply-contract';
 import type {
   NewProductCheckResult,
   ProductEvidence,
@@ -36,6 +37,38 @@ function candidateDetails(candidate: OfficialProductCandidate): AgentObject {
   void _evidence;
   return details as unknown as AgentObject;
 }
+
+function mmvProposalForObservation(
+  observation: {
+    readonly type: AgentFindingType;
+    readonly reasonCode: string | null | undefined;
+    readonly candidate: OfficialProductCandidate;
+    readonly variants: readonly OfficialProductCandidate[];
+  },
+): AgentObject | null {
+  if (
+    !observation.reasonCode ||
+    !MMV_DIRECT_APPLY_REASON_CODES.includes(
+      observation.reasonCode as (typeof MMV_DIRECT_APPLY_REASON_CODES)[number],
+    )
+  )
+    return null;
+
+  return {
+    action: 'STAGE_MMV_IDENTITY',
+    reasonCode: observation.reasonCode,
+    brand: observation.candidate.brand,
+    model: observation.candidate.model,
+    bodyStyle: observation.candidate.bodyStyle ?? null,
+    officialVersionLabel: observation.candidate.officialVersionLabel,
+    trim: observation.candidate.trim,
+    powertrainLabel: observation.candidate.powertrainLabel,
+    propulsion: observation.candidate.propulsion,
+    engineDisplacement: observation.candidate.engineDisplacement,
+    variants: observation.variants.map(candidateDetails),
+  };
+}
+
 /** Mapping belongs to MMV: the generic platform does not derive official identities. */
 export function mapMmvRunToPlatform(
   result: NewProductCheckResult,
@@ -142,7 +175,7 @@ export function mapMmvRunToPlatform(
         confidence: candidate.confidence,
         requiresReview: observation.type !== 'MMV_MATCHED',
         subject,
-        proposal: null,
+        proposal: mmvProposalForObservation(observation),
         payload: {
           matchMode: observation.matchMode,
           reasonCode: observation.reasonCode ?? null,
