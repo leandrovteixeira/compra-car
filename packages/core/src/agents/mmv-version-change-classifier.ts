@@ -74,7 +74,9 @@ export function classifyMmvVersionChange(
 
   const previousWithoutTransmission = stripTransmissionDescriptor(previousLabel);
   const nextWithoutTransmission = stripTransmissionDescriptor(nextLabel);
+  const labelChanged = key(previousLabel) !== key(nextLabel);
   if (
+    labelChanged &&
     previousWithoutTransmission &&
     previousWithoutTransmission === nextWithoutTransmission &&
     !powertrainChanged
@@ -96,6 +98,7 @@ export function classifyMmvVersionChange(
 
   // Transmission family alone is explicitly non-identifying in Sprint 20.
   if (
+    labelChanged &&
     previous.transmission !== null &&
     next.transmission !== null &&
     normalizeTransmissionFamily(previous.transmission, previous.propulsion) !== null &&
