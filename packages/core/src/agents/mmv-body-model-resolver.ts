@@ -1,14 +1,6 @@
 import { vehicleTextComparisonKey as key } from '../admin/vehicle-text-normalization';
-import type { MmvDiscoveryReasonCode } from './mmv-discovery-contract';
+import type { MmvBodyModelResolutionProposal } from './mmv-discovery-contract';
 import type { OfficialProductCandidate } from './new-product-check-types';
-
-export interface BodyModelResolutionProposal {
-  readonly reasonCode: Extract<MmvDiscoveryReasonCode, 'POSSIBLE_BODY_SPLIT'>;
-  readonly currentModel: string;
-  readonly bodyStyle: string;
-  readonly proposedModel: string;
-  readonly requiresReview: true;
-}
 
 function bodyAlreadyInModel(model: string, bodyStyle: string): boolean {
   const normalizedModel = key(model);
@@ -27,7 +19,7 @@ function bodyAlreadyInModel(model: string, bodyStyle: string): boolean {
  */
 export function proposeBodyModelResolution(
   candidate: OfficialProductCandidate,
-): BodyModelResolutionProposal | null {
+): MmvBodyModelResolutionProposal | null {
   const bodyStyle = candidate.bodyStyle?.trim();
   if (!bodyStyle || bodyAlreadyInModel(candidate.model, bodyStyle)) return null;
 
