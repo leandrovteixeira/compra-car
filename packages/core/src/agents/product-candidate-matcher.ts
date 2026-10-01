@@ -9,6 +9,7 @@ import {
   normalizeTransmissionFamily,
   powertrainComparisonKey,
 } from './product-component-normalization';
+import { classifyMmvVersionChange } from './mmv-version-change-classifier';
 import type {
   AgentMarketScope,
   NewProductFinding,
@@ -90,6 +91,64 @@ function hasCommercialVariantEvidence(candidate: OfficialProductCandidate): bool
     ),
   );
 }
+
+function legacyIdentityCandidate(identity: CatalogMmvIdentity): OfficialProductCandidate {
+  const legacy = identity.parsedLegacyComponents;
+  return {
+    brand: identity.brand,
+    model: identity.model,
+    bodyStyle: null,
+    taxonomy: 'VARIANT',
+    officialVersionLabel: identity.canonicalVersionLabel,
+    trim: legacy.trim,
+    powertrainLabel: legacy.powertrainLabel,
+    engineDisplacement: legacy.engineDisplacement,
+    engineLabel: legacy.engineLabel,
+    propulsion: legacy.propulsion,
+    transmission: legacy.transmission,
+    drivetrain: legacy.drivetrain,
+    productionYear: null,
+    modelYear: null,
+    confidence: 1,
+    evidence: [],
+    extractionWarnings: [],
+  };
+}
+
+function plausiblePredecessors(
+  candidate: OfficialProductCandidate,
+  identities: readonly CatalogMmvIdentity[],
+): readonly CatalogMmvIdentity[] {
+  const targetTrim = candidate.trim ?? candidate.officialVersionLabel;
+  if (!targetTrim) return [];
+  const exactTrim = identities.filter((identity) => {
+    const legacyTrim = identity.parsedLegacyComponents.trim;
+    return legacyTrim !== null && key(legacyTrim) === key(targetTrim);
+  });
+  if (exactTrim.length) return exactTrim;
+  return identities.filter((identity) =>
+    namingUncertain(targetTrim, identity.parsedLegacyComponents.trim ?? identity.canonicalVersionLabel),
+  );
+}
+
+function classifyNewVersionReason(
+  candidate: OfficialProductCandidate,
+  modelIdentities: readonly CatalogMmvIdentity[],
+) {
+  const predecessors = plausiblePredecessors(candidate, modelIdentities);
+  if (!predecessors.length) return 'NEW_COMMERCIAL_VARIANT' as const;
+  const classifications = predecessors.map((identity) =>
+    classifyMmvVersionChange(legacyIdentityCandidate(identity), candidate),
+  );
+  const priority = [
+    'SAME_LABEL_DISTINCT_POWERTRAIN',
+    'DESCRIPTOR_ONLY_VARIATION',
+    'NEW_COMMERCIAL_VARIANT',
+    'POSSIBLE_RENAME',
+  ] as const;
+  return priority.find((reason) => classifications.some((item) => item.reasonCode === reason)) ?? 'POSSIBLE_RENAME';
+}
+
 interface Survivor {
   readonly identity: CatalogMmvIdentity;
   readonly legacy: CatalogMmvIdentity['parsedLegacyComponents'];
@@ -117,6 +176,7 @@ export class ProductCandidateMatcher {
       reason: string,
       identities: readonly CatalogMmvIdentity[] = [],
       matchMode: ProductMatchMode | null = null,
+      reasonCode: NewProductFinding['reasonCode'] = null,
     ) => ({
       finding: {
         fingerprint: findingFingerprint(scope, candidate, type),
@@ -129,6 +189,7 @@ export class ProductCandidateMatcher {
         matchedProducts: identities.flatMap((i) => i.productRows),
         matchMode,
         reason,
+        reasonCode,
       },
     });
     if (key(candidate.brand) !== key(scope.brand) || !candidate.evidence.length)
@@ -265,7 +326,7 @@ export class ProductCandidateMatcher {
         : warnings.includes('POSSIBLE_PACKAGE')
           ? 'Official structured source identifies a commercial variant; no existing administrative variant reconciles.'
           : 'No administrative variant survives the available official component constraints.';
-      return finding('NEW_VERSION', reason);
+      return finding('NEW_VERSION', reason, [], null, classifyNewVersionReason(candidate, models));
     }
     if (survivors.length > 1)
       return finding(
