@@ -10,7 +10,7 @@ function detail(overrides: Partial<AgentFindingDetail['finding']> = {}, decision
     ...source.finding,
     findingType: 'NEW_MODEL' as const,
     fingerprint: 'mmv-proposal-v1',
-    proposal: { action: 'STAGE_MMV_IDENTITY', brand: 'Fixture Motors', model: 'Model X' },
+    proposal: { action: 'STAGE_MMV_IDENTITIES', market: 'BR', identities: [{ identityKey: 'x', brand: 'Fixture Motors', model: 'Model X', officialVersionLabel: 'Version X' }] },
     payload: { reasonCode: 'NEW_MODEL' },
     ...overrides,
   };
