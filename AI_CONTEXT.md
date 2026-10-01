@@ -1,5 +1,15 @@
 # Contexto para agentes de IA
 
+## Sprint 20E — Review / Apply boundary
+
+Discovery, review and apply are now distinct. ACCEPT never mutates canonical data. Direct apply eligibility is restricted to NEW_MODEL, NEW_COMMERCIAL_VARIANT and SAME_LABEL_DISTINCT_POWERTRAIN, with COMPLETED run + latest ACCEPT + proposal + current fingerprint required. Other reason classes remain review-only.
+
+Applicable findings carry `STAGE_MMV_IDENTITY` proposals. Core explicitly blocks writing `products` from Sprint 20 because products require PY/MY, owned by Sprint 21.
+
+One architecture decision is now required before the write side: create a dedicated year-independent canonical MMV registry, or keep accepted MMVs only as Agent Platform proposals until Sprint 21. Recommendation is a dedicated MMV registry so the Product Year Agent has the canonical MMV bank it depends on.
+
+Details: [MMV_REVIEW_APPLY_20E.md](docs/agents/MMV_REVIEW_APPLY_20E.md).
+
 ## Sprint 20D — Evidence & Confidence
 
 MMV evidence now distinguishes source semantics: MANUFACTURER (primary commercial), FIPE (primary market reference) and SECONDARY (lead-only). Corroboration levels are NO_EVIDENCE, SECONDARY_ONLY, SINGLE_PRIMARY, MULTI_SOURCE_SAME_KIND and CROSS_PRIMARY.
