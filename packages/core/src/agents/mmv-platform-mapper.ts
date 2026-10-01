@@ -11,6 +11,7 @@ import {
   AgentPlatformError,
 } from '../agent-platform/rules';
 import { officialCandidateIdentity } from './product-candidate-matcher';
+import { assessMmvEvidence } from './mmv-evidence-confidence';
 import type {
   NewProductCheckResult,
   ProductEvidence,
@@ -95,6 +96,20 @@ export function mapMmvRunToPlatform(
         createdAt: result.completedAt,
       };
     });
+    const assessment = observation.reasonCode
+      ? assessMmvEvidence({
+          reasonCode: observation.reasonCode,
+          extractionConfidence: candidate.confidence,
+          sources: [
+            ...candidate.evidence,
+            ...observation.variants.flatMap((variant) => variant.evidence),
+          ].map((item) => ({
+            kind: item.sourceKind ?? 'MANUFACTURER',
+            sourceKey: item.url,
+          })),
+          warnings: observation.warnings,
+        })
+      : null;
     const subject: AgentObject = {
       brand: candidate.brand,
       model: candidate.model,
@@ -130,6 +145,7 @@ export function mapMmvRunToPlatform(
         payload: {
           matchMode: observation.matchMode,
           reasonCode: observation.reasonCode ?? null,
+          evidenceAssessment: assessment as unknown as AgentObject | null,
           warnings: observation.warnings,
           associatedProductRows: observation.matchedProducts as unknown as AgentObject[],
           structuredCandidate: candidateDetails(candidate),
@@ -202,6 +218,14 @@ export function mapMmvRunToPlatform(
         },
         payload: {
           reasonCode: proposal.reasonCode,
+          evidenceAssessment: assessMmvEvidence({
+            reasonCode: proposal.reasonCode,
+            extractionConfidence: 1,
+            sources: proposal.evidence.map((item) => ({
+              kind: item.sourceKind ?? 'MANUFACTURER',
+              sourceKey: item.url,
+            })),
+          }) as unknown as AgentObject,
           requiresReview: true,
         },
         createdAt: result.completedAt,
