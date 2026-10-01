@@ -1,5 +1,14 @@
 # Changelog
 
+## Sprint 20B — Current MMV Discovery Engine (2026-10-01)
+
+- Separated current-market discovery from legacy reconciliation through `CurrentMmvDiscoveryAgent` and immutable `CurrentMmvDiscoverySnapshot/20B.1`.
+- Current discovery now resolves Brand Connector, validates/filters official evidence and deduplicates candidates without any legacy catalog dependency.
+- Existing `NewProductCheckAgent` now reconciles from the current snapshot, preserving historical 19A.4 outputs and matcher behavior.
+- Added `--discovery-only` CLI mode plus `agent:mmv-discovery:dry-run`; discovery-only reports are stored separately and cannot persist reconciliation findings.
+- Added targeted FIPE lookup boundary as a separate source contract; no undocumented bulk FIPE enumeration.
+- No migration, provider call, Staging write or Production mutation in implementation.
+
 ## Sprint 20A — MMV Discovery contract & audit (2026-10-01)
 
 - Sprint 20 opened on `sprint-20-mmv-discovery-agent`, based on validated Sprint 19C agent stack.
