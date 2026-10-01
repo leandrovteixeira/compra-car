@@ -18,7 +18,7 @@ const response = (patch: Partial<Response> = {}) =>
     model: 'configured-model',
     status: 'completed',
     output_text: JSON.stringify({
-      candidates: toyotaFixtureCandidates.map((c) => ({ ...c, extractionWarnings: [] })),
+      candidates: toyotaFixtureCandidates.map((c) => ({ ...c, bodyStyle: c.bodyStyle ?? null, extractionWarnings: [] })),
     }),
     output: [
       {
@@ -47,7 +47,7 @@ describe('OpenAI research adapter (mock transport only)', () => {
     expect(prompt).not.toContain('site:media.toyota.com.br');
     const transport = vi.fn<ProductResearchTransport>(async () =>
       response({
-        output_text: JSON.stringify({ candidates: jeepFixtureCandidates }),
+        output_text: JSON.stringify({ candidates: jeepFixtureCandidates.map((c) => ({ ...c, bodyStyle: c.bodyStyle ?? null })) }),
       }),
     );
     const result = await new OpenAIProductResearchProvider({
