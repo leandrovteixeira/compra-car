@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   classifyMmvVersionChange,
   proposeBodyModelResolution,
+  ProductCandidateMatcher,
   type OfficialProductCandidate,
 } from '../src/agents';
 
@@ -53,6 +54,58 @@ describe('MMV body/model proposals', () => {
   it('does not propose a split when body is already present or unknown', () => {
     expect(proposeBodyModelResolution({ ...base, model: 'A3 Sedan', bodyStyle: 'Sedan' })).toBeNull();
     expect(proposeBodyModelResolution({ ...base, model: 'A3', bodyStyle: null })).toBeNull();
+  });
+});
+
+describe('MMV matcher reason-code integration', () => {
+  const matcher = new ProductCandidateMatcher();
+  const catalog = [
+    {
+      id: 'legacy-longitude',
+      brand: 'Jeep',
+      model: 'Renegade',
+      version: 'Longitude T270 1.3 AT ICE',
+      productionYear: 2026,
+      modelYear: 2026,
+      isActive: true,
+      isPublic: true,
+    },
+  ];
+
+  it('labels a reconciled T270 -> T270 MHEV gap as NEW_COMMERCIAL_VARIANT', () => {
+    const result = matcher.match(
+      { country: 'BR', brand: 'Jeep' },
+      {
+        ...base,
+        officialVersionLabel: 'Longitude T270 MHEV',
+        trim: 'Longitude',
+        powertrainLabel: 'T270 MHEV',
+        propulsion: 'MHEV',
+      },
+      catalog,
+    );
+    expect(result).toMatchObject({
+      finding: { type: 'NEW_VERSION', reasonCode: 'NEW_COMMERCIAL_VARIANT' },
+    });
+  });
+
+  it('labels transmission-only naming drift as DESCRIPTOR_ONLY_VARIATION', () => {
+    const result = matcher.match(
+      { country: 'BR', brand: 'Jeep' },
+      {
+        ...base,
+        officialVersionLabel: 'Longitude T270 AT6',
+        trim: 'Longitude',
+        powertrainLabel: 'T270',
+        propulsion: 'ICE',
+        engineDisplacement: 1.3,
+        transmission: 'AT6',
+      },
+      catalog,
+    );
+    expect(result).toMatchObject({
+      finding: { type: 'NEW_VERSION', reasonCode: 'DESCRIPTOR_ONLY_VARIATION' },
+    });
   });
 });
 
