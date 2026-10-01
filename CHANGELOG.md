@@ -1,5 +1,14 @@
 # Changelog
 
+## Sprint 20C.2 — validation hardening (2026-10-01)
+
+- Fixed numbered transmission normalization so `AT6`/`MT6` resolve to AT/MT families instead of creating matcher uncertainty.
+- Descriptor-only transmission naming now reconciles to the existing MMV rather than producing a false new-version proposal.
+- Fixed MMV platform mapper typing by making matched observations explicitly carry `reasonCode: null`.
+- Updated captured Jeep regression to expect reconciliation schema `20C.2`.
+- Removed an accidental REJECT redirect from the Admin review action; ACCEPT/REJECT/DEFER now consistently remain append-only review actions and return success state without navigation side effects.
+- Sprint 10C timeout failures remain unrelated baseline behavior.
+
 ## Sprint 20C.1 — Agent Platform reason codes & body review (2026-10-01)
 
 - Fixed candidate validation so only new `bodyStyle` may be omitted; legacy required fields such as `trim` remain strict.
