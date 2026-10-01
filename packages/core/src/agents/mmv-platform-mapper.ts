@@ -58,7 +58,7 @@ function stagedMmvIdentity(candidate: OfficialProductCandidate): AgentObject | n
 function mmvProposalForObservation(
   observation: {
     readonly type: AgentFindingType;
-    readonly reasonCode: string | null | undefined;
+    readonly reasonCode?: string | null;
     readonly candidate: OfficialProductCandidate;
     readonly variants: readonly OfficialProductCandidate[];
   },
