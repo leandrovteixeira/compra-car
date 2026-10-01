@@ -95,6 +95,23 @@ export interface ProductResearchProvider {
     readonly metadata: ResearchMetadata;
   }>;
 }
+export interface CurrentMmvDiscoverySnapshot {
+  readonly schemaVersion: '20B.1';
+  readonly runId: string;
+  readonly startedAt: string;
+  readonly completedAt: string;
+  readonly brand: string;
+  readonly market: 'BR';
+  readonly researchedCandidates: number;
+  readonly acceptedCandidates: number;
+  readonly modelsDiscovered: number;
+  readonly variantsResolved: number;
+  readonly candidates: readonly OfficialProductCandidate[];
+  readonly rejectedCandidates: readonly RejectedProductCandidate[];
+  readonly rejectedExternalSources: number;
+  readonly researchMetadata: ResearchMetadata;
+}
+
 export interface ProductCatalogReader {
   readProducts(scope: AgentMarketScope): Promise<readonly AdministrativeVehicle[]>;
 }
