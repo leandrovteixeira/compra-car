@@ -1,60 +1,120 @@
-# Sprint 20C — MMV Identity Foundation
+# Sprint 20C — MMV Identity & Body Intelligence
 
-## Scope completed in this increment
+## Status
 
-Sprint 20C has started with the deterministic identity layer only.
+Implemented on branch `sprint-20-mmv-discovery-agent`, pending local gates.
 
-The new `mmv-discovery-identity.ts` keeps the manufacturer's visible commercial version label unchanged while allowing an internal commercial-variant discriminator.
+## Commercial identity
 
-This is required for cases where the same visible version label is sold with distinct powertrains.
+The current-discovery identity keeps the manufacturer's visible version label unchanged while allowing an internal commercial-variant discriminator.
 
-Example class:
+This supports cases such as:
 
 - Jeep Commander / Overland / T270 MHEV
 - Jeep Commander / Overland / 2.2T Diesel 4x4
 
-Both can keep the visible label `Overland`, while the current-discovery identity key remains distinct.
+Both can retain the visible label `Overland`, while explicit commercial powertrain evidence keeps the identities distinct internally.
 
-## Identity-forming inputs in v1
-
-The internal proposal key currently uses:
+Identity-forming inputs in v1:
 
 - brand;
 - model;
-- official version label (or trim only as fallback when official label is absent);
-- commercial powertrain label, when explicitly published;
+- body style when explicitly observed;
+- official version label (or trim only as fallback);
+- commercial powertrain label when explicitly published;
 - propulsion;
 - engine displacement.
 
-The following are preserved in the discriminator/evidence but are **not identity-forming by default**:
+Preserved as evidence but non-identifying by default:
 
 - engine label;
 - transmission;
 - drivetrain.
 
-This is intentionally conservative. It prevents technical wording such as `AT` vs `AT6`, or different engine-name wording, from silently creating a new MMV.
+This prevents technical wording such as `AT` vs `AT6` from silently creating a new MMV.
 
-## Important boundary
+## Body intelligence
 
-This key is a discovery/proposal identity. It does not rewrite the legacy catalog and does not yet replace `CatalogMmvIdentity`.
+Product research schema v3 adds nullable `bodyStyle`.
 
-Body-style resolution is still pending. `bodyStyle` remains null in this first deterministic foundation and will be added only with an explicit evidence path.
+The provider must:
+- extract body only when explicitly supported;
+- keep `model` unchanged;
+- never synthesize `A3 Sedan` from `model=A3` inside the LLM.
 
-## Tests added
+Core then produces a review-only `POSSIBLE_BODY_SPLIT` proposal when body is explicit but absent from the model name.
 
-Coverage includes:
+Example:
 
-- same visible version + distinct powertrain => distinct internal identity;
-- transmission-only variation => same identity;
-- drivetrain-only variation => same identity at this stage;
-- technical engine-label wording alone => same identity;
-- special-edition/trim fallback when official version label is absent;
-- unresolved model-only observation rejected from resolved identity projection.
+```text
+observed model: A3
+bodyStyle: Sedan
+proposal: A3 Sedan
+requiresReview: true
+```
 
-## Next 20C increments
+No canonical model rename happens in discovery.
 
-1. add explicit body-style observation to discovery candidates without breaking provider compatibility;
-2. model/body resolver with review-required proposals;
-3. descriptor-only vs new-commercial-variant reason classification;
-4. connect current-discovery identity keys to reconciliation proposals;
-5. benchmark Jeep/Audi-style ambiguity cases before any canonical apply behavior.
+Current snapshot schema is now `20C.1` and includes `bodyModelProposals`.
+
+## Version-change reason classification
+
+`classifyMmvVersionChange` produces proposal reasons, never canonical decisions.
+
+Initial deterministic classes:
+
+- `SAME_LABEL_DISTINCT_POWERTRAIN`
+  - same visible version label;
+  - explicit powertrain identity differs.
+
+- `NEW_COMMERCIAL_VARIANT`
+  - explicit commercial powertrain identity changes.
+  - Example class: `Longitude T270` -> `Longitude T270 MHEV`.
+
+- `DESCRIPTOR_ONLY_VARIATION`
+  - visible difference is transmission-style technical wording only;
+  - no distinct explicit commercial powertrain identity.
+  - Example class: `T270 AT` vs `T270 AT6`.
+
+- `POSSIBLE_RENAME`
+  - name changed, but structured evidence does not prove a distinct commercial variant.
+
+Every class remains review-required in this Sprint.
+
+## Provider contract
+
+OpenAI product research structured output is now `official_product_candidates_v3`.
+
+`bodyStyle` is a strict nullable output field in the real provider schema. Historical core fixtures may omit it; core normalizes absence to null for replay compatibility.
+
+## Boundaries
+
+- No legacy catalog rewrite.
+- No canonical create/update.
+- No migration.
+- No automatic merge.
+- No automatic body split.
+- No Product Year decision.
+- No package/option identity.
+- FIPE remains a separate targeted evidence boundary.
+
+## Tests
+
+Coverage now includes:
+- same visible label + distinct powertrain;
+- T270 -> T270 MHEV;
+- AT vs AT6 descriptor-only variation;
+- possible rename fallback;
+- A3 + Sedan review-only proposal;
+- no body proposal if body is already present;
+- strict provider bodyStyle output;
+- body-aware discovery identity;
+- historical fixtures with missing bodyStyle normalized to null.
+
+## Next
+
+After local gates:
+1. persist reason codes in MMV operational finding payloads;
+2. expose body proposals/reason codes in Admin review;
+3. connect accepted proposals to explicit apply contracts;
+4. benchmark real Jeep plus a body-ambiguous brand before considering ASSISTED behavior.
