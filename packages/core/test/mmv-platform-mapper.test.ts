@@ -43,6 +43,47 @@ describe('MMV platform mapping', () => {
     for (const finding of input.findings)
       expect(bundle.findings.some((i) => i.finding.fingerprint === finding.fingerprint)).toBe(true);
   });
+  it('persists reason codes in MMV finding payloads', async () => {
+    const bundle = mapMmvRunToPlatform(await result(), { provider: 'fixture' });
+    const newVersion = bundle.findings.find((item) => item.finding.findingType === 'NEW_VERSION')!;
+    expect(typeof newVersion.finding.payload.reasonCode).toBe('string');
+  });
+
+  it('maps body/model proposals into reviewable ambiguous findings with evidence', async () => {
+    const input = await result();
+    const evidence = input.findings[0]!.candidate.evidence;
+    const bundle = mapMmvRunToPlatform(
+      {
+        ...input,
+        bodyModelProposals: [
+          {
+            reasonCode: 'POSSIBLE_BODY_SPLIT',
+            currentModel: 'A3',
+            bodyStyle: 'Sedan',
+            proposedModel: 'A3 Sedan',
+            requiresReview: true,
+            evidence,
+          },
+        ],
+      },
+      { provider: 'fixture' },
+    );
+    const body = bundle.findings.find(
+      (item) => item.finding.payload.reasonCode === 'POSSIBLE_BODY_SPLIT',
+    )!;
+    expect(body.finding).toMatchObject({
+      findingType: 'AMBIGUOUS_MMV',
+      requiresReview: true,
+      proposal: {
+        action: 'REVIEW_MODEL_BODY_SPLIT',
+        currentModel: 'A3',
+        bodyStyle: 'Sedan',
+        proposedModel: 'A3 Sedan',
+      },
+    });
+    expect(body.evidence.length).toBeGreaterThan(0);
+  });
+
   it('preserves canonical MMV and all four associated product rows', async () => {
     const bundle = mapMmvRunToPlatform(await result(true), { provider: 'fixture' });
     const item = bundle.findings.find((i) =>
