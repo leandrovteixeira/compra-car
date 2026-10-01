@@ -97,7 +97,7 @@ export class CurrentMmvDiscoveryAgent {
       return proposal ? [proposal] : [];
     });
     return {
-      schemaVersion: '20B.1',
+      schemaVersion: '20C.1',
       runId,
       startedAt,
       completedAt: now().toISOString(),
