@@ -99,7 +99,7 @@ export interface ProductResearchProvider {
   }>;
 }
 export interface CurrentMmvDiscoverySnapshot {
-  readonly schemaVersion: '20B.1';
+  readonly schemaVersion: '20C.1';
   readonly runId: string;
   readonly startedAt: string;
   readonly completedAt: string;
