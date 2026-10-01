@@ -106,6 +106,9 @@ export interface CurrentMmvDiscoverySnapshot {
   readonly acceptedCandidates: number;
   readonly modelsDiscovered: number;
   readonly variantsResolved: number;
+  /** Validated source observations before cross-source deduplication. */
+  readonly observations: readonly OfficialProductCandidate[];
+  /** Deduplicated current commercial candidates. */
   readonly candidates: readonly OfficialProductCandidate[];
   readonly rejectedCandidates: readonly RejectedProductCandidate[];
   readonly rejectedExternalSources: number;
