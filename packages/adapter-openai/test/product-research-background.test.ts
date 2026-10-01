@@ -23,7 +23,7 @@ const result = (status: Response['status'] = 'completed', patch: Partial<Respons
     status,
     output: [{ type: 'web_search_call', status: 'completed' }],
     output_text: JSON.stringify({
-      candidates: toyotaFixtureCandidates.map((c) => ({ ...c, extractionWarnings: [] })),
+      candidates: toyotaFixtureCandidates.map((c) => ({ ...c, bodyStyle: c.bodyStyle ?? null, extractionWarnings: [] })),
     }),
     ...patch,
   }) as Response;
