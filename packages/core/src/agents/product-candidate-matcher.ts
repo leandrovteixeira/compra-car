@@ -27,6 +27,7 @@ export function officialCandidateIdentity(
     scope.country,
     key(scope.brand),
     key(candidate.model),
+    normalized(candidate.bodyStyle ?? null),
     normalized(candidate.officialVersionLabel),
     candidate.officialVersionLabel === null ? normalized(candidate.trim) : null,
     candidate.propulsion,
