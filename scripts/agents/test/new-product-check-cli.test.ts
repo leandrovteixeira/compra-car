@@ -47,7 +47,7 @@ describe('CLI and local reports', () => {
     const json = JSON.parse(
       await readFile(join(directory, files.find((file) => file.endsWith('.json'))!), 'utf8'),
     );
-    expect(json.schemaVersion).toBe('20B.1');
+    expect(json.schemaVersion).toBe('20C.1');
     expect(json.candidates).toHaveLength(21);
     expect(json).not.toHaveProperty('matchedCandidates');
     expect(json).not.toHaveProperty('knownMmvIdentities');
