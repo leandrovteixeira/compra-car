@@ -1,6 +1,7 @@
 import type { OfficialProductCandidate } from './new-product-check-types';
 
 export const officialCandidateTextFields = [
+  'bodyStyle',
   'officialVersionLabel',
   'trim',
   'powertrainLabel',
@@ -28,7 +29,7 @@ export function isOfficialProductCandidate(value: unknown): value is OfficialPro
     text(c.brand, 120) &&
     text(c.model, 200) &&
     ['MODEL', 'VARIANT', 'POWERTRAIN', 'LANDING_PAGE', 'UNKNOWN'].includes(c.taxonomy) &&
-    officialCandidateTextFields.every((field) => c[field] === null || text(c[field], 200)) &&
+    officialCandidateTextFields.every((field) => c[field] === undefined || c[field] === null || text(c[field], 200)) &&
     (c.engineDisplacement === null ||
       (Number.isFinite(c.engineDisplacement) &&
         c.engineDisplacement > 0 &&
