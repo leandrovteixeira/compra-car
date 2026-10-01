@@ -142,7 +142,7 @@ describe('OpenAI research adapter (mock transport only)', () => {
       transport: async () =>
         response({
           output_text: JSON.stringify({
-            candidates: [{ ...toyotaFixtureCandidates[0], ...patch }],
+            candidates: [{ ...toyotaFixtureCandidates[0], bodyStyle: null, ...patch }],
           }),
         }),
     });
@@ -207,6 +207,7 @@ describe('OpenAI research adapter (mock transport only)', () => {
             candidates: [
               {
                 ...toyotaFixtureCandidates[1],
+                bodyStyle: null,
                 extractionWarnings: [],
                 evidence: [
                   { url: 'https://example.com', title: null, excerpt: null, evidenceType: null },
