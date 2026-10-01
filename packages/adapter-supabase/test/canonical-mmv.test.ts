@@ -11,6 +11,32 @@ function setup() {
       typeof input === 'string' ? input : input instanceof URL ? input.href : input.url,
     );
     if (url.origin !== 'https://offline.invalid') throw Error('Network forbidden');
+    if (url.pathname.endsWith('/catalog_mmvs') && (init?.method ?? 'GET') === 'GET') {
+      return new Response(
+        JSON.stringify([
+          {
+            id: randomUUID(),
+            market: 'BR',
+            identity_key: 'read-identity',
+            brand: 'Jeep',
+            model: 'Commander',
+            official_version_label: 'Overland',
+            body_style: null,
+            powertrain_label: 'T270 MHEV',
+            propulsion: 'MHEV',
+            engine_displacement: '1.300',
+            status: 'ACTIVE',
+            visibility: 'PRIVATE',
+            source_finding_id: randomUUID(),
+            last_confirmed_finding_id: randomUUID(),
+            created_by: null,
+            created_at: '2026-10-01T18:00:00Z',
+            updated_at: '2026-10-01T18:00:00Z',
+          },
+        ]),
+        { headers: { 'content-type': 'application/json' } },
+      );
+    }
     if (url.pathname.endsWith('/rpc/apply_catalog_mmvs') && (init?.method ?? 'GET') === 'POST') {
       rpc.args = JSON.parse(String(init?.body)) as Record<string, unknown>;
       const findingId = String(rpc.args.p_finding_id);
@@ -53,6 +79,18 @@ function setup() {
 }
 
 describe('Canonical MMV Supabase adapter', () => {
+  it('reads the canonical MMV bank for the Product Year Agent', async () => {
+    const { repo } = setup();
+    const rows = await repo.listCanonicalMmvs({ market: 'BR', brand: 'Jeep', status: 'ACTIVE' });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      identityKey: 'read-identity',
+      brand: 'Jeep',
+      engineDisplacement: 1.3,
+      status: 'ACTIVE',
+    });
+  });
+
   it('calls only the transactional RPC and maps canonical rows', async () => {
     const { repo, rpc } = setup();
     const findingId = randomUUID();
