@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import {
+  CurrentMmvDiscoveryAgent,
   NewProductCheckAgent,
   mapMmvRunToPlatform,
   AdministrativeProductCatalogReader,
@@ -20,6 +21,7 @@ import {
   productResearchMaxWaitMs,
 } from '@compra-car/adapter-openai';
 import { LocalProductReportWriter, redactSecrets } from './report-writer';
+import { LocalCurrentDiscoveryReportWriter } from './current-discovery-report-writer';
 import { loadAgentEnvironment } from './agent-environment';
 import { safeAgentFailure } from './agent-diagnostics';
 
@@ -27,8 +29,14 @@ export function parseAgentArguments(args: readonly string[]) {
   const values = args[0] === '--' ? args.slice(1) : [...args];
   const options = new Map<string, string>();
   let persistFindings = false;
+  let discoveryOnly = false;
   for (let index = 0; index < values.length; index += 1) {
     const name = values[index];
+    if (name === '--discovery-only') {
+      if (discoveryOnly) throw new Error('INVALID_AGENT_ARGUMENTS');
+      discoveryOnly = true;
+      continue;
+    }
     if (name === '--persist-findings') {
       if (persistFindings) throw new Error('INVALID_AGENT_ARGUMENTS');
       persistFindings = true;
@@ -46,12 +54,13 @@ export function parseAgentArguments(args: readonly string[]) {
   }
   const brand = options.get('--brand');
   const provider = options.get('--provider');
-  if (!brand || (provider !== 'fixture' && provider !== 'openai'))
+  if (!brand || (provider !== 'fixture' && provider !== 'openai') || (discoveryOnly && persistFindings))
     throw new Error('INVALID_AGENT_ARGUMENTS');
   return {
     scope: { country: 'BR' as const, brand: connectorText(brand, 100) },
     provider,
     persistFindings,
+    discoveryOnly,
   };
 }
 
@@ -63,7 +72,7 @@ export async function runNewProductCheckCli(
   persistence?: Pick<AgentPlatformRepository, 'persistRunBundle'>,
 ): Promise<number> {
   try {
-    const { scope, provider, persistFindings } = parseAgentArguments(args);
+    const { scope, provider, persistFindings, discoveryOnly } = parseAgentArguments(args);
     env = await loadAgentEnvironment(repositoryRoot, env);
     if (provider === 'openai' && (!env.OPENAI_API_KEY?.trim() || !env.OPENAI_AGENT_MODEL?.trim())) {
       throw new Error('OPENAI_AGENT_CONFIG_REQUIRED');
@@ -105,6 +114,34 @@ export async function runNewProductCheckCli(
               'utf8',
             ),
           });
+    const runId = randomUUID();
+    log('Run: ' + runId);
+
+    if (discoveryOnly) {
+      const result = await new CurrentMmvDiscoveryAgent({
+        research,
+        connectorResolver,
+      }).run(scope, runId);
+      await new LocalCurrentDiscoveryReportWriter(repositoryRoot, secrets).write(result);
+      log(
+        'Current discovery only | provider: ' +
+          provider +
+          ' | models discovered: ' +
+          result.modelsDiscovered +
+          ' | variants resolved: ' +
+          result.variantsResolved +
+          ' | researched: ' +
+          result.researchedCandidates +
+          ' | accepted: ' +
+          result.acceptedCandidates +
+          ' | rejected: ' +
+          result.rejectedCandidates.length,
+      );
+      log('Legacy catalog not read. No reconciliation or canonical mutation executed.');
+      log('Reports: .local-reports/agents/mmv-current-discovery/' + runId + '.{json,md}');
+      return 0;
+    }
+
     const catalog =
       provider === 'fixture'
         ? new FixtureProductCatalogReader()
@@ -121,8 +158,6 @@ export async function runNewProductCheckCli(
               listOperatorMatchingProducts: () => repository.listOperatorMatchingProducts(),
             });
           })();
-    const runId = randomUUID();
-    log('Run: ' + runId);
     const result = await new NewProductCheckAgent({
       research,
       catalog,
