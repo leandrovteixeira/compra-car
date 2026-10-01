@@ -27,6 +27,7 @@ describe('CurrentMmvDiscoveryAgent', () => {
       variantsResolved: 20,
       rejectedExternalSources: 0,
     });
+    expect(result.observations).toHaveLength(21);
     expect(result.candidates).toHaveLength(21);
     expect(result.candidates.some((candidate) => candidate.officialVersionLabel === 'XR')).toBe(true);
     expect(JSON.stringify(result)).not.toContain('matchedProductIds');
@@ -89,8 +90,8 @@ describe('CurrentMmvDiscoveryAgent', () => {
     const resolve = vi.fn(async () => ({
       country: 'BR' as const,
       brand: 'Toyota',
-      allowedDomains: ['toyota.com.br'],
-      allowedHosts: ['toyota.com.br'],
+      allowedDomains: ['media.toyota.com.br'],
+      allowedHosts: ['media.toyota.com.br'],
       searchHints: ['current catalog'],
     }));
     const researchProducts = vi.fn(async () => ({
