@@ -1,5 +1,12 @@
 # Changelog
 
+## Sprint 20C — MMV identity foundation (2026-10-01)
+
+- Added deterministic current-discovery MMV identity projection that preserves official version labels while distinguishing same-label commercial variants through explicit powertrain/propulsion/displacement evidence.
+- Kept engine label, transmission and drivetrain non-identifying by default to avoid false MMVs from technical descriptors such as AT vs AT6.
+- Added tests for Commander-style same-label/different-powertrain identity, descriptor-only variations, trim fallback and unresolved model-only observations.
+- No legacy catalog rewrite, migration or canonical apply behavior introduced.
+
 ## Sprint 20B — Current MMV Discovery Engine (2026-10-01)
 
 - Separated current-market discovery from legacy reconciliation through `CurrentMmvDiscoveryAgent` and immutable `CurrentMmvDiscoverySnapshot/20B.1`.
