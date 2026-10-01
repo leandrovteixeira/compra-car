@@ -239,6 +239,20 @@ export function AgentFindingDetailView({ detail }: { readonly detail: AgentFindi
       {typeof finding.payload.reasonCode === 'string' ? (
         <p className="text-sm">Motivo: <strong>{finding.payload.reasonCode}</strong></p>
       ) : null}
+      {finding.payload.evidenceAssessment &&
+      typeof finding.payload.evidenceAssessment === 'object' &&
+      !Array.isArray(finding.payload.evidenceAssessment) ? (
+        <p className="text-sm">
+          Evidência:{' '}
+          <strong>{String(finding.payload.evidenceAssessment.readiness ?? '—')}</strong>
+          {' · '}
+          {String(finding.payload.evidenceAssessment.corroborationLevel ?? '—')}
+          {' · '}
+          {finding.payload.evidenceAssessment.automationEligible === false
+            ? 'validação humana'
+            : '—'}
+        </p>
+      ) : null}
       <Link
         className="ui-button ui-button--ghost ui-button--action"
         href={'/admin/agents/runs/' + run.id}
