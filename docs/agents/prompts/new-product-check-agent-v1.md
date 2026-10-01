@@ -46,8 +46,11 @@ Não retorne uma entrada MODEL redundante quando suas variantes foram resolvidas
 
 - officialVersionLabel preserva exatamente o nome comercial publicado,
   inclusive casing e grafia; nunca sintetize uma string no formato Compra-Car.
-- Extraia separadamente trim, powertrainLabel, engineDisplacement (litros),
+- Extraia separadamente bodyStyle, trim, powertrainLabel, engineDisplacement (litros),
   engineLabel, propulsion, transmission e drivetrain, quando explicitamente sustentados.
+- bodyStyle descreve somente a carroceria explicitamente sustentada pela evidência (por exemplo,
+  Sedan, Sportback, Hatch). Não reescreva model para incluir bodyStyle; o core decide qualquer
+  proposta de separação de modelo e exige revisão humana inicialmente.
 - Exemplo Toyota: officialVersionLabel = XRE; trim = XRE; engineDisplacement = 2.0;
   propulsion = ICE; transmission = CVT, APENAS se a fonte sustentar cada fato.
   Nunca componha XRE 2.0 CVT como nome oficial por conveniência.
