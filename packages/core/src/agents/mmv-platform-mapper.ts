@@ -55,6 +55,7 @@ export function mapMmvRunToPlatform(
       ]),
       variants: [],
       warnings: match.candidate.extractionWarnings ?? [],
+      reasonCode: null,
     })),
     ...result.findings.map((finding) => {
       if (finding.type === 'POSSIBLE_YEAR_CHANGE') throw new AgentPlatformError('INVALID_INPUT');
