@@ -13,8 +13,8 @@ describe('Sprint 20F multi-brand validation runner', () => {
     const connector = vi.fn(async (brand: string) =>
       ['Toyota', 'Jeep'].includes(brand) ? { status: 'ACTIVE' } : null,
     );
-    const connectorDiscovery = vi.fn(async () => 0);
-    const mmvDiscovery = vi.fn(async () => 0);
+    const connectorDiscovery = vi.fn(async (_brand: string, _log: (message: string) => void) => 0);
+    const mmvDiscovery = vi.fn(async (_brand: string, _log: (message: string) => void) => 0);
     try {
       const result = await runMmvMultiBrandValidation(
         {
