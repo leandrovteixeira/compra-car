@@ -83,6 +83,9 @@ export function AgentFindingTable({ items }: { readonly items: readonly AgentFin
               <td className="p-3">
                 <span className="block text-xs text-text-muted">{run.agentType}</span>
                 {finding.findingType}
+                {typeof finding.payload.reasonCode === 'string' ? (
+                  <span className="block text-xs text-text-muted">{finding.payload.reasonCode}</span>
+                ) : null}
               </td>
               <td className="p-3">
                 <span className="block font-medium">{finding.title}</span>
@@ -233,6 +236,9 @@ export function AgentFindingDetailView({ detail }: { readonly detail: AgentFindi
             : 'Informativo'}
       </p>
       <p className="text-sm text-text-secondary">{finding.summary}</p>
+      {typeof finding.payload.reasonCode === 'string' ? (
+        <p className="text-sm">Motivo: <strong>{finding.payload.reasonCode}</strong></p>
+      ) : null}
       <Link
         className="ui-button ui-button--ghost ui-button--action"
         href={'/admin/agents/runs/' + run.id}
