@@ -17,7 +17,7 @@ describe('CurrentMmvDiscoveryAgent', () => {
     }).run(scope, 'current-only');
 
     expect(result).toMatchObject({
-      schemaVersion: '20B.1',
+      schemaVersion: '20C.1',
       runId: 'current-only',
       brand: 'Toyota',
       market: 'BR',
