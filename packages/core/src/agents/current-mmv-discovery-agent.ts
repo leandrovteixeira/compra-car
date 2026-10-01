@@ -52,6 +52,7 @@ export class CurrentMmvDiscoveryAgent {
         const url = officialEvidenceUrl(item.url, source);
         if (url)
           evidence.push({
+            sourceKind: 'MANUFACTURER',
             url,
             title: item.title,
             excerpt: item.excerpt,
