@@ -39,8 +39,8 @@ export function normalizeTransmissionFamily(
   }
   const cvt = /\bcvt\b/u.test(label);
   const dht = /\bdht\b/u.test(label);
-  const manual = /\b(?:mt|manual)\b/u.test(label);
-  const explicitAt = /\bat\b/u.test(label);
+  const manual = /\b(?:mt\d*|manual)\b/u.test(label);
+  const explicitAt = /\bat\d*\b/u.test(label);
   if (Number(cvt) + Number(dht) + Number(manual) + Number(explicitAt) > 1) return null;
   if (cvt) return 'CVT';
   if (dht) return 'DHT';
