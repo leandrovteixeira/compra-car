@@ -218,6 +218,34 @@ describe('Agents Admin presentation', () => {
     expect(html).toContain('NEW_COMMERCIAL_VARIANT');
   });
 
+  it('surfaces evidence readiness without implying automation', async () => {
+    const { repo, bundle } = await setup();
+    const detail = (await repo.getFinding(bundle.findings[1]!.finding.id))!;
+    const html = renderToStaticMarkup(
+      <AgentFindingDetailView
+        detail={{
+          ...detail,
+          finding: {
+            ...detail.finding,
+            payload: {
+              ...detail.finding.payload,
+              reasonCode: 'NEW_COMMERCIAL_VARIANT',
+              evidenceAssessment: {
+                readiness: 'HIGH',
+                corroborationLevel: 'CROSS_PRIMARY',
+                automationEligible: false,
+              },
+            },
+          },
+        }}
+      />,
+    );
+    expect(html).toContain('Evidência:');
+    expect(html).toContain('HIGH');
+    expect(html).toContain('CROSS_PRIMARY');
+    expect(html).toContain('validação humana');
+  });
+
   it('renders escaped evidence, safe external links and no executable proposal action', async () => {
     const { repo, bundle } = await setup();
     const detail = (await repo.getFinding(bundle.findings[1]!.finding.id))!;
