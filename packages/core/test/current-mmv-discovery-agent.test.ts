@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { aggregateBodyModelProposals } from '../src/agents/mmv-body-model-resolver';
 import {
   CurrentMmvDiscoveryAgent,
   FixtureProductResearchProvider,
@@ -9,6 +10,77 @@ import {
 const scope = { country: 'BR', brand: 'Toyota' } as const;
 
 describe('CurrentMmvDiscoveryAgent', () => {
+  it('groups normalized body proposal identity without mutating published labels or input', () => {
+    const proposal = {
+      reasonCode: 'POSSIBLE_BODY_SPLIT' as const,
+      currentModel: 'Corolla',
+      bodyStyle: 'Sedan',
+      proposedModel: 'Corolla Sedan',
+      requiresReview: true as const,
+      evidence: toyotaFixtureCandidates[0]!.evidence,
+    };
+    const duplicate = {
+      ...proposal,
+      currentModel: ' corolla ',
+      bodyStyle: 'SEDAN',
+      proposedModel: ' corolla   sedan ',
+    };
+    const result = aggregateBodyModelProposals(
+      Object.freeze([Object.freeze(proposal), Object.freeze(duplicate)]),
+    );
+    expect(result).toEqual([proposal]);
+    expect(result[0]).not.toBe(proposal);
+  });
+  it('aggregates five Corolla variants and keeps distinct Hilux bodies review-only', async () => {
+    const base = toyotaFixtureCandidates[0]!;
+    const common = base.evidence[0]!;
+    const distinct = Array.from({ length: 5 }, (_, index) => ({
+      ...common,
+      url: `https://toyota.com.br/corolla/${index}`,
+      excerpt: `Variant ${index}`,
+    }));
+    const candidates = [
+      ...distinct.map((evidence, index) => ({
+        ...base,
+        model: 'Corolla',
+        bodyStyle: 'Sedan',
+        officialVersionLabel: `Variant ${index}`,
+        trim: `Variant ${index}`,
+        evidence: [common, evidence, common],
+      })),
+      ...['Cabine Dupla', 'Cabine Simples', 'Chassi Cabine Simples'].map((bodyStyle) => ({
+        ...base,
+        model: 'Hilux',
+        bodyStyle,
+      })),
+    ];
+    const result = await new CurrentMmvDiscoveryAgent({
+      research: { researchProducts: async () => ({ candidates, metadata: { provider: 'fake' } }) },
+    }).run(scope, 'body-aggregation');
+    expect(result.candidates.filter((candidate) => candidate.model === 'Corolla')).toHaveLength(5);
+    expect(result.bodyModelProposals).toHaveLength(4);
+    const corolla = result.bodyModelProposals.filter(
+      (proposal) => proposal.currentModel === 'Corolla',
+    );
+    expect(corolla).toHaveLength(1);
+    expect(corolla[0]).toMatchObject({
+      reasonCode: 'POSSIBLE_BODY_SPLIT',
+      currentModel: 'Corolla',
+      bodyStyle: 'Sedan',
+      proposedModel: 'Corolla Sedan',
+      requiresReview: true,
+    });
+    expect(corolla[0]!.evidence).toHaveLength(6);
+    expect(corolla[0]!.evidence).toEqual(
+      expect.arrayContaining(distinct.map((evidence) => expect.objectContaining(evidence))),
+    );
+    expect(
+      result.bodyModelProposals
+        .filter((proposal) => proposal.currentModel === 'Hilux')
+        .map((proposal) => proposal.proposedModel),
+    ).toEqual(['Hilux Cabine Dupla', 'Hilux Cabine Simples', 'Hilux Chassi Cabine Simples']);
+    expect(result.bodyModelProposals.every((proposal) => proposal.requiresReview)).toBe(true);
+  });
   it('produces a current discovery snapshot without any catalog dependency', async () => {
     const research = new FixtureProductResearchProvider();
     const result = await new CurrentMmvDiscoveryAgent({
@@ -29,7 +101,9 @@ describe('CurrentMmvDiscoveryAgent', () => {
     });
     expect(result.observations).toHaveLength(21);
     expect(result.candidates).toHaveLength(21);
-    expect(result.candidates.some((candidate) => candidate.officialVersionLabel === 'XR')).toBe(true);
+    expect(result.candidates.some((candidate) => candidate.officialVersionLabel === 'XR')).toBe(
+      true,
+    );
     expect(JSON.stringify(result)).not.toContain('matchedProductIds');
     expect(JSON.stringify(result)).not.toContain('knownMmvIdentities');
   });

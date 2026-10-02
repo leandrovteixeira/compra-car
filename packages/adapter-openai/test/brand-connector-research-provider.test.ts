@@ -4,7 +4,8 @@ import {
   BrandConnectorAgent,
   FixtureBrandConnectorResearchProvider,
 } from '@compra-car/core/agents';
-import { OpenAIBrandConnectorResearchProvider } from '../src';
+import { OpenAIBrandConnectorResearchProvider, BrandConnectorResearchProviderError } from '../src';
+import OpenAI from 'openai';
 const input = { brand: 'Volkswagen', market: 'BR', mode: 'discover' as const };
 async function response(patch: Partial<Response> = {}): Promise<Response> {
   const fixture = await new FixtureBrandConnectorResearchProvider().researchConnector(input);
@@ -28,6 +29,90 @@ async function response(patch: Partial<Response> = {}): Promise<Response> {
   } as Response;
 }
 describe('Brand connector provider with injected transport only', () => {
+  it('rejects a candidate domain without evidence in the same response', async () => {
+    const valid = await response();
+    const data = JSON.parse(valid.output_text);
+    const provider = new OpenAIBrandConnectorResearchProvider({
+      apiKey: 'synthetic',
+      model: 'mock',
+      prompt: 'generic',
+      transport: async () => ({
+        ...valid,
+        output_text: JSON.stringify({
+          ...data,
+          candidateDomains: ['vw.com.br', 'outro-dominio.com.br'],
+          sourceEntries: [
+            { type: 'MODEL_INDEX', url: 'https://vw.com.br/modelos', priority: 1, notes: null },
+          ],
+          evidence: [
+            {
+              url: 'https://vw.com.br/legal',
+              title: 'Official ownership',
+              excerpt: 'Manufacturer',
+            },
+          ],
+        }),
+      }),
+    });
+    await expect(new BrandConnectorAgent(provider).run(input, undefined, 'openai')).rejects.toThrow(
+      'CONNECTOR_DOMAIN_EVIDENCE_REQUIRED',
+    );
+  });
+
+  it.each([
+    [400, 'BAD_REQUEST'],
+    [422, 'BAD_REQUEST'],
+    [401, 'AUTH'],
+    [403, 'AUTH'],
+    [408, 'TIMEOUT'],
+    [429, 'RATE_LIMIT'],
+    [500, 'SERVER_ERROR'],
+  ] as const)('redacts SDK failure %i into %s', async (status, suffix) => {
+    const raw = new OpenAI.APIError(
+      status,
+      { message: 'secret response' },
+      'secret message',
+      new Headers({ authorization: 'secret-api-key' }),
+    );
+    const transport = vi.fn(async () => {
+      throw raw;
+    });
+    const provider = new OpenAIBrandConnectorResearchProvider({
+      apiKey: 'secret-api-key',
+      model: 'mock',
+      prompt: 'generic',
+      transport,
+    });
+    const error = await provider.researchConnector(input).catch((error: unknown) => error);
+    expect(error).toBeInstanceOf(BrandConnectorResearchProviderError);
+    expect(error).toMatchObject({
+      code: `CONNECTOR_RESEARCH_${suffix}`,
+      message: `CONNECTOR_RESEARCH_${suffix}`,
+      status,
+    });
+    expect(error).not.toHaveProperty('cause');
+    expect(error).not.toHaveProperty('headers');
+    expect(String(error) + JSON.stringify(error)).not.toContain('secret');
+    expect(transport).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    [new OpenAI.APIConnectionTimeoutError({ message: 'secret timeout' }), 'TIMEOUT'],
+    [new OpenAI.APIConnectionError({ message: 'secret connection' }), 'CONNECTION'],
+  ] as const)('classifies connection errors safely', async (raw, suffix) => {
+    const provider = new OpenAIBrandConnectorResearchProvider({
+      apiKey: 'synthetic',
+      model: 'mock',
+      prompt: 'generic',
+      transport: async () => {
+        throw raw;
+      },
+    });
+    const error = await provider.researchConnector(input).catch((error: unknown) => error);
+    expect(error).toMatchObject({ code: `CONNECTOR_RESEARCH_${suffix}` });
+    expect(error).not.toHaveProperty('cause');
+    expect(String(error) + JSON.stringify(error)).not.toContain('secret');
+  });
   it('sends internal target unchanged and returns a separate observed label through the structured schema', async () => {
     const transport = vi.fn(async () => response());
     const provider = new OpenAIBrandConnectorResearchProvider({

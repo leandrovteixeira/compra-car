@@ -45,6 +45,47 @@ export const brandConnectorResearchSchema = object({
 const validate = new Ajv({ strict: true }).compile<BrandConnectorResearch>(
   brandConnectorResearchSchema,
 );
+export class BrandConnectorResearchProviderError extends Error {
+  constructor(
+    readonly code:
+      | 'CONNECTOR_RESEARCH_BAD_REQUEST'
+      | 'CONNECTOR_RESEARCH_AUTH'
+      | 'CONNECTOR_RESEARCH_RATE_LIMIT'
+      | 'CONNECTOR_RESEARCH_TIMEOUT'
+      | 'CONNECTOR_RESEARCH_CONNECTION'
+      | 'CONNECTOR_RESEARCH_SERVER_ERROR'
+      | 'CONNECTOR_RESEARCH_FAILED',
+    readonly status?: number,
+  ) {
+    super(code);
+  }
+}
+
+function transportFailure(error: unknown): BrandConnectorResearchProviderError {
+  // Retain only a bounded HTTP status; never retain SDK errors, causes or response metadata.
+  const status =
+    error instanceof OpenAI.APIError &&
+    Number.isInteger(error.status) &&
+    error.status! >= 100 &&
+    error.status! <= 599
+      ? error.status
+      : undefined;
+  const code =
+    error instanceof OpenAI.APIConnectionTimeoutError || status === 408
+      ? 'CONNECTOR_RESEARCH_TIMEOUT'
+      : error instanceof OpenAI.APIConnectionError
+        ? 'CONNECTOR_RESEARCH_CONNECTION'
+        : status === 400 || status === 422
+          ? 'CONNECTOR_RESEARCH_BAD_REQUEST'
+          : status === 401 || status === 403
+            ? 'CONNECTOR_RESEARCH_AUTH'
+            : status === 429
+              ? 'CONNECTOR_RESEARCH_RATE_LIMIT'
+              : status !== undefined && status >= 500
+                ? 'CONNECTOR_RESEARCH_SERVER_ERROR'
+                : 'CONNECTOR_RESEARCH_FAILED';
+  return new BrandConnectorResearchProviderError(code, status);
+}
 export class OpenAIBrandConnectorResearchProvider implements BrandConnectorResearchProvider {
   private readonly transport: (request: ResponseCreateParamsNonStreaming) => Promise<Response>;
   constructor(
@@ -84,8 +125,8 @@ export class OpenAIBrandConnectorResearchProvider implements BrandConnectorResea
           },
         },
       });
-    } catch {
-      throw new Error('CONNECTOR_RESEARCH_FAILED');
+    } catch (error) {
+      throw transportFailure(error);
     }
     if (response.status !== 'completed') throw new Error('CONNECTOR_RESEARCH_INCOMPLETE');
     const searches = response.output.filter((o) => o.type === 'web_search_call');

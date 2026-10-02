@@ -1,5 +1,12 @@
 # Changelog
 
+## Sprint 20F.1 — discovery persistence and safe diagnostics (2026-10-02)
+
+- Current MMV discovery aggregates body/model proposals by normalized model, body and proposed model before Agent Platform mapping, merging distinct evidence and removing repeated observations with the existing evidence helper. POSSIBLE_BODY_SPLIT remains review-only.
+- Brand Connector prompt now explicitly requires same-response evidence on each candidate domain or a DNS subdomain, proving official ownership; unsupported domains belong only in warnings. Domain validation is unchanged.
+- Brand Connector transport errors now expose typed safe BAD_REQUEST/AUTH/RATE_LIMIT/TIMEOUT/CONNECTION/SERVER_ERROR/FAILED codes, preserved by CLI allowlisting, without raw SDK data or cause. No retry added.
+- No live research, remote persistence, review, activation, MMV apply or Production change performed.
+
 ## Sprint 20E.1 — canonical MMV registry / Option A (2026-10-01)
 
 - Option A implemented: year-independent `catalog_mmvs` is now the canonical MMV bank, while `products` remains the MMVY occurrence table.

@@ -1,5 +1,13 @@
 # Contexto para agentes de IA
 
+## Sprint 20F.1 — local fixes for first validation run
+
+Body proposals are aggregated in CurrentMmvDiscoveryAgent before platform mapping using normalized currentModel/bodyStyle/proposedModel and existing evidence deduplication (URL/title/excerpt/evidenceType). Published labels remain verbatim and POSSIBLE_BODY_SPLIT stays review-only. No import cycle or dependency introduced.
+
+Brand Connector prompt requires official-ownership evidence in the same response for every candidate domain (same host or DNS subdomain); validation remains strict. OpenAI connector transport failures expose safe typed codes, preserved by CLI allowlisting; no SDK error, cause, headers or response text retained. SDK retries remain disabled.
+
+Governance is unchanged: Toyota/Jeep discovery persists operational findings only; Volkswagen/Audi connector discovery requires human review and explicit activation. No automatic ACCEPT/activation/apply. No live 20F rerun or Production write authorized. Details: [20F validation](docs/agents/MMV_MULTI_BRAND_VALIDATION_20F.md).
+
 ## Sprint 20E.1 — canonical MMV registry / Option A
 
 Approved architecture: `catalog_mmvs` is the year-independent canonical identity bank; `products` remains year-aware MMVY. Staging migration `20261001184015_sprint_20e_canonical_mmv_registry` has been applied only to Compra Car Staging. It is additive: new registry + nullable `products.mmv_id`; no legacy backfill or Product mutation.

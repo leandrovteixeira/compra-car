@@ -2,7 +2,7 @@ import { vehicleTextComparisonKey as key } from '../admin/vehicle-text-normaliza
 import type { BrandConnectorResolver } from './brand-connector-resolver';
 import { deduplicateOfficialCandidates } from './official-product-candidate-deduplication';
 import { isOfficialProductCandidate } from './official-product-candidate-validation';
-import { proposeBodyModelResolution } from './mmv-body-model-resolver';
+import { aggregateBodyModelProposals, proposeBodyModelResolution } from './mmv-body-model-resolver';
 import { officialBrandSource, officialEvidenceUrl } from './official-product-sources';
 import { isResolvedOfficialVariant } from './product-candidate-matcher';
 import type {
@@ -93,10 +93,12 @@ export class CurrentMmvDiscoveryAgent {
     });
 
     const candidates = deduplicateOfficialCandidates(normalizedScope, accepted);
-    const bodyModelProposals = candidates.flatMap((candidate) => {
-      const proposal = proposeBodyModelResolution(candidate);
-      return proposal ? [proposal] : [];
-    });
+    const bodyModelProposals = aggregateBodyModelProposals(
+      candidates.flatMap((candidate) => {
+        const proposal = proposeBodyModelResolution(candidate);
+        return proposal ? [proposal] : [];
+      }),
+    );
     return {
       schemaVersion: '20C.1',
       runId,

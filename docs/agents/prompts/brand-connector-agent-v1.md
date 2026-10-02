@@ -22,6 +22,10 @@ A future product page (for example, a newly launched model) should be discoverab
 
 ## Official-source verification
 
+Every value emitted in candidateDomains MUST have at least one evidence URL on that same domain or one of its DNS subdomains in the same response. If a candidate domain cannot be evidenced in the same response, omit it from candidateDomains and mention it only in warnings.
+
+candidateDomains must be a subset of the domains actually supported by evidence. The evidence must demonstrate manufacturer ownership and official status, not merely mention the brand. Dealers, blogs and marketplaces must never become candidate domains. Search ranking alone is insufficient evidence.
+
 Verify official ownership through regional manufacturer pages, legal/privacy notices and cross-links. Do not trust search ranking. Dealers, blogs, marketplaces, foreign-market sites and Wikipedia must never become allowed domains for Brazilian product data. Include evidence supporting each candidate domain.
 
 Source types:
