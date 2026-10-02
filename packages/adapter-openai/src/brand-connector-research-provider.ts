@@ -11,7 +11,7 @@ import {
   type BrandConnectorResearchProvider,
 } from '@compra-car/core/agents';
 const string = { type: 'string' };
-const strings = { type: 'array', items: string };
+const strings = (maxItems = 40, minItems = 0) => ({ type: 'array', items: string, minItems, maxItems });
 function object(properties: Record<string, unknown>) {
   return {
     type: 'object',
@@ -23,9 +23,10 @@ function object(properties: Record<string, unknown>) {
 export const brandConnectorResearchSchema = object({
   observedBrandLabel: string,
   market: string,
-  candidateDomains: strings,
+  candidateDomains: strings(20, 1),
   sourceEntries: {
     type: 'array',
+    maxItems: 100,
     items: object({
       type: { type: 'string', enum: [...CONNECTOR_SOURCE_TYPES] },
       url: string,
@@ -33,13 +34,13 @@ export const brandConnectorResearchSchema = object({
       notes: { type: ['string', 'null'] },
     }),
   },
-  searchHints: strings,
-  terminologyHints: strings,
+  searchHints: strings(40),
+  terminologyHints: strings(40),
   confidence: { type: 'number' },
-  warnings: strings,
-  evidence: { type: 'array', items: object({ url: string, title: string, excerpt: string }) },
+  warnings: strings(40),
+  evidence: { type: 'array', minItems: 1, maxItems: 100, items: object({ url: string, title: string, excerpt: string }) },
   verificationSummary: string,
-  checksPerformed: strings,
+  checksPerformed: strings(100),
   driftDetected: { type: 'boolean' },
 });
 const validate = new Ajv({ strict: true }).compile<BrandConnectorResearch>(
