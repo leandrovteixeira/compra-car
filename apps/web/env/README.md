@@ -1,8 +1,33 @@
 # Ambientes locais do Compra Car
 
-Esta pasta contém arquivos privados locais usados para selecionar o ambiente da aplicação Next.js. Os arquivos esperados são `staging.env` para **Compra Car Staging** e `production.env` para **Compra Car App / Produção**. Eles nunca devem ser versionados.
+As credenciais reais do Compra Car ficam fora do repositório e são compartilhadas por todos os worktrees.
 
-O arquivo efetivamente lido pelo Next.js é `apps/web/.env.local`. O Next.js não lê `staging.env` nem `production.env` automaticamente; os scripts abaixo validam o destino e copiam o arquivo selecionado para o local ativo.
+Fonte canônica local:
+
+```text
+C:\Dev\.secrets\compra-car\staging.env
+C:\Dev\.secrets\compra-car\production.env
+```
+
+É possível sobrescrever essa pasta na sessão atual com:
+
+```powershell
+$env:COMPRA_CAR_SECRETS_DIR="D:\caminho\privado\compra-car"
+```
+
+Os arquivos reais nunca devem ser versionados.
+
+## Arquivo ativo do worktree
+
+O arquivo efetivamente lido pelo Next.js é:
+
+```text
+apps/web/.env.local
+```
+
+Ele é apenas uma cópia do ambiente atualmente selecionado. Não é a fonte canônica de secrets e também fica fora do Git.
+
+Os scripts de seleção também configuram `COMPRA_CAR_AGENT_ENV_FILE` para esse mesmo `.env.local`, mantendo aplicação e agentes no mesmo ambiente.
 
 ## Comandos
 
@@ -12,31 +37,74 @@ Ativar Staging:
 .\scripts\environment\use-staging.ps1
 ```
 
+O script:
+- lê `C:\Dev\.secrets\compra-car\staging.env`;
+- valida que as URLs pública e server-side apontam para o projeto Staging esperado;
+- copia o arquivo para `apps/web/.env.local`;
+- configura `COMPRA_CAR_AGENT_ENV_FILE`;
+- mostra apenas destino e presença de variáveis importantes, nunca seus valores.
+
 Consultar o ambiente ativo:
 
 ```powershell
 .\scripts\environment\show-environment.ps1
 ```
 
-Ativar Produção, com confirmação explícita obrigatória:
+Ativar Produção exige confirmação explícita:
 
 ```powershell
 .\scripts\environment\use-production.ps1 -ConfirmProduction
 ```
 
-Depois de qualquer troca, interrompa e reinicie o servidor Next.js:
+O script de Produção valida o project ref antes de copiar qualquer arquivo.
+
+Depois de trocar o ambiente, reinicie o servidor Next.js:
 
 ```powershell
 pnpm dev
 ```
 
-## Variáveis obrigatórias
+## Variáveis mínimas da aplicação
 
-- `NEXT_PUBLIC_SUPABASE_URL`: URL pública do projeto usada no navegador.
-- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`: chave publicável; pode ser exposta ao navegador.
-- `SUPABASE_URL`: URL do mesmo projeto usada no servidor.
-- `SUPABASE_SERVER_KEY`: chave privada usada somente no servidor. Ela nunca deve receber o prefixo `NEXT_PUBLIC_`.
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- `SUPABASE_URL`
+- `SUPABASE_SERVER_KEY`
 
-As variáveis de integração e os nomes do aplicativo são opcionais para este mecanismo. Não inclua chaves ou valores privados em documentação ou arquivos versionados.
+## Variáveis dos agentes OpenAI
 
-Ambientes online futuros deverão usar variáveis configuradas diretamente na plataforma de deploy, não estes arquivos locais.
+Para Brand Connector / MMV Discovery:
+
+- `OPENAI_API_KEY`
+- `OPENAI_AGENT_MODEL`
+- `OPENAI_AGENT_MAX_WAIT_MS` (opcional; default do agente)
+
+Para Import Engine:
+
+- `OPENAI_IMPORT_MODEL`
+- demais variáveis `OPENAI_IMPORT_*` usadas pelo fluxo de importação
+
+O mesmo arquivo de Staging/Produção deve concentrar as credenciais necessárias daquele ambiente.
+
+## Arquivos versionados
+
+Somente templates/documentação podem entrar no Git, por exemplo:
+
+```text
+apps/web/env/staging.env.example
+apps/web/env/production.env.example
+apps/web/env/README.md
+```
+
+Nunca versionar:
+
+```text
+apps/web/.env.local
+apps/web/env/staging.env
+apps/web/env/production.env
+C:\Dev\.secrets\...
+```
+
+## Ambientes online
+
+Vercel/CI/produção online devem continuar usando variáveis configuradas diretamente na plataforma de deploy. Os arquivos de `C:\Dev\.secrets` existem apenas para desenvolvimento/operação local.
