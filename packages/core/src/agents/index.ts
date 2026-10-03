@@ -42,3 +42,5 @@ export * from './mmv-body-model-resolver';
 export * from './mmv-version-change-classifier';
 export * from './mmv-evidence-confidence';
 export * from './mmv-apply-contract';
+
+export * from './mmv-market-reconciliation';
