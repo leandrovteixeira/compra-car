@@ -39,7 +39,7 @@ describe('OpenAIMmvMarketLookupProvider', () => {
             sourceName: 'WEBMOTORS',
             sourceUrl:
               'https://www.webmotors.com.br/tabela-fipe/carros/kia/niro/2027/16-gdi-hev-ex-dct',
-            fipeCode: '018099-8',
+            fipeCode: '999999-9',
             brand: 'Kia',
             modelLabel: 'Niro 1.6 GDI HEV EX DCT',
             matchedVersionHint: 'EX',
@@ -52,7 +52,7 @@ describe('OpenAIMmvMarketLookupProvider', () => {
             sourceName: 'WEBMOTORS',
             sourceUrl:
               'https://www.webmotors.com.br/tabela-fipe/carros/kia/niro/2027/16-gdi-hev-sx-prestige-dct',
-            fipeCode: '018100-5',
+            fipeCode: '888888-8',
             brand: 'Kia',
             modelLabel: 'Niro 1.6 GDI HEV SX Prestige DCT',
             matchedVersionHint: 'SX Prestige',
@@ -66,8 +66,8 @@ describe('OpenAIMmvMarketLookupProvider', () => {
     const result = await provider.lookup(request);
     expect(result).toHaveLength(2);
     expect(result.map((item) => [item.matchedVersionHint, item.fipeCode])).toEqual([
-      ['EX', '018099-8'],
-      ['SX Prestige', '018100-5'],
+      ['EX', '999999-9'],
+      ['SX Prestige', '888888-8'],
     ]);
     expect(result.every((item) => item.sourceKind === 'SECONDARY')).toBe(true);
     expect(result.every((item) => Number.isFinite(Date.parse(item.capturedAt)))).toBe(true);
@@ -84,7 +84,7 @@ describe('OpenAIMmvMarketLookupProvider', () => {
             sourceKind: 'FIPE',
             sourceName: 'FIPE',
             sourceUrl: 'https://veiculos.fipe.org.br/',
-            fipeCode: '018099-8',
+            fipeCode: '999999-9',
             brand: 'Kia',
             modelLabel: 'Niro 1.6 GDI HEV EX DCT',
             matchedVersionHint: 'EX',
@@ -96,7 +96,7 @@ describe('OpenAIMmvMarketLookupProvider', () => {
     });
 
     await expect(provider.lookup(request)).resolves.toMatchObject([
-      { sourceKind: 'FIPE', sourceName: 'FIPE', fipeCode: '018099-8' },
+      { sourceKind: 'FIPE', sourceName: 'FIPE', fipeCode: '999999-9' },
     ]);
   });
 
@@ -105,7 +105,7 @@ describe('OpenAIMmvMarketLookupProvider', () => {
       sourceKind: 'FIPE',
       sourceName: 'FIPE',
       sourceUrl: 'https://example.com/fipe',
-      fipeCode: '018099-8',
+      fipeCode: '999999-9',
       brand: 'Kia',
       modelLabel: 'Niro',
       matchedVersionHint: 'EX',
@@ -129,7 +129,7 @@ describe('OpenAIMmvMarketLookupProvider', () => {
       sourceKind: 'SECONDARY',
       sourceName: 'WEBMOTORS',
       sourceUrl: 'https://www.webmotors.com.br/tabela-fipe/kia/niro',
-      fipeCode: '018099-8',
+      fipeCode: '999999-9',
       brand: 'Kia',
       modelLabel: 'Niro',
       matchedVersionHint: 'UNKNOWN',
