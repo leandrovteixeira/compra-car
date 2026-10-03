@@ -50,7 +50,7 @@ function response(observations: unknown[]): Response {
     truncation: 'disabled',
     usage: null,
     user: null,
-  } as Response;
+  } as unknown as Response;
 }
 
 describe('OpenAIMmvMarketLookupProvider', () => {
