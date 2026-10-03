@@ -12,8 +12,17 @@ const request = {
 function response(observations: unknown[]): Response {
   return {
     id: 'mock',
+    object: 'response',
+    created_at: 0,
+    completed_at: 0,
+    background: false,
+    conversation: null,
+    error: null,
+    incomplete_details: null,
+    instructions: null,
+    max_output_tokens: null,
+    max_tool_calls: null,
     model: 'mock-model',
-    status: 'completed',
     output_text: JSON.stringify({ observations }),
     output: [
       {
@@ -23,6 +32,24 @@ function response(observations: unknown[]): Response {
         action: { type: 'search', query: 'synthetic', sources: [] },
       },
     ],
+    parallel_tool_calls: true,
+    previous_response_id: null,
+    prompt: null,
+    prompt_cache_key: null,
+    prompt_cache_retention: null,
+    reasoning: null,
+    safety_identifier: null,
+    service_tier: 'default',
+    status: 'completed',
+    temperature: 1,
+    text: { format: { type: 'text' } },
+    tool_choice: 'auto',
+    tools: [],
+    top_logprobs: 0,
+    top_p: 1,
+    truncation: 'disabled',
+    usage: null,
+    user: null,
   } as Response;
 }
 
