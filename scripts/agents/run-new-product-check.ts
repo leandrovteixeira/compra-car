@@ -15,9 +15,11 @@ import {
   connectorText,
   productCheckFixture,
   benchmarkProductFixture,
+  type MmvMarketObservation,
 } from '@compra-car/core/agents';
 import {
   OpenAIProductResearchProvider,
+  OpenAIMmvMarketLookupProvider,
   productResearchMaxWaitMs,
 } from '@compra-car/adapter-openai';
 import { LocalProductReportWriter, redactSecrets } from './report-writer';
@@ -30,6 +32,7 @@ export function parseAgentArguments(args: readonly string[]) {
   const options = new Map<string, string>();
   let persistFindings = false;
   let discoveryOnly = false;
+  let marketReconcile = false;
   for (let index = 0; index < values.length; index += 1) {
     const name = values[index];
     if (name === '--discovery-only') {
@@ -40,6 +43,11 @@ export function parseAgentArguments(args: readonly string[]) {
     if (name === '--persist-findings') {
       if (persistFindings) throw new Error('INVALID_AGENT_ARGUMENTS');
       persistFindings = true;
+      continue;
+    }
+    if (name === '--market-reconcile') {
+      if (marketReconcile) throw new Error('INVALID_AGENT_ARGUMENTS');
+      marketReconcile = true;
       continue;
     }
     const value = values[++index];
@@ -54,13 +62,19 @@ export function parseAgentArguments(args: readonly string[]) {
   }
   const brand = options.get('--brand');
   const provider = options.get('--provider');
-  if (!brand || (provider !== 'fixture' && provider !== 'openai') || (discoveryOnly && persistFindings))
+  if (
+    !brand ||
+    (provider !== 'fixture' && provider !== 'openai') ||
+    (discoveryOnly && persistFindings) ||
+    (marketReconcile && provider !== 'openai')
+  )
     throw new Error('INVALID_AGENT_ARGUMENTS');
   return {
     scope: { country: 'BR' as const, brand: connectorText(brand, 100) },
     provider,
     persistFindings,
     discoveryOnly,
+    marketReconcile,
   };
 }
 
@@ -72,7 +86,8 @@ export async function runNewProductCheckCli(
   persistence?: Pick<AgentPlatformRepository, 'persistRunBundle'>,
 ): Promise<number> {
   try {
-    const { scope, provider, persistFindings, discoveryOnly } = parseAgentArguments(args);
+    const { scope, provider, persistFindings, discoveryOnly, marketReconcile } =
+      parseAgentArguments(args);
     env = await loadAgentEnvironment(repositoryRoot, env);
     if (provider === 'openai' && (!env.OPENAI_API_KEY?.trim() || !env.OPENAI_AGENT_MODEL?.trim())) {
       throw new Error('OPENAI_AGENT_CONFIG_REQUIRED');
@@ -200,6 +215,60 @@ export async function runNewProductCheckCli(
       );
       log('Fixture benchmark: ' + JSON.stringify(benchmark));
     }
+    let marketReconciliationByModel:
+      | Readonly<Record<string, readonly MmvMarketObservation[]>>
+      | undefined;
+    if (marketReconcile) {
+      const lookup = new OpenAIMmvMarketLookupProvider({
+        apiKey: env.OPENAI_API_KEY!,
+        model: env.OPENAI_AGENT_MODEL!,
+        prompt: await readFile(
+          resolve(repositoryRoot, 'docs/agents/prompts/mmv-market-reconciliation-v1.md'),
+          'utf8',
+        ),
+      });
+      const requests = new Map<string, Set<string>>();
+      for (const finding of result.findings) {
+        if (finding.type !== 'NEW_MODEL' && finding.type !== 'NEW_VERSION') continue;
+        const labels =
+          finding.type === 'NEW_MODEL'
+            ? finding.variants
+                .map((variant) => variant.officialVersionLabel ?? variant.trim)
+                .filter((value): value is string => Boolean(value?.trim()))
+            : [finding.candidate.officialVersionLabel ?? finding.candidate.trim].filter(
+                (value): value is string => Boolean(value?.trim()),
+              );
+        if (!labels.length) continue;
+        const set = requests.get(finding.candidate.model) ?? new Set<string>();
+        labels.forEach((label) => set.add(label));
+        requests.set(finding.candidate.model, set);
+      }
+
+      const collected: Record<string, readonly MmvMarketObservation[]> = {};
+      for (const [model, hints] of requests) {
+        try {
+          collected[model] = await lookup.lookup({
+            market: result.market,
+            brand: result.brand,
+            model,
+            versionHints: [...hints],
+          });
+          log(
+            'Market reconciliation: ' +
+              model +
+              ' | hints: ' +
+              hints.size +
+              ' | observations: ' +
+              collected[model]!.length,
+          );
+        } catch {
+          collected[model] = [];
+          log('Market reconciliation unavailable for ' + model + '; MMV finding preserved.');
+        }
+      }
+      marketReconciliationByModel = collected;
+    }
+
     if (persistFindings) {
       const repository =
         persistence ??
@@ -214,7 +283,9 @@ export async function runNewProductCheckCli(
           );
         })());
       const sanitized = JSON.parse(redactSecrets(JSON.stringify(result), secrets)) as typeof result;
-      await repository.persistRunBundle(mapMmvRunToPlatform(sanitized, { provider }));
+      await repository.persistRunBundle(
+        mapMmvRunToPlatform(sanitized, { provider, marketReconciliationByModel }),
+      );
       log('Operational findings persisted. Catalog unchanged.');
     }
     log('Reports: .local-reports/agents/new-product-check/' + runId + '.{json,md}');
