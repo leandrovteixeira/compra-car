@@ -52,7 +52,7 @@ export function parseAgentArguments(args: readonly string[]) {
     }
     const value = values[++index];
     if (
-      !['--brand', '--provider'].includes(name ?? '') ||
+      !['--brand', '--provider', '--market-model'].includes(name ?? '') ||
       !value ||
       value.startsWith('--') ||
       options.has(name!)
@@ -62,11 +62,13 @@ export function parseAgentArguments(args: readonly string[]) {
   }
   const brand = options.get('--brand');
   const provider = options.get('--provider');
+  const marketModel = options.get('--market-model')?.trim() || null;
   if (
     !brand ||
     (provider !== 'fixture' && provider !== 'openai') ||
     (discoveryOnly && persistFindings) ||
-    (marketReconcile && provider !== 'openai')
+    (marketReconcile && provider !== 'openai') ||
+    (marketModel !== null && !marketReconcile)
   )
     throw new Error('INVALID_AGENT_ARGUMENTS');
   return {
@@ -75,6 +77,7 @@ export function parseAgentArguments(args: readonly string[]) {
     persistFindings,
     discoveryOnly,
     marketReconcile,
+    marketModel,
   };
 }
 
@@ -86,7 +89,7 @@ export async function runNewProductCheckCli(
   persistence?: Pick<AgentPlatformRepository, 'persistRunBundle'>,
 ): Promise<number> {
   try {
-    const { scope, provider, persistFindings, discoveryOnly, marketReconcile } =
+    const { scope, provider, persistFindings, discoveryOnly, marketReconcile, marketModel } =
       parseAgentArguments(args);
     env = await loadAgentEnvironment(repositoryRoot, env);
     if (provider === 'openai' && (!env.OPENAI_API_KEY?.trim() || !env.OPENAI_AGENT_MODEL?.trim())) {
@@ -230,6 +233,12 @@ export async function runNewProductCheckCli(
       const requests = new Map<string, Set<string>>();
       for (const finding of result.findings) {
         if (finding.type !== 'NEW_MODEL' && finding.type !== 'NEW_VERSION') continue;
+        if (
+          marketModel &&
+          finding.candidate.model.trim().toLocaleLowerCase('pt-BR') !==
+            marketModel.toLocaleLowerCase('pt-BR')
+        )
+          continue;
         const labels =
           finding.type === 'NEW_MODEL'
             ? finding.variants
