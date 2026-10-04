@@ -14,6 +14,7 @@ import { officialCandidateIdentity } from './product-candidate-matcher';
 import { assessMmvEvidence } from './mmv-evidence-confidence';
 import { MMV_DIRECT_APPLY_REASON_CODES } from './mmv-apply-contract';
 import { mmvDiscoveryIdentityKey } from './mmv-discovery-identity';
+import type { MmvMarketObservation } from './mmv-market-reconciliation';
 import type {
   NewProductCheckResult,
   ProductEvidence,
@@ -96,6 +97,7 @@ export function mapMmvRunToPlatform(
     readonly provider: string;
     readonly sourceCommitSha?: string | null;
     readonly uuid?: () => string;
+    readonly marketReconciliationByModel?: Readonly<Record<string, readonly MmvMarketObservation[]>>;
   },
 ): AgentRunBundle {
   const uuid = options.uuid ?? (() => globalThis.crypto.randomUUID());
@@ -164,6 +166,31 @@ export function mapMmvRunToPlatform(
           warnings: observation.warnings,
         })
       : null;
+    const marketObservations = options.marketReconciliationByModel?.[candidate.model] ?? [];
+    const relevantVersionLabels =
+      observation.type === 'NEW_MODEL'
+        ? observation.variants
+            .map((variant) => variant.officialVersionLabel ?? variant.trim)
+            .filter((value): value is string => Boolean(value?.trim()))
+        : [candidate.officialVersionLabel ?? candidate.trim].filter(
+            (value): value is string => Boolean(value?.trim()),
+          );
+    const marketReconciliation = relevantVersionLabels.map((manufacturerVersionLabel) => ({
+      manufacturerVersionLabel,
+      observations: marketObservations
+        .filter((item) => item.matchedVersionHint === manufacturerVersionLabel)
+        .map((item) => ({
+          sourceKind: item.sourceKind,
+          sourceName: item.sourceName,
+          sourceUrl: item.sourceUrl,
+          fipeCode: item.fipeCode,
+          modelLabel: item.modelLabel,
+          modelYear: item.modelYear,
+          referencePeriod: item.referencePeriod,
+          confidence: item.confidence,
+          capturedAt: item.capturedAt,
+        })),
+    }));
     const subject: AgentObject = {
       brand: candidate.brand,
       model: candidate.model,
@@ -204,6 +231,7 @@ export function mapMmvRunToPlatform(
           associatedProductRows: observation.matchedProducts as unknown as AgentObject[],
           structuredCandidate: candidateDetails(candidate),
           resolvedVariants: observation.variants.map(candidateDetails),
+          marketReconciliation: marketReconciliation as unknown as AgentObject[],
         },
         createdAt: result.completedAt,
         updatedAt: result.completedAt,
