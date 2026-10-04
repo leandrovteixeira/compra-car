@@ -291,7 +291,12 @@ describe('CLI and local reports', () => {
         '--market-reconcile',
         '--persist-findings',
       ]),
-    ).toMatchObject({ provider: 'openai', marketReconcile: true, persistFindings: true });
+    ).toMatchObject({
+      provider: 'openai',
+      marketReconcile: true,
+      persistFindings: true,
+      marketModel: null,
+    });
     expect(() =>
       parseAgentArguments([
         '--brand',
@@ -299,6 +304,27 @@ describe('CLI and local reports', () => {
         '--provider',
         'fixture',
         '--market-reconcile',
+      ]),
+    ).toThrow();
+    expect(
+      parseAgentArguments([
+        '--brand',
+        'Kia',
+        '--provider',
+        'openai',
+        '--market-reconcile',
+        '--market-model',
+        'Niro',
+      ]),
+    ).toMatchObject({ marketReconcile: true, marketModel: 'Niro' });
+    expect(() =>
+      parseAgentArguments([
+        '--brand',
+        'Kia',
+        '--provider',
+        'openai',
+        '--market-model',
+        'Niro',
       ]),
     ).toThrow();
   });
