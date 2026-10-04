@@ -167,4 +167,51 @@ describe('MMV platform mapping', () => {
     expect(JSON.stringify(bundle)).not.toContain('secret-do-not-copy');
     expect(bundle.run.configSnapshot.persistence).toBe('operational-only');
   });
+  it('attaches market reconciliation without changing canonical manufacturer labels', async () => {
+    const input = await result();
+    const newModel = input.findings.find((finding) => finding.type === 'NEW_MODEL')!;
+    const version = newModel.variants[0]!.officialVersionLabel!;
+    const bundle = mapMmvRunToPlatform(input, {
+      provider: 'fixture',
+      marketReconciliationByModel: {
+        [newModel.candidate.model]: [
+          {
+            sourceKind: 'SECONDARY',
+            sourceName: 'WEBMOTORS',
+            sourceUrl: 'https://www.webmotors.com.br/tabela-fipe/synthetic',
+            fipeCode: '999999-9',
+            brand: newModel.candidate.brand,
+            modelLabel: newModel.candidate.model + ' 1.0 ' + version,
+            matchedVersionHint: version,
+            modelYear: 2027,
+            referencePeriod: null,
+            confidence: 0.9,
+            capturedAt: input.completedAt,
+          },
+        ],
+      },
+    });
+    const item = bundle.findings.find(
+      (finding) => finding.finding.fingerprint === newModel.fingerprint,
+    )!;
+    expect(item.finding.payload.marketReconciliation).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          manufacturerVersionLabel: version,
+          observations: [
+            expect.objectContaining({
+              fipeCode: '999999-9',
+              sourceKind: 'SECONDARY',
+            }),
+          ],
+        }),
+      ]),
+    );
+    expect(item.finding.proposal).toMatchObject({
+      action: 'STAGE_MMV_IDENTITIES',
+      identities: expect.arrayContaining([
+        expect.objectContaining({ officialVersionLabel: version }),
+      ]),
+    });
+  });
 });
