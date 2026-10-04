@@ -281,6 +281,28 @@ describe('CLI and local reports', () => {
   ])('rejects invalid arguments %j', (...args) =>
     expect(() => parseAgentArguments(args)).toThrow(),
   );
+  it('supports market reconciliation only with the OpenAI provider', () => {
+    expect(
+      parseAgentArguments([
+        '--brand',
+        'Kia',
+        '--provider',
+        'openai',
+        '--market-reconcile',
+        '--persist-findings',
+      ]),
+    ).toMatchObject({ provider: 'openai', marketReconcile: true, persistFindings: true });
+    expect(() =>
+      parseAgentArguments([
+        '--brand',
+        'Kia',
+        '--provider',
+        'fixture',
+        '--market-reconcile',
+      ]),
+    ).toThrow();
+  });
+
   it('supports pnpm argument separator', () =>
     expect(
       parseAgentArguments(['--', '--brand', ' toyota ', '--provider', 'fixture']),
