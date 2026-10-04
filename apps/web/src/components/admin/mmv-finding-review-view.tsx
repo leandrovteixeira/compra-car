@@ -39,6 +39,7 @@ export function MmvFindingReviewView({ detail }: { readonly detail: AgentFinding
   const structured = object(finding.payload.structuredCandidate);
   const resolved = objects(finding.payload.resolvedVariants);
   const proposed = identities.length ? identities : resolved;
+  const marketReconciliation = objects(finding.payload.marketReconciliation);
   const model = text(finding.subject.model) ?? text(structured?.model) ?? 'Modelo';
   const brand = text(finding.subject.brand) ?? text(structured?.brand) ?? '';
   const version = text(finding.subject.officialVersionLabel) ?? text(structured?.officialVersionLabel);
@@ -99,6 +100,44 @@ export function MmvFindingReviewView({ detail }: { readonly detail: AgentFinding
                 <div key={index} className="ui-surface p-3">
                   <p className="font-medium">{label}</p>
                   {technical ? <p className="text-sm text-text-secondary">{technical}</p> : null}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+
+      {marketReconciliation.length ? (
+        <div>
+          <h3 className="font-semibold">FIPE / mercado</h3>
+          <div className="mt-2 grid gap-2">
+            {marketReconciliation.map((item, index) => {
+              const manufacturerVersionLabel =
+                text(item.manufacturerVersionLabel) ?? 'Versão não identificada';
+              const observations = objects(item.observations);
+              return (
+                <div key={index} className="ui-surface p-3">
+                  <p className="font-medium">{manufacturerVersionLabel}</p>
+                  {!observations.length ? (
+                    <p className="text-sm text-text-secondary">
+                      Nenhum código FIPE explícito encontrado.
+                    </p>
+                  ) : (
+                    <ul className="mt-1 space-y-1 text-sm">
+                      {observations.map((observation, observationIndex) => {
+                        const official = text(observation.sourceKind) === 'FIPE';
+                        return (
+                          <li key={observationIndex}>
+                            <strong>{text(observation.fipeCode) ?? '—'}</strong>
+                            {' · '}
+                            {text(observation.modelLabel) ?? 'Rótulo não informado'}
+                            {' · '}
+                            {official ? 'FIPE oficial' : 'candidato via mercado'}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
                 </div>
               );
             })}
