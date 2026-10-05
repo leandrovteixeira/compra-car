@@ -1,4 +1,4 @@
-import { projectCatalogMmvIdentities } from './catalog-mmv-identity';
+import { projectCatalogMmvIdentities, projectCanonicalMmvIdentities } from './catalog-mmv-identity';
 import type { BrandConnectorResolver } from './brand-connector-resolver';
 import { CurrentMmvDiscoveryAgent } from './current-mmv-discovery-agent';
 import { vehicleTextComparisonKey as key } from '../admin/vehicle-text-normalization';
@@ -11,6 +11,7 @@ import type {
   ReportWriter,
   NewProductCheckResult,
 } from './new-product-check-types';
+import type { CanonicalMmv } from './mmv-apply-contract';
 export { isOfficialProductCandidate } from './official-product-candidate-validation';
 
 export class NewProductCheckAgent {
@@ -22,6 +23,7 @@ export class NewProductCheckAgent {
       readonly matcher?: ProductCandidateMatcher;
       readonly now?: () => Date;
       readonly connectorResolver?: BrandConnectorResolver;
+      readonly canonicalMmvs?: () => Promise<readonly CanonicalMmv[]>;
     },
   ) {}
 
@@ -39,7 +41,30 @@ export class NewProductCheckAgent {
     const catalog = (await this.dependencies.catalog.readProducts(normalizedScope)).filter(
       (product) => key(product.brand) === key(discovery.brand),
     );
-    const identities = projectCatalogMmvIdentities(catalog);
+    const legacyIdentities = projectCatalogMmvIdentities(catalog);
+    const canonicalIdentities = this.dependencies.canonicalMmvs
+      ? projectCanonicalMmvIdentities(
+          (await this.dependencies.canonicalMmvs()).filter(
+            (mmv) => key(mmv.brand) === key(discovery.brand) && mmv.status === 'ACTIVE',
+          ),
+        )
+      : [];
+    const byCore = new Map(
+      legacyIdentities.map((identity) => [
+        [identity.normalizedBrand, identity.normalizedModel, identity.normalizedVersion].join('|'),
+        identity,
+      ]),
+    );
+    for (const canonical of canonicalIdentities) {
+      const core = [
+        canonical.normalizedBrand,
+        canonical.normalizedModel,
+        canonical.normalizedVersion,
+      ].join('|');
+      const legacy = byCore.get(core);
+      byCore.set(core, legacy ? { ...canonical, productRows: legacy.productRows } : canonical);
+    }
+    const identities = [...byCore.values()];
     const matcher = this.dependencies.matcher ?? new ProductCandidateMatcher();
     const matches = discovery.candidates.map((candidate) =>
       matcher.matchIdentities(normalizedScope, candidate, identities),
