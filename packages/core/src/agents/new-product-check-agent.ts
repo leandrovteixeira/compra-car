@@ -2,6 +2,7 @@ import { projectCatalogMmvIdentities, projectCanonicalMmvIdentities } from './ca
 import type { BrandConnectorResolver } from './brand-connector-resolver';
 import { CurrentMmvDiscoveryAgent } from './current-mmv-discovery-agent';
 import { vehicleTextComparisonKey as key } from '../admin/vehicle-text-normalization';
+import { sameVehicleBrand } from './vehicle-brand-normalization';
 import { ProductCandidateMatcher } from './product-candidate-matcher';
 import { aggregateProductFindings } from './product-finding-aggregation';
 import type {
@@ -39,13 +40,13 @@ export class NewProductCheckAgent {
       brand: discovery.brand,
     };
     const catalog = (await this.dependencies.catalog.readProducts(normalizedScope)).filter(
-      (product) => key(product.brand) === key(discovery.brand),
+      (product) => sameVehicleBrand(product.brand, discovery.brand),
     );
     const legacyIdentities = projectCatalogMmvIdentities(catalog);
     const canonicalIdentities = this.dependencies.canonicalMmvs
       ? projectCanonicalMmvIdentities(
           (await this.dependencies.canonicalMmvs()).filter(
-            (mmv) => key(mmv.brand) === key(discovery.brand) && mmv.status === 'ACTIVE',
+            (mmv) => sameVehicleBrand(mmv.brand, discovery.brand) && mmv.status === 'ACTIVE',
           ),
         )
       : [];
