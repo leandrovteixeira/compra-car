@@ -5,6 +5,7 @@ import type {
   ResponseCreateParamsNonStreaming,
 } from 'openai/resources/responses/responses';
 import {
+  BRAND_ALIAS_TYPES,
   CONNECTOR_SOURCE_TYPES,
   type BrandConnectorResearch,
   type BrandConnectorResearchInput,
@@ -22,6 +23,19 @@ function object(properties: Record<string, unknown>) {
 }
 export const brandConnectorResearchSchema = object({
   observedBrandLabel: string,
+  canonicalBrand: string,
+  aliases: {
+    type: 'array',
+    maxItems: 20,
+    items: object({
+      alias: string,
+      aliasType: { type: 'string', enum: [...BRAND_ALIAS_TYPES] },
+      confidence: { type: 'number' },
+      evidenceUrl: string,
+      evidenceTitle: string,
+      evidenceExcerpt: string,
+    }),
+  },
   market: string,
   candidateDomains: strings(20, 1),
   sourceEntries: {
