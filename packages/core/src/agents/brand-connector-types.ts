@@ -56,14 +56,36 @@ export interface BrandConnectorRepository {
   /** Atomic review recheck, supersession and insertion; never expose standalone supersession. */
   activateConnector(findingId: string, actor: string): Promise<BrandConnector>;
 }
+export const BRAND_ALIAS_TYPES = [
+  'OFFICIAL_SHORT_NAME',
+  'LEGAL_NAME',
+  'MARKETING_NAME',
+  'LEGACY_CATALOG',
+  'FORMER_NAME',
+] as const;
+export type BrandAliasType = (typeof BRAND_ALIAS_TYPES)[number];
+
+export interface BrandAliasResearch {
+  readonly alias: string;
+  readonly aliasType: BrandAliasType;
+  readonly confidence: number;
+  readonly evidenceUrl: string;
+  readonly evidenceTitle: string;
+  readonly evidenceExcerpt: string;
+}
+
 export interface ConnectorEvidence {
   readonly url: string;
   readonly title: string;
   readonly excerpt: string;
 }
 export interface BrandConnectorResearch {
-  /** Informational manufacturer label; never the operational target identity. */
+  /** Manufacturer-facing label observed on official sources. */
   readonly observedBrandLabel: string;
+  /** Proposed canonical manufacturer identity. Human review still controls activation. */
+  readonly canonicalBrand: string;
+  /** Proposed aliases supported by explicit evidence. */
+  readonly aliases: readonly BrandAliasResearch[];
   readonly market: string;
   readonly candidateDomains: readonly string[];
   readonly sourceEntries: readonly ConnectorSourceEntry[];
