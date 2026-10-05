@@ -1,4 +1,6 @@
 import { vehicleTextComparisonKey as key } from '../admin/vehicle-text-normalization';
+import { canonicalVehicleBrand, sameVehicleBrand } from './vehicle-brand-normalization';
+import { normalizeDiscoveredVariantLabels } from './official-product-candidate-normalization';
 import type { BrandConnectorResolver } from './brand-connector-resolver';
 import { deduplicateOfficialCandidates } from './official-product-candidate-deduplication';
 import { isOfficialProductCandidate } from './official-product-candidate-validation';
@@ -29,7 +31,8 @@ export class CurrentMmvDiscoveryAgent {
     const source = this.dependencies.connectorResolver
       ? await this.dependencies.connectorResolver.resolve(scope)
       : officialBrandSource(scope);
-    const normalizedScope: AgentMarketScope = { country: source.country, brand: source.brand };
+    const canonicalBrand = canonicalVehicleBrand(source.brand);
+    const normalizedScope: AgentMarketScope = { country: source.country, brand: canonicalBrand };
     const now = this.dependencies.now ?? (() => new Date());
     const startedAt = now().toISOString();
     const research = await this.dependencies.research.researchProducts(normalizedScope, source);
@@ -61,7 +64,7 @@ export class CurrentMmvDiscoveryAgent {
         else rejectedExternalSources++;
       }
 
-      if (key(raw.brand) !== key(source.brand)) {
+      if (!sameVehicleBrand(raw.brand, canonicalBrand)) {
         rejectedCandidates.push({ candidateIndex, reason: 'OUT_OF_SCOPE' });
         return;
       }
@@ -71,8 +74,9 @@ export class CurrentMmvDiscoveryAgent {
       }
 
       // Explicit projection strips provider-only fields. Published labels stay verbatim.
-      accepted.push({
-        brand: raw.brand,
+      accepted.push(
+        normalizeDiscoveredVariantLabels({
+        brand: canonicalBrand,
         model: raw.model,
         bodyStyle: raw.bodyStyle ?? null,
         taxonomy: raw.taxonomy,
@@ -89,7 +93,8 @@ export class CurrentMmvDiscoveryAgent {
         confidence: raw.confidence,
         evidence,
         extractionWarnings: raw.extractionWarnings ?? [],
-      });
+      }),
+      );
     });
 
     const candidates = deduplicateOfficialCandidates(normalizedScope, accepted);
@@ -104,7 +109,7 @@ export class CurrentMmvDiscoveryAgent {
       runId,
       startedAt,
       completedAt: now().toISOString(),
-      brand: source.brand,
+      brand: canonicalBrand,
       market: source.country,
       researchedCandidates: research.candidates.length,
       acceptedCandidates: candidates.length,
