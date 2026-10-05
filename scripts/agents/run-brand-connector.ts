@@ -99,6 +99,10 @@ export async function runBrandConnectorCli(
             )
           : undefined
         : ((await repository!.getActiveConnector(options.brand, options.market)) ?? undefined);
+    const activeIdentity =
+      options.provider === 'openai' && repository
+        ? await repository.resolveBrandIdentity(options.brand, options.market)
+        : null;
     const research =
       dependencies.research ??
       (options.provider === 'fixture'
@@ -112,7 +116,13 @@ export async function runBrandConnectorCli(
             ),
           }));
     const bundle = await new BrandConnectorAgent(research).run(
-      { brand: options.brand, market: options.market, mode: options.mode, activeConnector },
+      {
+        brand: options.brand,
+        market: options.market,
+        mode: options.mode,
+        activeConnector,
+        activeIdentity,
+      },
       undefined,
       options.provider,
     );
