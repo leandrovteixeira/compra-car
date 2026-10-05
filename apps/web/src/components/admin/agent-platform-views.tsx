@@ -229,6 +229,89 @@ export function AgentRunDetail({ bundle }: { readonly bundle: AgentRunBundle }) 
     </div>
   );
 }
+function BrandIdentityReview({ payload, subject }: {
+  readonly payload: AgentObject;
+  readonly subject: AgentObject;
+}) {
+  const canonicalBrand =
+    typeof payload.canonicalBrand === 'string' ? payload.canonicalBrand : null;
+  const targetBrand = typeof subject.brand === 'string' ? subject.brand : null;
+  const aliases = Array.isArray(payload.aliases)
+    ? payload.aliases.filter(
+        (item): item is AgentObject =>
+          item !== null && typeof item === 'object' && !Array.isArray(item),
+      )
+    : [];
+
+  if (!canonicalBrand && !aliases.length) return null;
+
+  return (
+    <section className="ui-surface space-y-3 p-4">
+      <div>
+        <h2 className="text-lg font-semibold">Identidade da marca</h2>
+        <p className="text-sm text-text-secondary">
+          A identidade e os aliases só entram no registry após revisão e ativação do connector.
+        </p>
+      </div>
+      <dl className="grid gap-2 text-sm md:grid-cols-2">
+        <div>
+          <dt className="text-text-muted">Target operacional</dt>
+          <dd className="font-medium">{targetBrand ?? '—'}</dd>
+        </div>
+        <div>
+          <dt className="text-text-muted">Marca canônica proposta</dt>
+          <dd className="font-medium">{canonicalBrand ?? '—'}</dd>
+        </div>
+      </dl>
+      <div>
+        <h3 className="font-medium">Aliases propostos</h3>
+        {!aliases.length ? (
+          <p className="mt-1 text-sm text-text-muted">Nenhum alias proposto.</p>
+        ) : (
+          <ul className="mt-2 divide-y divide-border">
+            {aliases.map((alias, index) => {
+              const value = typeof alias.alias === 'string' ? alias.alias : '—';
+              const aliasType =
+                typeof alias.aliasType === 'string' ? alias.aliasType : '—';
+              const confidenceValue =
+                typeof alias.confidence === 'number' ? alias.confidence : null;
+              const evidenceUrl =
+                typeof alias.evidenceUrl === 'string'
+                  ? safeConnectorUrl(alias.evidenceUrl)
+                  : null;
+              return (
+                <li key={index} className="space-y-1 py-2">
+                  <p>
+                    <strong>{value}</strong> · {aliasType}
+                    {confidenceValue !== null
+                      ? ' · ' + confidence(confidenceValue)
+                      : ''}
+                  </p>
+                  {typeof alias.evidenceExcerpt === 'string' ? (
+                    <p className="text-sm text-text-secondary">
+                      {alias.evidenceExcerpt}
+                    </p>
+                  ) : null}
+                  {evidenceUrl ? (
+                    <a
+                      href={evidenceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm underline underline-offset-2"
+                    >
+                      Evidência do alias
+                    </a>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+    </section>
+  );
+}
+
 export function AgentFindingDetailView({ detail }: { readonly detail: AgentFindingDetail }) {
   const { finding, run, evidence, reviews, latestReview } = detail;
   const evidenceAssessment = asAgentObject(finding.payload.evidenceAssessment);
@@ -265,6 +348,7 @@ export function AgentFindingDetailView({ detail }: { readonly detail: AgentFindi
       <AgentDetails title="Identidade observada" value={finding.subject} />
       {['NEW_BRAND_CONNECTOR', 'CONNECTOR_DRIFT'].includes(finding.findingType) ? (
         <>
+          <BrandIdentityReview payload={finding.payload} subject={finding.subject} />
           <BrandConnectorView value={finding.proposal} />
           {typeof finding.payload.observedBrandLabel === 'string' ? (
             <p>Nome oficial observado (informativo): {finding.payload.observedBrandLabel}</p>
