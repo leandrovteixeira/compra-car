@@ -40,11 +40,16 @@ function candidateDetails(candidate: OfficialProductCandidate): AgentObject {
   return details as unknown as AgentObject;
 }
 
-function stagedMmvIdentity(candidate: OfficialProductCandidate): AgentObject | null {
+function stagedMmvIdentity(
+  candidate: OfficialProductCandidate,
+  reasonCode: string,
+): AgentObject | null {
   const officialVersionLabel = candidate.officialVersionLabel ?? candidate.trim;
   if (!officialVersionLabel?.trim()) return null;
   return {
-    identityKey: mmvDiscoveryIdentityKey(candidate),
+    identityKey: mmvDiscoveryIdentityKey(candidate, {
+      includeCommercialPowertrain: reasonCode === 'SAME_LABEL_DISTINCT_POWERTRAIN',
+    }),
     brand: candidate.brand,
     model: candidate.model,
     bodyStyle: candidate.bodyStyle ?? null,
@@ -77,7 +82,7 @@ function mmvProposalForObservation(
       ? observation.variants
       : [observation.candidate];
   const identities = source.flatMap((candidate) => {
-    const identity = stagedMmvIdentity(candidate);
+    const identity = stagedMmvIdentity(candidate, observation.reasonCode);
     return identity ? [identity] : [];
   });
   if (!identities.length) return null;
