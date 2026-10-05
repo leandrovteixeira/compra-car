@@ -45,7 +45,7 @@ export function findingFingerprint(
     return JSON.stringify([
       'new-product-check:v3',
       scope.country,
-      key(scope.brand),
+      vehicleBrandComparisonKey(scope.brand),
       key(candidate.model),
       type,
     ]);
