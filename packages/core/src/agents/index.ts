@@ -44,3 +44,5 @@ export * from './mmv-evidence-confidence';
 export * from './mmv-apply-contract';
 
 export * from './mmv-market-reconciliation';
+export * from './vehicle-brand-normalization';
+export * from './official-product-candidate-normalization';
