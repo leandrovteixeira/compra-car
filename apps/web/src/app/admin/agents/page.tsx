@@ -51,7 +51,7 @@ export default async function AgentsPage({
     <>
       <PageHeader
         title="Agentes"
-        description="Findings, evidências e decisões humanas. Esta decisão não altera o catálogo."
+        description="Execução, findings, evidências e decisões humanas no ambiente QA."
       />
       <div className="mt-5 space-y-5">
         <nav aria-label="Área de agentes" className="flex gap-2">
