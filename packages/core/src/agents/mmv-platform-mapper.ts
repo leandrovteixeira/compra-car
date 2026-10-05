@@ -42,7 +42,7 @@ function candidateDetails(candidate: OfficialProductCandidate): AgentObject {
 
 function stagedMmvIdentity(
   candidate: OfficialProductCandidate,
-  reasonCode: string,
+  reasonCode: string | null | undefined,
 ): AgentObject | null {
   const officialVersionLabel = candidate.officialVersionLabel ?? candidate.trim;
   if (!officialVersionLabel?.trim()) return null;
