@@ -28,6 +28,7 @@ export interface BrandConnectorTarget {
   readonly market: string;
   readonly enabled: boolean;
   readonly origin: 'CATALOG' | 'MANUAL';
+  readonly brandIdentityId: string | null;
   readonly createdBy: string | null;
   readonly createdAt: string;
   readonly updatedAt: string;
