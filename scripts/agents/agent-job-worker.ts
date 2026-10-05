@@ -1,6 +1,7 @@
 import { resolve } from 'node:path';
 import { createLegacySupabaseClient } from '@compra-car/adapter-supabase';
 import { runNewProductCheckCli } from './run-new-product-check';
+import { runBrandConnectorCli } from './run-brand-connector';
 
 type JobRow = {
   id: string;
@@ -13,6 +14,7 @@ type JobRow = {
     persistFindings?: boolean;
     marketReconcile?: boolean;
     marketModel?: string | null;
+    mode?: 'discover' | 'health-check';
   };
 };
 
@@ -57,39 +59,63 @@ async function fail(jobId: string, code: string) {
 }
 
 async function execute(job: JobRow) {
-  if (job.job_type !== 'MMV_DISCOVERY') {
+  const logs: string[] = [];
+  const log = (line: string) => {
+    logs.push(line);
+    console.log('[agent-job]', job.id, line);
+  };
+
+  let code: number;
+  if (job.job_type === 'MMV_DISCOVERY') {
+    code = await runNewProductCheckCli(
+      [
+        '--brand',
+        job.brand,
+        '--provider',
+        'openai',
+        '--persist-findings',
+        ...(job.input.marketReconcile ? ['--market-reconcile'] : []),
+        ...(job.input.marketModel ? ['--market-model', job.input.marketModel] : []),
+      ],
+      env,
+      log,
+      repositoryRoot,
+    );
+  } else if (job.job_type === 'BRAND_CONNECTOR') {
+    code = await runBrandConnectorCli(
+      [
+        '--brand',
+        job.brand,
+        '--market',
+        job.market,
+        '--mode',
+        job.input.mode ?? 'discover',
+        '--provider',
+        'openai',
+        '--persist-findings',
+      ],
+      env,
+      log,
+      repositoryRoot,
+    );
+  } else {
     await fail(job.id, 'UNSUPPORTED_AGENT_JOB');
     return;
   }
 
-  const args = [
-    '--brand',
-    job.brand,
-    '--provider',
-    'openai',
-    '--persist-findings',
-    ...(job.input.marketReconcile ? ['--market-reconcile'] : []),
-    ...(job.input.marketModel ? ['--market-model', job.input.marketModel] : []),
-  ];
-
-  const logs: string[] = [];
-  const code = await runNewProductCheckCli(
-    args,
-    env,
-    (line) => {
-      logs.push(line);
-      console.log('[agent-job]', job.id, line);
-    },
-    repositoryRoot,
-  );
-  const runId =
-    logs.find((line) => line.startsWith('Run: '))?.slice('Run: '.length).trim() ?? null;
+  const runLine = logs.find((line) => line.startsWith('Run: '));
+  const runId = runLine?.match(
+    /^Run:\s+([0-9a-fA-F-]{36})(?:\s|$)/u,
+  )?.[1] ?? null;
 
   if (code !== 0 || !runId) {
     await fail(
       job.id,
-      logs.find((line) => line.startsWith('NEW_PRODUCT_CHECK_FAILED:')) ??
-        'AGENT_JOB_EXECUTION_FAILED',
+      logs.find(
+        (line) =>
+          line.startsWith('NEW_PRODUCT_CHECK_FAILED:') ||
+          line.startsWith('BRAND_CONNECTOR_FAILED:'),
+      ) ?? 'AGENT_JOB_EXECUTION_FAILED',
     );
     return;
   }
