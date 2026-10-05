@@ -2417,3 +2417,15 @@ verifica versão, formatos, chaves e referências Product/Policy/Offer. Product 
 valuation, Apply, UI, persistência, Supabase e migrations permanecem **PENDENTES** e fora do boundary.
 `Legacy` e o banco não foram alterados. A decisão está documentada em
 `docs/import/SPRINT_15C1_COMMERCIAL_XLSX_INGESTION.md`.
+
+
+## Environment policy — online QA + Production (2026-10-05)
+
+- Compra Car has only two persistent environments: **QA/Staging online** and **Production online**.
+- QA/Staging uses Supabase project `shfsjyjxmgwnlexmdkcs` and is the mandatory target for development, agent runs, human review, validation and smoke tests.
+- Production must remain untouched during development. Do not change Production code, schema or data directly.
+- Promote only reviewed code/migrations from QA to Production. Never promote QA data.
+- Production data changes require an explicit production data operation/import approved by the user.
+- Local execution is optional for coding/debugging and is not a third persistent environment.
+- If the target environment cannot be proven, fail closed instead of assuming.
+- Canonical reference: `docs/architecture/decisions/ADR-020-ONLINE-QA-AND-PRODUCTION-ENVIRONMENTS.md`.
