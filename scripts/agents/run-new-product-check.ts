@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { AgentPlatformRepository } from '@compra-car/core/agent-platform';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import {
   CurrentMmvDiscoveryAgent,
   NewProductCheckAgent,
@@ -85,7 +85,7 @@ export async function runNewProductCheckCli(
   args: readonly string[],
   env: Readonly<Record<string, string | undefined>> = process.env,
   log: (message: string) => void = console.log,
-  repositoryRoot = fileURLToPath(new URL('../../', import.meta.url)),
+  repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..'),
   persistence?: Pick<AgentPlatformRepository, 'persistRunBundle'>,
 ): Promise<number> {
   try {
