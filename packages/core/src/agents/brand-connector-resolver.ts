@@ -1,6 +1,6 @@
 import { officialBrandSource } from './official-product-sources';
 import type { AgentMarketScope, OfficialBrandSource } from './new-product-check-types';
-import { canonicalVehicleBrand, vehicleBrandAliases } from './vehicle-brand-normalization';
+import { canonicalVehicleBrand } from './vehicle-brand-normalization';
 import type { BrandConnectorDefinition, BrandConnectorRepository } from './brand-connector-types';
 import { connectorFingerprint, validateConnectorDefinition } from './brand-connector-validation';
 export interface BrandConnectorResolver {
@@ -39,7 +39,10 @@ export function connectorOfficialSource(input: BrandConnectorDefinition): Offici
 }
 export class OperationalBrandConnectorResolver implements BrandConnectorResolver {
   constructor(
-    private readonly repository: Pick<BrandConnectorRepository, 'getActiveConnector'>,
+    private readonly repository: Pick<
+      BrandConnectorRepository,
+      'getActiveConnector' | 'resolveBrandIdentity'
+    >,
     private readonly fallback?: BrandConnectorResolver,
   ) {}
   async resolve(scope: AgentMarketScope) {
@@ -49,16 +52,24 @@ export class OperationalBrandConnectorResolver implements BrandConnectorResolver
   }
 
   async resolveAlternates(scope: AgentMarketScope) {
+    const identity = await this.repository.resolveBrandIdentity(scope.brand, scope.country);
+    const canonicalBrand = identity?.canonicalName ?? canonicalVehicleBrand(scope.brand);
+    const lookupNames = identity
+      ? [identity.canonicalName, ...identity.aliases]
+      : [canonicalBrand];
     const sources: OfficialBrandSource[] = [];
-    for (const alias of vehicleBrandAliases(scope.brand)) {
-      const active = await this.repository.getActiveConnector(alias, scope.country);
-      if (active) sources.push(connectorOfficialSource(active));
+    const seen = new Set<string>();
+    for (const name of lookupNames) {
+      const active = await this.repository.getActiveConnector(name, scope.country);
+      if (!active) continue;
+      const source = connectorOfficialSource(active);
+      const identityKey = JSON.stringify([source.allowedDomains, source.searchHints, source.allowedHosts]);
+      if (seen.has(identityKey)) continue;
+      seen.add(identityKey);
+      sources.push({ ...source, brand: canonicalBrand });
     }
     if (!sources.length && this.fallback) {
-      sources.push(await this.fallback.resolve({
-        ...scope,
-        brand: canonicalVehicleBrand(scope.brand),
-      }));
+      sources.push(await this.fallback.resolve({ ...scope, brand: canonicalBrand }));
     }
     return sources;
   }
