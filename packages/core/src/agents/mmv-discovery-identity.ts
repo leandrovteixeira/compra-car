@@ -6,10 +6,6 @@ import type {
 } from './mmv-discovery-contract';
 import type { OfficialProductCandidate } from './new-product-check-types';
 
-function normalizedOptional(value: string | null): string | null {
-  return value === null ? null : key(value);
-}
-
 export function mmvCommercialVariantDiscriminator(
   candidate: OfficialProductCandidate,
 ): MmvCommercialVariantDiscriminator {
@@ -51,21 +47,22 @@ export function projectMmvDiscoveryIdentity(
  * Sprint 20 they are evidence/attributes unless a future reviewed rule explicitly promotes them.
  * This avoids creating new MMVs from technical wording or descriptors such as AT/AT6 alone.
  */
-export function mmvDiscoveryIdentityKey(candidate: OfficialProductCandidate): string {
+export function mmvDiscoveryIdentityKey(
+  candidate: OfficialProductCandidate,
+  options: { readonly includeCommercialPowertrain?: boolean } = {},
+): string {
   const identity = projectMmvDiscoveryIdentity(candidate);
-  const powertrain =
-    identity.discriminator.commercialPowertrainLabel === null
-      ? null
-      : powertrainComparisonKey(identity.discriminator.commercialPowertrainLabel);
+  const commercialDiscriminator =
+    options.includeCommercialPowertrain &&
+    identity.discriminator.commercialPowertrainLabel !== null
+      ? powertrainComparisonKey(identity.discriminator.commercialPowertrainLabel)
+      : null;
 
   return JSON.stringify([
-    'mmv-current:v1',
+    'mmv-current:v2',
     key(identity.brand),
     key(identity.model),
     key(identity.officialVersionLabel),
-    normalizedOptional(identity.bodyStyle),
-    powertrain,
-    identity.discriminator.propulsion,
-    identity.discriminator.engineDisplacement,
+    commercialDiscriminator,
   ]);
 }
