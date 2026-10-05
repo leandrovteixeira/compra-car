@@ -62,8 +62,11 @@ export function MmvFindingReviewView({ detail }: { readonly detail: AgentFinding
 
       <div className="grid gap-3 md:grid-cols-2">
         <div className="ui-surface p-3">
-          <p className="text-xs text-text-muted">Identidade observada</p>
+          <p className="text-xs text-text-muted">Identidade comercial observada</p>
           <p className="font-medium">{[brand, model, version].filter(Boolean).join(' ')}</p>
+          <p className="mt-1 text-xs text-text-muted">
+            Marca, modelo e versão comercial formam a identidade MMV. Dados técnicos abaixo servem para confirmar ou desambiguar.
+          </p>
         </div>
         <div className="ui-surface p-3">
           <p className="text-xs text-text-muted">Match com catálogo</p>
@@ -86,7 +89,7 @@ export function MmvFindingReviewView({ detail }: { readonly detail: AgentFinding
       {proposed.length ? (
         <div>
           <h3 className="font-semibold">
-            {finding.findingType === 'NEW_MODEL' ? 'MMVs encontrados' : 'MMV proposto'}
+            {finding.findingType === 'NEW_MODEL' ? 'Identidades MMV propostas' : 'Identidade MMV proposta'}
           </h3>
           <div className="mt-2 grid gap-2">
             {proposed.map((identity, index) => {
@@ -99,7 +102,12 @@ export function MmvFindingReviewView({ detail }: { readonly detail: AgentFinding
               return (
                 <div key={index} className="ui-surface p-3">
                   <p className="font-medium">{label}</p>
-                  {technical ? <p className="text-sm text-text-secondary">{technical}</p> : null}
+                  {technical ? (
+                    <div className="mt-2">
+                      <p className="text-xs text-text-muted">Dados técnicos observados</p>
+                      <p className="text-sm text-text-secondary">{technical}</p>
+                    </div>
+                  ) : null}
                 </div>
               );
             })}
@@ -109,7 +117,10 @@ export function MmvFindingReviewView({ detail }: { readonly detail: AgentFinding
 
       {marketReconciliation.length ? (
         <div>
-          <h3 className="font-semibold">FIPE / mercado</h3>
+          <h3 className="font-semibold">Reconciliação FIPE / mercado</h3>
+          <p className="mt-1 text-sm text-text-secondary">
+            O código FIPE é uma referência externa vinculada ao MMV. Fonte secundária permanece candidata até confirmação.
+          </p>
           <div className="mt-2 grid gap-2">
             {marketReconciliation.map((item, index) => {
               const manufacturerVersionLabel =
@@ -132,7 +143,7 @@ export function MmvFindingReviewView({ detail }: { readonly detail: AgentFinding
                             {' · '}
                             {text(observation.modelLabel) ?? 'Rótulo não informado'}
                             {' · '}
-                            {official ? 'FIPE oficial' : 'candidato via mercado'}
+                            {official ? 'FIPE oficial · confirmado' : 'fonte secundária · candidato'}
                           </li>
                         );
                       })}
@@ -144,6 +155,13 @@ export function MmvFindingReviewView({ detail }: { readonly detail: AgentFinding
           </div>
         </div>
       ) : null}
+
+      <div className="ui-surface p-3">
+        <h3 className="font-semibold">O que acontece depois da revisão</h3>
+        <p className="mt-1 text-sm text-text-secondary">
+          Aceitar registra somente a concordância humana com o finding. A criação ou atualização do catálogo continua sendo uma ação separada e explícita.
+        </p>
+      </div>
 
       <details className="ui-surface p-3">
         <summary className="cursor-pointer font-medium">Ver detalhes técnicos / JSON</summary>
