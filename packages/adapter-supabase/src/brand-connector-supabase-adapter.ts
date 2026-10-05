@@ -119,8 +119,8 @@ export class BrandConnectorSupabaseAdapter implements BrandConnectorRepository {
 
     const directTarget = await this.getTarget(brand, marketKey);
     let identityId =
-      directTarget && typeof (directTarget as BrandConnectorTarget & { brandIdentityId?: string | null }).brandIdentityId === 'string'
-        ? (directTarget as BrandConnectorTarget & { brandIdentityId?: string | null }).brandIdentityId!
+      directTarget && typeof directTarget.brandIdentityId === 'string'
+        ? directTarget.brandIdentityId
         : null;
 
     if (!identityId) {
