@@ -13,10 +13,12 @@ import {
   safeConnectorUrl,
   validateConnectorDefinition,
 } from './brand-connector-validation';
-import type {
-  BrandConnectorResearch,
-  BrandConnectorResearchInput,
-  BrandConnectorResearchProvider,
+import {
+  BRAND_ALIAS_TYPES,
+  type BrandAliasResearch,
+  type BrandConnectorResearch,
+  type BrandConnectorResearchInput,
+  type BrandConnectorResearchProvider,
 } from './brand-connector-types';
 
 export class BrandConnectorAgent {
