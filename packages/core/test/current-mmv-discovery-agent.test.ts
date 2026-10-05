@@ -58,22 +58,10 @@ describe('CurrentMmvDiscoveryAgent', () => {
       research: { researchProducts: async () => ({ candidates, metadata: { provider: 'fake' } }) },
     }).run(scope, 'body-aggregation');
     expect(result.candidates.filter((candidate) => candidate.model === 'Corolla')).toHaveLength(5);
-    expect(result.bodyModelProposals).toHaveLength(4);
-    const corolla = result.bodyModelProposals.filter(
-      (proposal) => proposal.currentModel === 'Corolla',
-    );
-    expect(corolla).toHaveLength(1);
-    expect(corolla[0]).toMatchObject({
-      reasonCode: 'POSSIBLE_BODY_SPLIT',
-      currentModel: 'Corolla',
-      bodyStyle: 'Sedan',
-      proposedModel: 'Corolla Sedan',
-      requiresReview: true,
-    });
-    expect(corolla[0]!.evidence).toHaveLength(6);
-    expect(corolla[0]!.evidence).toEqual(
-      expect.arrayContaining(distinct.map((evidence) => expect.objectContaining(evidence))),
-    );
+    expect(result.bodyModelProposals).toHaveLength(3);
+    expect(
+      result.bodyModelProposals.filter((proposal) => proposal.currentModel === 'Corolla'),
+    ).toHaveLength(0);
     expect(
       result.bodyModelProposals
         .filter((proposal) => proposal.currentModel === 'Hilux')
@@ -160,7 +148,7 @@ describe('CurrentMmvDiscoveryAgent', () => {
     });
   });
 
-  it('emits review-only body/model proposals without rewriting discovered model identity', async () => {
+  it('suppresses generic body styles without rewriting discovered model identity', async () => {
     const base = toyotaFixtureCandidates[0]!;
     const result = await new CurrentMmvDiscoveryAgent({
       research: {
@@ -199,16 +187,7 @@ describe('CurrentMmvDiscoveryAgent', () => {
 
     expect(result.candidates[0]?.model).toBe('A3');
     expect(result.candidates[0]?.bodyStyle).toBe('Sedan');
-    expect(result.bodyModelProposals).toEqual([
-      {
-        reasonCode: 'POSSIBLE_BODY_SPLIT',
-        currentModel: 'A3',
-        bodyStyle: 'Sedan',
-        proposedModel: 'A3 Sedan',
-        requiresReview: true,
-        evidence: expect.any(Array),
-      },
-    ]);
+    expect(result.bodyModelProposals).toEqual([]);
   });
 
   it('preserves validated observations separately from deduplicated candidates', async () => {
