@@ -1,4 +1,5 @@
 import { vehicleTextComparisonKey as key } from '../admin/vehicle-text-normalization';
+import { sameVehicleBrand, vehicleBrandComparisonKey } from './vehicle-brand-normalization';
 import type { AdministrativeVehicle } from '../admin/administrative-vehicle';
 import { projectCatalogMmvIdentities, type CatalogMmvIdentity } from './catalog-mmv-identity';
 import {
@@ -26,7 +27,7 @@ export function officialCandidateIdentity(
   const normalized = (value: string | null) => (value === null ? null : key(value));
   return [
     scope.country,
-    key(scope.brand),
+    vehicleBrandComparisonKey(scope.brand),
     key(candidate.model),
     normalized(candidate.bodyStyle ?? null),
     normalized(candidate.officialVersionLabel),
@@ -168,7 +169,7 @@ export class ProductCandidateMatcher {
     catalog: readonly CatalogMmvIdentity[],
   ): { readonly matched: MatchedProductCandidate } | { readonly finding: NewProductFinding } {
     const models = catalog.filter(
-      (p) => key(p.brand) === key(scope.brand) && key(p.model) === key(candidate.model),
+      (p) => sameVehicleBrand(p.brand, scope.brand) && key(p.model) === key(candidate.model),
     );
     const warnings = [...new Set(candidate.extractionWarnings ?? [])];
     const finding = (
@@ -193,7 +194,7 @@ export class ProductCandidateMatcher {
         reasonCode,
       },
     });
-    if (key(candidate.brand) !== key(scope.brand) || !candidate.evidence.length)
+    if (!sameVehicleBrand(candidate.brand, scope.brand) || !candidate.evidence.length)
       return finding('AMBIGUOUS', 'Official model evidence is insufficient for this scope.');
     if (candidate.taxonomy !== 'MODEL' && candidate.taxonomy !== 'VARIANT') {
       return finding(
