@@ -26,6 +26,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@compra-car/agents':
+        specifier: workspace:*
+        version: link:../../scripts/agents
       '@compra-car/adapter-supabase':
         specifier: workspace:*
         version: link:../../packages/adapter-supabase
