@@ -5,6 +5,7 @@ import {
   type AgentReviewFilter,
 } from '@compra-car/core/agent-platform';
 import { loadAgentQueue, loadAgentRuns } from '@/application/admin/agent-platform';
+import { loadAgentJobs } from '@/application/admin/agent-runner';
 import { loadBrandTargets } from '@/application/admin/brand-connectors';
 import {
   AgentFindingTable,
@@ -13,6 +14,7 @@ import {
 } from '@/components/admin/agent-platform-views';
 import { PageHeader } from '@/components/admin/page-header';
 import { AgentRunLauncher } from '@/components/admin/agent-run-launcher';
+import { AgentJobQueue } from '@/components/admin/agent-job-queue';
 export default async function AgentsPage({
   searchParams,
 }: {
@@ -31,9 +33,10 @@ export default async function AgentsPage({
   const rawPage = typeof params.page === 'string' ? Number(params.page) : 1;
   const page = Number.isSafeInteger(rawPage) && rawPage > 0 ? rawPage : 1;
   const options = { offset: (page - 1) * 25, limit: 25, agentType };
-  const [result, brandTargets] = await Promise.all([
+  const [result, brandTargets, jobs] = await Promise.all([
     runs ? loadAgentRuns(options) : loadAgentQueue({ ...options, review }),
     process.env.APP_ENV === 'qa' ? loadBrandTargets() : Promise.resolve([]),
+    runs && process.env.APP_ENV === 'qa' ? loadAgentJobs(20) : Promise.resolve([]),
   ]);
   const launcherBrands = brandTargets
     .filter(({ target }) => target.enabled)
@@ -77,6 +80,7 @@ export default async function AgentsPage({
           </Link>
         </nav>
         {process.env.APP_ENV === 'qa' ? <AgentRunLauncher brands={launcherBrands} /> : null}
+        {runs && process.env.APP_ENV === 'qa' ? <AgentJobQueue items={jobs} /> : null}
         <form className="flex flex-wrap items-end gap-3">
           <input type="hidden" name="tab" value={runs ? 'runs' : 'queue'} />
           {!runs ? (
