@@ -28,14 +28,30 @@ export class CurrentMmvDiscoveryAgent {
   async run(scope: AgentMarketScope, runId: string): Promise<CurrentMmvDiscoverySnapshot> {
     if (!/^[a-zA-Z0-9-]{1,100}$/u.test(runId)) throw new Error('INVALID_RUN_ID');
 
-    const source = this.dependencies.connectorResolver
-      ? await this.dependencies.connectorResolver.resolve(scope)
-      : officialBrandSource(scope);
+    const sources = this.dependencies.connectorResolver?.resolveAlternates
+      ? await this.dependencies.connectorResolver.resolveAlternates(scope)
+      : [
+          this.dependencies.connectorResolver
+            ? await this.dependencies.connectorResolver.resolve(scope)
+            : officialBrandSource(scope),
+        ];
+    const source = sources[0];
+    if (!source) throw new Error('BRAND_CONNECTOR_REQUIRED');
     const canonicalBrand = canonicalVehicleBrand(source.brand);
     const normalizedScope: AgentMarketScope = { country: source.country, brand: canonicalBrand };
     const now = this.dependencies.now ?? (() => new Date());
     const startedAt = now().toISOString();
-    const research = await this.dependencies.research.researchProducts(normalizedScope, source);
+    let research: Awaited<ReturnType<ProductResearchProvider['researchProducts']>> | null = null;
+    let researchError: unknown;
+    for (const candidateSource of sources) {
+      try {
+        research = await this.dependencies.research.researchProducts(normalizedScope, candidateSource);
+        break;
+      } catch (error) {
+        researchError = error;
+      }
+    }
+    if (!research) throw researchError ?? new Error('OPENAI_RESEARCH_FAILED');
 
     if (!Array.isArray(research.candidates) || research.candidates.length > 1000)
       throw new Error('INVALID_RESEARCH_RESULT');
