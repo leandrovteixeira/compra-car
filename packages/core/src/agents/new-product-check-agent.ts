@@ -1,7 +1,6 @@
 import { projectCatalogMmvIdentities, projectCanonicalMmvIdentities } from './catalog-mmv-identity';
 import type { BrandConnectorResolver } from './brand-connector-resolver';
 import { CurrentMmvDiscoveryAgent } from './current-mmv-discovery-agent';
-import { vehicleTextComparisonKey as key } from '../admin/vehicle-text-normalization';
 import { sameVehicleBrand } from './vehicle-brand-normalization';
 import { ProductCandidateMatcher } from './product-candidate-matcher';
 import { aggregateProductFindings } from './product-finding-aggregation';
