@@ -228,12 +228,46 @@ describe('Brand Connector Agent and platform integration', () => {
       market: 'BR',
       mode: 'health-check',
       activeConnector: fixtureActiveConnector(),
+      activeIdentity: {
+      id: platformFixtureId(57),
+      market: 'BR',
+      canonicalName: 'Volkswagen',
+      canonicalKey: 'volkswagen',
+      aliases: ['VW'],
+    },
     });
     expect(bundle.findings[0]!.finding.findingType).toBe(
       drift ? 'CONNECTOR_DRIFT' : 'CONNECTOR_HEALTHY',
     );
     expect(bundle.findings[0]!.finding.requiresReview).toBe(drift);
   });
+  it('reports identity drift even when the connector fingerprint is unchanged', async () => {
+    const activeConnector = fixtureActiveConnector();
+    const bundle = await new BrandConnectorAgent(
+      new FixtureBrandConnectorResearchProvider(false),
+    ).run({
+      brand: 'Volkswagen',
+      market: 'BR',
+      mode: 'health-check',
+      activeConnector,
+      activeIdentity: {
+        id: platformFixtureId(58),
+        market: 'BR',
+        canonicalName: 'Volkswagen',
+        canonicalKey: 'volkswagen',
+        aliases: [],
+      },
+    });
+    expect(bundle.findings[0]!.finding).toMatchObject({
+      findingType: 'CONNECTOR_DRIFT',
+      requiresReview: true,
+      payload: { identityDrift: true },
+    });
+    expect(bundle.findings[0]!.finding.payload.connectorFingerprint).toBe(
+      activeConnector.fingerprint,
+    );
+  });
+
   it('fails health without ACTIVE and discovery with an active connector', async () => {
     const agent = new BrandConnectorAgent(new FixtureBrandConnectorResearchProvider());
     await expect(
