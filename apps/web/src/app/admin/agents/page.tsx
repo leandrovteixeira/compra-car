@@ -5,6 +5,7 @@ import {
   type AgentReviewFilter,
 } from '@compra-car/core/agent-platform';
 import { loadAgentQueue, loadAgentRuns } from '@/application/admin/agent-platform';
+import { canonicalVehicleBrand } from '@compra-car/core/agents';
 import { loadAgentJobs } from '@/application/admin/agent-runner';
 import { loadBrandTargets } from '@/application/admin/brand-connectors';
 import {
@@ -38,10 +39,13 @@ export default async function AgentsPage({
     process.env.APP_ENV === 'qa' ? loadBrandTargets() : Promise.resolve([]),
     runs && process.env.APP_ENV === 'qa' ? loadAgentJobs(20) : Promise.resolve([]),
   ]);
-  const launcherBrands = brandTargets
-    .filter(({ target }) => target.enabled)
-    .map(({ target }) => target.brand)
-    .sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  const launcherBrands = [
+    ...new Set(
+      brandTargets
+        .filter(({ target }) => target.enabled)
+        .map(({ target }) => canonicalVehicleBrand(target.brand)),
+    ),
+  ].sort((a, b) => a.localeCompare(b, 'pt-BR'));
   const link = (p: number) =>
     '/admin/agents?' +
     new URLSearchParams({
