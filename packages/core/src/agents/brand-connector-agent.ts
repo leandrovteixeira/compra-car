@@ -57,6 +57,33 @@ export function mapBrandConnectorRun(
   const brand = connectorText(input.brand, 100),
     market = connectorMarket(input.market);
   const observedBrandLabel = connectorText(result.observedBrandLabel, 100);
+  const canonicalBrand = connectorText(result.canonicalBrand, 100);
+  if (!Array.isArray(result.aliases) || result.aliases.length > 20)
+    throw new Error('INVALID_CONNECTOR_RESEARCH');
+  const aliases: BrandAliasResearch[] = [
+    ...new Map(
+      result.aliases.map((raw) => {
+        const alias = connectorText(raw.alias, 100);
+        const aliasType = raw.aliasType;
+        const confidence = raw.confidence;
+        const evidenceUrl = safeConnectorUrl(raw.evidenceUrl);
+        const evidenceTitle = connectorText(raw.evidenceTitle, 500);
+        const evidenceExcerpt = connectorText(raw.evidenceExcerpt, 1000);
+        if (
+          !BRAND_ALIAS_TYPES.includes(aliasType) ||
+          !Number.isFinite(confidence) ||
+          confidence < 0 ||
+          confidence > 1 ||
+          !evidenceUrl
+        )
+          throw new Error('INVALID_CONNECTOR_ALIAS');
+        return [
+          brandKey(alias),
+          { alias, aliasType, confidence, evidenceUrl, evidenceTitle, evidenceExcerpt },
+        ] as const;
+      }),
+    ).values(),
+  ];
   if (
     input.activeConnector &&
     (brandKey(input.activeConnector.brand) !== brandKey(brand) ||
@@ -107,6 +134,14 @@ export function mapBrandConnectorRun(
     if (!url) throw new Error('INVALID_CONNECTOR_EVIDENCE');
     return { url, title: connectorText(e.title), excerpt: connectorText(e.excerpt, 1000) };
   });
+  const aliasEvidenceUrls = new Set(observedEvidence.map((e) => e.url));
+  if (aliases.some((alias) => !aliasEvidenceUrls.has(alias.evidenceUrl)))
+    throw new Error('CONNECTOR_ALIAS_EVIDENCE_REQUIRED');
+  if (
+    brandKey(canonicalBrand) !== brandKey(brand) &&
+    !aliases.some((alias) => brandKey(alias.alias) === brandKey(brand))
+  )
+    throw new Error('CONNECTOR_TARGET_ALIAS_EVIDENCE_REQUIRED');
   if (
     !noReplacement &&
     !proposal.allowedDomains.every((d) =>
@@ -135,6 +170,8 @@ export function mapBrandConnectorRun(
     findingId = randomUUID();
   const payload: AgentObject = {
     observedBrandLabel,
+    canonicalBrand,
+    aliases: aliases as unknown as AgentObject[],
     warnings,
     verificationSummary,
     candidateDomains: noReplacement ? [] : proposal.allowedDomains,
@@ -155,11 +192,11 @@ export function mapBrandConnectorRun(
       market: proposal.market,
       provider,
       runMode: input.mode,
-      schemaVersion: '19C.2',
+      schemaVersion: '19C.3',
       startedAt,
       completedAt,
       input: { brand: proposal.brand, market: proposal.market, mode: input.mode },
-      summary: { findingType, confidence: result.confidence },
+      summary: { findingType, confidence: result.confidence, canonicalBrand, aliasCount: aliases.length },
       configSnapshot: { connectorVersion: input.activeConnector?.version ?? null },
       error: null,
       sourceCommitSha: null,
@@ -181,6 +218,7 @@ export function mapBrandConnectorRun(
           requiresReview: findingType !== 'CONNECTOR_HEALTHY',
           subject: {
             brand: proposal.brand,
+            canonicalBrand,
             market: proposal.market,
             connectorVersion: input.activeConnector?.version ?? null,
           },
