@@ -113,6 +113,60 @@ export class BrandConnectorSupabaseAdapter implements BrandConnectorRepository {
       if (await this.insertTarget(brand, market, 'CATALOG', null)) added++;
     return { added, existing: brands.size - added };
   }
+  async resolveBrandIdentity(brand: string, market: string) {
+    const marketKey = connectorMarket(market);
+    const aliasKey = brandKey(brand);
+
+    const directTarget = await this.getTarget(brand, marketKey);
+    let identityId =
+      directTarget && typeof (directTarget as BrandConnectorTarget & { brandIdentityId?: string | null }).brandIdentityId === 'string'
+        ? (directTarget as BrandConnectorTarget & { brandIdentityId?: string | null }).brandIdentityId!
+        : null;
+
+    if (!identityId) {
+      const aliases = await this.read('brand_aliases', {
+        market: marketKey,
+        alias_key: aliasKey,
+      });
+      if (aliases[0]?.brand_identity_id && typeof aliases[0].brand_identity_id === 'string')
+        identityId = aliases[0].brand_identity_id;
+    }
+
+    if (!identityId) {
+      const identities = await this.read('brand_identities', {
+        market: marketKey,
+        canonical_key: aliasKey,
+      });
+      if (identities[0]?.id && typeof identities[0].id === 'string')
+        identityId = identities[0].id;
+    }
+
+    if (!identityId) return null;
+
+    const identities = await this.read('brand_identities', { id: identityId });
+    const identity = identities[0];
+    if (
+      !identity ||
+      typeof identity.id !== 'string' ||
+      typeof identity.market !== 'string' ||
+      typeof identity.canonical_name !== 'string' ||
+      typeof identity.canonical_key !== 'string'
+    )
+      return null;
+
+    const aliases = (await this.read('brand_aliases', { brand_identity_id: identityId }))
+      .filter((row) => row.status === 'CONFIRMED' && typeof row.alias === 'string')
+      .map((row) => row.alias as string);
+
+    return {
+      id: identity.id,
+      market: identity.market,
+      canonicalName: identity.canonical_name,
+      canonicalKey: identity.canonical_key,
+      aliases,
+    };
+  }
+
   async listConnectorVersions(targetId: string): Promise<readonly BrandConnector[]> {
     assertAgentUuid(targetId);
     const targets = await this.read('brand_connector_targets', { id: targetId });
