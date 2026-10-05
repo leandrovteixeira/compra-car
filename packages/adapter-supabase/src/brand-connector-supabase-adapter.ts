@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   acceptedConnectorProposal,
   brandKey,
+  canonicalVehicleBrand,
   connectorText,
   connectorMarket,
   connectorFingerprint,
@@ -53,7 +54,7 @@ export class BrandConnectorSupabaseAdapter implements BrandConnectorRepository {
   }
   async getTarget(brand: string, market: string) {
     const rows = await this.read('brand_connector_targets', {
-      brand_key: brandKey(brand),
+      brand_key: brandKey(canonicalVehicleBrand(brand)),
       market: connectorMarket(market),
     });
     return rows[0] ? fromRow<BrandConnectorTarget>(rows[0]) : null;
@@ -68,8 +69,8 @@ export class BrandConnectorSupabaseAdapter implements BrandConnectorRepository {
       .from('brand_connector_targets')
       .upsert(
         {
-          brand: connectorText(brand, 100),
-          brand_key: brandKey(brand),
+          brand: connectorText(canonicalVehicleBrand(brand), 100),
+          brand_key: brandKey(canonicalVehicleBrand(brand)),
           market: connectorMarket(market),
           origin,
           created_by: actor,
@@ -103,7 +104,10 @@ export class BrandConnectorSupabaseAdapter implements BrandConnectorRepository {
     const brands = new Map<string, string>();
     for (const row of rows)
       if (typeof row.brand === 'string' && row.brand.trim())
-        brands.set(brandKey(row.brand), row.brand);
+        {
+          const canonical = canonicalVehicleBrand(row.brand);
+          brands.set(brandKey(canonical), canonical);
+        }
     let added = 0;
     for (const brand of brands.values())
       if (await this.insertTarget(brand, market, 'CATALOG', null)) added++;
