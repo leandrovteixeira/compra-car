@@ -1,5 +1,6 @@
 import { officialBrandSource } from './official-product-sources';
 import type { AgentMarketScope, OfficialBrandSource } from './new-product-check-types';
+import { canonicalVehicleBrand } from './vehicle-brand-normalization';
 import type { BrandConnectorDefinition, BrandConnectorRepository } from './brand-connector-types';
 import { connectorFingerprint, validateConnectorDefinition } from './brand-connector-validation';
 export interface BrandConnectorResolver {
@@ -41,9 +42,10 @@ export class OperationalBrandConnectorResolver implements BrandConnectorResolver
     private readonly fallback?: BrandConnectorResolver,
   ) {}
   async resolve(scope: AgentMarketScope) {
-    const active = await this.repository.getActiveConnector(scope.brand, scope.country);
+    const canonicalBrand = canonicalVehicleBrand(scope.brand);
+    const active = await this.repository.getActiveConnector(canonicalBrand, scope.country);
     if (active) return connectorOfficialSource(active);
-    if (this.fallback) return this.fallback.resolve(scope);
+    if (this.fallback) return this.fallback.resolve({ ...scope, brand: canonicalBrand });
     throw new Error('BRAND_CONNECTOR_REQUIRED');
   }
 }
