@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { LegacyLegacySupabaseClient } from '@compra-car/adapter-supabase';
 import {
   BrandConnectorSupabaseAdapter,
 } from '@compra-car/adapter-supabase/brand-connectors';
@@ -47,7 +47,7 @@ function normalizeHtml(input: string): string {
     .trim();
 }
 
-async function latestSnapshot(client: SupabaseClient, market: string, url: string) {
+async function latestSnapshot(client: LegacySupabaseClient, market: string, url: string) {
   const { data, error } = await client
     .from('agent_source_snapshots')
     .select('id,http_status,etag,last_modified,content_sha256,normalized_sha256')
@@ -86,7 +86,7 @@ function classifyChange(previous: SnapshotRow | null, current: SnapshotRow) {
 }
 
 export async function monitorBrandSources(
-  client: SupabaseClient,
+  client: LegacySupabaseClient,
   brand: string,
   market = 'BR',
 ): Promise<SourceMonitorResult> {
