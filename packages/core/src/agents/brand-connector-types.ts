@@ -44,6 +44,14 @@ export interface BrandConnector extends BrandConnectorDefinition {
   readonly supersededAt: string | null;
   readonly createdAt: string;
 }
+export interface BrandIdentityResolution {
+  readonly id: string;
+  readonly market: string;
+  readonly canonicalName: string;
+  readonly canonicalKey: string;
+  readonly aliases: readonly string[];
+}
+
 export interface BrandConnectorRepository {
   listTargets(): Promise<readonly BrandConnectorTarget[]>;
   getTarget(brand: string, market: string): Promise<BrandConnectorTarget | null>;
@@ -51,6 +59,7 @@ export interface BrandConnectorRepository {
   setEnabled(id: string, enabled: boolean): Promise<void>;
   syncCatalogBrands(market?: string): Promise<{ added: number; existing: number }>;
   getActiveConnector(brand: string, market: string): Promise<BrandConnector | null>;
+  resolveBrandIdentity(brand: string, market: string): Promise<BrandIdentityResolution | null>;
   listConnectorVersions(targetId: string): Promise<readonly BrandConnector[]>;
   listMissingConnectorTargets(): Promise<readonly BrandConnectorTarget[]>;
   /** Atomic review recheck, supersession and insertion; never expose standalone supersession. */
