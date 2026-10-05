@@ -21,7 +21,8 @@
     "next": "15.5.20",
     "openai": "6.49.0",
     "react": "19.2.7",
-    "react-dom": "19.2.7"
+    "react-dom": "19.2.7",
+    "@compra-car/agents": "workspace:*"
   },
   "devDependencies": {
     "@eslint/eslintrc": "3.3.6",
