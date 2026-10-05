@@ -8,7 +8,7 @@ export function AgentRunLauncher({ brands }: { readonly brands: readonly string[
   const [state, action, pending] = useActionState(launchMmvDiscoveryAction, {
     status: 'idle' as const,
     message: '',
-    runId: null,
+    jobId: null,
   });
 
   return (
@@ -74,13 +74,8 @@ export function AgentRunLauncher({ brands }: { readonly brands: readonly string[
           <p role={state.status === 'error' ? 'alert' : 'status'} className="text-sm">
             {state.message}
           </p>
-          {state.runId ? (
-            <Link
-              className="ui-button ui-button--secondary ui-button--action"
-              href={'/admin/agents/runs/' + state.runId}
-            >
-              Abrir run
-            </Link>
+          {state.jobId ? (
+            <p className="text-xs text-text-muted">Job: {state.jobId}</p>
           ) : null}
         </div>
       ) : null}
