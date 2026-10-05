@@ -1,0 +1,23 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "RAILPACK",
+    "buildCommand": "pnpm --filter @compra-car/agents typecheck",
+    "watchPatterns": [
+      "scripts/agents/**",
+      "packages/core/**",
+      "packages/adapter-openai/**",
+      "packages/adapter-supabase/**",
+      "package.json",
+      "pnpm-lock.yaml",
+      "pnpm-workspace.yaml",
+      "turbo.json",
+      "railway.worker.json"
+    ]
+  },
+  "deploy": {
+    "startCommand": "pnpm --filter @compra-car/agents exec tsx agent-job-worker.ts",
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 5
+  }
+}
