@@ -50,7 +50,7 @@ describe('MMV current discovery identity', () => {
     });
   });
 
-  it('distinguishes same visible version label when commercial powertrain differs', () => {
+  it('keeps technical powertrain out of identity by default and only discriminates explicitly', () => {
     const mhev = {
       ...base,
       powertrainLabel: 'T270 MHEV',
@@ -65,7 +65,12 @@ describe('MMV current discovery identity', () => {
       drivetrain: '4x4',
     };
 
-    expect(mmvDiscoveryIdentityKey(mhev)).not.toBe(mmvDiscoveryIdentityKey(diesel));
+    expect(mmvDiscoveryIdentityKey(mhev)).toBe(mmvDiscoveryIdentityKey(diesel));
+    expect(
+      mmvDiscoveryIdentityKey(mhev, { includeCommercialPowertrain: true }),
+    ).not.toBe(
+      mmvDiscoveryIdentityKey(diesel, { includeCommercialPowertrain: true }),
+    );
     expect(projectMmvDiscoveryIdentity(mhev).officialVersionLabel).toBe('Overland');
     expect(projectMmvDiscoveryIdentity(diesel).officialVersionLabel).toBe('Overland');
   });
