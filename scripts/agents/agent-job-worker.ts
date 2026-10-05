@@ -2,6 +2,7 @@ import { resolve } from 'node:path';
 import { createLegacySupabaseClient } from '@compra-car/adapter-supabase';
 import { runNewProductCheckCli } from './run-new-product-check';
 import { runBrandConnectorCli } from './run-brand-connector';
+import { monitorBrandSources } from './source-monitor';
 
 type JobRow = {
   id: string;
@@ -9,6 +10,7 @@ type JobRow = {
   status: string;
   market: string;
   brand: string;
+  created_by?: string | null;
   input: {
     provider?: string;
     persistFindings?: boolean;
@@ -50,6 +52,13 @@ async function complete(jobId: string, runId: string) {
   if (error) throw new Error('AGENT_JOB_COMPLETE_FAILED');
 }
 
+async function completeWithoutRun(jobId: string) {
+  const { error } = await client.rpc('complete_agent_job_without_run', {
+    p_job_id: jobId,
+  });
+  if (error) throw new Error('AGENT_JOB_COMPLETE_FAILED');
+}
+
 async function fail(jobId: string, code: string) {
   const { error } = await client.rpc('fail_agent_job', {
     p_job_id: jobId,
@@ -81,6 +90,20 @@ async function execute(job: JobRow) {
       log,
       repositoryRoot,
     );
+  } else if (job.job_type === 'SOURCE_MONITOR') {
+    const result = await monitorBrandSources(client, job.brand, job.market);
+    console.log('[source-monitor]', job.id, JSON.stringify(result));
+    if (result.changed > 0) {
+      const { error } = await client.rpc('enqueue_ai_jobs_for_source_changes', {
+        p_monitor_job_id: job.id,
+        p_brand: job.brand,
+        p_created_by: job.created_by,
+        p_change_count: result.changed,
+      });
+      if (error) throw new Error('SOURCE_MONITOR_TRIGGER_FAILED');
+    }
+    await completeWithoutRun(job.id);
+    return;
   } else if (job.job_type === 'BRAND_CONNECTOR') {
     code = await runBrandConnectorCli(
       [
