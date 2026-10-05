@@ -18,5 +18,8 @@
     "@types/node": "24.13.3",
     "tsx": "4.20.6",
     "vitest": "4.1.10"
+  },
+  "exports": {
+    "./run-new-product-check": "./run-new-product-check.ts"
   }
 }
