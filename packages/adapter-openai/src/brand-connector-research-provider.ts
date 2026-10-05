@@ -115,7 +115,7 @@ export class OpenAIBrandConnectorResearchProvider implements BrandConnectorResea
       throw new Error('OPENAI_AGENT_CONFIG_REQUIRED');
     const client = options.transport
       ? undefined
-      : new OpenAI({ apiKey: options.apiKey, timeout: 120000, maxRetries: 0, logLevel: 'off' });
+      : new OpenAI({ apiKey: options.apiKey, timeout: 120000, maxRetries: 2, logLevel: 'off' });
     this.transport = options.transport ?? ((request) => client!.responses.create(request));
   }
   async researchConnector(input: BrandConnectorResearchInput): Promise<BrandConnectorResearch> {
