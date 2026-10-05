@@ -1,4 +1,5 @@
 import { vehicleTextComparisonKey as key } from '../admin/vehicle-text-normalization';
+import { vehicleBrandComparisonKey } from './vehicle-brand-normalization';
 import type { AdministrativeVehicle } from '../admin/administrative-vehicle';
 import type { CanonicalMmv } from './mmv-apply-contract';
 import {
@@ -23,7 +24,7 @@ export function catalogMmvIdentityId(
 ): string {
   return JSON.stringify([
     'catalog-mmv:v1',
-    key(product.brand),
+    vehicleBrandComparisonKey(product.brand),
     key(product.model),
     key(product.version),
   ]);
@@ -53,7 +54,7 @@ export function projectCatalogMmvIdentities(
       brand: representative.brand,
       model: representative.model,
       canonicalVersionLabel: representative.version,
-      normalizedBrand: key(representative.brand),
+      normalizedBrand: vehicleBrandComparisonKey(representative.brand),
       normalizedModel: key(representative.model),
       normalizedVersion: key(representative.version),
       parsedLegacyComponents,
@@ -85,7 +86,7 @@ export function projectCanonicalMmvIdentities(
       brand: mmv.brand,
       model: mmv.model,
       canonicalVersionLabel: mmv.officialVersionLabel,
-      normalizedBrand: key(mmv.brand),
+      normalizedBrand: vehicleBrandComparisonKey(mmv.brand),
       normalizedModel: key(mmv.model),
       normalizedVersion: key(mmv.officialVersionLabel),
       parsedLegacyComponents: {
