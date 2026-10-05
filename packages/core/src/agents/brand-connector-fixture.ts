@@ -41,8 +41,23 @@ export class FixtureBrandConnectorResearchProvider implements BrandConnectorRese
       input.market !== definition.market
     )
       throw new Error('CONNECTOR_FIXTURE_NOT_AVAILABLE');
+    const aliasEvidenceUrl = 'https://' + definition.allowedDomains[0] + '/';
     return {
       observedBrandLabel: definition.brand,
+      canonicalBrand: definition.brand,
+      aliases:
+        definition.brand === 'Volkswagen'
+          ? [
+              {
+                alias: 'VW',
+                aliasType: 'OFFICIAL_SHORT_NAME' as const,
+                confidence: 0.99,
+                evidenceUrl: aliasEvidenceUrl,
+                evidenceTitle: 'Fixture sintética — não é descoberta real',
+                evidenceExcerpt: 'Sinal de oficialidade simulado exclusivamente para testes.',
+              },
+            ]
+          : [],
       market: definition.market,
       candidateDomains: definition.allowedDomains,
       sourceEntries: definition.sourceEntries,
