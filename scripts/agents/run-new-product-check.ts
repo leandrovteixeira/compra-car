@@ -176,11 +176,33 @@ export async function runNewProductCheckCli(
               listOperatorMatchingProducts: () => repository.listOperatorMatchingProducts(),
             });
           })();
+    const canonicalMmvs =
+      provider === 'fixture'
+        ? undefined
+        : await (async () => {
+            const {
+              CanonicalMmvSupabaseAdapter,
+              createLegacySupabaseClient,
+            } = await import('@compra-car/adapter-supabase');
+            const repository = new CanonicalMmvSupabaseAdapter(
+              createLegacySupabaseClient({
+                url: env.SUPABASE_URL!,
+                serverKey: env.SUPABASE_SERVER_KEY!,
+              }),
+            );
+            return () =>
+              repository.listCanonicalMmvs({
+                market: 'BR',
+                brand: scope.brand,
+                status: 'ACTIVE',
+              });
+          })();
     const result = await new NewProductCheckAgent({
       research,
       catalog,
       reports,
       connectorResolver,
+      canonicalMmvs,
     }).run(scope, runId);
     log(
       'Provider: ' +
