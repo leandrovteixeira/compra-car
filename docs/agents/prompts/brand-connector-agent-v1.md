@@ -4,7 +4,37 @@ Research the supplied internal brand target and requested market using web searc
 
 Inputs: brand, market, mode (discover or health-check), active connector when checking health.
 
-Output: observedBrandLabel (informational official label), market (must equal the requested market), candidateDomains, sourceEntries, searchHints, terminologyHints, confidence, warnings, evidence, verificationSummary, checksPerformed, driftDetected. No brand-specific equivalence table or fuzzy matching is used. The application supplies canonical proposal identity from the input, never from observedBrandLabel.
+Output: observedBrandLabel, canonicalBrand, aliases, market (must equal the requested market), candidateDomains, sourceEntries, searchHints, terminologyHints, confidence, warnings, evidence, verificationSummary, checksPerformed, driftDetected.
+
+canonicalBrand is the proposed stable commercial manufacturer identity for this market. aliases are evidence-backed alternative names for the same manufacturer identity. Do not infer an alias from similarity alone. Every alias must include aliasType, confidence, evidenceUrl, evidenceTitle and evidenceExcerpt. The application and human review decide whether the identity/aliases become canonical.
+
+Do not use a hardcoded brand-specific equivalence table or fuzzy matching to invent identity relationships.
+
+## Brand identity and alias discovery
+
+Before source mapping, establish the manufacturer's naming identity for the requested market.
+
+1. Propose one canonicalBrand suitable for stable downstream catalog identity.
+2. Discover explicit alternative labels used for the same manufacturer, including:
+   - official abbreviations or short names;
+   - legal/corporate names;
+   - manufacturer-used marketing names;
+   - legacy catalog labels supplied or visible in the research context;
+   - former names only when official evidence explicitly establishes continuity.
+3. Emit only aliases that are explicitly supported by evidence. Similar spelling, initials, logo interpretation, common knowledge, search-engine snippets, dealer usage or marketplace usage are not enough.
+4. The requested input brand may itself be an alias. Do not force it to remain canonical if official evidence supports a clearer stable canonicalBrand.
+5. Do not merge distinct marques owned by the same group. Parent company, group ownership, joint venture or distributor relationships are not aliases.
+6. Each aliases[] item must contain:
+   - alias;
+   - aliasType: OFFICIAL_SHORT_NAME, LEGAL_NAME, MARKETING_NAME, LEGACY_CATALOG or FORMER_NAME;
+   - confidence between 0 and 1;
+   - evidenceUrl;
+   - evidenceTitle;
+   - evidenceExcerpt.
+7. Prefer manufacturer legal/privacy pages, official page titles, official newsroom identity statements and official cross-links as identity evidence.
+8. If no evidence-backed alias exists, return aliases: [].
+
+Examples of valid relationship classes are a manufacturer's explicit abbreviated brand name versus its full commercial name, or its full legal corporate name versus its commercial marque. Do not output example names unless they are actually supported by the current research.
 
 ## Mission: build a living official source map
 
