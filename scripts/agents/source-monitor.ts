@@ -26,18 +26,24 @@ function sha256(value: string | Uint8Array): string {
 
 function normalizeHtml(input: string): string {
   return input
-    .replace(/<!--[sS]*?-->/gu, ' ')
-    .replace(/<script[^>]*>[sS]*?</script>/giu, ' ')
-    .replace(/<style[^>]*>[sS]*?</style>/giu, ' ')
-    .replace(/<svg[^>]*>[sS]*?</svg>/giu, ' ')
-    .replace(/<noscript[^>]*>[sS]*?</noscript>/giu, ' ')
-    .replace(/s(?:nonce|integrity|crossorigin|data-reactroot|data-reactid)=("[^"]*"|'[^']*'|[^s>]+)/giu, ' ')
+    .replace(new RegExp('<!--[\\s\\S]*?-->', 'gu'), ' ')
+    .replace(new RegExp('<script\\b[^>]*>[\\s\\S]*?<\\/script>', 'giu'), ' ')
+    .replace(new RegExp('<style\\b[^>]*>[\\s\\S]*?<\\/style>', 'giu'), ' ')
+    .replace(new RegExp('<svg\\b[^>]*>[\\s\\S]*?<\\/svg>', 'giu'), ' ')
+    .replace(new RegExp('<noscript\\b[^>]*>[\\s\\S]*?<\\/noscript>', 'giu'), ' ')
+    .replace(
+      new RegExp(
+        '\\s(?:nonce|integrity|crossorigin|data-reactroot|data-reactid)=("[^"]*"|\\\'[^\\\']*\\\'|[^\\s>]+)',
+        'giu',
+      ),
+      ' ',
+    )
     .replace(/<[^>]+>/gu, ' ')
     .replace(/&nbsp;/giu, ' ')
     .replace(/&amp;/giu, '&')
     .replace(/&#39;/giu, "'")
     .replace(/&quot;/giu, '"')
-    .replace(/s+/gu, ' ')
+    .replace(/\\s+/gu, ' ')
     .trim();
 }
 
