@@ -1,4 +1,5 @@
 import { vehicleTextComparisonKey as key } from '../admin/vehicle-text-normalization';
+import { vehicleBrandComparisonKey } from './vehicle-brand-normalization';
 import { powertrainComparisonKey } from './product-component-normalization';
 import type {
   MmvCommercialVariantDiscriminator,
@@ -60,7 +61,7 @@ export function mmvDiscoveryIdentityKey(
 
   return JSON.stringify([
     'mmv-current:v2',
-    key(identity.brand),
+    vehicleBrandComparisonKey(identity.brand),
     key(identity.model),
     key(identity.officialVersionLabel),
     commercialDiscriminator,
