@@ -16,6 +16,7 @@ import {
   productCheckFixture,
   benchmarkProductFixture,
   type MmvMarketObservation,
+  canonicalVehicleBrand,
 } from '@compra-car/core/agents';
 import {
   OpenAIProductResearchProvider,
@@ -72,7 +73,7 @@ export function parseAgentArguments(args: readonly string[]) {
   )
     throw new Error('INVALID_AGENT_ARGUMENTS');
   return {
-    scope: { country: 'BR' as const, brand: connectorText(brand, 100) },
+    scope: { country: 'BR' as const, brand: canonicalVehicleBrand(connectorText(brand, 100)) },
     provider,
     persistFindings,
     discoveryOnly,
