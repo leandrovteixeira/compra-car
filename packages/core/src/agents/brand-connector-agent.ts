@@ -154,10 +154,20 @@ export function mapBrandConnectorRun(
   )
     throw new Error('CONNECTOR_DOMAIN_EVIDENCE_REQUIRED');
   const fingerprint = connectorFingerprint(proposal);
+  const proposedAliasKeys = [...new Set(aliases.map((alias) => brandKey(alias.alias)))].sort();
+  const activeAliasKeys = [...new Set((input.activeIdentity?.aliases ?? []).map(brandKey))].sort();
+  const identityDrift =
+    input.mode === 'health-check' &&
+    (
+      !input.activeIdentity ||
+      brandKey(input.activeIdentity.canonicalName) !== brandKey(canonicalBrand) ||
+      JSON.stringify(activeAliasKeys) !== JSON.stringify(proposedAliasKeys)
+    );
   const drift =
     input.mode === 'health-check' &&
     (noReplacement ||
       result.driftDetected ||
+      identityDrift ||
       input.activeConnector?.fingerprint !== fingerprint ||
       result.confidence < 0.7 ||
       checksPerformed.length === 0 ||
@@ -174,6 +184,7 @@ export function mapBrandConnectorRun(
     observedBrandLabel,
     canonicalBrand,
     aliases: aliases as unknown as AgentObject[],
+    identityDrift,
     warnings,
     verificationSummary,
     candidateDomains: noReplacement ? [] : proposal.allowedDomains,
@@ -199,7 +210,10 @@ export function mapBrandConnectorRun(
       completedAt,
       input: { brand: proposal.brand, market: proposal.market, mode: input.mode },
       summary: { findingType, confidence: result.confidence, canonicalBrand, aliasCount: aliases.length },
-      configSnapshot: { connectorVersion: input.activeConnector?.version ?? null },
+      configSnapshot: {
+        connectorVersion: input.activeConnector?.version ?? null,
+        brandIdentityId: input.activeIdentity?.id ?? null,
+      },
       error: null,
       sourceCommitSha: null,
       createdBy: null,
