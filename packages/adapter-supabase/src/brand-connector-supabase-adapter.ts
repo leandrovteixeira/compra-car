@@ -54,7 +54,7 @@ export class BrandConnectorSupabaseAdapter implements BrandConnectorRepository {
   }
   async getTarget(brand: string, market: string) {
     const rows = await this.read('brand_connector_targets', {
-      brand_key: brandKey(canonicalVehicleBrand(brand)),
+      brand_key: brandKey(brand),
       market: connectorMarket(market),
     });
     return rows[0] ? fromRow<BrandConnectorTarget>(rows[0]) : null;
