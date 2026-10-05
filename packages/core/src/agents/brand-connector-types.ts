@@ -113,6 +113,7 @@ export interface BrandConnectorResearchInput {
   readonly market: string;
   readonly mode: 'discover' | 'health-check';
   readonly activeConnector?: BrandConnector;
+  readonly activeIdentity?: BrandIdentityResolution | null;
 }
 export interface BrandConnectorResearchProvider {
   researchConnector(input: BrandConnectorResearchInput): Promise<BrandConnectorResearch>;
