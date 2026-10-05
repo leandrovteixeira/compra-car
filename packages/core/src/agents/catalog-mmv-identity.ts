@@ -1,5 +1,6 @@
 import { vehicleTextComparisonKey as key } from '../admin/vehicle-text-normalization';
 import type { AdministrativeVehicle } from '../admin/administrative-vehicle';
+import type { CanonicalMmv } from './mmv-apply-contract';
 import {
   parseLegacyProductVersion,
   type LegacyParsedProduct,
@@ -57,6 +58,46 @@ export function projectCatalogMmvIdentities(
       normalizedVersion: key(representative.version),
       parsedLegacyComponents,
       productRows,
+    };
+  });
+}
+
+
+export function projectCanonicalMmvIdentities(
+  mmvs: readonly CanonicalMmv[],
+): readonly CatalogMmvIdentity[] {
+  return mmvs.map((mmv) => {
+    const synthetic: AdministrativeVehicle = {
+      id: 'mmv:' + mmv.id,
+      brand: mmv.brand,
+      model: mmv.model,
+      version: mmv.officialVersionLabel,
+      productionYear: 2001,
+      modelYear: 2001,
+      isActive: mmv.status === 'ACTIVE',
+      isPublic: mmv.visibility === 'PUBLIC',
+    };
+    const { product: _product, ...parsedLegacyComponents } =
+      parseLegacyProductVersion(synthetic);
+    void _product;
+    return {
+      id: mmv.id,
+      brand: mmv.brand,
+      model: mmv.model,
+      canonicalVersionLabel: mmv.officialVersionLabel,
+      normalizedBrand: key(mmv.brand),
+      normalizedModel: key(mmv.model),
+      normalizedVersion: key(mmv.officialVersionLabel),
+      parsedLegacyComponents: {
+        ...parsedLegacyComponents,
+        powertrainLabel: mmv.powertrainLabel ?? parsedLegacyComponents.powertrainLabel,
+        propulsion:
+          (mmv.propulsion as LegacyParsedProduct['propulsion']) ??
+          parsedLegacyComponents.propulsion,
+        engineDisplacement:
+          mmv.engineDisplacement ?? parsedLegacyComponents.engineDisplacement,
+      },
+      productRows: [],
     };
   });
 }
