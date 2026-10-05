@@ -1,14 +1,25 @@
 import 'server-only';
 
-import { resolve } from 'node:path';
-import { revalidatePath } from 'next/cache';
 import { requireRole } from '@/auth/authorization';
-import { runNewProductCheckCli } from '@compra-car/agents/run-new-product-check';
+import { createPrivilegedAdminClient } from '@/auth/admin-client';
 
 export interface AgentLaunchState {
   readonly status: 'idle' | 'success' | 'error';
   readonly message: string;
+  readonly jobId: string | null;
+}
+
+export interface AgentJobListItem {
+  readonly id: string;
+  readonly jobType: string;
+  readonly status: string;
+  readonly brand: string;
+  readonly input: Record<string, unknown>;
   readonly runId: string | null;
+  readonly error: Record<string, unknown> | null;
+  readonly createdAt: string;
+  readonly claimedAt: string | null;
+  readonly completedAt: string | null;
 }
 
 function inputText(data: FormData, name: string, maxLength: number): string {
@@ -22,13 +33,13 @@ function inputText(data: FormData, name: string, maxLength: number): string {
 export async function launchMmvDiscovery(
   data: FormData,
 ): Promise<AgentLaunchState> {
-  await requireRole('admin');
+  const { profile } = await requireRole('admin');
 
   if (process.env.APP_ENV !== 'qa') {
     return {
       status: 'error',
       message: 'Execução bloqueada: este launcher só funciona no ambiente QA.',
-      runId: null,
+      jobId: null,
     };
   }
 
@@ -43,49 +54,51 @@ export async function launchMmvDiscovery(
     if (marketModel && (!marketReconcile || marketModel.length > 200))
       throw new Error('INVALID_INPUT');
 
-    const args = [
-      '--brand',
-      brand,
-      '--provider',
-      'openai',
-      '--persist-findings',
-      ...(marketReconcile ? ['--market-reconcile'] : []),
-      ...(marketModel ? ['--market-model', marketModel] : []),
-    ];
+    const client = createPrivilegedAdminClient();
+    const { data: job, error } = await client.rpc('enqueue_mmv_discovery_job', {
+      p_brand: brand,
+      p_market_reconcile: marketReconcile,
+      p_market_model: marketModel,
+      p_created_by: profile.id,
+    });
+    if (error || !job || typeof job !== 'object')
+      throw new Error(error?.message || 'AGENT_JOB_ENQUEUE_FAILED');
 
-    const logs: string[] = [];
-    const repositoryRoot = resolve(process.cwd(), '../..');
-    const code = await runNewProductCheckCli(
-      args,
-      process.env,
-      (line) => logs.push(line),
-      repositoryRoot,
-    );
-    const runLine = logs.find((line) => line.startsWith('Run: '));
-    const runId = runLine?.slice('Run: '.length).trim() || null;
-
-    if (code !== 0 || !runId) {
-      return {
-        status: 'error',
-        message:
-          logs.find((line) => line.startsWith('NEW_PRODUCT_CHECK_FAILED:')) ??
-          'A execução do agente falhou. Consulte Runs e os logs do QA.',
-        runId,
-      };
-    }
-
-    revalidatePath('/admin/agents');
-    revalidatePath('/admin/agents?tab=runs');
+    const row = job as { id?: unknown };
     return {
       status: 'success',
-      message: 'Run concluída e findings persistidos no QA.',
-      runId,
+      message: 'Job enfileirado no QA. Acompanhe o progresso na aba Runs.',
+      jobId: typeof row.id === 'string' ? row.id : null,
     };
-  } catch {
-    return {
-      status: 'error',
-      message: 'Não foi possível iniciar a run. Verifique marca, modelo e configuração do QA.',
-      runId: null,
-    };
+  } catch (error) {
+    const message =
+      error instanceof Error && error.message.includes('AGENT_JOB_ALREADY_ACTIVE')
+        ? 'Já existe uma execução ativa desta marca no QA.'
+        : 'Não foi possível enfileirar a run. Verifique marca, modelo e configuração do QA.';
+    return { status: 'error', message, jobId: null };
   }
+}
+
+export async function loadAgentJobs(limit = 20): Promise<readonly AgentJobListItem[]> {
+  await requireRole('admin');
+  const client = createPrivilegedAdminClient();
+  const { data, error } = await client
+    .from('agent_jobs')
+    .select('id,job_type,status,brand,input,run_id,error,created_at,claimed_at,completed_at')
+    .order('created_at', { ascending: false })
+    .limit(Math.max(1, Math.min(limit, 100)));
+  if (error || !data) return [];
+
+  return data.map((row) => ({
+    id: row.id,
+    jobType: row.job_type,
+    status: row.status,
+    brand: row.brand,
+    input: (row.input ?? {}) as Record<string, unknown>,
+    runId: row.run_id,
+    error: (row.error ?? null) as Record<string, unknown> | null,
+    createdAt: row.created_at,
+    claimedAt: row.claimed_at,
+    completedAt: row.completed_at,
+  }));
 }
