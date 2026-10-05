@@ -1,10 +1,11 @@
 import { officialBrandSource } from './official-product-sources';
 import type { AgentMarketScope, OfficialBrandSource } from './new-product-check-types';
-import { canonicalVehicleBrand } from './vehicle-brand-normalization';
+import { canonicalVehicleBrand, vehicleBrandAliases } from './vehicle-brand-normalization';
 import type { BrandConnectorDefinition, BrandConnectorRepository } from './brand-connector-types';
 import { connectorFingerprint, validateConnectorDefinition } from './brand-connector-validation';
 export interface BrandConnectorResolver {
   resolve(scope: AgentMarketScope): Promise<OfficialBrandSource>;
+  resolveAlternates?(scope: AgentMarketScope): Promise<readonly OfficialBrandSource[]>;
 }
 export class BuiltInBrandConnectorResolver implements BrandConnectorResolver {
   async resolve(scope: AgentMarketScope) {
@@ -42,11 +43,24 @@ export class OperationalBrandConnectorResolver implements BrandConnectorResolver
     private readonly fallback?: BrandConnectorResolver,
   ) {}
   async resolve(scope: AgentMarketScope) {
-    const canonicalBrand = canonicalVehicleBrand(scope.brand);
-    const active = await this.repository.getActiveConnector(canonicalBrand, scope.country);
-    if (active) return connectorOfficialSource(active);
-    if (this.fallback) return this.fallback.resolve({ ...scope, brand: canonicalBrand });
+    const sources = await this.resolveAlternates(scope);
+    if (sources[0]) return sources[0];
     throw new Error('BRAND_CONNECTOR_REQUIRED');
+  }
+
+  async resolveAlternates(scope: AgentMarketScope) {
+    const sources: OfficialBrandSource[] = [];
+    for (const alias of vehicleBrandAliases(scope.brand)) {
+      const active = await this.repository.getActiveConnector(alias, scope.country);
+      if (active) sources.push(connectorOfficialSource(active));
+    }
+    if (!sources.length && this.fallback) {
+      sources.push(await this.fallback.resolve({
+        ...scope,
+        brand: canonicalVehicleBrand(scope.brand),
+      }));
+    }
+    return sources;
   }
 }
 /** Controlled bootstrap data preserves exactly the existing domains and hints. */
