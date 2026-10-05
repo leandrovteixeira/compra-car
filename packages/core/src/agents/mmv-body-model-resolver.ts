@@ -23,6 +23,25 @@ export function aggregateBodyModelProposals(
   return [...grouped.values()];
 }
 
+const GENERIC_BODY_STYLE_PREFIXES = [
+  'suv',
+  'sedan',
+  'hatch',
+  'hatchback',
+  'picape',
+  'pickup',
+  'crossover',
+  'perua',
+  'wagon',
+] as const;
+
+function genericBodyStyle(bodyStyle: string): boolean {
+  const normalized = key(bodyStyle);
+  return GENERIC_BODY_STYLE_PREFIXES.some(
+    (value) => normalized === value || normalized.startsWith(value + ' '),
+  );
+}
+
 function bodyAlreadyInModel(model: string, bodyStyle: string): boolean {
   const normalizedModel = key(model);
   const normalizedBody = key(bodyStyle);
@@ -42,7 +61,12 @@ export function proposeBodyModelResolution(
   candidate: OfficialProductCandidate,
 ): MmvBodyModelResolutionProposal | null {
   const bodyStyle = candidate.bodyStyle?.trim();
-  if (!bodyStyle || bodyAlreadyInModel(candidate.model, bodyStyle)) return null;
+  if (
+    !bodyStyle ||
+    genericBodyStyle(bodyStyle) ||
+    bodyAlreadyInModel(candidate.model, bodyStyle)
+  )
+    return null;
 
   return {
     reasonCode: 'POSSIBLE_BODY_SPLIT',
