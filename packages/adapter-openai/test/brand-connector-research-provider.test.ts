@@ -128,7 +128,17 @@ describe('Brand connector provider with injected transport only', () => {
     );
     expect(bundle.findings[0]!.finding).toMatchObject({
       proposal: { brand: 'VW', market: 'BR' },
-      payload: { observedBrandLabel: 'Volkswagen' },
+      subject: { brand: 'VW', canonicalBrand: 'Volkswagen', market: 'BR' },
+      payload: {
+        observedBrandLabel: 'Volkswagen',
+        canonicalBrand: 'Volkswagen',
+        aliases: [
+          expect.objectContaining({
+            alias: 'VW',
+            aliasType: 'OFFICIAL_SHORT_NAME',
+          }),
+        ],
+      },
     });
     expect(transport).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -136,7 +146,7 @@ describe('Brand connector provider with injected transport only', () => {
       }),
     );
   });
-  it('rejects research that attempts to return canonical brand or target id fields', async () => {
+  it('rejects undeclared operational target fields outside the structured identity contract', async () => {
     const valid = await response();
     const provider = new OpenAIBrandConnectorResearchProvider({
       apiKey: 'synthetic',
@@ -146,7 +156,6 @@ describe('Brand connector provider with injected transport only', () => {
         ...valid,
         output_text: JSON.stringify({
           ...JSON.parse(valid.output_text),
-          brand: 'forged',
           target_id: 'forged',
         }),
       }),
