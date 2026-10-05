@@ -16,3 +16,8 @@ export function vehicleBrandComparisonKey(value: string): string {
 export function sameVehicleBrand(left: string, right: string): boolean {
   return vehicleBrandComparisonKey(left) === vehicleBrandComparisonKey(right);
 }
+
+export function vehicleBrandAliases(value: string): readonly string[] {
+  const canonical = canonicalVehicleBrand(value);
+  return canonical === 'Volkswagen' ? ['Volkswagen', 'VW'] : [canonical];
+}
