@@ -94,11 +94,7 @@ describe('Brand connector definitions and URL boundary', () => {
   });
 });
 describe('Brand Connector Agent and platform integration', () => {
-  it.each([
-    ['VW', 'Volkswagen'],
-    ['GM', 'Chevrolet'],
-    ['Internal Code', 'Observed Manufacturer'],
-  ])('preserves internal identity %s with observed label %s', async (brand, observedBrandLabel) => {
+  it('keeps the operational target while proposing an evidence-backed canonical identity', async () => {
     const research = await new FixtureBrandConnectorResearchProvider().researchConnector({
       brand: 'Volkswagen',
       market: 'BR',
@@ -107,13 +103,22 @@ describe('Brand Connector Agent and platform integration', () => {
     const provider = {
       researchConnector: vi.fn(async () => ({
         ...research,
-        observedBrandLabel,
-        brand: 'forged identity',
-        targetId: 'forged target',
+        observedBrandLabel: 'Volkswagen',
+        canonicalBrand: 'Volkswagen',
+        aliases: [
+          {
+            alias: 'VW',
+            aliasType: 'OFFICIAL_SHORT_NAME' as const,
+            confidence: 0.99,
+            evidenceUrl: research.evidence[0]!.url,
+            evidenceTitle: research.evidence[0]!.title,
+            evidenceExcerpt: research.evidence[0]!.excerpt,
+          },
+        ],
       })),
     };
     const bundle = await new BrandConnectorAgent(provider).run({
-      brand,
+      brand: 'VW',
       market: 'BR',
       mode: 'discover',
     });
@@ -121,28 +126,36 @@ describe('Brand Connector Agent and platform integration', () => {
     expect(finding).toMatchObject({
       findingType: 'NEW_BRAND_CONNECTOR',
       requiresReview: true,
-      subject: { brand, market: 'BR' },
-      proposal: { brand, market: 'BR' },
-      payload: { observedBrandLabel },
+      subject: { brand: 'VW', canonicalBrand: 'Volkswagen', market: 'BR' },
+      proposal: { brand: 'VW', market: 'BR' },
+      payload: {
+        observedBrandLabel: 'Volkswagen',
+        canonicalBrand: 'Volkswagen',
+        aliases: [expect.objectContaining({ alias: 'VW' })],
+      },
     });
-    expect(bundle.run).toMatchObject({ brand, market: 'BR', input: { brand, market: 'BR' } });
+    expect(bundle.run).toMatchObject({ brand: 'VW', market: 'BR', input: { brand: 'VW', market: 'BR' } });
     expect(finding.proposal).not.toHaveProperty('targetId');
-    expect(finding.proposal).not.toHaveProperty('observedBrandLabel');
     expect(finding.payload.connectorFingerprint).toBe(
-      connectorFingerprint({ ...definition, brand }),
+      connectorFingerprint({ ...definition, brand: 'VW' }),
     );
-    const repo = new StoredAgentPlatformRepository(new InMemoryAgentPlatformStore());
-    await repo.persistRunBundle(bundle);
-    await repo.addReview({
-      findingId: finding.id,
-      decision: 'ACCEPT',
-      note: null,
-      reviewedBy: platformFixtureId(100),
-    });
-    expect(acceptedConnectorProposal((await repo.getFinding(finding.id))!)).toMatchObject({
-      brand,
+  });
+
+  it('rejects a canonical identity change when the original target is not evidenced as an alias', async () => {
+    const research = await new FixtureBrandConnectorResearchProvider().researchConnector({
+      brand: 'Volkswagen',
       market: 'BR',
+      mode: 'discover',
     });
+    await expect(
+      new BrandConnectorAgent({
+        researchConnector: async () => ({
+          ...research,
+          canonicalBrand: 'Volkswagen',
+          aliases: [],
+        }),
+      }).run({ brand: 'VW', market: 'BR', mode: 'discover' }),
+    ).rejects.toThrow('CONNECTOR_TARGET_ALIAS_EVIDENCE_REQUIRED');
   });
   it.each(['market', 'evidence', 'sources', 'verification'])(
     'different observed label does not bypass %s validation',
@@ -314,6 +327,7 @@ describe('Operational connector resolution and MMV regressions', () => {
     const operational = new OperationalBrandConnectorResolver({
       getActiveConnector: async () =>
         fixtureActiveConnector(builtInConnectorDefinitions().find((d) => d.brand === brand)!),
+      resolveBrandIdentity: async () => null,
     });
     expect(await operational.resolve({ country: 'BR', brand })).toEqual(source);
     expect(builtInConnectorDefinitions().find((d) => d.brand === brand)).toMatchObject({
@@ -323,9 +337,33 @@ describe('Operational connector resolution and MMV regressions', () => {
       terminologyHints: [],
     });
   });
+  it('resolves an alias through the brand identity registry and keeps the canonical brand', async () => {
+    const resolver = new OperationalBrandConnectorResolver({
+      resolveBrandIdentity: async () => ({
+        id: platformFixtureId(56),
+        market: 'BR',
+        canonicalName: 'Volkswagen',
+        canonicalKey: 'volkswagen',
+        aliases: ['VW'],
+      }),
+      getActiveConnector: async (brand) =>
+        brand === 'VW' ? fixtureActiveConnector({ ...definition, brand: 'VW' }) : null,
+    });
+    const sources = await resolver.resolveAlternates({ country: 'BR', brand: 'VW' });
+    expect(sources).toHaveLength(1);
+    expect(sources[0]).toMatchObject({ brand: 'Volkswagen' });
+  });
+
   it('active new brand reaches provider without a matcher branch', async () => {
     const resolver = new OperationalBrandConnectorResolver({
       getActiveConnector: async () => fixtureActiveConnector(),
+      resolveBrandIdentity: async () => ({
+        id: platformFixtureId(55),
+        market: 'BR',
+        canonicalName: 'Volkswagen',
+        canonicalKey: 'volkswagen',
+        aliases: ['VW'],
+      }),
     });
     const researchProducts = vi.fn(async () => ({
       candidates: [],
@@ -345,7 +383,7 @@ describe('Operational connector resolution and MMV regressions', () => {
   });
   it('unknown brand without active fails safely and controlled fallback resolves Toyota', async () => {
     const resolver = new OperationalBrandConnectorResolver(
-      { getActiveConnector: async () => null },
+      { getActiveConnector: async () => null, resolveBrandIdentity: async () => null },
       new BuiltInBrandConnectorResolver(),
     );
     await expect(resolver.resolve({ country: 'BR', brand: 'Unknown' })).rejects.toThrow(
