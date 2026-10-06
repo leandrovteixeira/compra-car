@@ -144,6 +144,18 @@ begin
         updated_at = now()
   returning * into applied;
 
+  -- Reuse a pre-MMV legacy product row when the exact commercial label/year pair already exists.
+  -- This avoids duplicating products while Sprint 20/21 progressively attach canonical identity.
+  update public.products p
+  set mmv_id = mmv.id,
+      updated_at = now()
+  where p.mmv_id is null
+    and p.brand = mmv.brand
+    and p.model = mmv.model
+    and p.version = mmv.official_version_label
+    and p.production_year = v_production_year
+    and p.model_year = v_model_year;
+
   insert into public.products (
     brand,
     model,
