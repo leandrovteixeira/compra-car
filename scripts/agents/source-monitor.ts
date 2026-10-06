@@ -152,8 +152,8 @@ export async function monitorBrandSources(
       'user-agent': 'CompraCarSourceMonitor/1.0',
       accept: 'text/html,application/json,text/plain,application/pdf;q=0.5,*/*;q=0.1',
     });
-    if (isComparable(previous) && previous.etag) headers.set('if-none-match', previous.etag);
-    if (isComparable(previous) && previous.last_modified)
+    if (previous && isComparable(previous) && previous.etag) headers.set('if-none-match', previous.etag);
+    if (previous && isComparable(previous) && previous.last_modified)
       headers.set('if-modified-since', previous.last_modified);
 
     let status = 599;
@@ -176,7 +176,7 @@ export async function monitorBrandSources(
       const length = response.headers.get('content-length');
       contentLength = length && /^\d+$/u.test(length) ? Number(length) : null;
 
-      if (status === 304 && isComparable(previous)) {
+      if (status === 304 && previous && isComparable(previous)) {
         // 304 means the representation did not change. Persist the effective
         // application status/hash, never the transport cache-validation status.
         status = effectiveStatusForNotModified(previous);
