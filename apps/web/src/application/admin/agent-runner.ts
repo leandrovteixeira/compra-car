@@ -30,7 +30,7 @@ function inputText(data: FormData, name: string, maxLength: number): string {
   return trimmed;
 }
 
-export async function launchMmvDiscovery(
+export async function launchSourceMonitor(
   data: FormData,
 ): Promise<AgentLaunchState> {
   const { profile } = await requireRole('admin');
@@ -45,20 +45,9 @@ export async function launchMmvDiscovery(
 
   try {
     const brand = inputText(data, 'brand', 100);
-    const marketReconcile = data.get('marketReconcile') === 'on';
-    const marketModelRaw = data.get('marketModel');
-    const marketModel =
-      typeof marketModelRaw === 'string' && marketModelRaw.trim()
-        ? marketModelRaw.trim()
-        : null;
-    if (marketModel && (!marketReconcile || marketModel.length > 200))
-      throw new Error('INVALID_INPUT');
-
     const client = createPrivilegedAdminClient();
-    const { data: job, error } = await client.rpc('enqueue_mmv_discovery_job', {
+    const { data: job, error } = await client.rpc('enqueue_source_monitor_job', {
       p_brand: brand,
-      p_market_reconcile: marketReconcile,
-      p_market_model: marketModel,
       p_created_by: profile.id,
     });
     if (error || !job || typeof job !== 'object')
@@ -67,14 +56,15 @@ export async function launchMmvDiscovery(
     const row = job as { id?: unknown };
     return {
       status: 'success',
-      message: 'Job enfileirado no QA. Acompanhe o progresso na aba Runs.',
+      message:
+        'Monitoramento enfileirado no QA. Primeiro verificaremos as fontes; IA só roda se houver mudança.',
       jobId: typeof row.id === 'string' ? row.id : null,
     };
   } catch (error) {
     const message =
       error instanceof Error && error.message.includes('AGENT_JOB_ALREADY_ACTIVE')
-        ? 'Já existe uma execução ativa desta marca no QA.'
-        : 'Não foi possível enfileirar a run. Verifique marca, modelo e configuração do QA.';
+        ? 'Já existe um monitoramento ativo desta marca no QA.'
+        : 'Não foi possível enfileirar o monitoramento. Verifique a marca e a configuração do QA.';
     return { status: 'error', message, jobId: null };
   }
 }
