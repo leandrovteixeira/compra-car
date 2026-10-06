@@ -24,7 +24,7 @@ export interface CanonicalMmvModelYear {
   readonly id: string;
   readonly mmvId: string;
   readonly modelYear: number;
-  readonly productionYear: number;
+  readonly productionYear: number | null;
   readonly status: ModelYearStatus;
   readonly confidence: number | null;
   readonly sourceFindingId: string;
@@ -40,7 +40,7 @@ export interface ModelYearObservation {
   readonly model: string;
   readonly officialVersionLabel: string;
   readonly modelYear: number;
-  readonly productionYear: number;
+  readonly productionYear: number | null;
   readonly confidence: number;
   readonly sourceUrls: readonly string[];
 }
