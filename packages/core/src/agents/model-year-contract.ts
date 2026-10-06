@@ -63,3 +63,17 @@ export interface ModelYearFindingDraft {
   readonly proposal: AgentObject | null;
   readonly payload: AgentObject;
 }
+
+
+export interface CanonicalMmvModelYearRepository {
+  listModelYears(filters?: {
+    readonly mmvId?: string;
+    readonly status?: ModelYearStatus;
+  }): Promise<readonly CanonicalMmvModelYear[]>;
+  applyAcceptedProposal(input: {
+    readonly findingId: string;
+    readonly actor: string;
+    readonly proposal: AgentObject;
+    readonly expectedFingerprint: string;
+  }): Promise<readonly CanonicalMmvModelYear[]>;
+}
