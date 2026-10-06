@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import type { LegacyLegacySupabaseClient } from '@compra-car/adapter-supabase';
+import type { LegacySupabaseClient } from '@compra-car/adapter-supabase';
 import {
   BrandConnectorSupabaseAdapter,
 } from '@compra-car/adapter-supabase/brand-connectors';
@@ -43,7 +43,7 @@ function normalizeHtml(input: string): string {
     .replace(/&amp;/giu, '&')
     .replace(/&#39;/giu, "'")
     .replace(/&quot;/giu, '"')
-    .replace(/\\s+/gu, ' ')
+    .replace(/\s+/gu, ' ')
     .trim();
 }
 
