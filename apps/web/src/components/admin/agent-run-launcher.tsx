@@ -1,10 +1,10 @@
 'use client';
 
 import { useActionState } from 'react';
-import { launchMmvDiscoveryAction } from '@/app/admin/agents/run-actions';
+import { launchSourceMonitorAction } from '@/app/admin/agents/run-actions';
 
 export function AgentRunLauncher({ brands }: { readonly brands: readonly string[] }) {
-  const [state, action, pending] = useActionState(launchMmvDiscoveryAction, {
+  const [state, action, pending] = useActionState(launchSourceMonitorAction, {
     status: 'idle' as const,
     message: '',
     jobId: null,
@@ -13,13 +13,13 @@ export function AgentRunLauncher({ brands }: { readonly brands: readonly string[
   return (
     <form action={action} className="ui-form-section space-y-4">
       <div>
-        <h2 className="text-lg font-semibold">Executar MMV Discovery</h2>
+        <h2 className="text-lg font-semibold">Monitorar fontes da marca</h2>
         <p className="mt-1 text-sm text-text-secondary">
-          Executa somente no QA, persiste findings e não altera o catálogo automaticamente.
+          Executa somente no QA. Primeiro compara as fontes oficiais de forma determinística; Brand Connector/MMV só rodam se houver mudança.
         </p>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="max-w-md">
         <label className="ui-label">
           Marca
           <select className="ui-field" name="brand" required defaultValue="">
@@ -33,39 +33,18 @@ export function AgentRunLauncher({ brands }: { readonly brands: readonly string[
             ))}
           </select>
         </label>
-
-        <label className="ui-label md:col-span-2">
-          Modelo específico para FIPE / mercado (opcional)
-          <input
-            className="ui-field"
-            name="marketModel"
-            maxLength={200}
-            placeholder="Ex.: Niro"
-            disabled={pending}
-          />
-        </label>
       </div>
 
-      <label className="flex items-start gap-2 text-sm">
-        <input
-          type="checkbox"
-          name="marketReconcile"
-          defaultChecked
-          disabled={pending}
-          className="mt-1"
-        />
-        <span>
-          Reconciliar FIPE / mercado para findings novos. Se um modelo específico for informado,
-          limita a reconciliação a ele.
-        </span>
-      </label>
+      <p className="text-sm text-text-secondary">
+        Primeira execução cria o baseline. Se nada mudou desde o último snapshot, nenhuma chamada de IA é feita.
+      </p>
 
       <button
         className="ui-button ui-button--primary ui-button--commit"
         disabled={pending}
         type="submit"
       >
-        {pending ? 'Executando… pode levar alguns minutos' : 'Executar agente'}
+        {pending ? 'Enfileirando monitoramento…' : 'Monitorar fontes'}
       </button>
 
       {state.message ? (
