@@ -1,7 +1,12 @@
 import { notFound } from 'next/navigation';
-import { acceptedConnectorProposal, mmvApplyEligibility } from '@compra-car/core/agents';
+import {
+  acceptedConnectorProposal,
+  mmvApplyEligibility,
+  modelYearApplyEligibility,
+} from '@compra-car/core/agents';
 import { BrandConnectorForm } from '@/components/admin/brand-connector-form';
 import { MmvApplyForm } from '@/components/admin/mmv-apply-form';
+import { ModelYearApplyForm } from '@/components/admin/model-year-apply-form';
 import { loadAgentFinding } from '@/application/admin/agent-platform';
 import { AgentFindingDetailView } from '@/components/admin/agent-platform-views';
 import { AgentReviewForm } from '@/components/admin/agent-review-form';
@@ -16,6 +21,7 @@ export default async function AgentFindingPage({
   if (!detail) notFound();
   let canActivate = false;
   let canApplyMmv = false;
+  let canApplyModelYear = false;
   try {
     acceptedConnectorProposal(detail);
     canActivate = true;
@@ -23,6 +29,9 @@ export default async function AgentFindingPage({
     /* Review or proposal is not eligible. */
   }
   canApplyMmv = mmvApplyEligibility(detail, {
+    expectedFingerprint: detail.finding.fingerprint,
+  }).eligible;
+  canApplyModelYear = modelYearApplyEligibility(detail, {
     expectedFingerprint: detail.finding.fingerprint,
   }).eligible;
   return (
@@ -42,6 +51,12 @@ export default async function AgentFindingPage({
         ) : null}
         {canApplyMmv ? (
           <MmvApplyForm
+            findingId={id}
+            expectedFingerprint={detail.finding.fingerprint}
+          />
+        ) : null}
+        {canApplyModelYear ? (
+          <ModelYearApplyForm
             findingId={id}
             expectedFingerprint={detail.finding.fingerprint}
           />
