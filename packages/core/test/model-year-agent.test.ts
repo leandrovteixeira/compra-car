@@ -23,7 +23,7 @@ const mmv: CanonicalMmv = {
   updatedAt: '2026-10-01T00:00:00.000Z',
 };
 
-function discovery(modelYear = 2027, productionYear = 2026): CurrentMmvDiscoverySnapshot {
+function discovery(modelYear = 2027, productionYear: number | null = 2026): CurrentMmvDiscoverySnapshot {
   const candidate = {
     brand: 'Kia',
     model: 'Niro',
@@ -110,6 +110,20 @@ describe('ModelYearAgent', () => {
     expect(result.findings[0]).toMatchObject({
       findingType: 'PRODUCTION_MODEL_YEAR_CONFLICT',
       proposal: null,
+    });
+  });
+
+  it('does not invent a production year when only MY is observed', () => {
+    const result = new ModelYearAgent().run({
+      discovery: discovery(2027, null),
+      mmvs: [mmv],
+      knownYears: [],
+    });
+    expect(result.findings[0]).toMatchObject({
+      findingType: 'PRODUCT_YEAR_UNCERTAIN',
+      reasonCode: 'INSUFFICIENT_YEAR_EVIDENCE',
+      proposal: null,
+      subject: { productionYear: null, modelYear: 2027 },
     });
   });
 });
