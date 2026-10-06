@@ -3,7 +3,7 @@
 create table public.catalog_mmv_model_years (
   id uuid primary key default gen_random_uuid(),
   mmv_id uuid not null references public.catalog_mmvs(id) on delete restrict,
-  production_year smallint not null check (production_year between 2001 and 2100),
+  production_year smallint check (production_year is null or production_year between 2001 and 2100),
   model_year smallint not null check (model_year between 2001 and 2100),
   status text not null default 'ACTIVE'
     check (status in ('ACTIVE','LIKELY_ACTIVE','DISCONTINUED','UNKNOWN')),
@@ -14,14 +14,16 @@ create table public.catalog_mmv_model_years (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint catalog_mmv_model_years_pair_check
-    check (production_year = model_year or production_year = model_year - 1),
-  constraint catalog_mmv_model_years_identity unique (mmv_id, production_year, model_year)
+    check (production_year is null or production_year = model_year or production_year = model_year - 1),
+  constraint catalog_mmv_model_years_identity unique nulls not distinct (mmv_id, production_year, model_year)
 );
 
 create index catalog_mmv_model_years_mmv_idx
   on public.catalog_mmv_model_years(mmv_id, model_year desc, production_year desc);
 create index catalog_mmv_model_years_status_idx
   on public.catalog_mmv_model_years(status, model_year desc);
+
+alter table public.products alter column production_year drop not null;
 
 alter table public.catalog_mmv_model_years enable row level security;
 revoke all privileges on table public.catalog_mmv_model_years
@@ -94,14 +96,22 @@ begin
   end if;
 
   v_mmv_id := (f.proposal->>'mmvId')::uuid;
-  v_production_year := (f.proposal->>'productionYear')::smallint;
+  v_production_year := case
+    when f.proposal ? 'productionYear' and f.proposal->'productionYear' <> 'null'::jsonb
+      then (f.proposal->>'productionYear')::smallint
+    else null
+  end;
   v_model_year := (f.proposal->>'modelYear')::smallint;
   v_status := coalesce(nullif(btrim(f.proposal->>'status'), ''), 'ACTIVE');
   v_confidence := f.confidence;
 
   if v_model_year not between 2001 and 2100
-    or v_production_year not between 2001 and 2100
-    or (v_production_year <> v_model_year and v_production_year <> v_model_year - 1)
+    or (v_production_year is not null and v_production_year not between 2001 and 2100)
+    or (
+      v_production_year is not null
+      and v_production_year <> v_model_year
+      and v_production_year <> v_model_year - 1
+    )
     or v_status not in ('ACTIVE','LIKELY_ACTIVE','DISCONTINUED','UNKNOWN')
   then
     raise exception 'PRODUCT_YEAR_INVALID_PROPOSAL';
@@ -117,6 +127,27 @@ begin
     raise exception 'PRODUCT_YEAR_MMV_REQUIRED';
   end if;
 
+  -- If MY was staged earlier without PY, enrich that provisional registry row first.
+  if v_production_year is not null then
+    update public.catalog_mmv_model_years existing_year
+    set production_year = v_production_year,
+        confidence = greatest(existing_year.confidence, v_confidence),
+        last_confirmed_finding_id = f.id,
+        updated_at = now()
+    where existing_year.mmv_id = mmv.id
+      and existing_year.model_year = v_model_year
+      and existing_year.production_year is null
+      and not exists (
+        select 1
+        from public.catalog_mmv_model_years exact_year
+        where exact_year.mmv_id = mmv.id
+          and exact_year.model_year = v_model_year
+          and exact_year.production_year = v_production_year
+      )
+    returning * into applied;
+  end if;
+
+  if applied.id is null then
   insert into public.catalog_mmv_model_years (
     mmv_id,
     production_year,
@@ -143,18 +174,34 @@ begin
         last_confirmed_finding_id = excluded.last_confirmed_finding_id,
         updated_at = now()
   returning * into applied;
+  end if;
 
   -- Reuse a pre-MMV legacy product row when the exact commercial label/year pair already exists.
   -- This avoids duplicating products while Sprint 20/21 progressively attach canonical identity.
-  update public.products p
-  set mmv_id = mmv.id,
-      updated_at = now()
-  where p.mmv_id is null
-    and p.brand = mmv.brand
-    and p.model = mmv.model
-    and p.version = mmv.official_version_label
-    and p.production_year = v_production_year
-    and p.model_year = v_model_year;
+  if v_production_year is not null then
+    update public.products p
+    set mmv_id = mmv.id,
+        production_year = v_production_year,
+        updated_at = now()
+    where p.brand = mmv.brand
+      and p.model = mmv.model
+      and p.version = mmv.official_version_label
+      and p.model_year = v_model_year
+      and (
+        (p.mmv_id is null and p.production_year = v_production_year)
+        or (p.mmv_id = mmv.id and p.production_year is null)
+      );
+  else
+    update public.products p
+    set mmv_id = mmv.id,
+        updated_at = now()
+    where p.mmv_id is null
+      and p.brand = mmv.brand
+      and p.model = mmv.model
+      and p.version = mmv.official_version_label
+      and p.model_year = v_model_year
+      and p.production_year is null;
+  end if;
 
   insert into public.products (
     brand,
@@ -179,8 +226,8 @@ begin
     select 1
     from public.products p
     where p.mmv_id = mmv.id
-      and p.production_year = v_production_year
       and p.model_year = v_model_year
+      and p.production_year is not distinct from v_production_year
   );
 
   return next applied;
