@@ -1,6 +1,9 @@
 name: Sprint 21 Validation
 
 on:
+  push:
+    branches:
+      - sprint-21-model-year-agent
   pull_request:
     branches:
       - sprint-20-mmv-discovery-agent
