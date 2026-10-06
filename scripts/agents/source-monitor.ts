@@ -91,7 +91,7 @@ async function pendingChange(client: LegacySupabaseClient, market: string, url: 
   return (data as PendingChangeRow | null) ?? null;
 }
 
-function isComparable(snapshot: SnapshotRow | null): snapshot is SnapshotRow {
+function isComparable(snapshot: SnapshotRow | null): boolean {
   return Boolean(
     snapshot &&
       snapshot.http_status !== null &&
