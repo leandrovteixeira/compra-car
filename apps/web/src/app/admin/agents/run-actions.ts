@@ -9,5 +9,5 @@ export async function launchSourceMonitorAction(
   _state: AgentLaunchState,
   data: FormData,
 ): Promise<AgentLaunchState> {
-  return launchMmvDiscovery(data);
+  return launchSourceMonitor(data);
 }
