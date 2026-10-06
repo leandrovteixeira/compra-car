@@ -113,16 +113,20 @@ describe('ModelYearAgent', () => {
     });
   });
 
-  it('does not invent a production year when only MY is observed', () => {
+  it('creates MY without inventing a production year', () => {
     const result = new ModelYearAgent().run({
       discovery: discovery(2027, null),
       mmvs: [mmv],
       knownYears: [],
     });
     expect(result.findings[0]).toMatchObject({
-      findingType: 'PRODUCT_YEAR_UNCERTAIN',
-      reasonCode: 'INSUFFICIENT_YEAR_EVIDENCE',
-      proposal: null,
+      findingType: 'NEW_PRODUCT_YEAR',
+      reasonCode: 'NEW_MODEL_YEAR',
+      proposal: {
+        action: 'STAGE_PRODUCT_YEAR',
+        productionYear: null,
+        modelYear: 2027,
+      },
       subject: { productionYear: null, modelYear: 2027 },
     });
   });
