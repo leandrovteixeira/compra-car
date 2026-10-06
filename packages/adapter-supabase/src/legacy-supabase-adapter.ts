@@ -147,7 +147,10 @@ export class LegacySupabaseAdapter
     let lastId = -1;
     let expectedTotal: number | undefined;
     while (true) {
-      let query = this.client.from('products').select(PRODUCT_COLUMNS, { count: 'exact' });
+      let query = this.client
+        .from('products')
+        .select(PRODUCT_COLUMNS, { count: 'exact' })
+        .not('production_year', 'is', null);
       if (years)
         query = query
           .in('production_year', [...new Set(years.map((pair) => pair.productionYear))])
@@ -208,7 +211,10 @@ export class LegacySupabaseAdapter
   async listAdministrativeVehicles(
     filters: AdministrativeVehicleFilters = {},
   ): Promise<readonly Vehicle[]> {
-    let query = this.client.from('products').select(PRODUCT_COLUMNS);
+    let query = this.client
+      .from('products')
+      .select(PRODUCT_COLUMNS)
+      .not('production_year', 'is', null);
     if (filters.model) query = query.ilike('model', escapedIlikeContains(filters.model));
     if (filters.brand) query = query.ilike('brand', escapedIlikeContains(filters.brand));
     if (filters.version) query = query.ilike('version', escapedIlikeContains(filters.version));
