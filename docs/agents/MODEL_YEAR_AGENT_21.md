@@ -50,3 +50,20 @@ Price and Spec agents can then target the concrete product row.
 ## Cost guard
 
 The model-year resolver is deterministic. LLM adjudication is reserved for conflicting or semantically ambiguous year evidence and must be recorded in the existing AI usage telemetry.
+
+
+## Operational command
+
+Read-only dry run:
+
+```bash
+pnpm agent:model-year:dry-run -- --brand Kia --provider openai
+```
+
+Persist findings (still no catalog mutation):
+
+```bash
+pnpm agent:model-year:dry-run -- --brand Kia --provider openai --persist-findings
+```
+
+Catalog mutation remains a separate reviewed admin action: `Aplicar ano-modelo`.
