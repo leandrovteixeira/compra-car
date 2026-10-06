@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseModelYearArguments, runModelYearCli } from '../model-year-cli';
+import { parseModelYearArguments, runModelYearCli } from '../run-model-year';
 
 describe('Model Year CLI', () => {
   it('parses a fixture dry-run', () => {
