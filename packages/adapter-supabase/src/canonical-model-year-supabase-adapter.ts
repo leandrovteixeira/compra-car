@@ -28,6 +28,13 @@ function integer(row: Row, key: string): number {
   if (!Number.isInteger(value)) throw new Error('INVALID_MODEL_YEAR_ROW');
   return value;
 }
+function optionalInteger(row: Row, key: string): number | null {
+  const raw = row[key];
+  if (raw === null || raw === undefined) return null;
+  const value = Number(raw);
+  if (!Number.isInteger(value)) throw new Error('INVALID_MODEL_YEAR_ROW');
+  return value;
+}
 
 function modelYear(row: Row): CanonicalMmvModelYear {
   const status = text(row, 'status');
@@ -41,7 +48,7 @@ function modelYear(row: Row): CanonicalMmvModelYear {
   return {
     id: text(row, 'id'),
     mmvId: text(row, 'mmv_id'),
-    productionYear: integer(row, 'production_year'),
+    productionYear: optionalInteger(row, 'production_year'),
     modelYear: integer(row, 'model_year'),
     status: status as ModelYearStatus,
     confidence,
