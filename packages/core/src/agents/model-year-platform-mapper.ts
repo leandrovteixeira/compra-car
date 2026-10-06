@@ -28,7 +28,7 @@ function candidateForFinding(
         candidate.model === finding.subject.model &&
         version(candidate) === finding.subject.officialVersionLabel &&
         candidate.modelYear === finding.subject.modelYear &&
-        (candidate.productionYear ?? candidate.modelYear) === finding.subject.productionYear,
+        candidate.productionYear === finding.subject.productionYear,
     ) ?? null
   );
 }
