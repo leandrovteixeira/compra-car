@@ -60,9 +60,36 @@ export class ModelYearAgent {
 
     for (const candidate of input.discovery.candidates) {
       if (!validYear(candidate.modelYear)) continue;
-      const productionYear = validYear(candidate.productionYear)
-        ? candidate.productionYear
-        : candidate.modelYear;
+      if (!validYear(candidate.productionYear)) {
+        const version = versionLabel(candidate);
+        const matches = exactMmvMatches(candidate, input.mmvs);
+        findings.push({
+          findingType: 'PRODUCT_YEAR_UNCERTAIN',
+          reasonCode: 'INSUFFICIENT_YEAR_EVIDENCE',
+          mmvId: matches.length === 1 ? matches[0]!.id : null,
+          title: `${candidate.brand} ${candidate.model} ${version ?? ''}: MY${candidate.modelYear} sem ano de fabricação confirmado`.trim(),
+          summary:
+            'O ano-modelo foi observado, mas o ano de fabricação não está explicitamente sustentado. Nenhum Product será criado até completar o par.',
+          confidence: candidate.confidence,
+          requiresReview: true,
+          subject: {
+            mmvId: matches.length === 1 ? matches[0]!.id : null,
+            brand: candidate.brand,
+            model: candidate.model,
+            officialVersionLabel: version,
+            productionYear: null,
+            modelYear: candidate.modelYear,
+          },
+          proposal: null,
+          payload: {
+            reasonCode: 'INSUFFICIENT_YEAR_EVIDENCE',
+            operatorMessage:
+              'Ano-modelo encontrado. Falta confirmar o ano de fabricação antes de aplicar.',
+          },
+        });
+        continue;
+      }
+      const productionYear = candidate.productionYear;
       if (productionYear !== candidate.modelYear && productionYear !== candidate.modelYear - 1) {
         const version = versionLabel(candidate);
         findings.push({
