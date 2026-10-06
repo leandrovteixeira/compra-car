@@ -60,6 +60,11 @@ async function latestSnapshot(client: LegacySupabaseClient, market: string, url:
   return (data as SnapshotRow | null) ?? null;
 }
 
+function effectiveStatusForNotModified(previous: SnapshotRow): number {
+  if (previous.http_status === 304 || previous.http_status === null) return 200;
+  return previous.http_status;
+}
+
 function classifyChange(previous: SnapshotRow | null, current: SnapshotRow) {
   if (!previous) return 'FIRST_OBSERVATION' as const;
 
@@ -151,14 +156,17 @@ export async function monitorBrandSources(
       etag = response.headers.get('etag');
       lastModified = response.headers.get('last-modified');
       const length = response.headers.get('content-length');
-      contentLength = length && /^d+$/u.test(length) ? Number(length) : null;
+      contentLength = length && /^\d+$/u.test(length) ? Number(length) : null;
 
       if (status === 304 && previous) {
-        status = previous.http_status ?? 200;
+        // 304 means the representation did not change. Persist the effective
+        // application status/hash, never the transport cache-validation status.
+        status = effectiveStatusForNotModified(previous);
         rawHash = previous.content_sha256;
         normalizedHash = previous.normalized_sha256;
         etag = etag ?? previous.etag;
         lastModified = lastModified ?? previous.last_modified;
+        contentLength = null;
       } else {
         const contentType = response.headers.get('content-type') ?? '';
         const bytes = new Uint8Array(await response.arrayBuffer());
