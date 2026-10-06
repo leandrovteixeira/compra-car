@@ -39,8 +39,8 @@ function sourceUrls(candidate: OfficialProductCandidate): readonly string[] {
   return [...new Set(candidate.evidence.map((item) => item.url))].sort();
 }
 
-function yearPairKey(mmvId: string, productionYear: number, modelYear: number): string {
-  return [mmvId, productionYear, modelYear].join(':');
+function yearPairKey(mmvId: string, productionYear: number | null, modelYear: number): string {
+  return [mmvId, productionYear ?? 'unknown-py', modelYear].join(':');
 }
 
 export class ModelYearAgent {
@@ -63,28 +63,91 @@ export class ModelYearAgent {
       if (!validYear(candidate.productionYear)) {
         const version = versionLabel(candidate);
         const matches = exactMmvMatches(candidate, input.mmvs);
-        findings.push({
-          findingType: 'PRODUCT_YEAR_UNCERTAIN',
-          reasonCode: 'INSUFFICIENT_YEAR_EVIDENCE',
-          mmvId: matches.length === 1 ? matches[0]!.id : null,
-          title: `${candidate.brand} ${candidate.model} ${version ?? ''}: MY${candidate.modelYear} sem ano de fabricação confirmado`.trim(),
-          summary:
-            'O ano-modelo foi observado, mas o ano de fabricação não está explicitamente sustentado. Nenhum Product será criado até completar o par.',
+        if (matches.length !== 1) {
+          findings.push({
+            findingType: matches.length === 0 ? 'POSSIBLE_NEW_MMV' : 'PRODUCT_YEAR_CONFLICT',
+            reasonCode: matches.length === 0 ? 'POSSIBLE_NEW_MMV' : 'MODEL_YEAR_CONFLICT',
+            mmvId: null,
+            title:
+              matches.length === 0
+                ? `${candidate.brand} ${candidate.model} ${version ?? ''}: versão não encontrada no registry MMV`.trim()
+                : `${candidate.brand} ${candidate.model} ${version ?? ''}: mais de um MMV compatível`.trim(),
+            summary:
+              matches.length === 0
+                ? 'O MY foi encontrado, mas a identidade deve ser resolvida primeiro pelo agente de MMV.'
+                : 'O MY não pode ser aplicado enquanto a identidade MMV permanecer ambígua.',
+            confidence: candidate.confidence,
+            requiresReview: true,
+            subject: {
+              brand: candidate.brand,
+              model: candidate.model,
+              officialVersionLabel: version,
+              productionYear: null,
+              modelYear: candidate.modelYear,
+            },
+            proposal: null,
+            payload: {
+              reasonCode: matches.length === 0 ? 'POSSIBLE_NEW_MMV' : 'MODEL_YEAR_CONFLICT',
+              operatorMessage:
+                matches.length === 0
+                  ? 'Revise primeiro a identidade na fila de MMV.'
+                  : 'Escolha/corrija o MMV antes de continuar.',
+            },
+          });
+          continue;
+        }
+
+        const mmv = matches[0]!;
+        const observation: ModelYearObservation = {
+          mmvId: mmv.id,
+          brand: mmv.brand,
+          model: mmv.model,
+          officialVersionLabel: mmv.officialVersionLabel,
+          productionYear: null,
+          modelYear: candidate.modelYear,
           confidence: candidate.confidence,
-          requiresReview: true,
+          sourceUrls: sourceUrls(candidate),
+        };
+        observations.push(observation);
+
+        const sameMyKnown = input.knownYears.some(
+          (item) => item.mmvId === mmv.id && item.modelYear === candidate.modelYear,
+        );
+        const isNew = !sameMyKnown;
+        findings.push({
+          findingType: 'NEW_PRODUCT_YEAR',
+          reasonCode: isNew ? 'NEW_MODEL_YEAR' : 'CONFIRMED_MODEL_YEAR',
+          mmvId: mmv.id,
+          title: `${mmv.brand} ${mmv.model} ${mmv.officialVersionLabel} — MY${candidate.modelYear}`,
+          summary: isNew
+            ? `Novo MY${candidate.modelYear} encontrado. O ano de fabricação ainda não foi confirmado e permanecerá vazio.`
+            : `MY${candidate.modelYear} confirmado novamente; o PY continua sem inferência.`,
+          confidence: candidate.confidence,
+          requiresReview: isNew,
           subject: {
-            mmvId: matches.length === 1 ? matches[0]!.id : null,
-            brand: candidate.brand,
-            model: candidate.model,
-            officialVersionLabel: version,
+            mmvId: mmv.id,
+            brand: mmv.brand,
+            model: mmv.model,
+            officialVersionLabel: mmv.officialVersionLabel,
             productionYear: null,
             modelYear: candidate.modelYear,
           },
-          proposal: null,
+          proposal: isNew
+            ? {
+                action: 'STAGE_PRODUCT_YEAR',
+                mmvId: mmv.id,
+                productionYear: null,
+                modelYear: candidate.modelYear,
+                status: 'ACTIVE',
+              }
+            : null,
           payload: {
-            reasonCode: 'INSUFFICIENT_YEAR_EVIDENCE',
-            operatorMessage:
-              'Ano-modelo encontrado. Falta confirmar o ano de fabricação antes de aplicar.',
+            reasonCode: isNew ? 'NEW_MODEL_YEAR' : 'CONFIRMED_MODEL_YEAR',
+            productionYearStatus: 'UNKNOWN',
+            operatorMessage: isNew
+              ? 'MY confirmado. Você pode aplicar agora; o PY ficará vazio até surgir evidência.'
+              : 'Nenhuma ação necessária. O PY não foi inferido.',
+            sourceCount: observation.sourceUrls.length,
           },
         });
         continue;
