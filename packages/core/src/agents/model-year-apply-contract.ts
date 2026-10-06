@@ -40,7 +40,7 @@ export function modelYearApplyEligibility(
     proposal.action !== 'STAGE_PRODUCT_YEAR' ||
     typeof proposal.mmvId !== 'string' ||
     typeof proposal.modelYear !== 'number' ||
-    typeof proposal.productionYear !== 'number'
+    (proposal.productionYear !== null && typeof proposal.productionYear !== 'number')
   )
     return { eligible: false, code: 'INVALID_PROPOSAL' };
   if (options.expectedFingerprint && options.expectedFingerprint !== detail.finding.fingerprint)
