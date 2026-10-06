@@ -1,5 +1,27 @@
 # Contexto para agentes de IA
 
+## Sprint 20K — deterministic monitoring / AI-on-change
+
+Sprint 20 closes with deterministic-first orchestration in QA/Staging. Routine polling MUST NOT call an LLM by default. The normal launcher enqueues SOURCE_MONITOR, which reads only already-approved Brand Connector source URLs, stores source snapshots and compares stable normalized fingerprints. FIRST_OBSERVATION is baseline only and never wakes AI.
+
+Source changes use a two-observation confirmation rule. A first divergence creates a PENDING change; only the same candidate state observed again after at least five minutes becomes CONFIRMED. Return to the stable baseline dismisses the candidate. A different state replaces the pending candidate. Snapshots without a successful status and valid content hash are not comparable baselines; recovery from an invalid observation is re-baselined rather than treated as semantic change. CDN ETag/Last-Modified changes alone never wake AI.
+
+Only CONFIRMED non-baseline source changes may enqueue downstream BRAND_CONNECTOR/MMV_DISCOVERY jobs. Manual/debug forced AI runs may exist later as technical operations, but they are not the default UI path or future scheduler path.
+
+Staging tables: agent_source_snapshots, agent_source_change_events, agent_ai_usage_events and agent_cost_policies. QA budget policy foundation exists; exact per-model token-cost accounting remains follow-up before production scheduling. Production remains untouched.
+
+Brand identity is now first-class: brand_identities + brand_aliases, evidence-backed alias discovery in Brand Connector, identity drift review, and operational alias resolution. Volkswagen/VW in QA points to one canonical Volkswagen identity; legacy target history is preserved.
+
+Roadmap after Sprint 20:
+- Sprint 21 — Model Year Agent
+- Sprint 22 — Price Agent
+- Sprint 23 — UX / Public Read Access: remove mandatory account/password friction for basic read-only consultation; keep administrative/mutating actions authenticated and authorized.
+- Sprint 24 — Spec Agent
+- Sprint 25 — Operations / Automation
+
+MY, Price and Spec agents MUST reuse SOURCE_MONITOR/change events and must not introduce unconditional daily LLM polling.
+
+
 ## Sprint 20F.1 — local fixes for first validation run
 
 Body proposals are aggregated in CurrentMmvDiscoveryAgent before platform mapping using normalized currentModel/bodyStyle/proposedModel and existing evidence deduplication (URL/title/excerpt/evidenceType). Published labels remain verbatim and POSSIBLE_BODY_SPLIT stays review-only. No import cycle or dependency introduced.
