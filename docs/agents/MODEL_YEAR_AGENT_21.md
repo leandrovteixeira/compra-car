@@ -29,6 +29,7 @@ A single model year can legitimately coexist with the previous model year. Absen
 
 - `MY2027`, `2027`, `linha 2027` normalize to model year 2027 when the source explicitly supports that reading.
 - `2026/2027` means production year 2026, model year 2027.
+- an explicit MY can be staged even when PY is unknown; PY remains `null` and is never inferred.
 - production year must equal model year or model year - 1 for the current Brazilian product model.
 - a year without exactly one canonical MMV is not applied.
 - zero MMV matches emits `POSSIBLE_NEW_MMV` and routes back to Sprint 20.
@@ -42,8 +43,9 @@ Accepting a finding never mutates the catalog.
 
 The separate apply action may:
 1. upsert `catalog_mmv_model_years`;
-2. create the corresponding `products` row as active + private;
-3. attach `products.mmv_id`.
+2. create the corresponding `products` row as active + private, even when PY is still unknown;
+3. attach `products.mmv_id`;
+4. enrich the provisional `PY=null` row later when explicit PY evidence appears.
 
 Price and Spec agents can then target the concrete product row.
 
