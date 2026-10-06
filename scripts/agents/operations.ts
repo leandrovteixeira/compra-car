@@ -1,11 +1,12 @@
 import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { createLegacyOperationsClient } from '@compra-car/adapter-supabase';
 import { loadAgentEnvironment, type AgentEnvironment } from './agent-environment';
 
 export const OPERATION_STAGES = ['BRAND_CONNECTOR','MMV_DISCOVERY','MODEL_YEAR'] as const;
 export type OperationStage = (typeof OPERATION_STAGES)[number];
+type OperationsClient = ReturnType<typeof createLegacyOperationsClient>;
 
 export type OperationsOptions = Readonly<{
   brands: readonly string[];
@@ -121,7 +122,7 @@ export async function runCommand(
 }
 
 async function acquireRun(
-  client: SupabaseClient,
+  client: OperationsClient,
   options: OperationsOptions,
   sourceCommitSha: string | undefined,
 ) {
@@ -144,7 +145,7 @@ async function acquireRun(
 }
 
 async function finishRun(
-  client: SupabaseClient,
+  client: OperationsClient,
   id: string,
   status: 'COMPLETED' | 'FAILED',
   summary: unknown,
@@ -171,7 +172,7 @@ export async function runOperations(
   dependencies: {
     cwd?: string;
     run?: typeof runCommand;
-    client?: SupabaseClient;
+    client?: OperationsClient;
   } = {},
 ) {
   const cwd = dependencies.cwd ?? fileURLToPath(new URL('../../', import.meta.url));
@@ -188,8 +189,8 @@ export async function runOperations(
     throw new Error('SUPABASE_AGENT_CONFIG_REQUIRED');
   let client = dependencies.client;
   if (!client) {
-    const { createLegacySupabaseClient } = await import('@compra-car/adapter-supabase');
-    client = createLegacySupabaseClient({
+    const { createLegacyOperationsClient } = await import('@compra-car/adapter-supabase');
+    client = createLegacyOperationsClient({
       url: env.SUPABASE_URL,
       serverKey: env.SUPABASE_SERVER_KEY,
     });
