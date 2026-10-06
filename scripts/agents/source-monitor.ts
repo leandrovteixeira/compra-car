@@ -62,26 +62,40 @@ async function latestSnapshot(client: LegacySupabaseClient, market: string, url:
 
 function classifyChange(previous: SnapshotRow | null, current: SnapshotRow) {
   if (!previous) return 'FIRST_OBSERVATION' as const;
-  if ((previous.http_status ?? 0) >= 400 && (current.http_status ?? 0) < 400)
-    return 'SOURCE_RECOVERED' as const;
-  if ((previous.http_status ?? 0) < 400 && (current.http_status ?? 0) >= 400)
-    return 'SOURCE_UNAVAILABLE' as const;
-  if (previous.http_status !== current.http_status)
-    return 'HTTP_STATUS_CHANGED' as const;
+
+  // 304 is an explicit server assertion that the previously observed representation
+  // is still current. Never treat 200 -> 304 as a content/status change.
+  if (current.http_status === 304) return null;
+
+  const previousAvailable =
+    previous.http_status !== null &&
+    previous.http_status >= 200 &&
+    previous.http_status < 400;
+  const currentAvailable =
+    current.http_status !== null &&
+    current.http_status >= 200 &&
+    current.http_status < 400;
+
+  if (!previousAvailable && currentAvailable) return 'SOURCE_RECOVERED' as const;
+  if (previousAvailable && !currentAvailable) return 'SOURCE_UNAVAILABLE' as const;
+
   if (
     previous.normalized_sha256 &&
     current.normalized_sha256 &&
     previous.normalized_sha256 !== current.normalized_sha256
   )
     return 'CONTENT_CHANGED' as const;
-  if (previous.etag && current.etag && previous.etag !== current.etag)
-    return 'ETAG_CHANGED' as const;
+
+  // HTTP status changes inside the successful 2xx/3xx family are not meaningful
+  // enough by themselves to wake expensive AI agents.
   if (
-    previous.last_modified &&
-    current.last_modified &&
-    previous.last_modified !== current.last_modified
+    previous.http_status !== current.http_status &&
+    (!previousAvailable || !currentAvailable)
   )
-    return 'LAST_MODIFIED_CHANGED' as const;
+    return 'HTTP_STATUS_CHANGED' as const;
+
+  // ETag/Last-Modified are useful cache validators, but CDNs can rotate them without
+  // a semantic page change. Keep them as snapshot metadata; do not escalate on them alone.
   return null;
 }
 
@@ -140,8 +154,11 @@ export async function monitorBrandSources(
       contentLength = length && /^d+$/u.test(length) ? Number(length) : null;
 
       if (status === 304 && previous) {
+        status = previous.http_status ?? 200;
         rawHash = previous.content_sha256;
         normalizedHash = previous.normalized_sha256;
+        etag = etag ?? previous.etag;
+        lastModified = lastModified ?? previous.last_modified;
       } else {
         const contentType = response.headers.get('content-type') ?? '';
         const bytes = new Uint8Array(await response.arrayBuffer());
