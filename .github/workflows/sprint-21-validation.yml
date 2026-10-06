@@ -1,0 +1,45 @@
+name: Sprint 21 Validation
+
+on:
+  pull_request:
+    branches:
+      - sprint-20-mmv-discovery-agent
+    paths:
+      - 'packages/core/**'
+      - 'packages/adapter-supabase/**'
+      - 'apps/web/**'
+      - 'scripts/agents/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/sprint-21-validation.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.5
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Core typecheck
+        run: pnpm --filter @compra-car/core typecheck
+      - name: Supabase adapter typecheck
+        run: pnpm --filter @compra-car/adapter-supabase typecheck
+      - name: Agents typecheck
+        run: pnpm --filter @compra-car/agents typecheck
+      - name: Web typecheck
+        run: pnpm --filter @compra-car/web typecheck
+      - name: Sprint 21 unit tests
+        run: pnpm --filter @compra-car/core exec vitest run test/model-year-agent.test.ts
+      - name: Model Year CLI tests
+        run: pnpm --filter @compra-car/agents exec vitest run test/model-year-cli.test.ts
+      - name: Model Year fixture dry-run
+        run: pnpm agent:model-year:dry-run -- --brand Jeep --provider fixture
