@@ -102,6 +102,14 @@ export interface ResearchMetadata {
   readonly totalTokens?: number;
   readonly webSearchCount?: number;
 }
+export interface MmvAmbiguityAdjudicator {
+  adjudicate(input: {
+    readonly scope: AgentMarketScope;
+    readonly candidate: OfficialProductCandidate;
+    readonly possibleMmvs: readonly CatalogMmvIdentity[];
+  }): Promise<OfficialProductCandidate | null>;
+}
+
 export interface ProductResearchProvider {
   /** Discovery then resolution, in one structured response or multiple provider calls. */
   researchProducts(
