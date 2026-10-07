@@ -38,7 +38,13 @@ export function normalizePriceSourceText(body: string): string {
     .replace(/<svg\b[^>]*>[\s\S]*?<\/svg>/giu, ' ')
     .replace(/<[^>]+>/gu, ' ')
     .replace(/\\u00a0/giu, ' ')
-    .replace(/\\u0024/giu, '
+    .replace(/\\u0024/giu, '$')
+    .replace(/\\u002e/giu, '.')
+    .replace(/\\u002c/giu, ',')
+    .replace(/\\(["/])/gu, '$1')
+    .replace(/\s+/gu, ' ')
+    .trim();
+}
 
 function brl(raw: string): string | null {
   const normalized = raw.replace(/\s/gu, '').replace(/\./gu, '').replace(',', '.');
