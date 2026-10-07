@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { BrandConnector } from './brand-connector-types';
+import { priceContexts, priceSourceAppliesToModel, priceTargetBinding } from './price-target-binding';
 import {
   isConditionalCommercialText,
   priceSourceAllowed,
@@ -66,32 +67,14 @@ function targetKey(target: PriceTarget) {
     .toLowerCase();
 }
 
-function mentionsTarget(text: string, target: PriceTarget) {
-  const haystack = text
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/gu, '')
-    .toLowerCase();
-  return [target.model, target.version]
-    .map((v) =>
-      v
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/gu, '')
-        .toLowerCase(),
-    )
-    .every((v) => haystack.includes(v));
-}
-
 export function extractDeterministicPrice(
   snapshot: PriceSourceSnapshot,
   target: PriceTarget,
 ): PriceObservation | null {
   const body = normalizePriceSourceText(snapshot.body);
-  if (!body || !mentionsTarget(body, target)) return null;
+  if (!body || !priceSourceAppliesToModel(snapshot, target) || !priceTargetBinding(body, target)) return null;
 
-  const contexts = body
-    .split(/(?<=[.!?;])\s+/u)
-    .filter((part) => mentionsTarget(part, target) || /pre[cç]o|r\$|b[oô]nus|oferta/iu.test(part))
-    .slice(0, 120);
+  const contexts = priceContexts(snapshot.body, target);
 
   let msrpAmount: string | null = null,
     publicOfferAmount: string | null = null,
@@ -103,7 +86,7 @@ export function extractDeterministicPrice(
     const msrp = part.match(
       /(?:pre[cç]o\s+(?:p[uú]blico\s+)?(?:sugerido|de\s+tabela)?|a\s+partir\s+de)\s*[:\-]?\s*(R\$\s*[0-9.]+(?:,[0-9]{2})?)/iu,
     );
-    if (msrp && mentionsTarget(body, target)) {
+    if (msrp) {
       const amount = money(msrp[1]!);
       if (amount) {
         msrpAmount = amount;
@@ -203,7 +186,8 @@ export class DeterministicFirstPriceResearch implements PriceResearchProvider {
       deterministicExtractions = 0,
       documentIntelligenceCalls = 0,
       targetMisses = 0,
-      pricePatternMisses = 0;
+      pricePatternMisses = 0,
+      modelSourceSkips = 0;
     const countedNetworkUrls = new Set<string>();
 
     const cached = (await this.ports.upstreamCache?.snapshots(targets, connector)) ?? [];
@@ -231,7 +215,11 @@ export class DeterministicFirstPriceResearch implements PriceResearchProvider {
 
       for (const source of sources) {
         const normalized = normalizePriceSourceText(source.body);
-        if (!mentionsTarget(normalized, target)) {
+        if (!priceSourceAppliesToModel(source, target)) {
+          modelSourceSkips++;
+          continue;
+        }
+        if (!priceTargetBinding(normalized, target)) {
           targetMisses++;
           continue;
         }
@@ -260,6 +248,7 @@ export class DeterministicFirstPriceResearch implements PriceResearchProvider {
         documentIntelligenceCalls,
         targetMisses,
         pricePatternMisses,
+        modelSourceSkips,
         uniqueNetworkUrls: countedNetworkUrls.size,
         solEscalations: 0,
         estimatedCostUsd: 0,
