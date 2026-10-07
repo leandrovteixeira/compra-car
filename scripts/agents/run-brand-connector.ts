@@ -16,6 +16,7 @@ import { OpenAIBrandConnectorResearchProvider } from '@compra-car/adapter-openai
 import { redactSecrets } from './report-writer';
 import { loadAgentEnvironment } from './agent-environment';
 import { safeAgentFailure } from './agent-diagnostics';
+import { recordAiUsage } from './ai-usage';
 export function parseBrandConnectorArguments(args: readonly string[]) {
   const values = args[0] === '--' ? args.slice(1) : args,
     options = new Map<string, string>();
@@ -103,6 +104,7 @@ export async function runBrandConnectorCli(
       options.provider === 'openai' && repository
         ? await repository.resolveBrandIdentity(options.brand, options.market)
         : null;
+    let openAiUsage: { model: string; inputTokens: number; outputTokens: number; totalTokens: number; webSearchCount: number } | null = null;
     const research =
       dependencies.research ??
       (options.provider === 'fixture'
@@ -114,6 +116,9 @@ export async function runBrandConnectorCli(
               resolve(root, 'docs/agents/prompts/brand-connector-agent-v1.md'),
               'utf8',
             ),
+            onUsage: (usage) => {
+              openAiUsage = usage;
+            },
           }));
     const bundle = await new BrandConnectorAgent(research).run(
       {
@@ -126,6 +131,29 @@ export async function runBrandConnectorCli(
       undefined,
       options.provider,
     );
+    if (options.provider === 'openai' && openAiUsage) {
+      const { createLegacySupabaseClient } = await import('@compra-car/adapter-supabase');
+      await recordAiUsage(
+        createLegacySupabaseClient({
+          url: env.SUPABASE_URL!,
+          serverKey: env.SUPABASE_SERVER_KEY!,
+        }),
+        {
+          runId: bundle.run.id,
+          agentType: 'BRAND_CONNECTOR',
+          market: options.market,
+          brand: options.brand,
+          provider: 'openai',
+          model: openAiUsage.model,
+          inputTokens: openAiUsage.inputTokens,
+          outputTokens: openAiUsage.outputTokens,
+          totalTokens: openAiUsage.totalTokens,
+          webSearchCount: openAiUsage.webSearchCount,
+          reason: 'BRAND_CONNECTOR_RESEARCH',
+        },
+        env,
+      );
+    }
     const secrets = [env.OPENAI_API_KEY ?? '', env.SUPABASE_SERVER_KEY ?? ''];
     const clean = JSON.parse(redactSecrets(JSON.stringify(bundle), secrets)) as typeof bundle;
     const finding = clean.findings[0]!.finding;
