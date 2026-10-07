@@ -1,5 +1,19 @@
 import type { PriceSourceSnapshot, PriceTarget } from './price-agent-types';
-import { normalizePriceSourceText } from './deterministic-price-research';
+
+function sourceText(value: string): string {
+  return value
+    .replace(/&nbsp;|&#160;/giu, ' ')
+    .replace(/&amp;/giu, '&')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/giu, ' ')
+    .replace(/<svg\b[^>]*>[\s\S]*?<\/svg>/giu, ' ')
+    .replace(/<[^>]+>/gu, ' ')
+    .replace(/\\u00a0/giu, ' ')
+    .replace(/\\u0024/giu, '$')
+    .replace(/\\u002e/giu, '.')
+    .replace(/\\u002c/giu, ',')
+    .replace(/\s+/gu, ' ')
+    .trim();
+}
 
 function comparisonText(value: string): string {
   return value
@@ -39,7 +53,7 @@ export function priceSourceAppliesToModel(
   } catch {
     return false;
   }
-  return comparisonText(normalizePriceSourceText(snapshot.body)).includes(model);
+  return comparisonText(sourceText(snapshot.body)).includes(model);
 }
 
 export function priceTargetBinding(text: string, target: PriceTarget): boolean {
@@ -49,7 +63,7 @@ export function priceTargetBinding(text: string, target: PriceTarget): boolean {
 }
 
 export function priceContexts(body: string, target: PriceTarget): readonly string[] {
-  const normalizedBody = normalizePriceSourceText(body);
+  const normalizedBody = sourceText(body);
   const comparable = comparisonText(normalizedBody);
   const windows: string[] = [];
 
