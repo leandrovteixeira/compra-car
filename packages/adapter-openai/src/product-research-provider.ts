@@ -33,6 +33,7 @@ export function productResearchMaxWaitMs(value: unknown): number {
         : NaN;
   return Number.isSafeInteger(parsed) && parsed >= 60_000 && parsed <= 1_800_000 ? parsed : 600_000;
 }
+const DIRECT_SOURCE_MAX_CHARS = 60000;
 const validate = new Ajv({ strict: true }).compile<{ candidates: OfficialProductCandidate[] }>(
   productResearchSchema,
 );
