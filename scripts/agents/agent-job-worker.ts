@@ -18,6 +18,7 @@ type JobRow = {
     marketReconcile?: boolean;
     marketModel?: string | null;
     mode?: 'discover' | 'health-check';
+    parentRunId?: string;
   };
 };
 
@@ -99,6 +100,7 @@ async function execute(job: JobRow) {
         '--provider',
         'openai',
         '--persist-findings',
+        ...(job.input.parentRunId ? ['--parent-run-id', job.input.parentRunId] : []),
       ],
       env,
       log,
