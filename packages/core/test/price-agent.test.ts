@@ -4,6 +4,9 @@ import {
   extractDeterministicPrice,
   makePriceSnapshot,
   mapPriceRunToPlatform,
+  priceSourceAppliesToModel,
+  priceTargetBinding,
+  priceVersionAliases,
   type PriceTarget,
 } from '../src/agents';
 import type { BrandConnector } from '../src/agents';
@@ -43,6 +46,32 @@ const connector: BrandConnector = {
 };
 
 describe('Price Agent', () => {
+  it('binds verbose catalog versions through conservative trim aliases', () => {
+    const verboseTarget: PriceTarget = {
+      ...target,
+      version: 'Longitude 1.3 TGDI AT MHEV',
+    };
+    const snapshot = makePriceSnapshot({
+      target: verboseTarget,
+      sourceUrl: 'https://www.jeep.com.br/renegade.html',
+      sourceKind: 'OFFICIAL_MODEL_PAGE',
+      body: 'Jeep Renegade Longitude MHEV. Consulte as condições.',
+    });
+    expect(priceVersionAliases(verboseTarget)).toContain('longitude');
+    expect(priceSourceAppliesToModel(snapshot, verboseTarget)).toBe(true);
+    expect(priceTargetBinding('Jeep Renegade Longitude MHEV', verboseTarget)).toBe(true);
+  });
+
+  it('rejects an official source scoped to another model before version matching', () => {
+    const snapshot = makePriceSnapshot({
+      target,
+      sourceUrl: 'https://www.jeep.com.br/commander.html',
+      sourceKind: 'OFFICIAL_MODEL_PAGE',
+      body: 'Jeep Commander Longitude. R$ 200.000,00',
+    });
+    expect(priceSourceAppliesToModel(snapshot, target)).toBe(false);
+  });
+
   it('extracts official MSRP and unconditional retail bonus deterministically', () => {
     const snapshot = makePriceSnapshot({
       target,
