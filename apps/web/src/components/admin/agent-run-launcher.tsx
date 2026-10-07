@@ -16,6 +16,7 @@ export function AgentRunLauncher({ brands }: { readonly brands: readonly string[
   });
 
   return (
+    <>
     <form action={action} className="ui-form-section space-y-4">
       <div>
         <h2 className="text-lg font-semibold">Monitorar fontes da marca</h2>
@@ -97,5 +98,6 @@ export function AgentRunLauncher({ brands }: { readonly brands: readonly string[
         </div>
       ) : null}
     </form>
+    </>
   );
 }
