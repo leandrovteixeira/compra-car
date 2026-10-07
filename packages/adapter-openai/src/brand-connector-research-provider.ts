@@ -109,6 +109,7 @@ export class OpenAIBrandConnectorResearchProvider implements BrandConnectorResea
       model: string;
       prompt: string;
       transport?: (request: ResponseCreateParamsNonStreaming) => Promise<Response>;
+      onUsage?: (usage: { model: string; inputTokens: number; outputTokens: number; totalTokens: number; webSearchCount: number }) => void;
     },
   ) {
     if (!options.apiKey.trim() || !options.model.trim() || !options.prompt.trim())
@@ -147,6 +148,15 @@ export class OpenAIBrandConnectorResearchProvider implements BrandConnectorResea
     const searches = response.output.filter((o) => o.type === 'web_search_call');
     if (!searches.length || searches.some((s) => s.status !== 'completed'))
       throw new Error('CONNECTOR_RESEARCH_NO_WEB_SEARCH');
+    if (response.usage) {
+      this.options.onUsage?.({
+        model: response.model,
+        inputTokens: response.usage.input_tokens,
+        outputTokens: response.usage.output_tokens,
+        totalTokens: response.usage.total_tokens,
+        webSearchCount: searches.length,
+      });
+    }
     let data: unknown;
     try {
       data = JSON.parse(response.output_text);
