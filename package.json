@@ -26,7 +26,8 @@
     "agent:model-year:dry-run": "pnpm --filter @compra-car/agents exec tsx model-year-cli.ts",
     "agent:spec-source:dry-run": "pnpm --filter @compra-car/agents exec tsx spec-source-cli.ts",
     "agent:spec-source:replay": "pnpm --filter @compra-car/agents exec tsx document-intelligence-cli.ts",
-    "agent:spec-source:benchmark": "pnpm --filter @compra-car/agents exec tsx document-intelligence-cli.ts"
+    "agent:spec-source:benchmark": "pnpm --filter @compra-car/agents exec tsx document-intelligence-cli.ts",
+    "agent:price:dry-run": "pnpm --filter @compra-car/agents exec tsx price-cli.ts"
   },
   "devDependencies": {
     "eslint": "9.39.5",
