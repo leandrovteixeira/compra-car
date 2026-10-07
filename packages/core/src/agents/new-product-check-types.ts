@@ -16,6 +16,12 @@ export interface OfficialBrandSource extends AgentMarketScope {
   /** Explicit opt-in to a domain and its DNS subdomains; empty by default. */
   readonly allowedSubdomainRoots?: readonly string[];
   readonly searchHints: readonly string[];
+  /** Preferred official URLs already discovered by the Brand Connector. */
+  readonly sourceEntries?: readonly {
+    readonly type: string;
+    readonly url: string;
+    readonly priority: number;
+  }[];
 }
 export type OfficialEvidenceType =
   | 'TECHNICAL_SHEET'
