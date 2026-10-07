@@ -58,6 +58,18 @@ describe('Price Agent', () => {
     expect(result?.confidence).toBeGreaterThan(0.9);
   });
 
+  it('normalizes fragmented HTML before matching model, version and price', () => {
+    const snapshot = makePriceSnapshot({
+      target,
+      sourceUrl: 'https://www.jeep.com.br/compass.html',
+      sourceKind: 'OFFICIAL_MODEL_PAGE',
+      body:
+        '<div>Jeep <strong>Compass</strong></div><div>Longitude <span>T270</span></div><p>Preço público sugerido:&nbsp;<b>R$ 184.990,00</b></p>',
+    });
+    const result = extractDeterministicPrice(snapshot, target);
+    expect(result?.msrpAmount).toBe('184990.00');
+  });
+
   it('does not classify conditional trade-in language as retail bonus', () => {
     const snapshot = makePriceSnapshot({
       target,
