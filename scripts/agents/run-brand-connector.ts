@@ -104,7 +104,7 @@ export async function runBrandConnectorCli(
       options.provider === 'openai' && repository
         ? await repository.resolveBrandIdentity(options.brand, options.market)
         : null;
-    let openAiUsage: { model: string; inputTokens: number; outputTokens: number; totalTokens: number; webSearchCount: number } | null = null;
+    const openAiUsage = { current: null as null | { model: string; inputTokens: number; outputTokens: number; totalTokens: number; webSearchCount: number } };
     const research =
       dependencies.research ??
       (options.provider === 'fixture'
@@ -117,7 +117,7 @@ export async function runBrandConnectorCli(
               'utf8',
             ),
             onUsage: (usage) => {
-              openAiUsage = usage;
+              openAiUsage.current = usage;
             },
           }));
     const bundle = await new BrandConnectorAgent(research).run(
@@ -131,7 +131,7 @@ export async function runBrandConnectorCli(
       undefined,
       options.provider,
     );
-    if (options.provider === 'openai' && openAiUsage) {
+    if (options.provider === 'openai' && openAiUsage.current) {
       const { createLegacySupabaseClient } = await import('@compra-car/adapter-supabase');
       await recordAiUsage(
         createLegacySupabaseClient({
@@ -144,11 +144,11 @@ export async function runBrandConnectorCli(
           market: options.market,
           brand: options.brand,
           provider: 'openai',
-          model: openAiUsage.model,
-          inputTokens: openAiUsage.inputTokens,
-          outputTokens: openAiUsage.outputTokens,
-          totalTokens: openAiUsage.totalTokens,
-          webSearchCount: openAiUsage.webSearchCount,
+          model: openAiUsage.current.model,
+          inputTokens: openAiUsage.current.inputTokens,
+          outputTokens: openAiUsage.current.outputTokens,
+          totalTokens: openAiUsage.current.totalTokens,
+          webSearchCount: openAiUsage.current.webSearchCount,
           reason: 'BRAND_CONNECTOR_RESEARCH',
         },
         env,
