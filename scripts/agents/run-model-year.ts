@@ -12,6 +12,8 @@ import {
   connectorText,
   mapModelYearRunToPlatform,
   type CanonicalMmv,
+  type CurrentMmvDiscoverySnapshot,
+  type OfficialProductCandidate,
 } from '@compra-car/core/agents';
 import {
   OpenAIProductResearchProvider,
@@ -32,7 +34,7 @@ export function parseModelYearArguments(args: readonly string[]) {
     }
     const value = values[++index];
     if (
-      !['--brand', '--provider'].includes(name ?? '') ||
+      !['--brand', '--provider', '--parent-run-id'].includes(name ?? '') ||
       !value ||
       value.startsWith('--') ||
       options.has(name!)
@@ -42,12 +44,123 @@ export function parseModelYearArguments(args: readonly string[]) {
   }
   const brand = options.get('--brand');
   const provider = options.get('--provider');
-  if (!brand || (provider !== 'fixture' && provider !== 'openai'))
+  const parentRunId = options.get('--parent-run-id') ?? null;
+  if (
+    !brand ||
+    (provider !== 'fixture' && provider !== 'openai') ||
+    (parentRunId !== null && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(parentRunId))
+  )
     throw new Error('INVALID_AGENT_ARGUMENTS');
   return {
     scope: { country: 'BR' as const, brand: canonicalVehicleBrand(connectorText(brand, 100)) },
     provider,
     persistFindings,
+    parentRunId,
+  };
+}
+
+
+function candidateWithEvidence(
+  value: unknown,
+  evidence: readonly { sourceUrl: string; title: string | null; excerpt: string | null; sourceType: string }[],
+): OfficialProductCandidate | null {
+  if (!value || typeof value !== 'object') return null;
+  const candidate = value as Record<string, unknown>;
+  if (
+    typeof candidate.brand !== 'string' ||
+    typeof candidate.model !== 'string' ||
+    typeof candidate.taxonomy !== 'string'
+  ) return null;
+  return {
+    ...(candidate as unknown as OfficialProductCandidate),
+    evidence: evidence.map((item) => ({
+      sourceKind: 'MANUFACTURER' as const,
+      url: item.sourceUrl,
+      title: item.title,
+      excerpt: item.excerpt,
+      evidenceType: item.sourceType as OfficialProductCandidate['evidence'][number]['evidenceType'],
+    })),
+  };
+}
+
+async function discoveryFromParentRun(
+  parentRunId: string,
+  scope: { readonly country: 'BR'; readonly brand: string },
+  env: Readonly<Record<string, string | undefined>>,
+): Promise<CurrentMmvDiscoverySnapshot> {
+  const { AgentPlatformSupabaseAdapter, createLegacySupabaseClient } =
+    await import('@compra-car/adapter-supabase');
+  const platform = new AgentPlatformSupabaseAdapter(
+    createLegacySupabaseClient({
+      url: env.SUPABASE_URL!,
+      serverKey: env.SUPABASE_SERVER_KEY!,
+    }),
+  );
+  const parent = await platform.getRun(parentRunId);
+  if (!parent || parent.run.agentType !== 'MMV_DISCOVERY' || parent.run.status !== 'COMPLETED')
+    throw new Error('MODEL_YEAR_PARENT_MMV_RUN_REQUIRED');
+  if (parent.run.brand !== scope.brand || parent.run.market !== scope.country)
+    throw new Error('MODEL_YEAR_PARENT_MMV_SCOPE_MISMATCH');
+
+  const candidates: OfficialProductCandidate[] = [];
+  for (const bundle of parent.findings) {
+    const evidence = bundle.evidence.map((item) => ({
+      sourceUrl: item.sourceUrl,
+      title: item.title,
+      excerpt: item.excerpt,
+      sourceType: item.sourceType,
+    }));
+    const structured = candidateWithEvidence(bundle.finding.payload.structuredCandidate, evidence);
+    if (structured) candidates.push(structured);
+    const variants = bundle.finding.payload.resolvedVariants;
+    if (Array.isArray(variants)) {
+      for (const variant of variants) {
+        const resolved = candidateWithEvidence(variant, evidence);
+        if (resolved) candidates.push(resolved);
+      }
+    }
+  }
+
+  const deduped = [
+    ...new Map(
+      candidates.map((candidate) => [
+        [
+          candidate.brand,
+          candidate.model,
+          candidate.officialVersionLabel ?? candidate.trim ?? '',
+          candidate.productionYear ?? '',
+          candidate.modelYear ?? '',
+        ].join('\u001f'),
+        candidate,
+      ]),
+    ).values(),
+  ];
+  if (!deduped.length) throw new Error('MODEL_YEAR_PARENT_MMV_SNAPSHOT_EMPTY');
+
+  const startedAt = new Date().toISOString();
+  return {
+    schemaVersion: '20C.1',
+    runId: randomUUID(),
+    startedAt,
+    completedAt: new Date().toISOString(),
+    brand: scope.brand,
+    market: scope.country,
+    researchedCandidates: deduped.length,
+    acceptedCandidates: deduped.length,
+    modelsDiscovered: new Set(deduped.map((candidate) => candidate.model)).size,
+    variantsResolved: deduped.filter((candidate) => Boolean(candidate.officialVersionLabel ?? candidate.trim)).length,
+    observations: deduped,
+    candidates: deduped,
+    bodyModelProposals: [],
+    rejectedCandidates: [],
+    rejectedExternalSources: 0,
+    researchMetadata: {
+      provider: 'reused-mmv-run',
+      inputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
+      webSearchCount: 0,
+    },
   };
 }
 
@@ -86,9 +199,9 @@ export async function runModelYearCli(
   repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..'),
 ): Promise<number> {
   try {
-    const { scope, provider, persistFindings } = parseModelYearArguments(args);
+    const { scope, provider, persistFindings, parentRunId } = parseModelYearArguments(args);
     env = await loadAgentEnvironment(repositoryRoot, env);
-    if (provider === 'openai' && (!env.OPENAI_API_KEY?.trim() || !env.OPENAI_AGENT_MODEL?.trim()))
+    if (provider === 'openai' && !parentRunId && (!env.OPENAI_API_KEY?.trim() || !env.OPENAI_AGENT_MODEL?.trim()))
       throw new Error('OPENAI_AGENT_CONFIG_REQUIRED');
     if (
       (provider === 'openai' || persistFindings) &&
@@ -117,22 +230,26 @@ export async function runModelYearCli(
     const research =
       provider === 'fixture'
         ? new FixtureProductResearchProvider()
-        : new OpenAIProductResearchProvider({
-            apiKey: env.OPENAI_API_KEY!,
-            model: env.OPENAI_AGENT_MODEL!,
-            maxWaitMs: productResearchMaxWaitMs(env.OPENAI_AGENT_MAX_WAIT_MS),
-            prompt: await readFile(
-              resolve(repositoryRoot, 'docs/agents/prompts/new-product-check-agent-v1.md'),
-              'utf8',
-            ),
-          });
+        : parentRunId
+          ? new FixtureProductResearchProvider()
+          : new OpenAIProductResearchProvider({
+              apiKey: env.OPENAI_API_KEY!,
+              model: env.OPENAI_AGENT_MODEL!,
+              maxWaitMs: productResearchMaxWaitMs(env.OPENAI_AGENT_MAX_WAIT_MS),
+              prompt: await readFile(
+                resolve(repositoryRoot, 'docs/agents/prompts/new-product-check-agent-v1.md'),
+                'utf8',
+              ),
+            });
 
-    const runId = randomUUID();
-    log('Run: ' + runId);
-    const discovery = await new CurrentMmvDiscoveryAgent({
-      research,
-      connectorResolver,
-    }).run(scope, runId);
+    const discovery = parentRunId
+      ? await discoveryFromParentRun(parentRunId, scope, env)
+      : await new CurrentMmvDiscoveryAgent({
+          research,
+          connectorResolver,
+        }).run(scope, randomUUID());
+    log('Run: ' + discovery.runId);
+    if (parentRunId) log('Reused MMV run: ' + parentRunId + ' | OpenAI calls: 0');
 
     const { mmvs, knownYears } =
       provider === 'fixture'
@@ -161,7 +278,7 @@ export async function runModelYearCli(
           })();
 
     const result = new ModelYearAgent().run({ discovery, mmvs, knownYears });
-    const bundle = mapModelYearRunToPlatform(discovery, result, { provider });
+    const bundle = mapModelYearRunToPlatform(discovery, result, { provider: parentRunId ? 'reused-mmv-run' : provider });
 
     if (persistFindings) {
       const { AgentPlatformSupabaseAdapter, createLegacySupabaseClient } =
