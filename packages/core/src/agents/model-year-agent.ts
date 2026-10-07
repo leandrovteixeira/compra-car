@@ -24,6 +24,15 @@ function exactMmvMatches(
   candidate: OfficialProductCandidate,
   mmvs: readonly CanonicalMmv[],
 ): readonly CanonicalMmv[] {
+  if (candidate.resolvedMmvId) {
+    return mmvs.filter(
+      (mmv) =>
+        mmv.status === 'ACTIVE' &&
+        mmv.id === candidate.resolvedMmvId &&
+        vehicleBrandComparisonKey(mmv.brand) === vehicleBrandComparisonKey(candidate.brand) &&
+        key(mmv.model) === key(candidate.model),
+    );
+  }
   const version = versionLabel(candidate);
   if (!version) return [];
   return mmvs.filter(
