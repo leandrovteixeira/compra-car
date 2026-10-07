@@ -63,6 +63,7 @@ export function parseModelYearArguments(args: readonly string[]) {
 function candidateWithEvidence(
   value: unknown,
   evidence: readonly { sourceUrl: string; title: string | null; excerpt: string | null; sourceType: string }[],
+  resolvedMmvId: string | null = null,
 ): OfficialProductCandidate | null {
   if (!value || typeof value !== 'object') return null;
   const candidate = value as Record<string, unknown>;
@@ -73,6 +74,7 @@ function candidateWithEvidence(
   ) return null;
   return {
     ...(candidate as unknown as OfficialProductCandidate),
+    resolvedMmvId,
     evidence: evidence.map((item) => ({
       sourceKind: 'MANUFACTURER' as const,
       url: item.sourceUrl,
@@ -110,7 +112,21 @@ async function discoveryFromParentRun(
       excerpt: item.excerpt,
       sourceType: item.sourceType,
     }));
-    const structured = candidateWithEvidence(bundle.finding.payload.structuredCandidate, evidence);
+    const canonicalMmvs = bundle.finding.subject.canonicalMmv;
+    const resolvedMmvId =
+      bundle.finding.findingType === 'MMV_MATCHED' &&
+      Array.isArray(canonicalMmvs) &&
+      canonicalMmvs.length === 1 &&
+      canonicalMmvs[0] &&
+      typeof canonicalMmvs[0] === 'object' &&
+      typeof (canonicalMmvs[0] as { id?: unknown }).id === 'string'
+        ? (canonicalMmvs[0] as { id: string }).id
+        : null;
+    const structured = candidateWithEvidence(
+      bundle.finding.payload.structuredCandidate,
+      evidence,
+      resolvedMmvId,
+    );
     if (structured) candidates.push(structured);
     const variants = bundle.finding.payload.resolvedVariants;
     if (Array.isArray(variants)) {
