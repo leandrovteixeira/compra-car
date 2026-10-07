@@ -10,6 +10,7 @@ import type {
   ProductCatalogReader,
   ReportWriter,
   NewProductCheckResult,
+  MmvAmbiguityAdjudicator,
 } from './new-product-check-types';
 import type { CanonicalMmv } from './mmv-apply-contract';
 export { isOfficialProductCandidate } from './official-product-candidate-validation';
@@ -24,6 +25,7 @@ export class NewProductCheckAgent {
       readonly now?: () => Date;
       readonly connectorResolver?: BrandConnectorResolver;
       readonly canonicalMmvs?: () => Promise<readonly CanonicalMmv[]>;
+      readonly ambiguityAdjudicator?: MmvAmbiguityAdjudicator;
     },
   ) {}
 
@@ -66,9 +68,26 @@ export class NewProductCheckAgent {
     }
     const identities = [...byCore.values()];
     const matcher = this.dependencies.matcher ?? new ProductCandidateMatcher();
-    const matches = discovery.candidates.map((candidate) =>
-      matcher.matchIdentities(normalizedScope, candidate, identities),
-    );
+    const matches = [];
+    for (const candidate of discovery.candidates) {
+      let match = matcher.matchIdentities(normalizedScope, candidate, identities);
+      if (
+        'finding' in match &&
+        match.finding.type === 'AMBIGUOUS' &&
+        match.finding.matchedMmvIdentities.length > 0 &&
+        this.dependencies.ambiguityAdjudicator
+      ) {
+        const adjudicated = await this.dependencies.ambiguityAdjudicator.adjudicate({
+          scope: normalizedScope,
+          candidate,
+          possibleMmvs: match.finding.matchedMmvIdentities,
+        });
+        if (adjudicated) {
+          match = matcher.matchIdentities(normalizedScope, adjudicated, identities);
+        }
+      }
+      matches.push(match);
+    }
 
     const completedAt = (this.dependencies.now ?? (() => new Date()))().toISOString();
     const result: NewProductCheckResult = {
