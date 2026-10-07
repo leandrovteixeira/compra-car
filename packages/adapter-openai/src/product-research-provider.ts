@@ -34,6 +34,70 @@ export function productResearchMaxWaitMs(value: unknown): number {
   return Number.isSafeInteger(parsed) && parsed >= 60_000 && parsed <= 1_800_000 ? parsed : 600_000;
 }
 const DIRECT_SOURCE_MAX_CHARS = 60000;
+const DIRECT_SOURCE_MIN_CHARS = 2500;
+
+function hintedOfficialUrls(source: OfficialBrandSource): readonly string[] {
+  const urls: string[] = [];
+  for (const hint of source.searchHints) {
+    const matches = hint.match(/https:\/\/[^\s)]+/gu) ?? [];
+    for (const raw of matches) {
+      try {
+        const url = new URL(raw);
+        if (
+          url.protocol === 'https:' &&
+          source.allowedDomains.some(
+            (domain) => url.hostname === domain || url.hostname.endsWith('.' + domain),
+          )
+        ) urls.push(url.href);
+      } catch {
+        // Ignore malformed hints; connector validation remains authoritative.
+      }
+    }
+  }
+  return [...new Set(urls)].slice(0, 20);
+}
+
+function compactDocumentText(value: string): string {
+  return value
+    .replace(/<!--[\s\S]*?-->/gu, ' ')
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/giu, ' ')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/giu, ' ')
+    .replace(/<svg\b[^>]*>[\s\S]*?<\/svg>/giu, ' ')
+    .replace(/<[^>]+>/gu, ' ')
+    .replace(/&nbsp;/giu, ' ')
+    .replace(/&amp;/giu, '&')
+    .replace(/&#39;/giu, "'")
+    .replace(/&quot;/giu, '"')
+    .replace(/\s+/gu, ' ')
+    .trim();
+}
+
+async function fetchDirectSourceDocuments(source: OfficialBrandSource) {
+  const documents: { url: string; text: string }[] = [];
+  let remaining = DIRECT_SOURCE_MAX_CHARS;
+  for (const url of hintedOfficialUrls(source)) {
+    if (remaining < 500) break;
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        redirect: 'follow',
+        headers: { 'user-agent': 'CompraCarMMVResearch/1.0' },
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!response.ok) continue;
+      const contentType = response.headers.get('content-type') ?? '';
+      if (!/text|html|json|xml/iu.test(contentType)) continue;
+      const text = compactDocumentText(await response.text()).slice(0, remaining);
+      if (text.length < 200) continue;
+      documents.push({ url, text });
+      remaining -= text.length;
+    } catch {
+      // Direct acquisition is best-effort. Web research remains the fallback.
+    }
+  }
+  return documents;
+}
+
 const validate = new Ajv({ strict: true }).compile<{ candidates: OfficialProductCandidate[] }>(
   productResearchSchema,
 );
