@@ -27,6 +27,7 @@ import { LocalProductReportWriter, redactSecrets } from './report-writer';
 import { LocalCurrentDiscoveryReportWriter } from './current-discovery-report-writer';
 import { loadAgentEnvironment } from './agent-environment';
 import { safeAgentFailure } from './agent-diagnostics';
+import { recordAiUsage } from './ai-usage';
 
 export function parseAgentArguments(args: readonly string[]) {
   const values = args.filter((value) => value !== '--');
@@ -205,6 +206,29 @@ export async function runNewProductCheckCli(
       connectorResolver,
       canonicalMmvs,
     }).run(scope, runId);
+    if (provider === 'openai' && result.researchMetadata.model) {
+      const { createLegacySupabaseClient } = await import('@compra-car/adapter-supabase');
+      await recordAiUsage(
+        createLegacySupabaseClient({
+          url: env.SUPABASE_URL!,
+          serverKey: env.SUPABASE_SERVER_KEY!,
+        }),
+        {
+          runId,
+          agentType: 'MMV_DISCOVERY',
+          market: result.market,
+          brand: result.brand,
+          provider: result.researchMetadata.provider,
+          model: result.researchMetadata.model,
+          inputTokens: result.researchMetadata.inputTokens,
+          outputTokens: result.researchMetadata.outputTokens,
+          totalTokens: result.researchMetadata.totalTokens,
+          webSearchCount: result.researchMetadata.webSearchCount,
+          reason: 'MMV_DISCOVERY_RESEARCH',
+        },
+        env,
+      );
+    }
     log(
       'Provider: ' +
         provider +
