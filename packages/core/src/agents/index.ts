@@ -69,3 +69,8 @@ export * from './document-intelligence-scope';
 
 export * from './document-intelligence-grounding';
 export * from './document-intelligence-census';
+
+export * from './price-agent-types';
+export * from './price-source-policy';
+export * from './deterministic-price-research';
+export * from './price-agent';
