@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { safeConnectorUrl } from '@compra-car/core/agents';
 import { BrandConnectorView } from './brand-connector-view';
 import { MmvFindingReviewView } from './mmv-finding-review-view';
+import { ModelYearFindingReviewView } from './model-year-finding-review-view';
 import {
   safeAgentSourceUrl,
   type AgentFindingListItem,
@@ -345,7 +346,9 @@ export function AgentFindingDetailView({ detail }: { readonly detail: AgentFindi
       >
         Run {run.agentType} · {agentDate(run.startedAt)}
       </Link>
-      <AgentDetails title="Identidade observada" value={finding.subject} />
+      {run.agentType === 'PRODUCT_YEAR' ? null : (
+        <AgentDetails title="Identidade observada" value={finding.subject} />
+      )}
       {['NEW_BRAND_CONNECTOR', 'CONNECTOR_DRIFT'].includes(finding.findingType) ? (
         <>
           <BrandIdentityReview payload={finding.payload} subject={finding.subject} />
@@ -367,6 +370,8 @@ export function AgentFindingDetailView({ detail }: { readonly detail: AgentFindi
         </>
       ) : run.agentType === 'MMV_DISCOVERY' ? (
         <MmvFindingReviewView detail={detail} />
+      ) : run.agentType === 'PRODUCT_YEAR' ? (
+        <ModelYearFindingReviewView detail={detail} />
       ) : (
         <>
           <AgentDetails title="Ação proposta (informativa)" value={finding.proposal} />

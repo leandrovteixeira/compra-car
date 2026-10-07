@@ -1,6 +1,6 @@
 const nullableText = { type: ['string', 'null'], minLength: 1, maxLength: 200 };
 const nullableYear = { type: ['integer', 'null'], minimum: 1900, maximum: 2200 };
-const candidateProperties = {
+export const candidateProperties = {
   brand: { type: 'string', minLength: 1, maxLength: 120 },
   model: { type: 'string', minLength: 1, maxLength: 200 },
   bodyStyle: nullableText,

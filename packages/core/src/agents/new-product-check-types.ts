@@ -16,6 +16,12 @@ export interface OfficialBrandSource extends AgentMarketScope {
   /** Explicit opt-in to a domain and its DNS subdomains; empty by default. */
   readonly allowedSubdomainRoots?: readonly string[];
   readonly searchHints: readonly string[];
+  /** Preferred official URLs already discovered by the Brand Connector. */
+  readonly sourceEntries?: readonly {
+    readonly type: string;
+    readonly url: string;
+    readonly priority: number;
+  }[];
 }
 export type OfficialEvidenceType =
   | 'TECHNICAL_SHEET'
@@ -43,6 +49,8 @@ export interface OfficialYearObservation {
   readonly modelYear: number | null;
 }
 export interface OfficialProductCandidate {
+  /** Canonical MMV resolved by an upstream deterministic match; never supplied by research providers. */
+  readonly resolvedMmvId?: string | null;
   /** Collected locally from repeated observations; never an MMV constraint. */
   readonly yearObservations?: readonly OfficialYearObservation[];
   readonly brand: string;
@@ -96,6 +104,14 @@ export interface ResearchMetadata {
   readonly totalTokens?: number;
   readonly webSearchCount?: number;
 }
+export interface MmvAmbiguityAdjudicator {
+  adjudicate(input: {
+    readonly scope: AgentMarketScope;
+    readonly candidate: OfficialProductCandidate;
+    readonly possibleMmvs: readonly CatalogMmvIdentity[];
+  }): Promise<OfficialProductCandidate | null>;
+}
+
 export interface ProductResearchProvider {
   /** Discovery then resolution, in one structured response or multiple provider calls. */
   researchProducts(

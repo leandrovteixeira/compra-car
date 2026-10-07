@@ -69,6 +69,48 @@ export async function launchSourceMonitor(
   }
 }
 
+
+export async function launchForceMmv(
+  data: FormData,
+): Promise<AgentLaunchState> {
+  const { profile } = await requireRole('admin');
+
+  if (process.env.APP_ENV !== 'qa') {
+    return {
+      status: 'error',
+      message: 'Force Run bloqueado: disponível somente no QA.',
+      jobId: null,
+    };
+  }
+
+  try {
+    const brand = inputText(data, 'brand', 100);
+    const client = createPrivilegedAdminClient();
+    const { data: job, error } = await client.rpc('enqueue_mmv_discovery_job', {
+      p_brand: brand,
+      p_market_reconcile: false,
+      p_market_model: null,
+      p_created_by: profile.id,
+    });
+    if (error || !job || typeof job !== 'object')
+      throw new Error(error?.message || 'AGENT_JOB_ENQUEUE_FAILED');
+
+    const row = job as { id?: unknown };
+    return {
+      status: 'success',
+      message:
+        'Force Run MMV enfileirado no QA. Ao concluir, o Product Year roda por reuso de evidência, sem nova chamada de IA.',
+      jobId: typeof row.id === 'string' ? row.id : null,
+    };
+  } catch (error) {
+    const message =
+      error instanceof Error && error.message.includes('AGENT_JOB_ALREADY_ACTIVE')
+        ? 'Já existe um MMV ativo desta marca no QA.'
+        : 'Não foi possível enfileirar o Force Run MMV.';
+    return { status: 'error', message, jobId: null };
+  }
+}
+
 export async function loadAgentJobs(limit = 20): Promise<readonly AgentJobListItem[]> {
   await requireRole('admin');
   const client = createPrivilegedAdminClient();

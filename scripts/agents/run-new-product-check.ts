@@ -21,12 +21,14 @@ import {
 import {
   OpenAIProductResearchProvider,
   OpenAIMmvMarketLookupProvider,
+  OpenAIMmvAmbiguityAdjudicator,
   productResearchMaxWaitMs,
 } from '@compra-car/adapter-openai';
 import { LocalProductReportWriter, redactSecrets } from './report-writer';
 import { LocalCurrentDiscoveryReportWriter } from './current-discovery-report-writer';
 import { loadAgentEnvironment } from './agent-environment';
 import { safeAgentFailure } from './agent-diagnostics';
+import { recordAiUsage } from './ai-usage';
 
 export function parseAgentArguments(args: readonly string[]) {
   const values = args.filter((value) => value !== '--');
@@ -133,6 +135,22 @@ export async function runNewProductCheckCli(
               'utf8',
             ),
           });
+    const adjudicationUsage: {
+      model: string;
+      inputTokens: number;
+      outputTokens: number;
+      totalTokens: number;
+      webSearchCount: number;
+    }[] = [];
+    const ambiguityAdjudicator =
+      provider === 'openai'
+        ? new OpenAIMmvAmbiguityAdjudicator({
+            apiKey: env.OPENAI_API_KEY!,
+            model: env.OPENAI_ADJUDICATION_MODEL?.trim() || 'gpt-5.6',
+            onUsage: (usage) => adjudicationUsage.push(usage),
+          })
+        : undefined;
+
     const runId = randomUUID();
     log('Run: ' + runId);
 
@@ -204,6 +222,7 @@ export async function runNewProductCheckCli(
       reports,
       connectorResolver,
       canonicalMmvs,
+      ambiguityAdjudicator,
     }).run(scope, runId);
     log(
       'Provider: ' +
@@ -317,6 +336,61 @@ export async function runNewProductCheckCli(
       const sanitized = JSON.parse(redactSecrets(JSON.stringify(result), secrets)) as typeof result;
       await repository.persistRunBundle(
         mapMmvRunToPlatform(sanitized, { provider, marketReconciliationByModel }),
+      );
+      if (provider === 'openai' && result.researchMetadata.model) {
+        const { createLegacySupabaseClient } = await import('@compra-car/adapter-supabase');
+        await recordAiUsage(
+          createLegacySupabaseClient({
+            url: env.SUPABASE_URL!,
+            serverKey: env.SUPABASE_SERVER_KEY!,
+          }),
+          {
+            runId,
+            agentType: 'MMV_DISCOVERY',
+            market: result.market,
+            brand: result.brand,
+            provider: result.researchMetadata.provider,
+            model: result.researchMetadata.model,
+            inputTokens: result.researchMetadata.inputTokens,
+            outputTokens: result.researchMetadata.outputTokens,
+            totalTokens: result.researchMetadata.totalTokens,
+            webSearchCount: result.researchMetadata.webSearchCount,
+            reason: 'MMV_DISCOVERY_RESEARCH',
+          },
+          env,
+        );
+      }
+      if (provider === 'openai' && adjudicationUsage.length) {
+        const { createLegacySupabaseClient } = await import('@compra-car/adapter-supabase');
+        const usageClient = createLegacySupabaseClient({
+          url: env.SUPABASE_URL!,
+          serverKey: env.SUPABASE_SERVER_KEY!,
+        });
+        for (const usage of adjudicationUsage) {
+          await recordAiUsage(
+            usageClient,
+            {
+              runId,
+              agentType: 'MMV_DISCOVERY',
+              market: result.market,
+              brand: result.brand,
+              provider: 'openai',
+              model: usage.model,
+              inputTokens: usage.inputTokens,
+              outputTokens: usage.outputTokens,
+              totalTokens: usage.totalTokens,
+              webSearchCount: usage.webSearchCount,
+              reason: 'MMV_AMBIGUITY_ADJUDICATION',
+            },
+            env,
+          );
+        }
+      }
+      log(
+        'Ambiguity adjudications: ' +
+          adjudicationUsage.length +
+          ' | escalated model: ' +
+          (env.OPENAI_ADJUDICATION_MODEL?.trim() || 'gpt-5.6'),
       );
       log('Operational findings persisted. Catalog unchanged.');
     }

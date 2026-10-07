@@ -2,6 +2,7 @@ import { resolve } from 'node:path';
 import { createLegacySupabaseClient } from '@compra-car/adapter-supabase';
 import { runNewProductCheckCli } from './run-new-product-check';
 import { runBrandConnectorCli } from './run-brand-connector';
+import { runModelYearCli } from './run-model-year';
 import { monitorBrandSources } from './source-monitor';
 
 type JobRow = {
@@ -17,6 +18,7 @@ type JobRow = {
     marketReconcile?: boolean;
     marketModel?: string | null;
     mode?: 'discover' | 'health-check';
+    parentRunId?: string;
   };
 };
 
@@ -90,6 +92,20 @@ async function execute(job: JobRow) {
       log,
       repositoryRoot,
     );
+  } else if (job.job_type === 'PRODUCT_YEAR') {
+    code = await runModelYearCli(
+      [
+        '--brand',
+        job.brand,
+        '--provider',
+        'openai',
+        '--persist-findings',
+        ...(job.input.parentRunId ? ['--parent-run-id', job.input.parentRunId] : []),
+      ],
+      env,
+      log,
+      repositoryRoot,
+    );
   } else if (job.job_type === 'SOURCE_MONITOR') {
     const result = await monitorBrandSources(client, job.brand, job.market);
     console.log('[source-monitor]', job.id, JSON.stringify(result));
@@ -137,12 +153,24 @@ async function execute(job: JobRow) {
       logs.find(
         (line) =>
           line.startsWith('NEW_PRODUCT_CHECK_FAILED:') ||
-          line.startsWith('BRAND_CONNECTOR_FAILED:'),
+          line.startsWith('BRAND_CONNECTOR_FAILED:') ||
+          line.startsWith('Model Year run failed:'),
       ) ?? 'AGENT_JOB_EXECUTION_FAILED',
     );
     return;
   }
   await complete(job.id, runId);
+
+  if (job.job_type === 'MMV_DISCOVERY') {
+    const { error } = await client.rpc('enqueue_product_year_job', {
+      p_brand: job.brand,
+      p_created_by: job.created_by,
+      p_parent_run_id: runId,
+    });
+    if (error) {
+      console.error('[agent-worker] could not enqueue PRODUCT_YEAR', job.id, error);
+    }
+  }
 }
 
 console.log('[agent-worker] started');

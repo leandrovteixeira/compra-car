@@ -46,3 +46,8 @@ export * from './mmv-apply-contract';
 export * from './mmv-market-reconciliation';
 export * from './vehicle-brand-normalization';
 export * from './official-product-candidate-normalization';
+
+export * from './model-year-contract';
+export * from './model-year-agent';
+export * from './model-year-apply-contract';
+export * from './model-year-platform-mapper';
