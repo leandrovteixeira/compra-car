@@ -7,7 +7,6 @@ import {
   connectorEntryPriceKind,
   makePriceSnapshot,
   type PriceSourceKind,
-  type PriceTarget,
 } from '@compra-car/core/agents';
 import type { AgentPlatformRepository } from '@compra-car/core/agent-platform';
 import {
