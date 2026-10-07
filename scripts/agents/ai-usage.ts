@@ -8,14 +8,20 @@ function nonNegativeNumber(value: string | undefined): number | null {
 
 export function estimateAiCostUsd(
   usage: {
+    readonly model?: string;
     readonly inputTokens?: number;
     readonly outputTokens?: number;
     readonly webSearchCount?: number;
   },
   env: Readonly<Record<string, string | undefined>>,
 ): { readonly cost: number; readonly priced: boolean } {
-  const inputRate = nonNegativeNumber(env.OPENAI_INPUT_USD_PER_1M);
-  const outputRate = nonNegativeNumber(env.OPENAI_OUTPUT_USD_PER_1M);
+  const isSol = usage.model === (env.OPENAI_ADJUDICATION_MODEL?.trim() || 'gpt-5.6');
+  const inputRate = nonNegativeNumber(
+    isSol ? env.OPENAI_SOL_INPUT_USD_PER_1M : env.OPENAI_INPUT_USD_PER_1M,
+  );
+  const outputRate = nonNegativeNumber(
+    isSol ? env.OPENAI_SOL_OUTPUT_USD_PER_1M : env.OPENAI_OUTPUT_USD_PER_1M,
+  );
   const searchRate = nonNegativeNumber(env.OPENAI_WEB_SEARCH_USD_PER_1K);
   const priced = inputRate !== null && outputRate !== null && searchRate !== null;
   if (!priced) return { cost: 0, priced: false };
@@ -44,7 +50,7 @@ export async function recordAiUsage(
   },
   env: Readonly<Record<string, string | undefined>>,
 ): Promise<void> {
-  const estimate = estimateAiCostUsd(input, env);
+  const estimate = estimateAiCostUsd({ ...input, model: input.model }, env);
   const { error } = await client.from('agent_ai_usage_events').insert({
     run_id: input.runId,
     agent_type: input.agentType,
