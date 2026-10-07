@@ -49,6 +49,8 @@ export interface OfficialYearObservation {
   readonly modelYear: number | null;
 }
 export interface OfficialProductCandidate {
+  /** Canonical MMV resolved by an upstream deterministic match; never supplied by research providers. */
+  readonly resolvedMmvId?: string | null;
   /** Collected locally from repeated observations; never an MMV constraint. */
   readonly yearObservations?: readonly OfficialYearObservation[];
   readonly brand: string;
