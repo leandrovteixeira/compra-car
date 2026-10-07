@@ -66,6 +66,7 @@ export interface PriceResearchResult {
     documentIntelligenceCalls: number;
     targetMisses: number;
     pricePatternMisses: number;
+    modelSourceSkips: number;
     uniqueNetworkUrls: number;
     solEscalations: number;
     estimatedCostUsd: number;
