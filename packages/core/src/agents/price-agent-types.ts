@@ -64,6 +64,9 @@ export interface PriceResearchResult {
     networkFetches: number;
     deterministicExtractions: number;
     documentIntelligenceCalls: number;
+    targetMisses: number;
+    pricePatternMisses: number;
+    uniqueNetworkUrls: number;
     solEscalations: number;
     estimatedCostUsd: number;
   }>;
