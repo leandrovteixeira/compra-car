@@ -72,5 +72,6 @@ export * from './document-intelligence-census';
 
 export * from './price-agent-types';
 export * from './price-source-policy';
+export * from './price-target-binding';
 export * from './deterministic-price-research';
 export * from './price-agent';
