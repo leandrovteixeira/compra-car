@@ -224,29 +224,6 @@ export async function runNewProductCheckCli(
       canonicalMmvs,
       ambiguityAdjudicator,
     }).run(scope, runId);
-    if (provider === 'openai' && result.researchMetadata.model) {
-      const { createLegacySupabaseClient } = await import('@compra-car/adapter-supabase');
-      await recordAiUsage(
-        createLegacySupabaseClient({
-          url: env.SUPABASE_URL!,
-          serverKey: env.SUPABASE_SERVER_KEY!,
-        }),
-        {
-          runId,
-          agentType: 'MMV_DISCOVERY',
-          market: result.market,
-          brand: result.brand,
-          provider: result.researchMetadata.provider,
-          model: result.researchMetadata.model,
-          inputTokens: result.researchMetadata.inputTokens,
-          outputTokens: result.researchMetadata.outputTokens,
-          totalTokens: result.researchMetadata.totalTokens,
-          webSearchCount: result.researchMetadata.webSearchCount,
-          reason: 'MMV_DISCOVERY_RESEARCH',
-        },
-        env,
-      );
-    }
     log(
       'Provider: ' +
         provider +
@@ -360,6 +337,29 @@ export async function runNewProductCheckCli(
       await repository.persistRunBundle(
         mapMmvRunToPlatform(sanitized, { provider, marketReconciliationByModel }),
       );
+      if (provider === 'openai' && result.researchMetadata.model) {
+        const { createLegacySupabaseClient } = await import('@compra-car/adapter-supabase');
+        await recordAiUsage(
+          createLegacySupabaseClient({
+            url: env.SUPABASE_URL!,
+            serverKey: env.SUPABASE_SERVER_KEY!,
+          }),
+          {
+            runId,
+            agentType: 'MMV_DISCOVERY',
+            market: result.market,
+            brand: result.brand,
+            provider: result.researchMetadata.provider,
+            model: result.researchMetadata.model,
+            inputTokens: result.researchMetadata.inputTokens,
+            outputTokens: result.researchMetadata.outputTokens,
+            totalTokens: result.researchMetadata.totalTokens,
+            webSearchCount: result.researchMetadata.webSearchCount,
+            reason: 'MMV_DISCOVERY_RESEARCH',
+          },
+          env,
+        );
+      }
       if (provider === 'openai' && adjudicationUsage.length) {
         const { createLegacySupabaseClient } = await import('@compra-car/adapter-supabase');
         const usageClient = createLegacySupabaseClient({
