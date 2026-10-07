@@ -253,7 +253,7 @@ export class DeterministicFirstPriceResearch implements PriceResearchProvider {
       observations,
       snapshots: [...this.snapshots.values()],
       metrics: {
-        sourcesConsidered: this.snapshots.size,
+        sourcesConsidered: new Set([...this.snapshots.values()].map((source) => source.finalUrl)).size,
         cacheHits,
         networkFetches,
         deterministicExtractions,
