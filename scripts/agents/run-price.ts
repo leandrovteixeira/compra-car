@@ -182,7 +182,13 @@ export async function runPriceCli(
     );
 
     if (telemetry) {
-      await telemetry.persistMappings('BR', brand, result.targets, result.research.mappings ?? []);
+      await telemetry.persistMappings(
+        'BR',
+        brand,
+        result.targets,
+        result.research.mappings ?? [],
+        result.research.snapshots,
+      );
       await telemetry.persistUsage({
         runId: result.bundle.run.id,
         market: 'BR',
