@@ -147,7 +147,7 @@ export class PriceAgentSupabaseTelemetry {
     if (!input.usage.length) return;
     const { error } = await this.client.from('agent_ai_usage_events').insert(
       input.usage.map((item) => ({
-        run_id: input.runId,
+        run_id: null,
         intended_run_id: input.runId,
         agent_type: 'PRICE_INTELLIGENCE',
         market: input.market,
