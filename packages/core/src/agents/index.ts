@@ -75,3 +75,5 @@ export * from './price-source-policy';
 export * from './price-target-binding';
 export * from './deterministic-price-research';
 export * from './price-agent';
+
+export * from './price-model-year-selection';
