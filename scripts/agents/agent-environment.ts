@@ -25,8 +25,26 @@ export async function loadAgentEnvironment(
   } catch {
     /* Configuration is checked by each CLI before constructing real providers/clients. */
   }
-  return {
-    ...defaults,
-    ...Object.fromEntries(Object.entries(environment).filter(([, value]) => value !== undefined)),
-  };
+  const ambient = Object.fromEntries(
+    Object.entries(environment).filter(([, value]) => value !== undefined),
+  );
+  const authoritativeKeys = new Set([
+    'APP_ENV',
+    'APP_NAME',
+    'NEXT_PUBLIC_APP_ENV',
+    'NEXT_PUBLIC_APP_NAME',
+    'NEXT_PUBLIC_SUPABASE_URL',
+    'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
+    'SUPABASE_URL',
+    'SUPABASE_SERVER_KEY',
+    'OPENAI_API_KEY',
+    'OPENAI_AGENT_MODEL',
+    'OPENAI_IMPORT_MODEL',
+  ]);
+
+  const merged: Record<string, string | undefined> = { ...ambient, ...defaults };
+  for (const [key, value] of Object.entries(ambient)) {
+    if (!authoritativeKeys.has(key)) merged[key] = value;
+  }
+  return merged;
 }
