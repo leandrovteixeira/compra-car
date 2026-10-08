@@ -37,3 +37,13 @@ Next: instrument `@compra-car/adapter-openai` at the actual request boundary wit
 
 ### Provider-level usage extension
 The OpenAI Brand Connector research provider exposes optional `onUsage` with actual completed-response input/output/cached token counters, LLM response count and web-search output count. The CLI merges these into the separate telemetry artifact if a real OpenAI provider supplies them. HTTP request count and cache ratios still need transport instrumentation. USD cost intentionally stays `null` until pricing is versioned. No live provider invocation or CI run was performed in this session; tests are authored but remain unverified.
+
+## Execution checkpoint — 2026-10-08
+
+Code review via connected GitHub is complete for the baseline evaluator and passive Brand Connector telemetry. Added injected-transport regression tests for actual Responses API usage and verified the CLI writes a separate telemetry artifact.
+
+**Validation status: NOT EXECUTED.** This environment could not resolve github.com for a local clone; consequently pnpm install, typecheck, lint, Vitest and benchmark execution were not possible. Connector file access and commits worked. No claim of green CI or real cost savings is made.
+
+**Observability limitations:** OpenAI response usage captures token totals only for a completed API response. It is not a count of all HTTP requests, retries, or external website fetches. Cache hits/misses and USD cost remain unknown. The existing offline fixture is Volkswagen-centered; Kia needs a separate representative recorded fixture before making a Kia baseline. A cold/warm comparison without source-level cache semantics would not prove savings.
+
+**Next gates:** (1) run `pnpm --filter @compra-car/core test` and `pnpm --filter @compra-car/adapter-openai test`; (2) lint/typecheck; (3) create Kia + VW recorded, sanitized input snapshots; (4) run fixture baseline/replay using identical inputs and evaluate semantic equivalence; (5) add transport/cache counters from actual request boundaries before claiming cache improvements. Do not run paid tests until the operator has set a spending limit.
