@@ -72,6 +72,26 @@ describe('Shared native agent environment', () => {
       MULTILINE: 'first\nsecond',
     });
   });
+  it('active env file wins for project credentials even when ambient process vars are stale', async () => {
+    const root = await temporaryRoot();
+    await environmentFile(
+      root,
+      'SUPABASE_URL=https://staging.example.invalid\nSUPABASE_SERVER_KEY=file-server\nOPENAI_API_KEY=file-openai\n',
+    );
+    const env = await loadAgentEnvironment(root, {
+      SUPABASE_URL: 'https://wrong-project.example.invalid',
+      SUPABASE_SERVER_KEY: 'wrong-server',
+      OPENAI_API_KEY: 'wrong-openai',
+      PRICE_AGENT_HARD_COST_CAP_USD: '0.75',
+    });
+    expect(env).toMatchObject({
+      SUPABASE_URL: 'https://staging.example.invalid',
+      SUPABASE_SERVER_KEY: 'file-server',
+      OPENAI_API_KEY: 'file-openai',
+      PRICE_AGENT_HARD_COST_CAP_USD: '0.75',
+    });
+  });
+
   it('existing process.env values, including empty strings, win without process mutation', async () => {
     const root = await temporaryRoot();
     await environmentFile(
