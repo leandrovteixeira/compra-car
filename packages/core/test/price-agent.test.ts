@@ -5,6 +5,7 @@ import {
   makePriceSnapshot,
   mapPriceRunToPlatform,
   priceSourceAppliesToModel,
+  priceSourceFingerprint,
   priceTargetBinding,
   priceVersionAliases,
   type PriceTarget,
@@ -167,6 +168,16 @@ describe('Price Agent', () => {
     const result = extractDeterministicPrice(snapshot, target);
     expect(result?.msrpAmount).toBe('184990.00');
     expect(result?.retailBonusAmount).toBeNull();
+  });
+
+  it('keeps source fingerprint stable across volatile telemetry noise', () => {
+    const a =
+      '<script>window.NREUM={requestId:"abc",timestamp:111}</script>' +
+      '<main>Jeep Commander Overland T270 MHEV MY2027</main>';
+    const b =
+      '<script>window.NREUM={requestId:"xyz",timestamp:999}</script>' +
+      '<main>Jeep Commander Overland T270 MHEV MY2027</main>';
+    expect(priceSourceFingerprint(a)).toBe(priceSourceFingerprint(b));
   });
 
   it('reuses a cached AI reconciliation when the official source fingerprint is unchanged', async () => {
