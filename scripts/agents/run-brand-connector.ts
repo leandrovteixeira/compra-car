@@ -100,10 +100,10 @@ export async function runBrandConnectorCli(
             )
           : undefined
         : ((await repository!.getActiveConnector(options.brand, options.market)) ?? undefined);
-    let observedApiUsage: {
+    const apiUsage: { value: {
       llmCalls: number; webSearches: number; inputTokens: number | null;
       outputTokens: number | null; cachedInputTokens: number | null;
-    } | null = null;
+    } | null } = { value: null };
     const research =
       dependencies.research ??
       (options.provider === 'fixture'
@@ -111,7 +111,7 @@ export async function runBrandConnectorCli(
         : new OpenAIBrandConnectorResearchProvider({
             apiKey: env.OPENAI_API_KEY ?? '',
             model: env.OPENAI_AGENT_MODEL ?? '',
-            onUsage: (usage) => { observedApiUsage = usage; },
+            onUsage: (usage) => { apiUsage.value = usage; },
             prompt: await readFile(
               resolve(root, 'docs/agents/prompts/brand-connector-agent-v1.md'),
               'utf8',
@@ -171,7 +171,7 @@ export async function runBrandConnectorCli(
         resolve(directory, bundle.run.id + '.telemetry.json'),
         JSON.stringify({ runId: bundle.run.id, brand: clean.run.brand, market: clean.run.market,
           mode: options.mode, provider: options.provider, ...metrics,
-          ...(observedApiUsage ? { ...observedApiUsage } : {}) }, null, 2) + '\n',
+          ...(apiUsage.value ?? {}) }, null, 2) + '\n',
       );
     }
     if (options.persistFindings) await persistence!.persistRunBundle(clean);
