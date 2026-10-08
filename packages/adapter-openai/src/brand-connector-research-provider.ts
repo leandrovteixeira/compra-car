@@ -53,6 +53,8 @@ export class OpenAIBrandConnectorResearchProvider implements BrandConnectorResea
       model: string;
       prompt: string;
       transport?: (request: ResponseCreateParamsNonStreaming) => Promise<Response>;
+      onUsage?: (usage: { llmCalls: number; webSearches: number; inputTokens: number | null;
+        outputTokens: number | null; cachedInputTokens: number | null }) => void;
     },
   ) {
     if (!options.apiKey.trim() || !options.model.trim() || !options.prompt.trim())
@@ -89,6 +91,16 @@ export class OpenAIBrandConnectorResearchProvider implements BrandConnectorResea
     }
     if (response.status !== 'completed') throw new Error('CONNECTOR_RESEARCH_INCOMPLETE');
     const searches = response.output.filter((o) => o.type === 'web_search_call');
+    // Counts come from the actual response, not an estimated token formula.
+    try {
+      this.options.onUsage?.({
+        llmCalls: 1,
+        webSearches: searches.length,
+        inputTokens: response.usage?.input_tokens ?? null,
+        outputTokens: response.usage?.output_tokens ?? null,
+        cachedInputTokens: response.usage?.input_tokens_details?.cached_tokens ?? null,
+      });
+    } catch { /* Observability must never affect research. */ }
     if (!searches.length || searches.some((s) => s.status !== 'completed'))
       throw new Error('CONNECTOR_RESEARCH_NO_WEB_SEARCH');
     let data: unknown;
