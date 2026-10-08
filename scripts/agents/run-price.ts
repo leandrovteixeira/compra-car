@@ -22,7 +22,11 @@ import { redactSecrets } from './report-writer';
 function safePriceFailure(error: unknown): string {
   if (!(error instanceof Error)) return 'PRICE_AGENT_FAILED';
   const message = error.message.replace(/[\r\n\t]/gu, ' ').slice(0, 1200);
-  if (/^(?:CONNECTOR_READ_FAILED|SUPABASE_AGENT_CONFIG_REQUIRED|BRAND_CONNECTOR_REQUIRED|PRICE_[A-Z_]+)(?::|$)/u.test(message))
+  if (
+    /^(?:CONNECTOR_READ_FAILED|SUPABASE_AGENT_CONFIG_REQUIRED|BRAND_CONNECTOR_REQUIRED|PRICE_[A-Z_]+|INVALID_AGENT_ARGUMENTS)(?::|$)/u.test(
+      message,
+    )
+  )
     return 'PRICE_AGENT_FAILED: ' + message;
   return 'PRICE_AGENT_FAILED';
 }
@@ -61,9 +65,7 @@ function priceBudget(raw: string | undefined): number {
   return value;
 }
 
-async function operationalResearch(
-  env: Readonly<Record<string, string | undefined>>,
-) {
+async function operationalResearch(env: Readonly<Record<string, string | undefined>>) {
   const requestCache = new Map<string, Promise<{ body: string; finalUrl: string } | null>>();
   const reconciliation = env.OPENAI_API_KEY?.trim()
     ? new (await import('@compra-car/adapter-openai')).OpenAIPriceReconciliationProvider({
@@ -73,6 +75,7 @@ async function operationalResearch(
         maxOutputTokens: 1800,
       })
     : undefined;
+
   return new DeterministicFirstPriceResearch({
     reconciliation,
     hardCostCapUsd: priceBudget(env.PRICE_AGENT_HARD_COST_CAP_USD),
@@ -81,6 +84,7 @@ async function operationalResearch(
       for (const entry of [...connector.sourceEntries].sort((a, b) => a.priority - b.priority)) {
         const sourceKind = connectorEntryPriceKind(entry) ?? kindForEntry(entry.type);
         if (!sourceKind) continue;
+
         let pending = requestCache.get(entry.url);
         if (!pending) {
           pending = (async () => {
@@ -101,6 +105,7 @@ async function operationalResearch(
           })();
           requestCache.set(entry.url, pending);
         }
+
         const loaded = await pending;
         if (!loaded) continue;
         out.push(
@@ -126,42 +131,32 @@ export async function runPriceCli(
     agent?: PriceAgent;
     persistence?: Pick<AgentPlatformRepository, 'persistRunBundle'>;
   } = {},
-) {
+): Promise<number> {
   try {
     const { brand, persistFindings } = parse(args);
     env = await loadAgentEnvironment(root, env);
-    let agent = dependencies.agent,
-      persistence = dependencies.persistence;
+
+    let agent = dependencies.agent;
+    let persistence = dependencies.persistence;
+    let telemetry: PriceAgentSupabaseTelemetry | undefined;
 
     if (!agent || (persistFindings && !persistence)) {
       if (!env.SUPABASE_URL?.trim() || !env.SUPABASE_SERVER_KEY?.trim())
         throw new Error('SUPABASE_AGENT_CONFIG_REQUIRED');
+
       const client = createLegacySupabaseClient({
         url: env.SUPABASE_URL,
         serverKey: env.SUPABASE_SERVER_KEY,
       });
       const connectors = new BrandConnectorSupabaseAdapter(client);
       persistence ??= new AgentPlatformSupabaseAdapter(client);
-      const telemetry = new PriceAgentSupabaseTelemetry(client);
+      telemetry = new PriceAgentSupabaseTelemetry(client);
+
       agent ??= new PriceAgent({
         catalog: new PriceAgentSupabaseCatalogReader(client),
         connector: connectors,
         research: await operationalResearch(env),
       });
-      const original = agent;
-      agent = {
-        run: async (...runArgs: Parameters<PriceAgent['run']>) => {
-          const result = await original.run(...runArgs);
-          await telemetry.persistMappings('BR', brand, result.targets, result.research.mappings ?? []);
-          await telemetry.persistUsage({
-            runId: result.bundle.run.id,
-            market: 'BR',
-            brand,
-            usage: result.research.usage ?? [],
-          });
-          return result;
-        },
-      } as PriceAgent;
     }
 
     const result = await agent.run(
@@ -169,6 +164,17 @@ export async function runPriceCli(
       'BR',
       env.OPENAI_API_KEY?.trim() ? 'hybrid' : 'deterministic',
     );
+
+    if (telemetry) {
+      await telemetry.persistMappings('BR', brand, result.targets, result.research.mappings ?? []);
+      await telemetry.persistUsage({
+        runId: result.bundle.run.id,
+        market: 'BR',
+        brand,
+        usage: result.research.usage ?? [],
+      });
+    }
+
     const clean = JSON.parse(
       redactSecrets(JSON.stringify(result), [
         env.SUPABASE_SERVER_KEY ?? '',
@@ -190,6 +196,28 @@ export async function runPriceCli(
         'Run: ' + clean.bundle.run.id,
         'Brand: ' + brand,
         ...Object.entries(clean.bundle.run.summary).map(([key, value]) => key + ': ' + value),
+        ...(clean.research.usage?.length
+          ? [
+              '',
+              'AI usage:',
+              ...clean.research.usage.map(
+                (item) =>
+                  item.model +
+                  ': input=' +
+                  item.inputTokens +
+                  ' cached=' +
+                  item.cachedInputTokens +
+                  ' output=' +
+                  item.outputTokens +
+                  ' reasoning=' +
+                  item.reasoningTokens +
+                  ' web=' +
+                  item.webSearchCount +
+                  ' cost=$' +
+                  item.estimatedCostUsd.toFixed(6),
+              ),
+            ]
+          : []),
         ...(clean.research.diagnostics?.length
           ? [
               '',
@@ -205,34 +233,6 @@ export async function runPriceCli(
                   item.sample.replace(/[\r\n]+/gu, ' ').slice(0, 900),
               ),
             ]
-          : []),
-        ...(clean.research.usage?.length
-          ? clean.research.usage.map(
-              (item) =>
-                'AI ' +
-                item.model +
-                ': input=' +
-                item.inputTokens +
-                ' cached=' +
-                item.cachedInputTokens +
-                ' output=' +
-                item.outputTokens +
-                ' reasoning=' +
-                item.reasoningTokens +
-                ' web=' +
-                item.webSearchCount +
-                ' cost=
-      ].join('\n'),
-    );
-    return 0;
-  } catch (error) {
-    log(safePriceFailure(error));
-    return 1;
-  }
-}
- +
-                item.estimatedCostUsd.toFixed(6),
-            )
           : []),
         persistFindings
           ? 'Findings persisted for review. Canonical pricing unchanged.'
