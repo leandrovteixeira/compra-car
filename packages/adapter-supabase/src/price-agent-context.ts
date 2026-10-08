@@ -30,6 +30,13 @@ type PriceAliasRow = {
   confidence: string | number;
 };
 
+type KnownPriceReconciliation = {
+  observedLabel: string;
+  sourceUrl: string;
+  sourceFingerprint: string | null;
+  confidence: number;
+};
+
 export class PriceAgentSupabaseCatalogReader implements PriceCatalogReader {
   constructor(private readonly client: SupabaseClient) {}
 
@@ -65,7 +72,7 @@ export class PriceAgentSupabaseCatalogReader implements PriceCatalogReader {
     if (aliasesError) throw new Error('PRICE_ALIAS_CACHE_READ_FAILED');
 
     const aliases = new Map<number, string[]>();
-    const reconciliations = new Map<number, PriceTarget['knownPriceReconciliations'] extends readonly (infer T)[] ? T[] : never>();
+    const reconciliations = new Map<number, KnownPriceReconciliation[]>();
     for (const row of (aliasesData ?? []) as PriceAliasRow[]) {
       const confidence = Number(row.confidence);
       if (confidence < 0.8) continue;
