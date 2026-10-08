@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   DeterministicFirstPriceResearch,
+  PlatformPriceModelYearSelectionReader,
   PriceAgent,
   connectorEntryPriceKind,
   makePriceSnapshot,
@@ -236,7 +237,10 @@ export async function runPriceCli(
       telemetry = new PriceAgentSupabaseTelemetry(client);
 
       agent ??= new PriceAgent({
-        catalog: new PriceAgentSupabaseCatalogReader(client),
+        catalog: new PriceAgentSupabaseCatalogReader(
+          client,
+          new PlatformPriceModelYearSelectionReader(persistence),
+        ),
         connector: connectors,
         research: await operationalResearch(env),
       });
