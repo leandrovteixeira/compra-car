@@ -17,7 +17,14 @@ import {
 import { BrandConnectorSupabaseAdapter } from '@compra-car/adapter-supabase/brand-connectors';
 import { loadAgentEnvironment } from './agent-environment';
 import { redactSecrets } from './report-writer';
-import { safeAgentFailure } from './agent-diagnostics';
+
+function safePriceFailure(error: unknown): string {
+  if (!(error instanceof Error)) return 'PRICE_AGENT_FAILED';
+  const message = error.message.replace(/[\r\n\t]/gu, ' ').slice(0, 1200);
+  if (/^(?:CONNECTOR_READ_FAILED|SUPABASE_AGENT_CONFIG_REQUIRED|BRAND_CONNECTOR_REQUIRED|PRICE_[A-Z_]+)(?::|$)/u.test(message))
+    return 'PRICE_AGENT_FAILED: ' + message;
+  return 'PRICE_AGENT_FAILED';
+}
 
 function parse(args: readonly string[]) {
   const values = args[0] === '--' ? args.slice(1) : [...args];
@@ -151,7 +158,7 @@ export async function runPriceCli(
     );
     return 0;
   } catch (error) {
-    log(safeAgentFailure('PRICE_AGENT_FAILED', error));
+    log(safePriceFailure(error));
     return 1;
   }
 }
