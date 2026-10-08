@@ -95,6 +95,18 @@ export function extractDeterministicPrice(
       }
     }
 
+    if (!msrpAmount && !isConditionalCommercialText(part)) {
+      const rawPrice = part.match(/R\$\s*[0-9]{1,3}(?:\.[0-9]{3})*(?:,[0-9]{2})?/iu);
+      if (rawPrice) {
+        const amount = money(rawPrice[0]);
+        if (amount) {
+          msrpAmount = amount;
+          excerpt ||= part.slice(0, 900);
+          confidence = Math.max(confidence, 0.82);
+        }
+      }
+    }
+
     const dePor = part.match(
       /de\s*(R\$\s*[0-9.]+(?:,[0-9]{2})?)\s+por\s*(R\$\s*[0-9.]+(?:,[0-9]{2})?)/iu,
     );
