@@ -169,6 +169,59 @@ describe('Price Agent', () => {
     expect(result?.retailBonusAmount).toBeNull();
   });
 
+  it('reuses a cached AI reconciliation when the official source fingerprint is unchanged', async () => {
+    const baseTarget: PriceTarget = {
+      ...target,
+      currentPrice: {
+        id: '901',
+        money: { amount: '219990.00', currencyCode: 'BRL' },
+        startsOn: '2026-10-01',
+        status: 'published',
+      },
+      knownPriceAliases: ['Commander Overland T270 MHEV'],
+      model: 'Commander',
+      version: 'Overland 1.3 TGDI AT MHEV',
+      modelYear: 2027,
+    };
+    const snapshot = makePriceSnapshot({
+      target: baseTarget,
+      sourceUrl: 'https://www.jeep.com.br/commander/monte.html',
+      sourceKind: 'OFFICIAL_CONFIGURATOR',
+      body: '<html><body>Jeep Commander Overland T270 MHEV</body></html>',
+    });
+    const cachedTarget: PriceTarget = {
+      ...baseTarget,
+      knownPriceReconciliations: [
+        {
+          observedLabel: 'COMMANDER OVERLAND T270 MHEV',
+          sourceUrl: 'https://www.jeep.com.br/commander/monte.html?mvs=6711AJ1&year=2027',
+          sourceFingerprint: snapshot.contentHash,
+          confidence: 0.99,
+        },
+      ],
+    };
+    const reconciliation = {
+      reconcile: vi.fn(async () => ({ observations: [], mappings: [], usage: [] })),
+    };
+    const research = new DeterministicFirstPriceResearch({
+      fetch: async () => [
+        makePriceSnapshot({
+          target: cachedTarget,
+          sourceUrl: snapshot.finalUrl,
+          sourceKind: snapshot.sourceKind,
+          body: snapshot.body,
+        }),
+      ],
+      reconciliation,
+    });
+    const result = await research.researchPrices([cachedTarget], connector);
+    expect(result.observations).toHaveLength(1);
+    expect(result.observations[0]?.msrpAmount).toBe('219990.00');
+    expect(result.metrics.cacheHits).toBe(1);
+    expect(result.metrics.llmCalls ?? 0).toBe(0);
+    expect(reconciliation.reconcile).not.toHaveBeenCalled();
+  });
+
   it('reuses an upstream source snapshot before network or document intelligence', async () => {
     const cached = makePriceSnapshot({
       target,
