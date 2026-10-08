@@ -12,6 +12,7 @@ import type { AgentPlatformRepository } from '@compra-car/core/agent-platform';
 import {
   AgentPlatformSupabaseAdapter,
   PriceAgentSupabaseCatalogReader,
+  PriceAgentSupabaseTelemetry,
   createLegacySupabaseClient,
 } from '@compra-car/adapter-supabase';
 import { BrandConnectorSupabaseAdapter } from '@compra-car/adapter-supabase/brand-connectors';
@@ -53,9 +54,28 @@ function kindForEntry(type: string): PriceSourceKind | null {
   return null;
 }
 
-function operationalResearch() {
+function priceBudget(raw: string | undefined): number {
+  if (raw === undefined) return 1;
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value <= 0 || value > 10) throw new Error('INVALID_AGENT_ARGUMENTS');
+  return value;
+}
+
+async function operationalResearch(
+  env: Readonly<Record<string, string | undefined>>,
+) {
   const requestCache = new Map<string, Promise<{ body: string; finalUrl: string } | null>>();
+  const reconciliation = env.OPENAI_API_KEY?.trim()
+    ? new (await import('@compra-car/adapter-openai')).OpenAIPriceReconciliationProvider({
+        apiKey: env.OPENAI_API_KEY,
+        models: ['gpt-5.6-luna', 'gpt-5.6-terra', 'gpt-5.6-sol'],
+        maxToolCalls: 2,
+        maxOutputTokens: 1800,
+      })
+    : undefined;
   return new DeterministicFirstPriceResearch({
+    reconciliation,
+    hardCostCapUsd: priceBudget(env.PRICE_AGENT_HARD_COST_CAP_USD),
     fetch: async (target, connector) => {
       const out = [];
       for (const entry of [...connector.sourceEntries].sort((a, b) => a.priority - b.priority)) {
@@ -122,14 +142,33 @@ export async function runPriceCli(
       });
       const connectors = new BrandConnectorSupabaseAdapter(client);
       persistence ??= new AgentPlatformSupabaseAdapter(client);
+      const telemetry = new PriceAgentSupabaseTelemetry(client);
       agent ??= new PriceAgent({
         catalog: new PriceAgentSupabaseCatalogReader(client),
         connector: connectors,
-        research: operationalResearch(),
+        research: await operationalResearch(env),
       });
+      const original = agent;
+      agent = {
+        run: async (...runArgs: Parameters<PriceAgent['run']>) => {
+          const result = await original.run(...runArgs);
+          await telemetry.persistMappings('BR', brand, result.targets, result.research.mappings ?? []);
+          await telemetry.persistUsage({
+            runId: result.bundle.run.id,
+            market: 'BR',
+            brand,
+            usage: result.research.usage ?? [],
+          });
+          return result;
+        },
+      } as PriceAgent;
     }
 
-    const result = await agent.run(brand, 'BR', 'deterministic');
+    const result = await agent.run(
+      brand,
+      'BR',
+      env.OPENAI_API_KEY?.trim() ? 'hybrid' : 'deterministic',
+    );
     const clean = JSON.parse(
       redactSecrets(JSON.stringify(result), [
         env.SUPABASE_SERVER_KEY ?? '',
@@ -167,9 +206,37 @@ export async function runPriceCli(
               ),
             ]
           : []),
+        ...(clean.research.usage?.length
+          ? clean.research.usage.map(
+              (item) =>
+                'AI ' +
+                item.model +
+                ': input=' +
+                item.inputTokens +
+                ' cached=' +
+                item.cachedInputTokens +
+                ' output=' +
+                item.outputTokens +
+                ' reasoning=' +
+                item.reasoningTokens +
+                ' web=' +
+                item.webSearchCount +
+                ' cost=
+      ].join('\n'),
+    );
+    return 0;
+  } catch (error) {
+    log(safePriceFailure(error));
+    return 1;
+  }
+}
+ +
+                item.estimatedCostUsd.toFixed(6),
+            )
+          : []),
         persistFindings
-          ? 'Findings persisted for review. Pricing tables unchanged.'
-          : 'Dry-run report written. Pricing tables unchanged.',
+          ? 'Findings persisted for review. Canonical pricing unchanged.'
+          : 'Dry-run complete. Reconciliation cache/usage may be updated; canonical pricing unchanged.',
       ].join('\n'),
     );
     return 0;
