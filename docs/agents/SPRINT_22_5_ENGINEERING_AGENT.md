@@ -34,3 +34,6 @@ The first evaluator is `packages/core/src/agents/engineering-agent.ts`; unit tes
 Directly observed: research-provider call count, duration, evidence count, unique evidence URLs, candidate domains, source entries and warnings. Not yet instrumented: provider HTTP requests, LLM calls/tokens, cache hits and actual price. All unobserved fields are **null, never 0**. This is not a complete cost baseline.
 
 Next: instrument `@compra-car/adapter-openai` at the actual request boundary with optional counters, use recorded fixtures for cold/warm comparisons, establish semantic equivalence checks, and run full CI validation. No paid OpenAI runs or Supabase writes were triggered by this change.
+
+### Provider-level usage extension
+The OpenAI Brand Connector research provider exposes optional `onUsage` with actual completed-response input/output/cached token counters, LLM response count and web-search output count. The CLI merges these into the separate telemetry artifact if a real OpenAI provider supplies them. HTTP request count and cache ratios still need transport instrumentation. USD cost intentionally stays `null` until pricing is versioned. No live provider invocation or CI run was performed in this session; tests are authored but remain unverified.
