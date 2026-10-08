@@ -49,6 +49,7 @@ describe('Price Agent', () => {
   it('binds verbose catalog versions through conservative trim aliases', () => {
     const verboseTarget: PriceTarget = {
       ...target,
+      model: 'Renegade',
       version: 'Longitude 1.3 TGDI AT MHEV',
     };
     const snapshot = makePriceSnapshot({
