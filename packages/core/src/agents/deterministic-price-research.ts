@@ -20,8 +20,6 @@ import type {
   PriceTarget,
 } from './price-agent-types';
 
-const contentHash = (body: string) => createHash('sha256').update(body).digest('hex');
-
 export function priceSourceFingerprint(body: string): string {
   const decoded = decodeHtmlEntities(body);
   const embeddedRows = [...decoded.matchAll(
