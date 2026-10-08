@@ -6,7 +6,7 @@ $ErrorActionPreference = 'Stop'
 try {
     Import-Module (Join-Path $PSScriptRoot 'Environment.Common.psm1') -Force
     $root = Get-CompraCarRepositoryRoot
-    $source = Join-Path $root 'apps/web/env/staging.env'
+    $source = Get-CompraCarEnvironmentSource -EnvironmentName staging
     $destination = Join-Path $root 'apps/web/.env.local'
     $variables = Read-DotEnvFile -Path $source
     Assert-RequiredEnvironmentVariables -Variables $variables
