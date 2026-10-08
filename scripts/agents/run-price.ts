@@ -149,9 +149,23 @@ async function operationalResearch(env: Readonly<Record<string, string | undefin
     hardCostCapUsd: priceBudget(env.PRICE_AGENT_HARD_COST_CAP_USD),
     fetch: async (target, connector) => {
       const out = [];
-      for (const entry of [...connector.sourceEntries].sort((a, b) => a.priority - b.priority)) {
+      const entries = [
+        ...connector.sourceEntries,
+        ...(target.knownPriceReconciliations ?? [])
+          .filter((item) => item.sourceFingerprint)
+          .map((item) => ({
+            type: 'MODEL_PAGE' as const,
+            url: item.sourceUrl,
+            priority: -100,
+          })),
+      ];
+      const seen = new Set<string>();
+
+      for (const entry of [...entries].sort((a, b) => a.priority - b.priority)) {
+        if (seen.has(entry.url)) continue;
+        seen.add(entry.url);
         if (!entryAppliesToTarget(entry, target.model)) continue;
-        const sourceKind = connectorEntryPriceKind(entry) ?? kindForEntry(entry.type);
+        const sourceKind = connectorEntryPriceKind(entry as any) ?? kindForEntry(entry.type);
         if (!sourceKind) continue;
 
         let pending = requestCache.get(entry.url);
