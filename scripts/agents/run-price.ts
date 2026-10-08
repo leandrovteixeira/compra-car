@@ -233,13 +233,14 @@ export async function runPriceCli(
         serverKey: env.SUPABASE_SERVER_KEY,
       });
       const connectors = new BrandConnectorSupabaseAdapter(client);
-      persistence ??= new AgentPlatformSupabaseAdapter(client);
+      const platform = new AgentPlatformSupabaseAdapter(client);
+      persistence ??= platform;
       telemetry = new PriceAgentSupabaseTelemetry(client);
 
       agent ??= new PriceAgent({
         catalog: new PriceAgentSupabaseCatalogReader(
           client,
-          new PlatformPriceModelYearSelectionReader(persistence),
+          new PlatformPriceModelYearSelectionReader(platform),
         ),
         connector: connectors,
         research: await operationalResearch(env),
