@@ -19,6 +19,28 @@ function Get-CompraCarRepositoryRoot {
     return $root
 }
 
+
+function Get-CompraCarSecretsRoot {
+    $configured = [Environment]::GetEnvironmentVariable('COMPRA_CAR_SECRETS_ROOT')
+    $root = if (-not [string]::IsNullOrWhiteSpace($configured)) {
+        $configured
+    } else {
+        'C:\Dev\.secrets\compra-car'
+    }
+
+    if (-not (Test-Path -LiteralPath $root -PathType Container)) {
+        throw "Compra Car secrets directory not found: $root"
+    }
+    return $root
+}
+
+function Get-CompraCarEnvironmentSource {
+    param([Parameter(Mandatory = $true)][ValidateSet('staging', 'production')][string]$EnvironmentName)
+
+    $root = Get-CompraCarSecretsRoot
+    return Join-Path $root ($EnvironmentName + '.env')
+}
+
 function Read-DotEnvFile {
     param([Parameter(Mandatory = $true)][string]$Path)
 
@@ -151,4 +173,4 @@ function Show-EnvironmentSummary {
     Write-Host 'Restart the Next.js development server after changing environments.' -ForegroundColor Yellow
 }
 
-Export-ModuleMember -Function Get-CompraCarRepositoryRoot, Read-DotEnvFile, Assert-RequiredEnvironmentVariables, Get-SupabaseProjectRef, Assert-EnvironmentTarget, Set-ActiveEnvironmentFile, Show-EnvironmentSummary
+Export-ModuleMember -Function Get-CompraCarRepositoryRoot, Get-CompraCarSecretsRoot, Get-CompraCarEnvironmentSource, Read-DotEnvFile, Assert-RequiredEnvironmentVariables, Get-SupabaseProjectRef, Assert-EnvironmentTarget, Set-ActiveEnvironmentFile, Show-EnvironmentSummary
