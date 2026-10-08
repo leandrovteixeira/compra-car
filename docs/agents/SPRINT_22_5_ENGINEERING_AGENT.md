@@ -26,3 +26,11 @@ The first evaluator is `packages/core/src/agents/engineering-agent.ts`; unit tes
 3. Replay cold/warm runs offline and record a signed baseline report.
 4. Introduce deterministic fetch/parse/cache optimizations behind flags.
 5. Promote fixes only after manual approval and QA regression gates.
+
+## 22.5B — Brand Connector passive instrumentation (implemented on branch)
+
+`scripts/agents/brand-connector-telemetry.ts` wraps the research provider without modifying its response. The CLI writes an additional `<runId>.telemetry.json` alongside its existing local reports. The persisted Agent Platform bundle is unchanged.
+
+Directly observed: research-provider call count, duration, evidence count, unique evidence URLs, candidate domains, source entries and warnings. Not yet instrumented: provider HTTP requests, LLM calls/tokens, cache hits and actual price. All unobserved fields are **null, never 0**. This is not a complete cost baseline.
+
+Next: instrument `@compra-car/adapter-openai` at the actual request boundary with optional counters, use recorded fixtures for cold/warm comparisons, establish semantic equivalence checks, and run full CI validation. No paid OpenAI runs or Supabase writes were triggered by this change.
