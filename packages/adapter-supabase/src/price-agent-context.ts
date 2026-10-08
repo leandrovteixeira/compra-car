@@ -107,6 +107,15 @@ export class PriceAgentSupabaseCatalogReader implements PriceCatalogReader {
 }
 
 
+function comparableSourceUrl(value: string): string | null {
+  try {
+    const url = new URL(value);
+    return url.origin.toLowerCase() + url.pathname.replace(/\/$/u, '').toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
 function priceAliasKey(value: string): string {
   return value
     .normalize('NFD')
@@ -124,11 +133,18 @@ export class PriceAgentSupabaseTelemetry {
     brand: string,
     targets: readonly PriceTarget[],
     mappings: readonly import('@compra-car/core/agents').PriceIdentityMapping[],
+    snapshots: readonly import('@compra-car/core/agents').PriceSourceSnapshot[],
   ) {
     const byId = new Map(targets.map((target) => [target.productId, target]));
     for (const mapping of mappings) {
       const target = byId.get(mapping.productId);
       if (!target || mapping.confidence < 0.8) continue;
+      const sourceKey = comparableSourceUrl(mapping.sourceUrl);
+      const fingerprint =
+        sourceKey === null
+          ? null
+          : snapshots.find((snapshot) => comparableSourceUrl(snapshot.finalUrl) === sourceKey)
+              ?.contentHash ?? null;
       const { error } = await this.client.from('price_identity_reconciliation_cache').upsert(
         {
           market,
@@ -142,7 +158,7 @@ export class PriceAgentSupabaseTelemetry {
           canonical_version: target.version,
           confidence: mapping.confidence,
           source_url: mapping.sourceUrl,
-          source_fingerprint: null,
+          source_fingerprint: fingerprint,
           model_used: mapping.modelUsed,
           updated_at: new Date().toISOString(),
         },
