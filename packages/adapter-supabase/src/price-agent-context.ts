@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   catalogMmvIdentityId,
   type PriceCatalogReader,
+  type PriceModelYearSelectionReader,
   type PriceTarget,
 } from '@compra-car/core/agents';
 
@@ -38,7 +39,10 @@ type KnownPriceReconciliation = {
 };
 
 export class PriceAgentSupabaseCatalogReader implements PriceCatalogReader {
-  constructor(private readonly client: SupabaseClient) {}
+  constructor(
+    private readonly client: SupabaseClient,
+    private readonly selection?: PriceModelYearSelectionReader,
+  ) {}
 
   async readPriceTargets(brand: string, market: string): Promise<readonly PriceTarget[]> {
     if (market !== 'BR') throw new Error('PRICE_MARKET_UNSUPPORTED');
@@ -51,7 +55,18 @@ export class PriceAgentSupabaseCatalogReader implements PriceCatalogReader {
       .limit(5000);
     if (productsError) throw new Error('PRICE_PRODUCTS_READ_FAILED');
 
-    const products = (productsData ?? []) as ProductRow[];
+    let products = (productsData ?? []) as ProductRow[];
+    if (!products.length) return [];
+
+    const currentSelection = await this.selection?.latestCompleted(brand, market);
+    if (currentSelection) {
+      const allowed = new Set(
+        currentSelection.pairs.map((pair) => pair.mmvIdentity + '|' + pair.modelYear),
+      );
+      products = products.filter((row) =>
+        allowed.has(catalogMmvIdentityId(row) + '|' + row.model_year),
+      );
+    }
     if (!products.length) return [];
 
     const ids = products.map((row) => row.id);
