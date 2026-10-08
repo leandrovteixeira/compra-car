@@ -227,7 +227,7 @@ export class PriceAgent {
         provider,
         connector,
         observations: research.observations,
-        metrics: research.metrics,
+        metrics: { ...research.metrics, targetsSelected: targets.length },
       }),
     };
   }
