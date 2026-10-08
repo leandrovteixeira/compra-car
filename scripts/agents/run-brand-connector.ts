@@ -16,6 +16,7 @@ import { OpenAIBrandConnectorResearchProvider } from '@compra-car/adapter-openai
 import { redactSecrets } from './report-writer';
 import { loadAgentEnvironment } from './agent-environment';
 import { safeAgentFailure } from './agent-diagnostics';
+import { observeBrandConnectorResearch } from './brand-connector-telemetry';
 export function parseBrandConnectorArguments(args: readonly string[]) {
   const values = args[0] === '--' ? args.slice(1) : args,
     options = new Map<string, string>();
@@ -111,7 +112,8 @@ export async function runBrandConnectorCli(
               'utf8',
             ),
           }));
-    const bundle = await new BrandConnectorAgent(research).run(
+    const telemetry = observeBrandConnectorResearch(research);
+    const bundle = await new BrandConnectorAgent(telemetry.research).run(
       { brand: options.brand, market: options.market, mode: options.mode, activeConnector },
       undefined,
       options.provider,
@@ -157,6 +159,15 @@ export async function runBrandConnectorCli(
         '',
       ].join('\n'),
     );
+    // Separate report: never mutate the canonical AgentRunBundle or persisted findings.
+    const metrics = telemetry.snapshot();
+    if (metrics) {
+      await writeFile(
+        resolve(directory, bundle.run.id + '.telemetry.json'),
+        JSON.stringify({ runId: bundle.run.id, brand: clean.run.brand, market: clean.run.market,
+          mode: options.mode, provider: options.provider, ...metrics }, null, 2) + '\n',
+      );
+    }
     if (options.persistFindings) await persistence!.persistRunBundle(clean);
     log(
       'Run: ' +
