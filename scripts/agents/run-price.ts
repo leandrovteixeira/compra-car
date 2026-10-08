@@ -151,6 +151,22 @@ export async function runPriceCli(
         'Run: ' + clean.bundle.run.id,
         'Brand: ' + brand,
         ...Object.entries(clean.bundle.run.summary).map(([key, value]) => key + ': ' + value),
+        ...(clean.research.diagnostics?.length
+          ? [
+              '',
+              'Diagnostics:',
+              ...clean.research.diagnostics.map(
+                (item) =>
+                  item.reason +
+                  ' | ' +
+                  item.target +
+                  ' | ' +
+                  item.sourceUrl +
+                  ' | ' +
+                  item.sample.replace(/[\r\n]+/gu, ' ').slice(0, 900),
+              ),
+            ]
+          : []),
         persistFindings
           ? 'Findings persisted for review. Pricing tables unchanged.'
           : 'Dry-run report written. Pricing tables unchanged.',
