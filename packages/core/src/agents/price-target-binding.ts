@@ -15,11 +15,15 @@ function sourceText(value: string): string {
     .trim();
 }
 
-function comparisonText(value: string): string {
+function foldedText(value: string): string {
   return value
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/gu, '')
-    .toLowerCase()
+    .toLowerCase();
+}
+
+function comparisonText(value: string): string {
+  return foldedText(value)
     .replace(/[^a-z0-9]+/gu, ' ')
     .trim();
 }
@@ -64,13 +68,14 @@ export function priceTargetBinding(text: string, target: PriceTarget): boolean {
 
 export function priceContexts(body: string, target: PriceTarget): readonly string[] {
   const normalizedBody = sourceText(body);
-  const comparable = comparisonText(normalizedBody);
+  const foldedBody = foldedText(normalizedBody);
   const windows: string[] = [];
 
   for (const alias of priceVersionAliases(target)) {
+    const foldedAlias = foldedText(alias);
     let from = 0;
     for (;;) {
-      const index = comparable.indexOf(alias, from);
+      const index = foldedBody.indexOf(foldedAlias, from);
       if (index < 0) break;
       windows.push(
         normalizedBody.slice(
@@ -78,7 +83,7 @@ export function priceContexts(body: string, target: PriceTarget): readonly strin
           Math.min(normalizedBody.length, index + 1100),
         ),
       );
-      from = index + Math.max(1, alias.length);
+      from = index + Math.max(1, foldedAlias.length);
       if (windows.length >= 24) break;
     }
     if (windows.length >= 24) break;
