@@ -108,6 +108,20 @@ function structuredRowMatchesTarget(row: EmbeddedVersionRow, target: PriceTarget
   });
 }
 
+function currentOfficialYearsForTarget(
+  snapshots: readonly PriceSourceSnapshot[],
+  target: PriceTarget,
+): ReadonlySet<number> {
+  const years = new Set<number>();
+  for (const snapshot of snapshots) {
+    if (!priceSourceAppliesToModel(snapshot, target)) continue;
+    for (const row of embeddedVersionRows(snapshot.body)) {
+      if (compactIdentity(row.versionName).includes(compactIdentity(target.model))) years.add(row.year);
+    }
+  }
+  return years;
+}
+
 function extractEmbeddedStructuredPrice(
   snapshot: PriceSourceSnapshot,
   target: PriceTarget,
@@ -363,11 +377,22 @@ export class DeterministicFirstPriceResearch implements PriceResearchProvider {
 
     const resolved = new Set(observations.map((o) => o.target.productId));
     const unresolved = targets.filter((target) => !resolved.has(target.productId));
-    if (unresolved.length && this.ports.reconciliation) {
+    const unresolvedEligibleForAi = unresolved.filter((target) => {
+      const relevantSnapshots = [...this.snapshots.values()].filter(
+        (snapshot) => snapshot.targetKey === targetKey(target),
+      );
+      const currentYears = currentOfficialYearsForTarget(relevantSnapshots, target);
+      return currentYears.size === 0 || currentYears.has(target.modelYear);
+    });
+    if (unresolvedEligibleForAi.length && this.ports.reconciliation) {
       const spent = usage.reduce((sum, item) => sum + item.estimatedCostUsd, 0);
       const budget = Math.max(0, (this.ports.hardCostCapUsd ?? 1) - spent);
       if (budget > 0) {
-        const semantic = await this.ports.reconciliation.reconcile(unresolved, connector, budget);
+        const semantic = await this.ports.reconciliation.reconcile(
+          unresolvedEligibleForAi,
+          connector,
+          budget,
+        );
         observations.push(...semantic.observations);
         mappings.push(...semantic.mappings);
         usage.push(...semantic.usage);
