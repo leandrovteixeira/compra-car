@@ -22,6 +22,12 @@ type CurrentPriceRow = {
   starts_on: string;
 };
 
+type PriceAliasRow = {
+  product_id: number;
+  observed_label: string;
+  confidence: string | number;
+};
+
 export class PriceAgentSupabaseCatalogReader implements PriceCatalogReader {
   constructor(private readonly client: SupabaseClient) {}
 
@@ -50,6 +56,18 @@ export class PriceAgentSupabaseCatalogReader implements PriceCatalogReader {
       ((pricesData ?? []) as CurrentPriceRow[]).map((row) => [row.product_id, row]),
     );
 
+    const { data: aliasesData, error: aliasesError } = await this.client
+      .from('price_identity_reconciliation_cache')
+      .select('product_id,observed_label,confidence')
+      .in('product_id', ids);
+    if (aliasesError) throw new Error('PRICE_ALIAS_CACHE_READ_FAILED');
+
+    const aliases = new Map<number, string[]>();
+    for (const row of (aliasesData ?? []) as PriceAliasRow[]) {
+      if (Number(row.confidence) < 0.8) continue;
+      aliases.set(row.product_id, [...(aliases.get(row.product_id) ?? []), row.observed_label]);
+    }
+
     return products.map((row) => {
       const price = current.get(row.id);
       return {
@@ -59,6 +77,7 @@ export class PriceAgentSupabaseCatalogReader implements PriceCatalogReader {
         model: row.model,
         version: row.version,
         modelYear: row.model_year,
+        knownPriceAliases: aliases.get(row.id) ?? [],
         currentPrice:
           price && price.currency_code === 'BRL'
             ? {
@@ -70,5 +89,79 @@ export class PriceAgentSupabaseCatalogReader implements PriceCatalogReader {
             : null,
       };
     });
+  }
+}
+
+
+function priceAliasKey(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/gu, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/gu, ' ')
+    .trim();
+}
+
+export class PriceAgentSupabaseTelemetry {
+  constructor(private readonly client: SupabaseClient) {}
+
+  async persistMappings(
+    market: string,
+    brand: string,
+    targets: readonly PriceTarget[],
+    mappings: readonly import('@compra-car/core/agents').PriceIdentityMapping[],
+  ) {
+    const byId = new Map(targets.map((target) => [target.productId, target]));
+    for (const mapping of mappings) {
+      const target = byId.get(mapping.productId);
+      if (!target || mapping.confidence < 0.8) continue;
+      const { error } = await this.client.from('price_identity_reconciliation_cache').upsert(
+        {
+          market,
+          brand,
+          model: target.model,
+          model_year: target.modelYear,
+          observed_label: mapping.observedLabel,
+          observed_key: priceAliasKey(mapping.observedLabel),
+          product_id: Number(target.productId),
+          mmv_identity: target.mmvIdentity,
+          canonical_version: target.version,
+          confidence: mapping.confidence,
+          source_url: mapping.sourceUrl,
+          source_fingerprint: null,
+          model_used: mapping.modelUsed,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'market,brand,model,model_year,observed_key' },
+      );
+      if (error) throw new Error('PRICE_ALIAS_CACHE_WRITE_FAILED');
+    }
+  }
+
+  async persistUsage(input: {
+    runId: string;
+    market: string;
+    brand: string;
+    usage: readonly import('@compra-car/core/agents').PriceAiUsage[];
+  }) {
+    if (!input.usage.length) return;
+    const { error } = await this.client.from('agent_ai_usage_events').insert(
+      input.usage.map((item) => ({
+        run_id: input.runId,
+        intended_run_id: input.runId,
+        agent_type: 'PRICE_INTELLIGENCE',
+        market: input.market,
+        brand: input.brand,
+        provider: 'openai',
+        model: item.model,
+        input_tokens: item.inputTokens,
+        output_tokens: item.outputTokens,
+        total_tokens: item.inputTokens + item.outputTokens,
+        web_search_count: item.webSearchCount,
+        estimated_cost_usd: item.estimatedCostUsd,
+        reason: 'PRICE_CANONICAL_RECONCILIATION',
+      })),
+    );
+    if (error) throw new Error('PRICE_USAGE_WRITE_FAILED');
   }
 }
