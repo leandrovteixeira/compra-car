@@ -41,7 +41,12 @@ export class BrandConnectorSupabaseAdapter implements BrandConnectorRepository {
         .range(rows.length, rows.length + 499);
       for (const [key, value] of Object.entries(filters)) query = query.eq(key, value);
       const { data, error } = await query;
-      if (error || !data) throw new Error('CONNECTOR_READ_FAILED');
+      if (error || !data) {
+        const detail = error
+          ? [error.code, error.message, error.details, error.hint].filter(Boolean).join(' | ')
+          : 'NO_DATA';
+        throw new Error('CONNECTOR_READ_FAILED: ' + detail);
+      }
       if (!data.length) return rows;
       rows.push(...(data as unknown as Row[]));
     }
