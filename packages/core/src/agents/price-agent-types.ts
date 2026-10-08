@@ -17,6 +17,7 @@ export interface PriceTarget {
   readonly version: string;
   readonly modelYear: number;
   readonly currentPrice: Pick<ProductPublicPrice, 'id' | 'money' | 'startsOn' | 'status'> | null;
+  readonly knownPriceAliases?: readonly string[];
 }
 
 export interface PriceEvidence {
@@ -55,9 +56,41 @@ export interface PriceSourceSnapshot {
   readonly reusable?: boolean;
 }
 
+export interface PriceAiUsage {
+  readonly model: string;
+  readonly inputTokens: number;
+  readonly cachedInputTokens: number;
+  readonly outputTokens: number;
+  readonly reasoningTokens: number;
+  readonly webSearchCount: number;
+  readonly estimatedCostUsd: number;
+}
+
+export interface PriceIdentityMapping {
+  readonly productId: string;
+  readonly observedLabel: string;
+  readonly confidence: number;
+  readonly sourceUrl: string;
+  readonly modelUsed: string;
+}
+
+export interface PriceReconciliationProvider {
+  reconcile(
+    targets: readonly PriceTarget[],
+    connector: BrandConnector,
+    budgetUsd: number,
+  ): Promise<{
+    readonly observations: readonly PriceObservation[];
+    readonly mappings: readonly PriceIdentityMapping[];
+    readonly usage: readonly PriceAiUsage[];
+  }>;
+}
+
 export interface PriceResearchResult {
   readonly observations: readonly PriceObservation[];
   readonly snapshots: readonly PriceSourceSnapshot[];
+  readonly mappings?: readonly PriceIdentityMapping[];
+  readonly usage?: readonly PriceAiUsage[];
   readonly diagnostics?: readonly {
     readonly target: string;
     readonly sourceUrl: string;
@@ -70,6 +103,12 @@ export interface PriceResearchResult {
     networkFetches: number;
     deterministicExtractions: number;
     documentIntelligenceCalls: number;
+    llmCalls?: number;
+    llmInputTokens?: number;
+    llmCachedInputTokens?: number;
+    llmOutputTokens?: number;
+    llmReasoningTokens?: number;
+    webSearchCount?: number;
     targetMisses: number;
     pricePatternMisses: number;
     modelSourceSkips: number;
