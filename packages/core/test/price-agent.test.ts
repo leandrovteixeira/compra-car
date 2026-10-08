@@ -7,6 +7,7 @@ import {
   priceSourceAppliesToModel,
   priceSourceFingerprint,
   priceTargetBinding,
+  PlatformPriceModelYearSelectionReader,
   priceVersionAliases,
   type PriceTarget,
 } from '../src/agents';
@@ -231,6 +232,68 @@ describe('Price Agent', () => {
     expect(result.metrics.cacheHits).toBe(1);
     expect(result.metrics.llmCalls ?? 0).toBe(0);
     expect(reconciliation.reconcile).not.toHaveBeenCalled();
+  });
+
+  it('selects current price targets from the latest completed model year run', async () => {
+    const run = {
+      id: '11111111-1111-4111-8111-111111111111',
+      agentType: 'MODEL_YEAR',
+      status: 'COMPLETED',
+      market: 'BR',
+      brand: 'Jeep',
+      completedAt: '2026-10-08T12:00:00.000Z',
+      createdAt: '2026-10-08T12:00:00.000Z',
+    } as any;
+    const matched = {
+      finding: {
+        id: '22222222-2222-4222-8222-222222222222',
+        findingType: 'MODEL_YEAR_MATCHED',
+        subject: { mmvIdentity: 'jeep|compass|longitude', modelYear: 2026 },
+        payload: {},
+        proposal: null,
+      },
+      evidence: [],
+    } as any;
+    const acceptedNew = {
+      finding: {
+        id: '33333333-3333-4333-8333-333333333333',
+        findingType: 'NEW_MODEL_YEAR',
+        subject: { mmvIdentity: 'jeep|renegade|willys' },
+        payload: { modelYear: 2027 },
+        proposal: { modelYear: 2027 },
+      },
+      evidence: [],
+    } as any;
+    const deferred = {
+      finding: {
+        id: '44444444-4444-4444-8444-444444444444',
+        findingType: 'NEW_MODEL_YEAR',
+        subject: { mmvIdentity: 'jeep|commander|limited' },
+        payload: { modelYear: 2028 },
+        proposal: { modelYear: 2028 },
+      },
+      evidence: [],
+    } as any;
+    const repository = {
+      listRuns: vi.fn(async () => ({ items: [{ run, counts: {} }], total: 1 })),
+      getRun: vi.fn(async () => ({ run, findings: [matched, acceptedNew, deferred] })),
+      getLatestReview: vi.fn(async (id: string) =>
+        id === acceptedNew.finding.id
+          ? ({ decision: 'ACCEPT' } as any)
+          : id === deferred.finding.id
+            ? ({ decision: 'DEFER' } as any)
+            : null,
+      ),
+    };
+    const result = await new PlatformPriceModelYearSelectionReader(repository as any).latestCompleted(
+      'Jeep',
+      'BR',
+    );
+    expect(result?.runId).toBe(run.id);
+    expect(result?.pairs).toEqual([
+      { mmvIdentity: 'jeep|compass|longitude', modelYear: 2026 },
+      { mmvIdentity: 'jeep|renegade|willys', modelYear: 2027 },
+    ]);
   });
 
   it('reuses an upstream source snapshot before network or document intelligence', async () => {
