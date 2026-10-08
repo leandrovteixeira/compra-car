@@ -193,6 +193,7 @@ export class DeterministicFirstPriceResearch implements PriceResearchProvider {
     connector: BrandConnector,
   ): Promise<PriceResearchResult> {
     const observations: PriceObservation[] = [];
+    const diagnostics: NonNullable<PriceResearchResult['diagnostics']>[number][] = [];
     let cacheHits = 0,
       networkFetches = 0,
       deterministicExtractions = 0,
@@ -233,6 +234,13 @@ export class DeterministicFirstPriceResearch implements PriceResearchProvider {
         }
         if (!priceTargetBinding(normalized, target)) {
           targetMisses++;
+          if (diagnostics.length < 40)
+            diagnostics.push({
+              target: [target.model, target.version, 'MY' + target.modelYear].join(' '),
+              sourceUrl: source.finalUrl,
+              reason: 'TARGET_MISS',
+              sample: normalized.slice(0, 700),
+            });
           continue;
         }
         const deterministic = extractDeterministicPrice(source, target);
@@ -242,6 +250,13 @@ export class DeterministicFirstPriceResearch implements PriceResearchProvider {
           continue;
         }
         pricePatternMisses++;
+        if (diagnostics.length < 40)
+          diagnostics.push({
+            target: [target.model, target.version, 'MY' + target.modelYear].join(' '),
+            sourceUrl: source.finalUrl,
+            reason: 'PRICE_PATTERN_MISS',
+            sample: priceContexts(source.body, target)[0]?.slice(0, 900) ?? normalized.slice(0, 900),
+          });
         if (!this.ports.documentIntelligence) continue;
         documentIntelligenceCalls++;
         const semantic = await this.ports.documentIntelligence.extract(source, target);
@@ -252,6 +267,7 @@ export class DeterministicFirstPriceResearch implements PriceResearchProvider {
     return {
       observations,
       snapshots: [...this.snapshots.values()],
+      diagnostics,
       metrics: {
         sourcesConsidered: new Set([...this.snapshots.values()].map((source) => source.finalUrl)).size,
         cacheHits,
