@@ -51,6 +51,21 @@ function parse(args: readonly string[]) {
   return { brand, persistFindings };
 }
 
+function entryAppliesToTarget(
+  entry: { readonly type: string; readonly url: string },
+  model: string,
+): boolean {
+  if (entry.type === 'PRICE_LIST') return true;
+  if (!['MODEL_PAGE', 'CONFIGURATOR'].includes(entry.type)) return true;
+  try {
+    const path = new URL(entry.url).pathname.toLowerCase();
+    const needle = model.trim().toLowerCase();
+    return path.includes('/' + needle) || path.includes(needle + '.');
+  } catch {
+    return false;
+  }
+}
+
 function kindForEntry(type: string): PriceSourceKind | null {
   if (type === 'PRICE_LIST') return 'OFFICIAL_PRICE_LIST';
   if (type === 'CONFIGURATOR') return 'OFFICIAL_CONFIGURATOR';
@@ -82,6 +97,7 @@ async function operationalResearch(env: Readonly<Record<string, string | undefin
     fetch: async (target, connector) => {
       const out = [];
       for (const entry of [...connector.sourceEntries].sort((a, b) => a.priority - b.priority)) {
+        if (!entryAppliesToTarget(entry, target.model)) continue;
         const sourceKind = connectorEntryPriceKind(entry) ?? kindForEntry(entry.type);
         if (!sourceKind) continue;
 
