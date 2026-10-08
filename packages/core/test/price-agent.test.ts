@@ -128,6 +128,33 @@ describe('Price Agent', () => {
     expect(result?.msrpAmount).toBe('199990.00');
   });
 
+  it('extracts embedded manufacturer versions-data deterministically', async () => {
+    const research = new DeterministicFirstPriceResearch({
+      fetch: async () => [
+        makePriceSnapshot({
+          target,
+          sourceUrl: 'https://www.jeep.com.br/compass.html',
+          sourceKind: 'OFFICIAL_MODEL_PAGE',
+          body:
+            '<div versions-data="[{&#34;versionName&#34;:&#34;JEEP COMPASS LONGITUDE T270&#34;,' +
+            '&#34;price&#34;:&#34;199990.0&#34;,&#34;year&#34;:&#34;2026&#34;}]"></div>',
+        }),
+      ],
+    });
+    const connector = {
+      id: 'connector',
+      brand: 'Jeep',
+      market: 'BR',
+      allowedDomains: ['jeep.com.br'],
+      sourceEntries: [],
+    } as any;
+    const result = await research.researchPrices([target], connector);
+    expect(result.observations).toHaveLength(1);
+    expect(result.observations[0]?.msrpAmount).toBe('199990.00');
+    expect(result.metrics.deterministicExtractions).toBe(1);
+    expect(result.metrics.llmCalls ?? 0).toBe(0);
+  });
+
   it('does not classify conditional trade-in language as retail bonus', () => {
     const snapshot = makePriceSnapshot({
       target,
