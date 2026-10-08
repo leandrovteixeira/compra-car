@@ -58,6 +58,12 @@ export interface PriceSourceSnapshot {
 export interface PriceResearchResult {
   readonly observations: readonly PriceObservation[];
   readonly snapshots: readonly PriceSourceSnapshot[];
+  readonly diagnostics?: readonly {
+    readonly target: string;
+    readonly sourceUrl: string;
+    readonly reason: 'TARGET_MISS' | 'PRICE_PATTERN_MISS';
+    readonly sample: string;
+  }[];
   readonly metrics: Readonly<{
     sourcesConsidered: number;
     cacheHits: number;
