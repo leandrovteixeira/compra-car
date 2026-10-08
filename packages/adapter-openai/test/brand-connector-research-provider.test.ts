@@ -118,3 +118,38 @@ describe('Brand connector provider with injected transport only', () => {
     await expect(provider.researchConnector(input)).rejects.toThrow('CONNECTOR_RESEARCH_FAILED');
   });
 });
+
+
+describe('Sprint 22.5B usage telemetry', () => {
+  it('records API response usage without a second transport request', async () => {
+    const onUsage = vi.fn();
+    const transport = vi.fn(async () => response({
+      usage: {
+        input_tokens: 120,
+        output_tokens: 30,
+        total_tokens: 150,
+        input_tokens_details: { cached_tokens: 80 },
+        output_tokens_details: { reasoning_tokens: 0 },
+      },
+    }));
+    const provider = new OpenAIBrandConnectorResearchProvider({
+      apiKey: 'synthetic', model: 'mock', prompt: 'generic', transport, onUsage,
+    });
+    await provider.researchConnector(input);
+    expect(transport).toHaveBeenCalledTimes(1);
+    expect(onUsage).toHaveBeenCalledOnce();
+    expect(onUsage).toHaveBeenCalledWith({
+      llmCalls: 1, webSearches: 1, inputTokens: 120,
+      outputTokens: 30, cachedInputTokens: 80,
+    });
+  });
+  it('does not transform failed transport into invented usage', async () => {
+    const onUsage = vi.fn();
+    const provider = new OpenAIBrandConnectorResearchProvider({
+      apiKey:'synthetic', model:'mock', prompt:'generic', onUsage,
+      transport: async () => {throw Error('network failed');},
+    });
+    await expect(provider.researchConnector(input)).rejects.toThrow('CONNECTOR_RESEARCH_FAILED');
+    expect(onUsage).not.toHaveBeenCalled();
+  });
+});
