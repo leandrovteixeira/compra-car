@@ -128,7 +128,7 @@ describe('Sprint 22.5B usage telemetry', () => {
         input_tokens: 120,
         output_tokens: 30,
         total_tokens: 150,
-        input_tokens_details: { cached_tokens: 80 },
+        input_tokens_details: { cached_tokens: 80, cache_write_tokens: 0 },
         output_tokens_details: { reasoning_tokens: 0 },
       },
     }));
