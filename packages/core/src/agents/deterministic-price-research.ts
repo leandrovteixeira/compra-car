@@ -306,7 +306,7 @@ export class DeterministicFirstPriceResearch implements PriceResearchProvider {
         pricePatternMisses,
         modelSourceSkips,
         uniqueNetworkUrls: countedNetworkUrls.size,
-        solEscalations: 0,
+        solEscalations: usage.filter((item) => item.model === 'gpt-5.6-sol').length,
         estimatedCostUsd: llmCost,
       },
     };
