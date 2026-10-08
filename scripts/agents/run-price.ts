@@ -80,6 +80,59 @@ function priceBudget(raw: string | undefined): number {
   return value;
 }
 
+async function supplementalMappingSnapshots(
+  result: Awaited<ReturnType<PriceAgent['run']>>,
+) {
+  const out = [...result.research.snapshots];
+  const existing = new Set(
+    out.map((snapshot) => {
+      try {
+        const url = new URL(snapshot.finalUrl);
+        return url.origin.toLowerCase() + url.pathname.replace(/\/$/u, '').toLowerCase();
+      } catch {
+        return snapshot.finalUrl;
+      }
+    }),
+  );
+  const byId = new Map(result.targets.map((target) => [target.productId, target]));
+
+  for (const mapping of result.research.mappings ?? []) {
+    let sourceKey: string;
+    try {
+      const url = new URL(mapping.sourceUrl);
+      sourceKey = url.origin.toLowerCase() + url.pathname.replace(/\/$/u, '').toLowerCase();
+    } catch {
+      continue;
+    }
+    if (existing.has(sourceKey)) continue;
+    const target = byId.get(mapping.productId);
+    if (!target) continue;
+
+    try {
+      const response = await fetch(mapping.sourceUrl, {
+        headers: {
+          'user-agent': 'CompraCarPriceAgent/1.0',
+          accept: 'text/html,application/json,text/plain;q=0.9,*/*;q=0.1',
+        },
+        redirect: 'follow',
+        signal: AbortSignal.timeout(15000),
+      });
+      if (!response.ok) continue;
+      const snapshot = makePriceSnapshot({
+        target,
+        sourceUrl: response.url,
+        sourceKind: 'OFFICIAL_MODEL_PAGE',
+        body: await response.text(),
+      });
+      out.push(snapshot);
+      existing.add(sourceKey);
+    } catch {
+      /* evidence fingerprint enrichment is best-effort; never changes pricing output */
+    }
+  }
+  return out;
+}
+
 async function operationalResearch(env: Readonly<Record<string, string | undefined>>) {
   const requestCache = new Map<string, Promise<{ body: string; finalUrl: string } | null>>();
   const reconciliation = env.OPENAI_API_KEY?.trim()
@@ -182,12 +235,13 @@ export async function runPriceCli(
     );
 
     if (telemetry) {
+      const fingerprintSnapshots = await supplementalMappingSnapshots(result);
       await telemetry.persistMappings(
         'BR',
         brand,
         result.targets,
         result.research.mappings ?? [],
-        result.research.snapshots,
+        fingerprintSnapshots,
       );
       await telemetry.persistUsage({
         runId: result.bundle.run.id,
