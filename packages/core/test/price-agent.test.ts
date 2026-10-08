@@ -129,10 +129,11 @@ describe('Price Agent', () => {
   });
 
   it('extracts embedded manufacturer versions-data deterministically', async () => {
+    const target2026: PriceTarget = { ...target, modelYear: 2026 };
     const research = new DeterministicFirstPriceResearch({
       fetch: async () => [
         makePriceSnapshot({
-          target,
+          target: target2026,
           sourceUrl: 'https://www.jeep.com.br/compass.html',
           sourceKind: 'OFFICIAL_MODEL_PAGE',
           body:
@@ -148,7 +149,7 @@ describe('Price Agent', () => {
       allowedDomains: ['jeep.com.br'],
       sourceEntries: [],
     } as any;
-    const result = await research.researchPrices([target], connector);
+    const result = await research.researchPrices([target2026], connector);
     expect(result.observations).toHaveLength(1);
     expect(result.observations[0]?.msrpAmount).toBe('199990.00');
     expect(result.metrics.deterministicExtractions).toBe(1);
