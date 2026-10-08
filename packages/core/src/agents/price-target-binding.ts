@@ -41,9 +41,13 @@ export function priceVersionAliases(target: PriceTarget): readonly string[] {
     );
   });
   const trim = (firstTechnical < 0 ? tokens : tokens.slice(0, firstTechnical)).join(' ').trim();
-  return [...new Set([target.version.trim(), trim].filter(Boolean).map(comparisonText))].sort(
-    (a, b) => b.length - a.length,
-  );
+  return [
+    ...new Set(
+      [target.version.trim(), trim, ...(target.knownPriceAliases ?? [])]
+        .filter(Boolean)
+        .map(comparisonText),
+    ),
+  ].sort((a, b) => b.length - a.length);
 }
 
 export function priceSourceAppliesToModel(
