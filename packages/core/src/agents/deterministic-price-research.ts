@@ -196,8 +196,8 @@ export class DeterministicFirstPriceResearch implements PriceResearchProvider {
   ): Promise<PriceResearchResult> {
     const observations: PriceObservation[] = [];
     const diagnostics: NonNullable<PriceResearchResult['diagnostics']>[number][] = [];
-    const mappings: NonNullable<PriceResearchResult['mappings']> = [];
-    const usage: NonNullable<PriceResearchResult['usage']> = [];
+    const mappings: import('./price-agent-types').PriceIdentityMapping[] = [];
+    const usage: import('./price-agent-types').PriceAiUsage[] = [];
     let cacheHits = 0,
       networkFetches = 0,
       deterministicExtractions = 0,
