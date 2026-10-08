@@ -181,6 +181,8 @@ export class DeterministicFirstPriceResearch implements PriceResearchProvider {
           target: PriceTarget,
         ): Promise<PriceObservation | null>;
       };
+      reconciliation?: import('./price-agent-types').PriceReconciliationProvider;
+      hardCostCapUsd?: number;
     },
   ) {}
 
@@ -194,6 +196,8 @@ export class DeterministicFirstPriceResearch implements PriceResearchProvider {
   ): Promise<PriceResearchResult> {
     const observations: PriceObservation[] = [];
     const diagnostics: NonNullable<PriceResearchResult['diagnostics']>[number][] = [];
+    const mappings: NonNullable<PriceResearchResult['mappings']> = [];
+    const usage: NonNullable<PriceResearchResult['usage']> = [];
     let cacheHits = 0,
       networkFetches = 0,
       deterministicExtractions = 0,
@@ -264,9 +268,27 @@ export class DeterministicFirstPriceResearch implements PriceResearchProvider {
       }
     }
 
+    const resolved = new Set(observations.map((o) => o.target.productId));
+    const unresolved = targets.filter((target) => !resolved.has(target.productId));
+    if (unresolved.length && this.ports.reconciliation) {
+      const spent = usage.reduce((sum, item) => sum + item.estimatedCostUsd, 0);
+      const budget = Math.max(0, (this.ports.hardCostCapUsd ?? 1) - spent);
+      if (budget > 0) {
+        const semantic = await this.ports.reconciliation.reconcile(unresolved, connector, budget);
+        observations.push(...semantic.observations);
+        mappings.push(...semantic.mappings);
+        usage.push(...semantic.usage);
+      }
+    }
+
+    const llmCost = usage.reduce((sum, item) => sum + item.estimatedCostUsd, 0);
+    const llmCalls = usage.length;
+
     return {
       observations,
       snapshots: [...this.snapshots.values()],
+      mappings,
+      usage,
       diagnostics,
       metrics: {
         sourcesConsidered: new Set([...this.snapshots.values()].map((source) => source.finalUrl)).size,
@@ -274,12 +296,18 @@ export class DeterministicFirstPriceResearch implements PriceResearchProvider {
         networkFetches,
         deterministicExtractions,
         documentIntelligenceCalls,
+        llmCalls,
+        llmInputTokens: usage.reduce((sum, item) => sum + item.inputTokens, 0),
+        llmCachedInputTokens: usage.reduce((sum, item) => sum + item.cachedInputTokens, 0),
+        llmOutputTokens: usage.reduce((sum, item) => sum + item.outputTokens, 0),
+        llmReasoningTokens: usage.reduce((sum, item) => sum + item.reasoningTokens, 0),
+        webSearchCount: usage.reduce((sum, item) => sum + item.webSearchCount, 0),
         targetMisses,
         pricePatternMisses,
         modelSourceSkips,
         uniqueNetworkUrls: countedNetworkUrls.size,
         solEscalations: 0,
-        estimatedCostUsd: 0,
+        estimatedCostUsd: llmCost,
       },
     };
   }
