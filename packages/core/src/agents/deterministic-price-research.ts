@@ -158,6 +158,59 @@ function extractEmbeddedStructuredPrice(
   };
 }
 
+function comparableSourceUrl(value: string): string | null {
+  try {
+    const url = new URL(value);
+    return url.origin.toLowerCase() + url.pathname.replace(/\/$/u, '').toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+function cachedUnchangedObservation(
+  target: PriceTarget,
+  snapshots: readonly PriceSourceSnapshot[],
+): PriceObservation | null {
+  if (!target.currentPrice || !target.knownPriceReconciliations?.length) return null;
+
+  for (const cached of target.knownPriceReconciliations) {
+    if (!cached.sourceFingerprint || cached.confidence < 0.8) continue;
+    const sourceKey = comparableSourceUrl(cached.sourceUrl);
+    if (!sourceKey) continue;
+    const snapshot = snapshots.find(
+      (candidate) =>
+        comparableSourceUrl(candidate.finalUrl) === sourceKey &&
+        candidate.contentHash === cached.sourceFingerprint,
+    );
+    if (!snapshot) continue;
+
+    return {
+      target,
+      currencyCode: 'BRL',
+      msrpAmount: target.currentPrice.money.amount,
+      publicOfferAmount: null,
+      retailBonusAmount: null,
+      validFrom: null,
+      validTo: null,
+      confidence: Math.min(0.995, cached.confidence),
+      ambiguityReasons: [],
+      evidence: [
+        {
+          sourceUrl: snapshot.finalUrl,
+          sourceKind: snapshot.sourceKind,
+          contentHash: snapshot.contentHash,
+          locator: 'cache:reconciliation-fingerprint',
+          excerpt:
+            cached.observedLabel +
+            ' | unchanged source fingerprint | current published MSRP reused',
+          capturedAt: snapshot.fetchedAt,
+        },
+      ],
+    };
+  }
+  return null;
+}
+
 function targetKey(target: PriceTarget) {
   return [target.brand, target.model, target.version, target.modelYear]
     .join(' ')
@@ -372,6 +425,19 @@ export class DeterministicFirstPriceResearch implements PriceResearchProvider {
         documentIntelligenceCalls++;
         const semantic = await this.ports.documentIntelligence.extract(source, target);
         if (semantic) observations.push(semantic);
+      }
+    }
+
+    const initiallyResolved = new Set(observations.map((o) => o.target.productId));
+    for (const target of targets) {
+      if (initiallyResolved.has(target.productId)) continue;
+      const relevantSnapshots = [...this.snapshots.values()].filter(
+        (snapshot) => snapshot.targetKey === targetKey(target),
+      );
+      const cached = cachedUnchangedObservation(target, relevantSnapshots);
+      if (cached) {
+        observations.push(cached);
+        cacheHits++;
       }
     }
 
