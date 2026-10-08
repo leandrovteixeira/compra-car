@@ -113,6 +113,21 @@ describe('Price Agent', () => {
     expect(result?.confidence).toBeGreaterThanOrEqual(0.82);
   });
 
+  it('keeps source offsets aligned when extracting a price near a trim alias', () => {
+    const snapshot = makePriceSnapshot({
+      target,
+      sourceUrl: 'https://www.jeep.com.br/compass/monte.html',
+      sourceKind: 'OFFICIAL_CONFIGURATOR',
+      body:
+        '<main>' +
+        '<div>' + 'x'.repeat(900) + '</div>' +
+        '<section><h3>COMPASS LONGITUDE T270</h3><div>R$ 199.990,00</div></section>' +
+        '</main>',
+    });
+    const result = extractDeterministicPrice(snapshot, target);
+    expect(result?.msrpAmount).toBe('199990.00');
+  });
+
   it('does not classify conditional trade-in language as retail bonus', () => {
     const snapshot = makePriceSnapshot({
       target,
