@@ -25,6 +25,8 @@ type CurrentPriceRow = {
 type PriceAliasRow = {
   product_id: number;
   observed_label: string;
+  source_url: string;
+  source_fingerprint: string | null;
   confidence: string | number;
 };
 
@@ -58,14 +60,25 @@ export class PriceAgentSupabaseCatalogReader implements PriceCatalogReader {
 
     const { data: aliasesData, error: aliasesError } = await this.client
       .from('price_identity_reconciliation_cache')
-      .select('product_id,observed_label,confidence')
+      .select('product_id,observed_label,source_url,source_fingerprint,confidence')
       .in('product_id', ids);
     if (aliasesError) throw new Error('PRICE_ALIAS_CACHE_READ_FAILED');
 
     const aliases = new Map<number, string[]>();
+    const reconciliations = new Map<number, PriceTarget['knownPriceReconciliations'] extends readonly (infer T)[] ? T[] : never>();
     for (const row of (aliasesData ?? []) as PriceAliasRow[]) {
-      if (Number(row.confidence) < 0.8) continue;
+      const confidence = Number(row.confidence);
+      if (confidence < 0.8) continue;
       aliases.set(row.product_id, [...(aliases.get(row.product_id) ?? []), row.observed_label]);
+      reconciliations.set(row.product_id, [
+        ...(reconciliations.get(row.product_id) ?? []),
+        {
+          observedLabel: row.observed_label,
+          sourceUrl: row.source_url,
+          sourceFingerprint: row.source_fingerprint,
+          confidence,
+        },
+      ]);
     }
 
     return products.map((row) => {
@@ -78,6 +91,7 @@ export class PriceAgentSupabaseCatalogReader implements PriceCatalogReader {
         version: row.version,
         modelYear: row.model_year,
         knownPriceAliases: aliases.get(row.id) ?? [],
+        knownPriceReconciliations: reconciliations.get(row.id) ?? [],
         currentPrice:
           price && price.currency_code === 'BRL'
             ? {
