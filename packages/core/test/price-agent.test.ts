@@ -100,6 +100,19 @@ describe('Price Agent', () => {
     expect(result?.msrpAmount).toBe('184990.00');
   });
 
+  it('accepts a raw BRL amount inside the bounded trim context', () => {
+    const snapshot = makePriceSnapshot({
+      target,
+      sourceUrl: 'https://www.jeep.com.br/compass.html',
+      sourceKind: 'OFFICIAL_MODEL_PAGE',
+      body:
+        '<section><h3>Compass Longitude T270</h3><div>R$ 184.990,00</div><p>Consulte condições.</p></section>',
+    });
+    const result = extractDeterministicPrice(snapshot, target);
+    expect(result?.msrpAmount).toBe('184990.00');
+    expect(result?.confidence).toBeGreaterThanOrEqual(0.82);
+  });
+
   it('does not classify conditional trade-in language as retail bonus', () => {
     const snapshot = makePriceSnapshot({
       target,
