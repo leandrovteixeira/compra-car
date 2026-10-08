@@ -47,17 +47,21 @@ describe('Brand Connector CLI', () => {
       expect(persistence.persistRunBundle).toHaveBeenCalledTimes(persist ? 1 : 0);
       const dir = join(root, '.local-reports/agents/brand-connector'),
         files = await readdir(dir);
-      expect(files).toHaveLength(2);
+      expect(files).toHaveLength(3);
+      expect(files.filter((f) => f.endsWith('.telemetry.json'))).toHaveLength(1);
+      expect(files.filter((f) => f.endsWith('.md'))).toHaveLength(1);
       const report = JSON.parse(
         await readFile(
           join(
             dir,
-            files.find((f) => f.endsWith('.json'))!,
+            files.find((f) => f.endsWith('.json') && !f.endsWith('.telemetry.json'))!,
           ),
           'utf8',
         ),
       );
       expect(report.run.agentType).toBe('BRAND_CONNECTOR');
+      const metrics = JSON.parse(await readFile(join(dir, files.find((f) => f.endsWith('.telemetry.json'))!), 'utf8'));
+      expect(metrics).toMatchObject({runId: report.run.id, provider: 'fixture', schemaVersion: '22.5B', providerCalls: 1, llmCalls: null, estimatedCostUsd: null});
       expect(
         await readFile(
           join(
