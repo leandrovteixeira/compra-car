@@ -22,6 +22,29 @@ import type {
 
 const contentHash = (body: string) => createHash('sha256').update(body).digest('hex');
 
+export function priceSourceFingerprint(body: string): string {
+  const decoded = decodeHtmlEntities(body);
+  const embeddedRows = [...decoded.matchAll(
+    /"versionName"\s*:\s*"([^"]+)"[\s\S]{0,1800}?"price"\s*:\s*"([0-9]+(?:\.[0-9]+)?)"[\s\S]{0,700}?"year"\s*:\s*"(\d{4})"/giu,
+  )]
+    .map((match) => [match[1]!.trim(), match[2]!, match[3]!].join('|'))
+    .sort();
+
+  const stableText = decoded
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/giu, ' ')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/giu, ' ')
+    .replace(/\b(?:NREUM|newrelic|bam\.nr-data\.net)\b[\s\S]{0,4000}/giu, ' ')
+    .replace(/\b(?:timestamp|nonce|requestId|sessionId|traceId)\b\s*[:=]\s*["']?[^"'\s,}<]+/giu, ' ')
+    .replace(/<[^>]+>/gu, ' ')
+    .replace(/\s+/gu, ' ')
+    .trim()
+    .slice(0, 120000);
+
+  return createHash('sha256')
+    .update(JSON.stringify({ embeddedRows, stableText }))
+    .digest('hex');
+}
+
 function decodeHtmlEntities(value: string): string {
   return value
     .replace(/&nbsp;|&#160;/giu, ' ')
@@ -511,7 +534,7 @@ export function makePriceSnapshot(input: {
     sourceKind: input.sourceKind,
     fetchedAt: input.fetchedAt ?? new Date().toISOString(),
     contentType: 'text/html',
-    contentHash: contentHash(input.body),
+    contentHash: priceSourceFingerprint(input.body),
     targetKey: targetKey(input.target),
     body: input.body,
     reusedFromAgentRunId: input.reusedFromAgentRunId ?? null,
