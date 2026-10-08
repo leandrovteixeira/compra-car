@@ -8,3 +8,5 @@ export * from './spec-source-provider';
 export * from './spec-source-discovery-provider';
 
 export * from './document-intelligence-provider';
+
+export * from './price-reconciliation-provider';
