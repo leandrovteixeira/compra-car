@@ -207,7 +207,6 @@ export class OpenAIPriceReconciliationProvider implements PriceReconciliationPro
               } as any,
             ],
             tool_choice: 'required',
-            max_tool_calls: this.options.maxToolCalls ?? 2,
             include: ['web_search_call.action.sources'],
             text: {
               format: {
