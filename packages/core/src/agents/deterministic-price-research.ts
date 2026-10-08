@@ -1,6 +1,11 @@
 import { createHash } from 'node:crypto';
 import type { BrandConnector } from './brand-connector-types';
-import { priceContexts, priceSourceAppliesToModel, priceTargetBinding } from './price-target-binding';
+import {
+  priceContexts,
+  priceSourceAppliesToModel,
+  priceTargetBinding,
+  priceVersionAliases,
+} from './price-target-binding';
 import {
   isConditionalCommercialText,
   priceSourceAllowed,
@@ -57,6 +62,86 @@ function brl(raw: string): string | null {
 function money(text: string): string | null {
   const m = text.match(/R\$\s*([0-9]{1,3}(?:\.[0-9]{3})*(?:,[0-9]{2})?)/iu);
   return m ? brl(m[1]!) : null;
+}
+
+type EmbeddedVersionRow = {
+  readonly versionName: string;
+  readonly price: string;
+  readonly year: number;
+};
+
+function embeddedVersionRows(body: string): readonly EmbeddedVersionRow[] {
+  const decoded = decodeHtmlEntities(body);
+  const rows: EmbeddedVersionRow[] = [];
+  const pattern =
+    /"versionName"\s*:\s*"([^"]+)"[\s\S]{0,1800}?"price"\s*:\s*"([0-9]+(?:\.[0-9]+)?)"[\s\S]{0,700}?"year"\s*:\s*"(\d{4})"/giu;
+  for (const match of decoded.matchAll(pattern)) {
+    const year = Number(match[3]);
+    if (!Number.isInteger(year)) continue;
+    rows.push({
+      versionName: match[1]!.trim(),
+      price: match[2]!,
+      year,
+    });
+  }
+  return rows;
+}
+
+function compactIdentity(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/gu, '')
+    .toLowerCase()
+    .replace(/\b(?:jeep)\b/gu, ' ')
+    .replace(/[^a-z0-9]+/gu, ' ')
+    .trim();
+}
+
+function structuredRowMatchesTarget(row: EmbeddedVersionRow, target: PriceTarget): boolean {
+  if (row.year !== target.modelYear) return false;
+  const rowText = compactIdentity(row.versionName);
+  const model = compactIdentity(target.model);
+  if (!rowText.includes(model)) return false;
+  return priceVersionAliases(target).some((alias) => {
+    const compactAlias = compactIdentity(alias);
+    return compactAlias.length >= 4 && rowText.includes(compactAlias);
+  });
+}
+
+function extractEmbeddedStructuredPrice(
+  snapshot: PriceSourceSnapshot,
+  target: PriceTarget,
+): PriceObservation | null {
+  const matches = embeddedVersionRows(snapshot.body).filter((row) =>
+    structuredRowMatchesTarget(row, target),
+  );
+  if (matches.length !== 1) return null;
+  const row = matches[0]!;
+  const n = Number(row.price);
+  if (!Number.isFinite(n) || n <= 0 || n > 20_000_000) return null;
+  const amount = n.toFixed(2);
+  const excerpt = `${row.versionName} | price=${row.price} | year=${row.year}`;
+  return {
+    target,
+    currencyCode: 'BRL',
+    msrpAmount: amount,
+    publicOfferAmount: null,
+    retailBonusAmount: null,
+    validFrom: null,
+    validTo: null,
+    confidence: 0.995,
+    ambiguityReasons: [],
+    evidence: [
+      {
+        sourceUrl: snapshot.finalUrl,
+        sourceKind: snapshot.sourceKind,
+        contentHash: snapshot.contentHash,
+        locator: 'embedded:versions-data',
+        excerpt,
+        capturedAt: snapshot.fetchedAt,
+      },
+    ],
+  };
 }
 
 function targetKey(target: PriceTarget) {
@@ -231,11 +316,19 @@ export class DeterministicFirstPriceResearch implements PriceResearchProvider {
       }
 
       for (const source of sources) {
-        const normalized = normalizePriceSourceText(source.body);
         if (!priceSourceAppliesToModel(source, target)) {
           modelSourceSkips++;
           continue;
         }
+
+        const structured = extractEmbeddedStructuredPrice(source, target);
+        if (structured) {
+          observations.push(structured);
+          deterministicExtractions++;
+          continue;
+        }
+
+        const normalized = normalizePriceSourceText(source.body);
         if (!priceTargetBinding(normalized, target)) {
           targetMisses++;
           if (diagnostics.length < 40)
