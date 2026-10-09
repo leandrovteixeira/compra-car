@@ -12,7 +12,7 @@ async function main(args:readonly string[]):Promise<number> {
   inventory,output,createSafeCaptureTransport(nodePinnedCaptureNetwork()),
  );
  console.log(JSON.stringify({captures:capture.captures.length,failures:capture.failures.length,
-  reviewed:capture.independentlyReviewed,output}));
+  reviewed:capture.independentlyReviewed,failuresByReason:capture.failures.reduce<Record<string,number>>((counts,item)=>{counts[item.reason]=(counts[item.reason]??0)+1;return counts;},{}),output}));
  return capture.failures.length ? 2 : 0;
 }
 void main(process.argv.slice(2)).then(code=>{process.exitCode=code;})
