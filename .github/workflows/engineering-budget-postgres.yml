@@ -18,7 +18,7 @@ jobs:
     timeout-minutes: 6
     services:
       postgres:
-        image: postgres:16
+        image: public.ecr.aws/docker/library/postgres:16
         env:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: engineering_qa_test
