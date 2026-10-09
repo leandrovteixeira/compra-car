@@ -20,3 +20,12 @@ Never apply to production; never create a budget row with production credentials
 The migration `sprint_22_5_agent_spend_budget` was applied successfully to the **Compra Car Staging** Supabase project (project reference `shfsjyjxmgwnlexmdkcs`). Production was not touched. An attempt to execute SQL validation queries through the connector was blocked by tool security settings, therefore **real Postgres reserve/concurrency behavior is not yet integration-tested**. No pilot budget row was inserted, no API credentials used, and no OpenAI calls issued.
 
 `run-brand-connector.ts` now accepts an explicitly injected `AgentCostAdmission` and passes it to the OpenAI provider. The default CLI path still has **no controller** and rejects paid dispatch. The shared Supabase adapter is available but is **not auto-initialized or used to authorize spending**. Do not mark QA/paid pipeline accepted until database integration testing and provider-enforced charging controls have been independently completed.
+
+## Verified offline integration — 2026-10-09
+
+- GitHub Actions [budget PostgreSQL integration #3](https://github.com/leandrovteixeira/compra-car/actions/runs/37989283113): **PASS**. Against disposable PostgreSQL 16, the draft migration applied successfully, exactly one of two simultaneous USD 1.25 reservation requests was admitted under a shared USD 2 cap, excess was refused, and UNKNOWN completion retained the full reservation.
+- GitHub Actions [Engineering validation #187](https://github.com/leandrovteixeira/compra-car/actions/runs/37989283107): **PASS** for scoped typecheck, unit tests and lint.
+- Brand Connector now sends `max_output_tokens: 1800` (bounded constructor override accepted only within limit). The installed Responses SDK did **not** accept a `max_tool_calls` request field; attempts to add it failed typechecking and were reverted. Therefore tool/web-search billing exposure is **not yet tightly bounded**. The external-provider hard-dollar cap also remains unverified.
+- Synthetic multi-brand shared-budget test shows two simulated calls reserve USD 0.90 each, a third is blocked before transport, and failed transport calls keep reserves. **No real OpenAI spending.**
+
+**Go/no-go:** Offline infrastructure and DB concurrency gates: GO. Real paid QA Kia/VW benchmark under the user-approved strict USD 2 cap: **NO-GO** until (1) provider-billable upper bound or verified external hard-stop, (2) controlled tool search charges, and (3) reviewed canonical Brand benchmark are established. Do not auto-approve the PR or deploy to production.
