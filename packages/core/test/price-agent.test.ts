@@ -12,6 +12,7 @@ import {
   type PriceTarget,
 } from '../src/agents';
 import type { BrandConnector } from '../src/agents';
+import type { AgentRun, AgentFindingBundle, AgentReview } from '../src/agent-platform/types';
 
 const target: PriceTarget = {
   productId: '101',
@@ -144,14 +145,8 @@ describe('Price Agent', () => {
         }),
       ],
     });
-    const connector = {
-      id: 'connector',
-      brand: 'Jeep',
-      market: 'BR',
-      allowedDomains: ['jeep.com.br'],
-      sourceEntries: [],
-    } as any;
-    const result = await research.researchPrices([target2026], connector);
+    const localConnector: BrandConnector = { ...connector, sourceEntries: [] };
+    const result = await research.researchPrices([target2026], localConnector);
     expect(result.observations).toHaveLength(1);
     expect(result.observations[0]?.msrpAmount).toBe('199990.00');
     expect(result.metrics.deterministicExtractions).toBe(1);
@@ -243,7 +238,7 @@ describe('Price Agent', () => {
       brand: 'Jeep',
       completedAt: '2026-10-08T12:00:00.000Z',
       createdAt: '2026-10-08T12:00:00.000Z',
-    } as any;
+    } as AgentRun;
     const matched = {
       finding: {
         id: '22222222-2222-4222-8222-222222222222',
@@ -253,7 +248,7 @@ describe('Price Agent', () => {
         proposal: null,
       },
       evidence: [],
-    } as any;
+    } as AgentFindingBundle;
     const acceptedNew = {
       finding: {
         id: '33333333-3333-4333-8333-333333333333',
@@ -263,7 +258,7 @@ describe('Price Agent', () => {
         proposal: { modelYear: 2027 },
       },
       evidence: [],
-    } as any;
+    } as AgentFindingBundle;
     const deferred = {
       finding: {
         id: '44444444-4444-4444-8444-444444444444',
@@ -273,19 +268,19 @@ describe('Price Agent', () => {
         proposal: { modelYear: 2028 },
       },
       evidence: [],
-    } as any;
+    } as AgentFindingBundle;
     const repository = {
       listRuns: vi.fn(async () => ({ items: [{ run, counts: {} }], total: 1 })),
       getRun: vi.fn(async () => ({ run, findings: [matched, acceptedNew, deferred] })),
       getLatestReview: vi.fn(async (id: string) =>
         id === acceptedNew.finding.id
-          ? ({ decision: 'ACCEPT' } as any)
+          ? ({ decision: 'ACCEPT' } as AgentReview)
           : id === deferred.finding.id
-            ? ({ decision: 'DEFER' } as any)
+            ? ({ decision: 'DEFER' } as AgentReview)
             : null,
       ),
     };
-    const result = await new PlatformPriceModelYearSelectionReader(repository as any).latestCompleted(
+    const result = await new PlatformPriceModelYearSelectionReader(repository as ConstructorParameters<typeof PlatformPriceModelYearSelectionReader>[0]).latestCompleted(
       'Jeep',
       'BR',
     );
