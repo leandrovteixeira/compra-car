@@ -83,3 +83,5 @@ export * from './engineering-failure-intelligence';
 export * from './engineering-iteration-gate';
 export * from './engineering-evaluation-loop';
 export * from './engineering-patch-manifest';
+
+export * from './engineering-brand-replay';
