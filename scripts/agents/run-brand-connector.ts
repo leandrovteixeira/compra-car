@@ -197,7 +197,7 @@ export async function runBrandConnectorCli(
           reason: sameDefinition
             ? 'SOURCE_FRESHNESS_AND_ACCEPTED_REPLAY_REQUIRED'
             : 'CONNECTOR_CHANGED_OR_UNVERIFIED',
-        }, null, 2) + '\\n',
+        }, null, 2) + '\n',
       );
     }
     if (options.persistFindings) await persistence!.persistRunBundle(clean);
