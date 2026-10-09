@@ -14,3 +14,9 @@ Next:
 5. Continue offline cold/warm golden equivalence tests separately.
 
 Never apply to production; never create a budget row with production credentials.
+
+## QA deployment observation — 2026-10-09
+
+The migration `sprint_22_5_agent_spend_budget` was applied successfully to the **Compra Car Staging** Supabase project (project reference `shfsjyjxmgwnlexmdkcs`). Production was not touched. An attempt to execute SQL validation queries through the connector was blocked by tool security settings, therefore **real Postgres reserve/concurrency behavior is not yet integration-tested**. No pilot budget row was inserted, no API credentials used, and no OpenAI calls issued.
+
+`run-brand-connector.ts` now accepts an explicitly injected `AgentCostAdmission` and passes it to the OpenAI provider. The default CLI path still has **no controller** and rejects paid dispatch. The shared Supabase adapter is available but is **not auto-initialized or used to authorize spending**. Do not mark QA/paid pipeline accepted until database integration testing and provider-enforced charging controls have been independently completed.
