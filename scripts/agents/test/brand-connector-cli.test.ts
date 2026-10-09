@@ -97,6 +97,15 @@ describe('Brand Connector CLI', () => {
             root,
           ),
         ).toBe(0);
+        const dir = join(root, '.local-reports/agents/brand-connector');
+        const files = await readdir(dir);
+        const shadow = JSON.parse(await readFile(
+          join(dir, files.find((name) => name.endsWith('.engineering-shadow.json'))!),
+          'utf8',
+        )) as { reuseEligible: boolean; llmCallsAvoided: number; sourceFreshnessVerified: boolean };
+        expect(shadow.reuseEligible).toBe(false);
+        expect(shadow.llmCallsAvoided).toBe(0);
+        expect(shadow.sourceFreshnessVerified).toBe(false);
       } finally {
         await rm(root, { recursive: true, force: true });
       }
