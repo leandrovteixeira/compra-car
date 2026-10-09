@@ -23,7 +23,8 @@ function publicIp(ip:string):boolean {
 }
 export interface SafeCaptureNetwork {
  readonly resolve:(host:string)=>Promise<readonly string[]>;
- readonly request:(url:string, signal:AbortSignal)=>Promise<{
+ /** Must pin the TCP destination to address while verifying TLS for URL hostname. */
+ readonly request:(url:string, address:string, signal:AbortSignal)=>Promise<{
   status:number;headers:{get(name:string):string|null};
   body:ReadableStream<Uint8Array>|null;
  }>;
@@ -46,7 +47,7 @@ export function createSafeCaptureTransport(
   const controller=new AbortController();
   const timer=setTimeout(()=>controller.abort(),timeoutMs);
   try{
-   const response=await network.request(url,controller.signal);
+   const response=await network.request(url,addresses[0]!,controller.signal);
    if(response.status>=300&&response.status<400)throw new Error('ENGINEERING_REDIRECT_BLOCKED');
    const type=response.headers.get('content-type')??'';
    if(response.status!==200||!(/^(?:text\/html|application\/json)(?:;|$)/iu.test(type)))
@@ -69,7 +70,7 @@ export function createSafeCaptureTransport(
   }finally{clearTimeout(timer);}
  }};
 }
-/** Only use with a pinned-address transport. Fetch is not DNS-pinned. */
+/** Only pair with a pinned-address request implementation. Ordinary fetch is not DNS-pinned. */
 export async function resolveOfficialCaptureAddresses(host:string):Promise<readonly string[]>{
  const records=await lookup(host,{all:true});
  return records.map(r=>r.address);
