@@ -12,7 +12,7 @@ import {
   type BrandConnectorResearchProvider,
 } from '@compra-car/core/agents';
 import type { AgentPlatformRepository } from '@compra-car/core/agent-platform';
-import { OpenAIBrandConnectorResearchProvider } from '@compra-car/adapter-openai';
+import { OpenAIBrandConnectorResearchProvider, type AgentCostAdmission } from '@compra-car/adapter-openai';
 import { redactSecrets } from './report-writer';
 import { loadAgentEnvironment } from './agent-environment';
 import { safeAgentFailure } from './agent-diagnostics';
@@ -60,6 +60,7 @@ export async function runBrandConnectorCli(
     repository?: BrandConnectorRepository;
     persistence?: Pick<AgentPlatformRepository, 'persistRunBundle'>;
     research?: BrandConnectorResearchProvider;
+    costAdmission?: AgentCostAdmission;
   } = {},
 ): Promise<number> {
   try {
@@ -111,6 +112,7 @@ export async function runBrandConnectorCli(
         : new OpenAIBrandConnectorResearchProvider({
             apiKey: env.OPENAI_API_KEY ?? '',
             model: env.OPENAI_AGENT_MODEL ?? '',
+            costAdmission: dependencies.costAdmission,
             onUsage: (usage) => { apiUsage.value = usage; },
             prompt: await readFile(
               resolve(root, 'docs/agents/prompts/brand-connector-agent-v1.md'),
