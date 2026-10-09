@@ -19,7 +19,7 @@ export function nodePinnedCaptureNetwork(): SafeCaptureNetwork {
      reject(new Error('ENGINEERING_INVALID_DESTINATION'));return;
     }
     const req=httpsRequest(target,{
-     method:'GET',agent:false,signal,
+     method:'GET',agent:false,signal,autoSelectFamily:false,
      servername:target.hostname,
      rejectUnauthorized:true,
      lookup:(_hostname,_options,callback)=>{
@@ -37,7 +37,10 @@ export function nodePinnedCaptureNetwork(): SafeCaptureNetwork {
       body:Readable.toWeb(response) as ReadableStream<Uint8Array>,
      });
     });
-    req.on('error',reject);
+    req.on('error',(error: NodeJS.ErrnoException)=>{
+     const known=new Set(['ECONNREFUSED','ECONNRESET','ETIMEDOUT','ENOTFOUND','EAI_AGAIN','EHOSTUNREACH','ENETUNREACH','ERR_TLS_CERT_ALTNAME_INVALID','UNABLE_TO_VERIFY_LEAF_SIGNATURE']);
+     reject(new Error(known.has(error.code??'') ? 'ENGINEERING_NETWORK_'+error.code : 'ENGINEERING_NETWORK_FAILED'));
+    });
     req.end();
    });
   },
