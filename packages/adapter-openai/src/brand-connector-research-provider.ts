@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import Ajv from 'ajv';
+import type { AgentCostAdmission } from './agent-cost-admission';
 import type {
   Response,
   ResponseCreateParamsNonStreaming,
@@ -50,6 +51,7 @@ export class OpenAIBrandConnectorResearchProvider implements BrandConnectorResea
   constructor(
     private readonly options: {
       apiKey: string;
+      costAdmission?: AgentCostAdmission;
       model: string;
       prompt: string;
       transport?: (request: ResponseCreateParamsNonStreaming) => Promise<Response>;
@@ -65,6 +67,10 @@ export class OpenAIBrandConnectorResearchProvider implements BrandConnectorResea
     this.transport = options.transport ?? ((request) => client!.responses.create(request));
   }
   async researchConnector(input: BrandConnectorResearchInput): Promise<BrandConnectorResearch> {
+    if (!this.options.transport && !this.options.costAdmission)
+      throw new Error('COST_ADMISSION_REQUIRED');
+    const reservation = this.options.costAdmission
+      ? await this.options.costAdmission.reserve(this.options.model) : null;
     let response: Response;
     try {
       response = await this.transport({
@@ -88,6 +94,8 @@ export class OpenAIBrandConnectorResearchProvider implements BrandConnectorResea
       });
     } catch {
       throw new Error('CONNECTOR_RESEARCH_FAILED');
+    } finally {
+      if (reservation) await this.options.costAdmission!.complete(reservation, false);
     }
     if (response.status !== 'completed') throw new Error('CONNECTOR_RESEARCH_INCOMPLETE');
     const searches = response.output.filter((o) => o.type === 'web_search_call');
