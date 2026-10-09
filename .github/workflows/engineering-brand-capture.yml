@@ -5,6 +5,10 @@ on:
     paths:
       - '.github/workflows/engineering-brand-capture.yml'
       - 'docs/agents/fixtures/brand-pilot-official-source-inventory.json'
+  pull_request:
+    paths:
+      - '.github/workflows/engineering-brand-capture.yml'
+      - 'docs/agents/fixtures/brand-pilot-official-source-inventory.json'
   workflow_dispatch:
 permissions:
   contents: read
