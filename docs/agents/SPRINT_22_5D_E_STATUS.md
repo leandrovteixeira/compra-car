@@ -44,3 +44,9 @@ Before enabling warm-run short-circuit in Brand Connector: capture actual offici
 ## 22.5F snapshot capture capability
 
 Added `scripts/agents/engineering-source-capture.ts`: a transport-injected, allowlisted capture helper with byte hashing, source inventory hash, content-addressed payloads and explicit failures. Unit tests use **injected synthetic HTTP results** only. It is **not wired to a live fetch CLI** and has not retrieved official source bytes. The transport implementation must enforce hostname/IP checks, redirect handling, timeouts, size and rate bounds before any live capture; validating only the final URL after fetching is insufficient to prevent SSRF or unbounded downloads. Capture manifests remain `independentlyReviewed:false` until an external reviewer approves them. No golden benchmark or measured cost savings yet.
+
+## 22.5F safe transport boundary (2026-10-09)
+
+Added `engineering-safe-capture-transport.ts` with host allowlist, HTTPS-only policy, DNS public-address validation, mandatory **address-pinned request adapter** contract, redirect rejection, response content-type gate, timeout, bounded streaming bytes and offline tests. It deliberately does **not** use generic `fetch`, which may re-resolve to an unsafe IP after validation (DNS rebinding). The pinned network request implementation must be separately audited for TLS hostname validation and IP family support before live use.
+
+This is a reusable transport policy, **not yet an executable real capture run**. Official Kia/VW raw HTML remains uncaptured. No CI pass claim until the current workflow finishes.
