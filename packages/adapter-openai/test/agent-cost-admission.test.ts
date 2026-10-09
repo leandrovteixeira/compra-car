@@ -35,3 +35,24 @@ describe('Engineering mandatory pre-call cost admission',()=>{
     expect(transport).not.toHaveBeenCalled();
   });
 });
+
+describe('Kia VW multi-agent shared-budget offline simulation',()=>{
+ it('allows only two reserved calls across brands under a shared two-dollar ledger', async()=>{
+  const ledger=new InMemoryAgentCostAdmission(2,{'pilot-model':0.9});
+  const transport=vi.fn(async()=>{throw new Error('simulated transport failure, no API');});
+  const provider=new OpenAIBrandConnectorResearchProvider({
+   apiKey:'synthetic',model:'pilot-model',prompt:'fixture',transport,costAdmission:ledger,
+  });
+  await Promise.all([
+   expect(provider.researchConnector({brand:'Kia',market:'BR',mode:'discover'}))
+    .rejects.toThrow('CONNECTOR_RESEARCH_FAILED'),
+   expect(provider.researchConnector({brand:'Volkswagen',market:'BR',mode:'discover'}))
+    .rejects.toThrow('CONNECTOR_RESEARCH_FAILED'),
+  ]);
+  expect(transport).toHaveBeenCalledTimes(2);
+  await expect(provider.researchConnector({brand:'Kia',market:'BR',mode:'discover'}))
+   .rejects.toThrow('COST_BUDGET_EXHAUSTED');
+  expect(transport).toHaveBeenCalledTimes(2);
+  expect(ledger.snapshot()).toMatchObject({budgetUsd:2,consumedReserveUsd:1.8,pending:0});
+ });
+});
