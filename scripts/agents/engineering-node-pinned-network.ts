@@ -19,7 +19,7 @@ export function nodePinnedCaptureNetwork(): SafeCaptureNetwork {
      reject(new Error('ENGINEERING_INVALID_DESTINATION'));return;
     }
     const req=httpsRequest(target,{
-     method:'GET',agent:false,signal,autoSelectFamily:false,
+     method:'GET',agent:false,signal,
      servername:target.hostname,
      rejectUnauthorized:true,
      lookup:(_hostname,_options,callback)=>{
