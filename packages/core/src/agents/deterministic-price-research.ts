@@ -12,6 +12,9 @@ import {
 } from './price-source-policy';
 import type {
   PriceEvidence,
+  PriceAiUsage,
+  PriceIdentityMapping,
+  PriceReconciliationProvider,
   PriceObservation,
   PriceResearchProvider,
   PriceResearchResult,
@@ -354,7 +357,7 @@ export class DeterministicFirstPriceResearch implements PriceResearchProvider {
           target: PriceTarget,
         ): Promise<PriceObservation | null>;
       };
-      reconciliation?: import('./price-agent-types').PriceReconciliationProvider;
+      reconciliation?: PriceReconciliationProvider;
       hardCostCapUsd?: number;
     },
   ) {}
@@ -369,8 +372,8 @@ export class DeterministicFirstPriceResearch implements PriceResearchProvider {
   ): Promise<PriceResearchResult> {
     const observations: PriceObservation[] = [];
     const diagnostics: NonNullable<PriceResearchResult['diagnostics']>[number][] = [];
-    const mappings: import('./price-agent-types').PriceIdentityMapping[] = [];
-    const usage: import('./price-agent-types').PriceAiUsage[] = [];
+    const mappings: PriceIdentityMapping[] = [];
+    const usage: PriceAiUsage[] = [];
     let cacheHits = 0,
       networkFetches = 0,
       deterministicExtractions = 0,
