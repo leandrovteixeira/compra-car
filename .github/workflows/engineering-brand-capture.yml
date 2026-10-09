@@ -8,13 +8,6 @@ on:
       - 'scripts/agents/engineering-capture-cli.ts'
       - 'scripts/agents/engineering-node-pinned-network.ts'
       - 'scripts/agents/engineering-safe-capture-transport.ts'
-  pull_request:
-    paths:
-      - '.github/workflows/engineering-brand-capture.yml'
-      - 'docs/agents/fixtures/brand-pilot-official-source-inventory.json'
-      - 'scripts/agents/engineering-capture-cli.ts'
-      - 'scripts/agents/engineering-node-pinned-network.ts'
-      - 'scripts/agents/engineering-safe-capture-transport.ts'
   workflow_dispatch:
 permissions:
   contents: read
