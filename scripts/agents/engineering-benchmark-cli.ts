@@ -7,7 +7,7 @@ export async function runEngineeringBenchmarkCli(
   args: readonly string[],
   log: (message:string)=>void = console.log,
 ): Promise<number> {
-  if(args.length !== 3 || args[0]!=='--golden') throw new Error('ENGINEERING_BENCHMARK_ARGS');
+  if(args.length !== 2 || args[0]!=='--golden') throw new Error('ENGINEERING_BENCHMARK_ARGS');
   // Prefer explicit pairing: a JSON file carries expected and baseline/candidate observations.
   const raw=await readFile(args[1]!,'utf8');
   const parsed:unknown=JSON.parse(raw);
