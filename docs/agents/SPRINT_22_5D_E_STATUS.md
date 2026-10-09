@@ -17,3 +17,18 @@ Implemented `engineering-evaluation-loop.ts` with capped iteration count, bounde
 - Added `engineering-benchmark-cli.ts`: replay explicitly reviewed offline JSON fixtures and detect identity-level regressions. Synthetic fixtures in unit tests are not Kia/VW manufacturer benchmarks.
 - Remaining: trusted sandbox execution of patches, automated patch generation, captured manufacturer source snapshots, semantic equivalence review, HTTP/cache measurement, paid cost benchmark and a real cross-brand pilot.
 - The PR remains draft and must not merge until final CI passes.
+
+## 22.5E file-only patch executor checkpoint
+
+Added `scripts/agents/engineering-sandbox.ts`: a callable, offline patch writer for **caller-owned disposable workspaces**. It admits only strict manifest paths and engineering candidate branch names, verifies original and replacement SHA-256 hashes, checks resolved file paths against symlinks, then writes changed contents. No shell, Git execution, repository cloning, CI invocation, or network calls occur inside the executor. It is not a standalone autonomous agent and does not merge to production. Because filesystem state can change between verification and writing, the caller must ensure exclusive access to a disposable workspace and must not use this tool against a shared checkout.
+
+## 22.5F real-source benchmark prerequisites
+
+1. Capture unchanged official source snapshots with date, domain allowlist, source URL, semantic fingerprint and evidence scope.
+2. Independently review expected Brand Connector evidence for Kia and Volkswagen; do not mark synthetic fixtures as real.
+3. Pin both candidate and baseline to the same snapshot, canonical dataset revision and business rules.
+4. Run both paths offline and record output identities, evidence applicability, cost and unknown metric flags.
+5. Repeat with unchanged sources and with controlled source mutations; do not assume a warm run is cheap before measurements.
+6. Gate with full CI plus manual review of any proposed changes.
+
+No live manufacturer snapshot or API benchmark was run in this commit series.
