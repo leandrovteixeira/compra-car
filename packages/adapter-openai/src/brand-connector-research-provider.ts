@@ -54,6 +54,8 @@ export class OpenAIBrandConnectorResearchProvider implements BrandConnectorResea
       costAdmission?: AgentCostAdmission;
       model: string;
       prompt: string;
+      maxOutputTokens?: number;
+      maxToolCalls?: number;
       transport?: (request: ResponseCreateParamsNonStreaming) => Promise<Response>;
       onUsage?: (usage: { llmCalls: number; webSearches: number; inputTokens: number | null;
         outputTokens: number | null; cachedInputTokens: number | null }) => void;
@@ -61,6 +63,8 @@ export class OpenAIBrandConnectorResearchProvider implements BrandConnectorResea
   ) {
     if (!options.apiKey.trim() || !options.model.trim() || !options.prompt.trim())
       throw new Error('OPENAI_AGENT_CONFIG_REQUIRED');
+    if (!Number.isInteger(options.maxOutputTokens ?? 1800) || (options.maxOutputTokens ?? 1800) > 1800 || (options.maxOutputTokens ?? 1800) < 1 || !Number.isInteger(options.maxToolCalls ?? 2) || (options.maxToolCalls ?? 2) > 2 || (options.maxToolCalls ?? 2) < 1)
+      throw new Error('CONNECTOR_BUDGET_BOUND_INVALID');
     const client = options.transport
       ? undefined
       : new OpenAI({ apiKey: options.apiKey, timeout: 120000, maxRetries: 0, logLevel: 'off' });
@@ -76,6 +80,8 @@ export class OpenAIBrandConnectorResearchProvider implements BrandConnectorResea
       response = await this.transport({
         model: this.options.model,
         store: false,
+        max_output_tokens: this.options.maxOutputTokens ?? 1800,
+        max_tool_calls: this.options.maxToolCalls ?? 2,
         instructions: this.options.prompt,
         input: JSON.stringify(input),
         tools: [
