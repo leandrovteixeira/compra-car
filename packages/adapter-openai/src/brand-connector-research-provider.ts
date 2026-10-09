@@ -75,6 +75,7 @@ export class OpenAIBrandConnectorResearchProvider implements BrandConnectorResea
     const reservation = this.options.costAdmission
       ? await this.options.costAdmission.reserve(this.options.model) : null;
     let response: Response;
+    let usageKnown = false;
     try {
       response = await this.transport({
         model: this.options.model,
@@ -96,10 +97,11 @@ export class OpenAIBrandConnectorResearchProvider implements BrandConnectorResea
           },
         },
       });
+      usageKnown = response.usage !== null && response.usage !== undefined;
     } catch {
       throw new Error('CONNECTOR_RESEARCH_FAILED');
     } finally {
-      if (reservation) await this.options.costAdmission!.complete(reservation, false);
+      if (reservation) await this.options.costAdmission!.complete(reservation, usageKnown);
     }
     if (response.status !== 'completed') throw new Error('CONNECTOR_RESEARCH_INCOMPLETE');
     const searches = response.output.filter((o) => o.type === 'web_search_call');
