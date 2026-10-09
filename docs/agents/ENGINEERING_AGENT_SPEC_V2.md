@@ -48,3 +48,22 @@ The current unit tests use **synthetic Kia and VW identities** to verify scoring
 
 ## Reporting
 For each cycle: hypothesis, code/tests, full before/after quality, usage/cost, risk, reason to accept/reject, uncertainty and next benchmark. Never claim cost savings from missing metrics.
+
+## Mandatory cost-governance remediation gate
+
+Before any paid execution of a target agent, the Engineering Agent MUST audit whether it has a pre-call spending admission control. If missing or incomplete, the **first optimization task** is to implement and test the control; do not proceed to paid benchmarking until the gate passes.
+
+Required properties:
+1. Explicit run budget, including a shared aggregate budget for multi-brand pilots.
+2. Pricing catalog versioned per model, with input, cached input, output, reasoning (if separately billed) and tool/search fees.
+3. Bounded per-call output and bounded web/tool usage; prohibit any model or tool configuration without a defensible conservative upper-bound reservation.
+4. Atomic reserve **before dispatch** and reconcile after usage. Reservations must cover concurrent requests and any retries; failed, incomplete or missing-usage responses must not release budget optimistically.
+5. Fail closed for unknown models, missing rates, unknown maximum tool consumption, budget exhaustion, or storage/accounting errors.
+6. Durable budget scope and audit trail where execution can span processes/workers; process-local counters alone do not enforce a shared cap.
+7. Structured metrics: allowed/blocked calls, reserved amount, actual estimated usage, unknown fees and remaining budget. Never include API keys.
+8. Deterministic tests for over-budget admission, concurrent requests, retries, unknown pricing, missing usage, interruption and multi-agent totals.
+9. Human approval for increasing limits. Never silently relax limits or degrade correctness to reduce cost.
+
+The Price Agent provides a **reference implementation of estimated per-call reserve and post-response usage accounting**, but its current `spent + reserve` guard is not equivalent to an externally enforced hard billing ceiling. Audit and improve that pattern before generalizing it. The OpenAI Responses API itself does not expose a guaranteed per-request dollar-denominated cutoff through this code path. If actual billed cost cannot be upper-bounded, budget authorization alone is **not** permission to proceed. Continue offline or require an independently enforced provider/account spending control proven suitable for the requested ceiling.
+
+Priority sequence for any target: **cost safety gate → instrumentation → deterministic/cache optimization → golden benchmark → paid QA validation**.
