@@ -53,9 +53,15 @@ export function scoreEngineeringGolden(
     if ([...expected].some(x=>rejected.has(x))
         || [...resolved].some(x=>refused.has(x)||unsure.has(x))
         || [...refused].some(x=>unsure.has(x))) throw new Error('ENGINEERING_CONFLICTING_LABELS');
-    for (const key of resolved) expected.has(key) ? tp++ : fp++;
+    for (const key of resolved) {
+      if (expected.has(key)) tp++;
+      else fp++;
+    }
     for (const key of expected) if (!resolved.has(key)) fn++;
-    for (const key of refused) rejected.has(key) ? rejectedCorrectly++ : rejectedIncorrectly++;
+    for (const key of refused) {
+      if (rejected.has(key)) rejectedCorrectly++;
+      else rejectedIncorrectly++;
+    }
     ambiguous += unsure.size;
     caseSignatures.push(JSON.stringify([g.id,
       [...resolved].sort(), [...refused].sort(), [...unsure].sort()]));
