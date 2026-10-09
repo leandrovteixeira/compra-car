@@ -27,7 +27,8 @@ export class InMemoryAgentCostAdmission implements AgentCostAdmission {
     this.committed+=amount; this.pending.set(id,amount);
     return {id,reservedUsd:amount};
   }
-  async complete(reservation:AgentCostReservation, _usageKnown:boolean):Promise<void>{
+  async complete(reservation:AgentCostReservation, usageKnown:boolean):Promise<void>{
+    void usageKnown;
     if(!this.pending.has(reservation.id))throw new Error('COST_RESERVATION_UNKNOWN');
     this.pending.delete(reservation.id);
     // Conservatively hold full admission reserve even after known usage.
