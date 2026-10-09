@@ -67,3 +67,28 @@ Required properties:
 The Price Agent provides a **reference implementation of estimated per-call reserve and post-response usage accounting**, but its current `spent + reserve` guard is not equivalent to an externally enforced hard billing ceiling. Audit and improve that pattern before generalizing it. The OpenAI Responses API itself does not expose a guaranteed per-request dollar-denominated cutoff through this code path. If actual billed cost cannot be upper-bounded, budget authorization alone is **not** permission to proceed. Continue offline or require an independently enforced provider/account spending control proven suitable for the requested ceiling.
 
 Priority sequence for any target: **cost safety gate → instrumentation → deterministic/cache optimization → golden benchmark → paid QA validation**.
+
+## Canonical Price-derived implementation standard (Sprint 22.5)
+
+This is an actionable migration rule for the Engineering Agent. Use `AGENT_COST_POLICY` and `planAgentCostRemediation()` from `packages/core/src/agents/engineering-cost-policy.ts` in target-agent audits, before authorizing any paid run.
+
+**Reuse from the Price Agent**
+- Use cache/deterministic source discovery before model inference, then cheapest available model and escalation only for unresolved ambiguity.
+- Configure bounded `max_output_tokens`, bounded tool/search calls, `maxRetries: 0` unless retries are separately admitted, versioned model-price tables, cached-input accounting, and web/tool fees.
+- Produce model-level usage, estimated cost, reason for escalation, and outcome.
+
+**Correct before replicating**
+- The Price Agent's local `spent + reserve` check is an estimate-based guard, not atomic/shared reservation, and it can release the effective cost difference before certainty about external charges.
+- Unknown usage (API errors, timeouts, invalid response, missing usage) must keep the full reserved liability.
+- Concurrent workers and different agent families must debit the **same** shared run ledger transactionally.
+- Agent-local pricing tables are a starting reference, not a source of truth across providers or permanent guaranteed upper bounds.
+- The shared `AgentCostAdmission` contract is usable now; the QA migration and Supabase adapter are a prototype. Do not silently inject a controller with guessed model reserves.
+
+**Implementation priority**
+1. Brand Connector: use the explicit admission contract and QA ledger; measure telemetry; keep paid execution off until external cap is verified.
+2. MMV Discovery: audit existing detection/caching; implement missing controls, escalating only unresolved brand/model cases.
+3. Model Year: same cost admission scope, bounded reasoning and tool calls; reuse accepted MMV inputs.
+4. Spec Agent: cheapest deterministic extraction first, protect high-volume per-trim workloads.
+5. Price Agent: later replace its local `spent + reserve` with the shared reservation mechanism without changing reconciliation quality.
+
+All new paid agents MUST pass the standard profile audit; if any feature is missing, Engineering Agent must create a remediation patch and tests rather than only reporting it. Human review is required before deploy, migration promotion, or changes in spending limits. The user's authorized US$2 Kia/VW pilot must **not** be executed under a mere internal estimated reservation in lieu of a verified hard billing ceiling.
