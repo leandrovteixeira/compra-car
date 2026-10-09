@@ -166,7 +166,7 @@ async function operationalResearch(env: Readonly<Record<string, string | undefin
         if (seen.has(entry.url)) continue;
         seen.add(entry.url);
         if (!entryAppliesToTarget(entry, target.model)) continue;
-        const sourceKind = connectorEntryPriceKind(entry as any) ?? kindForEntry(entry.type);
+        const sourceKind = connectorEntryPriceKind(entry as Parameters<typeof connectorEntryPriceKind>[0]) ?? kindForEntry(entry.type);
         if (!sourceKind) continue;
 
         let pending = requestCache.get(entry.url);
