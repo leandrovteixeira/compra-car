@@ -53,8 +53,10 @@ export async function captureEngineeringSources(
          kind:source.kind,status:value.status,contentType:value.contentType,contentSha256:digest,
          byteLength:bytes.length});
        blobs.push({path:resolve(dirname(outputPath),'snapshots',digest+'.html'),body:value.body});
-     }catch{
-       failures.push({brand:brand.brand,sourceUrl:canonical,reason:'CAPTURE_FAILED'});
+     }catch(error){
+       const message=error instanceof Error?error.message:'';
+       const reason=/^ENGINEERING_[A-Z_]+$/u.test(message)?message:'CAPTURE_TRANSPORT_FAILED';
+       failures.push({brand:brand.brand,sourceUrl:canonical,reason});
      }
    }
  }
