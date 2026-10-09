@@ -32,3 +32,11 @@ Added `scripts/agents/engineering-sandbox.ts`: a callable, offline patch writer 
 6. Gate with full CI plus manual review of any proposed changes.
 
 No live manufacturer snapshot or API benchmark was run in this commit series.
+
+## 22.5F — conservative Brand replay eligibility (2026-10-09)
+
+Added `engineering-brand-replay.ts` and tests for Kia and VW (synthetic input only). Candidate reuse requires the *same reviewed connector fingerprint*, complete source URL census, valid SHA-256 content digests, source/brand/market consistency and a nonempty external review reference. Missing evidence or changed sources prevent reuse. Capture time alone does not invalidate matching digests.
+
+**This is only an eligibility check**, not network retrieval, freshness verification, a durable cache, or proof that API costs are zero. The `independentReview` flag is caller-supplied and must be authenticated by a future trusted benchmark pipeline. Synthetic Kia/VW records test the policy; they are not independently verified official manufacturer records.
+
+Before enabling warm-run short-circuit in Brand Connector: capture actual official source snapshots with independently reviewed evidence, define max age/freshness/revalidation, ensure cache can never bypass required health checks, and compare matching cold/warm snapshots and metrics. Do not skip LLM yet.
