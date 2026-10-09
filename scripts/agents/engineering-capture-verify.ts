@@ -2,6 +2,7 @@ import {createHash} from 'node:crypto';
 import {readFile,writeFile} from 'node:fs/promises';
 import {dirname,join} from 'node:path';
 import type {SourceCaptureManifest} from './engineering-source-capture';
+import { saveBrandCaptureObservations } from './engineering-brand-observed-coverage';
 
 export interface EngineeringCaptureIntegrity {
  schemaVersion:'engineering-capture-integrity-v1';
@@ -38,6 +39,10 @@ async function main(args:readonly string[]){
  if(args.length!==2||args[0]!=='--manifest')throw new Error('ENGINEERING_REPLAY_ARGUMENTS');
  const report=await verifyEngineeringCapture(args[1]!);
  await writeFile(join(dirname(args[1]!),'integrity.json'),JSON.stringify(report,null,2)+'\n');
+ if (report.allVerified) {
+   await saveBrandCaptureObservations(args[1]!,
+     new URL('../../docs/agents/fixtures/brand-pilot-official-source-inventory.json', import.meta.url).pathname);
+ }
  console.log(JSON.stringify(report));
  process.exitCode=report.allVerified?0:2;
 }
