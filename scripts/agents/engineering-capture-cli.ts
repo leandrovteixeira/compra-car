@@ -7,7 +7,7 @@ import { nodePinnedCaptureNetwork } from './engineering-node-pinned-network';
 async function main(args:readonly string[]):Promise<number> {
  if(args.length!==2 || args[0]!=='--output') throw new Error('ENGINEERING_CAPTURE_ARGUMENTS');
  const output=resolve(args[1]!);
- const inventory=resolve('docs/agents/fixtures/brand-pilot-official-source-inventory.json');
+ const inventory=resolve(import.meta.dirname,'../../docs/agents/fixtures/brand-pilot-official-source-inventory.json');
  const capture=await captureEngineeringSources(
   inventory,output,createSafeCaptureTransport(nodePinnedCaptureNetwork()),
  );
