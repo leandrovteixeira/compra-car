@@ -5,6 +5,10 @@ on:
     paths:
       - '.github/workflows/engineering-budget-postgres.yml'
       - 'supabase/migrations/20261009180000_sprint_22_5_agent_spend_budget.sql'
+  pull_request:
+    paths:
+      - '.github/workflows/engineering-budget-postgres.yml'
+      - 'supabase/migrations/20261009180000_sprint_22_5_agent_spend_budget.sql'
   workflow_dispatch:
 permissions:
   contents: read
