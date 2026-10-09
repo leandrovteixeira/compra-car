@@ -84,6 +84,8 @@ describe('Brand connector provider with injected transport only', () => {
     expect(transport).toHaveBeenCalledWith(
       expect.objectContaining({
         store: false,
+        max_output_tokens: 1800,
+        max_tool_calls: 2,
         tool_choice: 'required',
         tools: [{ type: 'web_search', user_location: { type: 'approximate', country: 'BR' } }],
         text: {
@@ -151,5 +153,18 @@ describe('Sprint 22.5B usage telemetry', () => {
     });
     await expect(provider.researchConnector(input)).rejects.toThrow('CONNECTOR_RESEARCH_FAILED');
     expect(onUsage).not.toHaveBeenCalled();
+  });
+});
+
+describe('Brand paid-call preflight limits', () => {
+  it('rejects attempts to raise output or web-call ceilings', () => {
+    expect(() => new OpenAIBrandConnectorResearchProvider({
+      apiKey:'fixture', model:'test-model', prompt:'fixture',
+      maxOutputTokens:1801, transport:async()=>response(),
+    })).toThrow('CONNECTOR_BUDGET_BOUND_INVALID');
+    expect(() => new OpenAIBrandConnectorResearchProvider({
+      apiKey:'fixture', model:'test-model', prompt:'fixture',
+      maxToolCalls:3, transport:async()=>response(),
+    })).toThrow('CONNECTOR_BUDGET_BOUND_INVALID');
   });
 });
