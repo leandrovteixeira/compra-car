@@ -8,3 +8,6 @@ Implemented in this branch:
 NOT implemented: automatic source edits, sandbox creation, hypothesis synthesis, tool-based autonomous iteration, actual brand golden datasets, live cold/warm benchmark, cache instrumentation, spend guard integration. No automation should be described as running end-to-end yet.
 
 Next: review completed CI for this branch; build explicitly reviewed real Kia/VW source+canonical snapshots and stable evidence signatures; introduce a patch runner only after branch and approval safeguards have been verified.
+
+## 22.5E bounded evaluation coordinator
+Implemented `engineering-evaluation-loop.ts` with capped iteration count, bounded rejection plateau, candidate input validation and mandatory human review before any promotion. It accepts externally generated, trusted CI evidence and **does not generate, edit, run or apply a patch**. This is intentional separation of proposal evaluation from executable code mutation. Unreviewed cost claims must remain unverified.
