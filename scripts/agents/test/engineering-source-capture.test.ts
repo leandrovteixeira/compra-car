@@ -38,7 +38,7 @@ describe('offline source capture with injected transport',()=>{
    })});
    expect(result.captures).toHaveLength(1);
    expect(result.failures).toHaveLength(1);
-   expect(result.failures[0]?.reason).toBe('CAPTURE_FAILED');
+   expect(result.failures[0]?.reason).toBe('ENGINEERING_UNSUPPORTED_SOURCE');
   }finally{await rm(root,{recursive:true,force:true});}
  });
 });
