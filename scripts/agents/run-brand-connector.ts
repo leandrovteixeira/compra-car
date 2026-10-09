@@ -174,6 +174,32 @@ export async function runBrandConnectorCli(
           ...(apiUsage.value ?? {}) }, null, 2) + '\n',
       );
     }
+    // Shadow-only optimization signal. Research was already executed normally.
+    // An unchanged connector definition is NOT proof that the official sources
+    // remain fresh. Never skip calls or claim realized savings from this signal.
+    if (options.mode === 'health-check' && activeConnector) {
+      const reportedFingerprint = finding.payload.connectorFingerprint;
+      const sameDefinition =
+        typeof reportedFingerprint === 'string' &&
+        reportedFingerprint === activeConnector.fingerprint;
+      await writeFile(
+        resolve(directory, bundle.run.id + '.engineering-shadow.json'),
+        JSON.stringify({
+          schemaVersion: 'engineering-brand-shadow-v1',
+          runId: bundle.run.id,
+          brand: clean.run.brand,
+          mode: options.mode,
+          sameConnectorDefinition: sameDefinition,
+          sourceFreshnessVerified: false,
+          acceptedReplayVerified: false,
+          reuseEligible: false,
+          llmCallsAvoided: 0,
+          reason: sameDefinition
+            ? 'SOURCE_FRESHNESS_AND_ACCEPTED_REPLAY_REQUIRED'
+            : 'CONNECTOR_CHANGED_OR_UNVERIFIED',
+        }, null, 2) + '\\n',
+      );
+    }
     if (options.persistFindings) await persistence!.persistRunBundle(clean);
     log(
       'Run: ' +
