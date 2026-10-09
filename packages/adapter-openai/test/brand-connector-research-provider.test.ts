@@ -163,3 +163,19 @@ describe('Brand paid-call preflight limits', () => {
     })).toThrow('CONNECTOR_BUDGET_BOUND_INVALID');
   });
 });
+
+describe('Brand admission completion accounting',()=>{
+  it('marks usage as known only after the SDK supplies usage statistics',async()=>{
+    const admission={reserve:vi.fn(async()=>({id:'reserved',reservedUsd:1})),
+      complete:vi.fn(async()=>undefined)};
+    const provider=new OpenAIBrandConnectorResearchProvider({
+      apiKey:'synthetic',model:'mock-model',prompt:'generic',costAdmission:admission,
+      transport:async()=>response({usage:{input_tokens:10,output_tokens:20,total_tokens:30,
+        input_tokens_details:{cached_tokens:0,cache_write_tokens:0},
+        output_tokens_details:{reasoning_tokens:0}}}),
+    });
+    await provider.researchConnector(input);
+    expect(admission.reserve).toHaveBeenCalledOnce();
+    expect(admission.complete).toHaveBeenCalledWith({id:'reserved',reservedUsd:1},true);
+  });
+});
