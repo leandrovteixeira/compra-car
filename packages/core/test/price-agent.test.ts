@@ -248,7 +248,7 @@ describe('Price Agent', () => {
         proposal: null,
       },
       evidence: [],
-    } as AgentFindingBundle;
+    } as unknown as AgentFindingBundle;
     const acceptedNew = {
       finding: {
         id: '33333333-3333-4333-8333-333333333333',
@@ -258,7 +258,7 @@ describe('Price Agent', () => {
         proposal: { modelYear: 2027 },
       },
       evidence: [],
-    } as AgentFindingBundle;
+    } as unknown as AgentFindingBundle;
     const deferred = {
       finding: {
         id: '44444444-4444-4444-8444-444444444444',
@@ -268,7 +268,7 @@ describe('Price Agent', () => {
         proposal: { modelYear: 2028 },
       },
       evidence: [],
-    } as AgentFindingBundle;
+    } as unknown as AgentFindingBundle;
     const repository = {
       listRuns: vi.fn(async () => ({ items: [{ run, counts: {} }], total: 1 })),
       getRun: vi.fn(async () => ({ run, findings: [matched, acceptedNew, deferred] })),
@@ -280,7 +280,7 @@ describe('Price Agent', () => {
             : null,
       ),
     };
-    const result = await new PlatformPriceModelYearSelectionReader(repository as ConstructorParameters<typeof PlatformPriceModelYearSelectionReader>[0]).latestCompleted(
+    const result = await new PlatformPriceModelYearSelectionReader(repository as unknown as ConstructorParameters<typeof PlatformPriceModelYearSelectionReader>[0]).latestCompleted(
       'Jeep',
       'BR',
     );
