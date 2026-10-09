@@ -40,3 +40,7 @@ Added `engineering-brand-replay.ts` and tests for Kia and VW (synthetic input on
 **This is only an eligibility check**, not network retrieval, freshness verification, a durable cache, or proof that API costs are zero. The `independentReview` flag is caller-supplied and must be authenticated by a future trusted benchmark pipeline. Synthetic Kia/VW records test the policy; they are not independently verified official manufacturer records.
 
 Before enabling warm-run short-circuit in Brand Connector: capture actual official source snapshots with independently reviewed evidence, define max age/freshness/revalidation, ensure cache can never bypass required health checks, and compare matching cold/warm snapshots and metrics. Do not skip LLM yet.
+
+## 22.5F snapshot capture capability
+
+Added `scripts/agents/engineering-source-capture.ts`: a transport-injected, allowlisted capture helper with byte hashing, source inventory hash, content-addressed payloads and explicit failures. Unit tests use **injected synthetic HTTP results** only. It is **not wired to a live fetch CLI** and has not retrieved official source bytes. The transport implementation must enforce hostname/IP checks, redirect handling, timeouts, size and rate bounds before any live capture; validating only the final URL after fetching is insufficient to prevent SSRF or unbounded downloads. Capture manifests remain `independentlyReviewed:false` until an external reviewer approves them. No golden benchmark or measured cost savings yet.
