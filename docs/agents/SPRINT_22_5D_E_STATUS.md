@@ -11,3 +11,9 @@ Next: review completed CI for this branch; build explicitly reviewed real Kia/VW
 
 ## 22.5E bounded evaluation coordinator
 Implemented `engineering-evaluation-loop.ts` with capped iteration count, bounded rejection plateau, candidate input validation and mandatory human review before any promotion. It accepts externally generated, trusted CI evidence and **does not generate, edit, run or apply a patch**. This is intentional separation of proposal evaluation from executable code mutation. Unreviewed cost claims must remain unverified.
+
+## Next-step implementation checkpoint
+- Added `engineering-patch-manifest.ts`: strict admission of candidate branch naming, allowed paths and expected SHA-256 hashes; **validation only**, no git writes.
+- Added `engineering-benchmark-cli.ts`: replay explicitly reviewed offline JSON fixtures and detect identity-level regressions. Synthetic fixtures in unit tests are not Kia/VW manufacturer benchmarks.
+- Remaining: trusted sandbox execution of patches, automated patch generation, captured manufacturer source snapshots, semantic equivalence review, HTTP/cache measurement, paid cost benchmark and a real cross-brand pilot.
+- The PR remains draft and must not merge until final CI passes.
