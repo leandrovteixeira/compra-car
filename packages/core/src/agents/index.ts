@@ -77,3 +77,9 @@ export * from './deterministic-price-research';
 export * from './price-agent';
 
 export * from './price-model-year-selection';
+
+export * from './engineering-golden-benchmark';
+export * from './engineering-failure-intelligence';
+export * from './engineering-iteration-gate';
+export * from './engineering-evaluation-loop';
+export * from './engineering-patch-manifest';
