@@ -4,6 +4,7 @@ import { runNewProductCheckCli } from './run-new-product-check';
 import { runBrandConnectorCli } from './run-brand-connector';
 import { runModelYearCli } from './run-model-year';
 import { monitorBrandSources } from './source-monitor';
+import { journalWorkerJob } from './engineering-worker-telemetry';
 
 type JobRow = {
   id: string;
@@ -70,6 +71,11 @@ async function fail(jobId: string, code: string) {
 }
 
 async function execute(job: JobRow) {
+  const startedAtMs=Date.now();
+  const journal=async(status:'SUCCESS'|'FAILED',runId:string,code?:string)=>{
+    try {await journalWorkerJob(client,{runId,jobType:job.job_type,brand:job.brand,startedAtMs,status,failureCode:code});}
+    catch {console.error('[engineering] QA central logging failed',job.id);}
+  };
   const logs: string[] = [];
   const log = (line: string) => {
     logs.push(line);
@@ -148,6 +154,11 @@ async function execute(job: JobRow) {
   )?.[1] ?? null;
 
   if (code !== 0 || !runId) {
+    const code=logs.find(
+        (line) => line.startsWith('NEW_PRODUCT_CHECK_FAILED:') ||
+          line.startsWith('BRAND_CONNECTOR_FAILED:') ||
+          line.startsWith('Model Year run failed:'),
+      ) ?? 'AGENT_JOB_EXECUTION_FAILED';
     await fail(
       job.id,
       logs.find(
@@ -157,9 +168,11 @@ async function execute(job: JobRow) {
           line.startsWith('Model Year run failed:'),
       ) ?? 'AGENT_JOB_EXECUTION_FAILED',
     );
+    await journal('FAILED',job.id,code);
     return;
   }
   await complete(job.id, runId);
+  await journal('SUCCESS',runId);
 
   if (job.job_type === 'MMV_DISCOVERY') {
     const { error } = await client.rpc('enqueue_product_year_job', {
@@ -189,6 +202,9 @@ for (;;) {
       console.error('[agent-worker] execution failed', job.id, error);
       try {
         await fail(job.id, 'AGENT_JOB_EXECUTION_FAILED');
+        try {await journalWorkerJob(client,{runId:job.id,jobType:job.job_type,brand:job.brand,
+          startedAtMs:Date.now(),status:'FAILED',failureCode:'AGENT_JOB_EXECUTION_FAILED'});}
+        catch {console.error('[engineering] QA central failure logging unavailable',job.id);}
       } catch (failError) {
         console.error('[agent-worker] could not mark failed', job.id, failError);
       }
