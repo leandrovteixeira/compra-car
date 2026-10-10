@@ -29,3 +29,11 @@ The migration `sprint_22_5_agent_spend_budget` was applied successfully to the *
 - Synthetic multi-brand shared-budget test shows two simulated calls reserve USD 0.90 each, a third is blocked before transport, and failed transport calls keep reserves. **No real OpenAI spending.**
 
 **Go/no-go:** Offline infrastructure and DB concurrency gates: GO. Real paid QA Kia/VW benchmark under the user-approved strict USD 2 cap: **NO-GO** until (1) provider-billable upper bound or verified external hard-stop, (2) controlled tool search charges, and (3) reviewed canonical Brand benchmark are established. Do not auto-approve the PR or deploy to production.
+
+## Continuous improvement starter — 2026-10-10
+
+Added `scripts/agents/engineering-run-log.ts` and tests: append-only JSONL of sanitized run metadata, explicit unknown cost values, and deterministic failure clustering. Brand Connector writes a success event to `.local-reports/agents/engineering/run-events.jsonl` on successful CLI runs. This log is **local to the executing process/runner**; it is not yet a persistent cross-run store. Failure journaling across all agents, canonical outcome validation, dashboard, and long-term storage must be added before claiming always-on learning.
+
+Scheduled a twice-weekly GitHub review (Monday/Thursday) to inspect available Actions/PR/log evidence and propose QA-only improvements. The schedule itself does not make ephemeral local JSONL available to future reviews. The reviewer must explicitly report that limitation when applicable; no automatic production changes or merge.
+
+This is a feedback loop, NOT machine learning or self-training of a foundation model. It identifies recurring patterns and proposes/test patches based on explicit evidence, with approval before deployment.
