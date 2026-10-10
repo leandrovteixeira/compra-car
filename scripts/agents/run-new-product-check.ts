@@ -23,6 +23,7 @@ import { LocalProductReportWriter, redactSecrets } from './report-writer';
 import { loadAgentEnvironment } from './agent-environment';
 import { safeAgentFailure } from './agent-diagnostics';
 import { recordEngineeringRunEvent } from './engineering-run-log';
+import { engineeringFailureReason } from './engineering-failure-reason';
 
 export function parseAgentArguments(args: readonly string[]) {
   const values = args[0] === '--' ? args.slice(1) : [...args];
@@ -203,7 +204,7 @@ export async function runNewProductCheckCli(
       durationMs:Math.max(0,performance.now()-started),estimatedCostUsd:null,llmCalls:null,
       sourceFingerprint:null,findingCount:null,
       failures:[{targetId:attemptId,brand:attemptedBrand,model:'unknown',sourceType:'agent',
-        reason:'MMV_RUN_FAILED',sourceStructure:'unknown'}],
+        reason:engineeringFailureReason(error,'mmv-discovery'),sourceStructure:'unknown'}],
     }); } catch { /* preserve original failure */ }
     log(safeAgentFailure('NEW_PRODUCT_CHECK_FAILED', error));
     return 1;
