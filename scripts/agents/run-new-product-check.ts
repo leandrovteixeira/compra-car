@@ -22,7 +22,7 @@ import {
 import { LocalProductReportWriter, redactSecrets } from './report-writer';
 import { loadAgentEnvironment } from './agent-environment';
 import { safeAgentFailure } from './agent-diagnostics';
-import { appendEngineeringRunEvent } from './engineering-run-log';
+import { recordEngineeringRunEvent } from './engineering-run-log';
 
 export function parseAgentArguments(args: readonly string[]) {
   const values = args[0] === '--' ? args.slice(1) : [...args];
@@ -187,7 +187,7 @@ export async function runNewProductCheckCli(
       await repository.persistRunBundle(mapMmvRunToPlatform(sanitized, { provider }));
       log('Operational findings persisted. Catalog unchanged.');
     }
-    try { await appendEngineeringRunEvent(resolve(repositoryRoot,'.local-reports/agents/engineering/run-events.jsonl'),{
+    try { await recordEngineeringRunEvent(resolve(repositoryRoot,'.local-reports/agents/engineering/run-events.jsonl'),{
       schemaVersion:'engineering-run-event-v1',runId,agent:'mmv-discovery',environment:'qa',
       timestamp:new Date().toISOString(),status:'SUCCESS',
       durationMs:Math.max(0,performance.now()-started),
@@ -197,7 +197,7 @@ export async function runNewProductCheckCli(
     log('Reports: .local-reports/agents/new-product-check/' + runId + '.{json,md}');
     return 0;
   } catch (error) {
-    try { await appendEngineeringRunEvent(resolve(repositoryRoot,'.local-reports/agents/engineering/run-events.jsonl'),{
+    try { await recordEngineeringRunEvent(resolve(repositoryRoot,'.local-reports/agents/engineering/run-events.jsonl'),{
       schemaVersion:'engineering-run-event-v1',runId:attemptId,agent:'mmv-discovery',
       environment:'qa',timestamp:new Date().toISOString(),status:'FAILED',
       durationMs:Math.max(0,performance.now()-started),estimatedCostUsd:null,llmCalls:null,
