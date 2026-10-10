@@ -61,11 +61,14 @@ export async function recordEngineeringRunEvent(
 ):Promise<void>{
   await appendEngineeringRunEvent(path,event);
   if(env.ENGINEERING_CENTRAL_LOG_ENABLED!=='1')return;
-  if(env.AGENT_ENVIRONMENT!=='qa'&&env.AGENT_ENVIRONMENT!=='staging')
+  const runtimeEnvironment=env.AGENT_ENVIRONMENT ?? env.APP_ENV;
+  if(runtimeEnvironment!=='qa'&&runtimeEnvironment!=='staging')
     throw new Error('ENGINEERING_ENVIRONMENT_NOT_VERIFIED');
+  if(env.SUPABASE_URL!=='https://shfsjyjxmgwnlexmdkcs.supabase.co')
+    throw new Error('ENGINEERING_QA_DATABASE_REQUIRED');
   if(!env.SUPABASE_URL?.trim()||!env.SUPABASE_SERVER_KEY?.trim())
     throw new Error('ENGINEERING_CENTRAL_LOG_CONFIG_REQUIRED');
   const {createLegacySupabaseClient}=await import('@compra-car/adapter-supabase');
   const db=createLegacySupabaseClient({url:env.SUPABASE_URL,serverKey:env.SUPABASE_SERVER_KEY});
-  await persistEngineeringRunEvent(db,{...event,environment:env.AGENT_ENVIRONMENT});
+  await persistEngineeringRunEvent(db,{...event,environment:runtimeEnvironment});
 }
