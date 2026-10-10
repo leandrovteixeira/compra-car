@@ -18,7 +18,7 @@ import { redactSecrets } from './report-writer';
 import { loadAgentEnvironment } from './agent-environment';
 import { safeAgentFailure } from './agent-diagnostics';
 import { observeBrandConnectorResearch } from './brand-connector-telemetry';
-import { appendEngineeringRunEvent } from './engineering-run-log';
+import { recordEngineeringRunEvent } from './engineering-run-log';
 export function parseBrandConnectorArguments(args: readonly string[]) {
   const values = args[0] === '--' ? args.slice(1) : args,
     options = new Map<string, string>();
@@ -210,7 +210,7 @@ export async function runBrandConnectorCli(
     }
     // Best effort observability, never modify the canonical run/finding.
     try {
-      await appendEngineeringRunEvent(
+      await recordEngineeringRunEvent(
         resolve(root, '.local-reports/agents/engineering/run-events.jsonl'),
         {
           schemaVersion:'engineering-run-event-v1',
@@ -240,7 +240,7 @@ export async function runBrandConnectorCli(
     );
     return 0;
   } catch (error) {
-    try { await appendEngineeringRunEvent(
+    try { await recordEngineeringRunEvent(
       resolve(root,'.local-reports/agents/engineering/run-events.jsonl'),{
         schemaVersion:'engineering-run-event-v1',runId:attemptId,
         agent:'brand-connector',environment:'qa',timestamp:new Date().toISOString(),
