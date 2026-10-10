@@ -20,7 +20,7 @@ import {
 import { BrandConnectorSupabaseAdapter } from '@compra-car/adapter-supabase/brand-connectors';
 import { loadAgentEnvironment } from './agent-environment';
 import { redactSecrets } from './report-writer';
-import { appendEngineeringRunEvent } from './engineering-run-log';
+import { recordEngineeringRunEvent } from './engineering-run-log';
 
 function safePriceFailure(error: unknown): string {
   if (!(error instanceof Error)) return 'PRICE_AGENT_FAILED';
@@ -293,7 +293,7 @@ export async function runPriceCli(
     if (persistFindings) await persistence!.persistRunBundle(clean.bundle);
     try {
       const usages = clean.research.usage ?? [];
-      await appendEngineeringRunEvent(resolve(root,'.local-reports/agents/engineering/run-events.jsonl'),{
+      await recordEngineeringRunEvent(resolve(root,'.local-reports/agents/engineering/run-events.jsonl'),{
         schemaVersion:'engineering-run-event-v1',runId:clean.bundle.run.id,agent:'price',
         environment:'qa',timestamp:new Date().toISOString(),status:'SUCCESS',
         durationMs:Math.max(0,performance.now()-started),
@@ -353,7 +353,7 @@ export async function runPriceCli(
     );
     return 0;
   } catch (error) {
-    try { await appendEngineeringRunEvent(resolve(root,'.local-reports/agents/engineering/run-events.jsonl'),{
+    try { await recordEngineeringRunEvent(resolve(root,'.local-reports/agents/engineering/run-events.jsonl'),{
       schemaVersion:'engineering-run-event-v1',runId:attemptId,agent:'price',environment:'qa',
       timestamp:new Date().toISOString(),status:'FAILED',durationMs:Math.max(0,performance.now()-started),
       estimatedCostUsd:null,llmCalls:null,sourceFingerprint:null,findingCount:null,
