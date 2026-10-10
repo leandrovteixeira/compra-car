@@ -21,6 +21,7 @@ import { BrandConnectorSupabaseAdapter } from '@compra-car/adapter-supabase/bran
 import { loadAgentEnvironment } from './agent-environment';
 import { redactSecrets } from './report-writer';
 import { recordEngineeringRunEvent } from './engineering-run-log';
+import { engineeringFailureReason } from './engineering-failure-reason';
 
 function safePriceFailure(error: unknown): string {
   if (!(error instanceof Error)) return 'PRICE_AGENT_FAILED';
@@ -358,7 +359,7 @@ export async function runPriceCli(
       timestamp:new Date().toISOString(),status:'FAILED',durationMs:Math.max(0,performance.now()-started),
       estimatedCostUsd:null,llmCalls:null,sourceFingerprint:null,findingCount:null,
       failures:[{targetId:attemptId,brand:attemptedBrand,model:'unknown',sourceType:'agent',
-        reason:'PRICE_RUN_FAILED',sourceStructure:'unknown'}],
+        reason:engineeringFailureReason(error,'price'),sourceStructure:'unknown'}],
     }); } catch { /* preserve original failure */ }
     log(safePriceFailure(error));
     return 1;
