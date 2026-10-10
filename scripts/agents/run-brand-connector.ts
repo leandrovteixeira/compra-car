@@ -1,4 +1,5 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -64,8 +65,12 @@ export async function runBrandConnectorCli(
     costAdmission?: AgentCostAdmission;
   } = {},
 ): Promise<number> {
+  const started = performance.now();
+  const attemptId = randomUUID();
+  let attemptedBrand = 'unknown';
   try {
     const options = parseBrandConnectorArguments(args);
+    attemptedBrand = options.brand;
     env = await loadAgentEnvironment(root, env);
     if (
       options.provider === 'openai' &&
@@ -214,7 +219,7 @@ export async function runBrandConnectorCli(
           environment:'qa',
           timestamp:new Date().toISOString(),
           status:'SUCCESS',
-          durationMs:metrics?.researchDurationMs ?? null,
+          durationMs:Math.max(0,performance.now()-started),
           estimatedCostUsd:null,
           llmCalls:apiUsage.value?.llmCalls ?? (options.provider==='fixture' ? 0 : null),
           sourceFingerprint:null,
@@ -235,6 +240,16 @@ export async function runBrandConnectorCli(
     );
     return 0;
   } catch (error) {
+    try { await appendEngineeringRunEvent(
+      resolve(root,'.local-reports/agents/engineering/run-events.jsonl'),{
+        schemaVersion:'engineering-run-event-v1',runId:attemptId,
+        agent:'brand-connector',environment:'qa',timestamp:new Date().toISOString(),
+        status:'FAILED',durationMs:Math.max(0,performance.now()-started),
+        estimatedCostUsd:null,llmCalls:null,sourceFingerprint:null,findingCount:null,
+        failures:[{targetId:attemptId,brand:attemptedBrand,model:'unknown',
+          sourceType:'agent',reason:'BRAND_CONNECTOR_RUN_FAILED',sourceStructure:'unknown'}],
+      },
+    ); } catch { /* preserve original failure */ }
     log(safeAgentFailure('BRAND_CONNECTOR_FAILED', error));
     return 1;
   }
