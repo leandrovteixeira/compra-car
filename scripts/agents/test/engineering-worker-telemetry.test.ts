@@ -14,7 +14,7 @@ describe('QA queued agent learning events',()=>{
   }),{onConflict:'run_id,agent'});
  });
  it('redacts raw error messages and records MMV failures',async()=>{
-  const upsert=vi.fn(async()=>({error:null}));
+  const upsert=vi.fn(async (_value:Record<string,unknown>, _options:{onConflict:string})=>({error:null}));
   await journalWorkerJob({from:()=>({upsert})},{
     runId:'22222222-2222-4222-8222-222222222222',
     jobType:'MMV_DISCOVERY',brand:'VW',startedAtMs:Date.now(),
