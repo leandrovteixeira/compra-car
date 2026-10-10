@@ -19,6 +19,7 @@ import { loadAgentEnvironment } from './agent-environment';
 import { safeAgentFailure } from './agent-diagnostics';
 import { observeBrandConnectorResearch } from './brand-connector-telemetry';
 import { recordEngineeringRunEvent } from './engineering-run-log';
+import { engineeringFailureReason } from './engineering-failure-reason';
 export function parseBrandConnectorArguments(args: readonly string[]) {
   const values = args[0] === '--' ? args.slice(1) : args,
     options = new Map<string, string>();
@@ -247,7 +248,7 @@ export async function runBrandConnectorCli(
         status:'FAILED',durationMs:Math.max(0,performance.now()-started),
         estimatedCostUsd:null,llmCalls:null,sourceFingerprint:null,findingCount:null,
         failures:[{targetId:attemptId,brand:attemptedBrand,model:'unknown',
-          sourceType:'agent',reason:'BRAND_CONNECTOR_RUN_FAILED',sourceStructure:'unknown'}],
+          sourceType:'agent',reason:engineeringFailureReason(error,'brand-connector'),sourceStructure:'unknown'}],
       },
     ); } catch { /* preserve original failure */ }
     log(safeAgentFailure('BRAND_CONNECTOR_FAILED', error));
