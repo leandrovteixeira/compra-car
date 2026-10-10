@@ -1,6 +1,7 @@
 import { appendFile, mkdir, readFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { clusterEngineeringFailures, type EngineeringFailure } from '@compra-car/core/agents';
+import { persistEngineeringRunEvent } from './engineering-central-log';
 
 export interface EngineeringRunEvent {
   schemaVersion: 'engineering-run-event-v1';
@@ -51,4 +52,20 @@ export async function summarizeEngineeringRunLog(path:string){
     clusters:clusterEngineeringFailures(failures),
     requiresReview:failures.length>0||events.some(e=>e.status!=='SUCCESS'),
   };
+}
+
+/** Opt-in central write, in addition to the local fallback.
+ * Never silently assume staging based on production credentials. */
+export async function recordEngineeringRunEvent(
+  path:string,event:EngineeringRunEvent,env:Readonly<Record<string,string|undefined>>=process.env,
+):Promise<void>{
+  await appendEngineeringRunEvent(path,event);
+  if(env.ENGINEERING_CENTRAL_LOG_ENABLED!=='1')return;
+  if(env.AGENT_ENVIRONMENT!=='qa'&&env.AGENT_ENVIRONMENT!=='staging')
+    throw new Error('ENGINEERING_ENVIRONMENT_NOT_VERIFIED');
+  if(!env.SUPABASE_URL?.trim()||!env.SUPABASE_SERVER_KEY?.trim())
+    throw new Error('ENGINEERING_CENTRAL_LOG_CONFIG_REQUIRED');
+  const {createLegacySupabaseClient}=await import('@compra-car/adapter-supabase');
+  const db=createLegacySupabaseClient({url:env.SUPABASE_URL,serverKey:env.SUPABASE_SERVER_KEY});
+  await persistEngineeringRunEvent(db,{...event,environment:env.AGENT_ENVIRONMENT});
 }
