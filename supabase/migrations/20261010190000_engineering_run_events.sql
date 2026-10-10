@@ -19,4 +19,4 @@ create index if not exists agent_engineering_run_events_recent
   on public.agent_engineering_run_events (happened_at desc);
 alter table public.agent_engineering_run_events enable row level security;
 revoke all on public.agent_engineering_run_events from public, anon, authenticated;
-grant select, insert on public.agent_engineering_run_events to service_role;
+grant select, insert, update on public.agent_engineering_run_events to service_role;
