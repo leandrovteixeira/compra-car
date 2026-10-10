@@ -17,6 +17,7 @@ import { redactSecrets } from './report-writer';
 import { loadAgentEnvironment } from './agent-environment';
 import { safeAgentFailure } from './agent-diagnostics';
 import { observeBrandConnectorResearch } from './brand-connector-telemetry';
+import { appendEngineeringRunEvent } from './engineering-run-log';
 export function parseBrandConnectorArguments(args: readonly string[]) {
   const values = args[0] === '--' ? args.slice(1) : args,
     options = new Map<string, string>();
@@ -202,6 +203,26 @@ export async function runBrandConnectorCli(
         }, null, 2) + '\n',
       );
     }
+    // Best effort observability, never modify the canonical run/finding.
+    try {
+      await appendEngineeringRunEvent(
+        resolve(root, '.local-reports/agents/engineering/run-events.jsonl'),
+        {
+          schemaVersion:'engineering-run-event-v1',
+          runId:bundle.run.id,
+          agent:'brand-connector',
+          environment:'qa',
+          timestamp:new Date().toISOString(),
+          status:'SUCCESS',
+          durationMs:metrics?.researchDurationMs ?? null,
+          estimatedCostUsd:null,
+          llmCalls:apiUsage.value?.llmCalls ?? (options.provider==='fixture' ? 0 : null),
+          sourceFingerprint:null,
+          findingCount:clean.findings.length,
+          failures:[],
+        },
+      );
+    } catch { /* Log errors cannot change canonical outcome. */ }
     if (options.persistFindings) await persistence!.persistRunBundle(clean);
     log(
       'Run: ' +
