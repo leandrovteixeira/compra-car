@@ -37,3 +37,16 @@ Added `scripts/agents/engineering-run-log.ts` and tests: append-only JSONL of sa
 Scheduled a twice-weekly GitHub review (Monday/Thursday) to inspect available Actions/PR/log evidence and propose QA-only improvements. The schedule itself does not make ephemeral local JSONL available to future reviews. The reviewer must explicitly report that limitation when applicable; no automatic production changes or merge.
 
 This is a feedback loop, NOT machine learning or self-training of a foundation model. It identifies recurring patterns and proposes/test patches based on explicit evidence, with approval before deployment.
+
+## Multi-agent learning telemetry — 2026-10-10
+
+Instrumented the three current CLI entrypoints:
+- `run-brand-connector.ts`: successful and failed runs; existing research usage metrics remain in separate telemetry JSON.
+- `run-new-product-check.ts`: MMV successes and failures.
+- `run-price.ts`: Price successes and failures; sum of known AI estimated costs when usage rows are available.
+
+All append `engineering-run-event-v1` records to `.local-reports/agents/engineering/run-events.jsonl`. Unknown cost remains null rather than zero, and sanitized static failure codes prevent leaking raw exception content. Each event is best effort and cannot modify canonical findings or persisted data. Only the Price Agent exposes its known per-call estimated costs currently; MMV and Brand retain unknown costs until integrated usage pricing is available.
+
+**Important operational gap:** local JSONL files are not accessible to the periodic GitHub review automation across deployed workers. This is instrumentation, not centralized durable monitoring. Promote these events to a centralized QA store or secure uploaded artifacts before relying on cross-worker trend analytics. Explicit QA/staging tagging is currently hardcoded in the local CLI and does not establish production-environment coverage; the deployed daily schedulers also need their own integration verification.
+
+Scope: Sprint 22.5 audit-ready, not fully autonomous self-improvement. Production untouched; migration promotion and PR merge require review.
