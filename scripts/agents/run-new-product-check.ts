@@ -22,6 +22,8 @@ import {
 import { LocalProductReportWriter, redactSecrets } from './report-writer';
 import { loadAgentEnvironment } from './agent-environment';
 import { safeAgentFailure } from './agent-diagnostics';
+import { recordEngineeringRunEvent } from './engineering-run-log';
+import { engineeringFailureReason } from './engineering-failure-reason';
 
 export function parseAgentArguments(args: readonly string[]) {
   const values = args[0] === '--' ? args.slice(1) : [...args];
@@ -62,8 +64,12 @@ export async function runNewProductCheckCli(
   repositoryRoot = fileURLToPath(new URL('../../', import.meta.url)),
   persistence?: Pick<AgentPlatformRepository, 'persistRunBundle'>,
 ): Promise<number> {
+  const started = performance.now();
+  const attemptId = randomUUID();
+  let attemptedBrand = 'unknown';
   try {
     const { scope, provider, persistFindings } = parseAgentArguments(args);
+    attemptedBrand = scope.brand;
     env = await loadAgentEnvironment(repositoryRoot, env);
     if (provider === 'openai' && (!env.OPENAI_API_KEY?.trim() || !env.OPENAI_AGENT_MODEL?.trim())) {
       throw new Error('OPENAI_AGENT_CONFIG_REQUIRED');
@@ -182,9 +188,24 @@ export async function runNewProductCheckCli(
       await repository.persistRunBundle(mapMmvRunToPlatform(sanitized, { provider }));
       log('Operational findings persisted. Catalog unchanged.');
     }
+    try { await recordEngineeringRunEvent(resolve(repositoryRoot,'.local-reports/agents/engineering/run-events.jsonl'),{
+      schemaVersion:'engineering-run-event-v1',runId,agent:'mmv-discovery',environment:'qa',
+      timestamp:new Date().toISOString(),status:'SUCCESS',
+      durationMs:Math.max(0,performance.now()-started),
+      estimatedCostUsd:null,llmCalls:provider==='fixture'?0:null,sourceFingerprint:null,
+      findingCount:result.findings.length,failures:[],
+    }); } catch { /* logging must not alter the agent result */ }
     log('Reports: .local-reports/agents/new-product-check/' + runId + '.{json,md}');
     return 0;
   } catch (error) {
+    try { await recordEngineeringRunEvent(resolve(repositoryRoot,'.local-reports/agents/engineering/run-events.jsonl'),{
+      schemaVersion:'engineering-run-event-v1',runId:attemptId,agent:'mmv-discovery',
+      environment:'qa',timestamp:new Date().toISOString(),status:'FAILED',
+      durationMs:Math.max(0,performance.now()-started),estimatedCostUsd:null,llmCalls:null,
+      sourceFingerprint:null,findingCount:null,
+      failures:[{targetId:attemptId,brand:attemptedBrand,model:'unknown',sourceType:'agent',
+        reason:engineeringFailureReason(error,'mmv-discovery'),sourceStructure:'unknown'}],
+    }); } catch { /* preserve original failure */ }
     log(safeAgentFailure('NEW_PRODUCT_CHECK_FAILED', error));
     return 1;
   }

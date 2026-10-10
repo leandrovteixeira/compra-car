@@ -1,0 +1,51 @@
+name: Engineering Kia VW official source capture
+on:
+  push:
+    branches: [sprint-22-5-engineering-agent]
+    paths:
+      - '.github/workflows/engineering-brand-capture.yml'
+      - 'docs/agents/fixtures/brand-pilot-official-source-inventory.json'
+      - 'scripts/agents/engineering-capture-cli.ts'
+      - 'scripts/agents/engineering-node-pinned-network.ts'
+      - 'scripts/agents/engineering-safe-capture-transport.ts'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      OPENAI_API_KEY: ''
+      SUPABASE_SERVER_KEY: ''
+      HTTP_PROXY: ''
+      HTTPS_PROXY: ''
+      ALL_PROXY: ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Capture official snapshots (bounded, no LLM)
+        id: capture
+        continue-on-error: true
+        run: pnpm --filter @compra-car/agents exec tsx engineering-capture-cli.ts --output ../../.local-reports/engineering/kia-vw/capture.json
+      - name: Verify captured bytes against recorded hashes
+        if: steps.capture.outcome == 'success'
+        run: pnpm --filter @compra-car/agents exec tsx engineering-capture-verify.ts --manifest ../../.local-reports/engineering/kia-vw/capture.json
+      - name: Upload capture evidence for independent review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: engineering-kia-vw-unreviewed-snapshots
+          path: .local-reports/engineering/kia-vw/
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Report capture outcome
+        if: steps.capture.outcome != 'success'
+        run: exit 1

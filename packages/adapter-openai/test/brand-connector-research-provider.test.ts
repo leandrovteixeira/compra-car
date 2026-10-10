@@ -84,6 +84,7 @@ describe('Brand connector provider with injected transport only', () => {
     expect(transport).toHaveBeenCalledWith(
       expect.objectContaining({
         store: false,
+        max_output_tokens: 1800,
         tool_choice: 'required',
         tools: [{ type: 'web_search', user_location: { type: 'approximate', country: 'BR' } }],
         text: {
@@ -116,5 +117,65 @@ describe('Brand connector provider with injected transport only', () => {
       },
     });
     await expect(provider.researchConnector(input)).rejects.toThrow('CONNECTOR_RESEARCH_FAILED');
+  });
+});
+
+
+describe('Sprint 22.5B usage telemetry', () => {
+  it('records API response usage without a second transport request', async () => {
+    const onUsage = vi.fn();
+    const transport = vi.fn(async () => response({
+      usage: {
+        input_tokens: 120,
+        output_tokens: 30,
+        total_tokens: 150,
+        input_tokens_details: { cached_tokens: 80, cache_write_tokens: 0 },
+        output_tokens_details: { reasoning_tokens: 0 },
+      },
+    }));
+    const provider = new OpenAIBrandConnectorResearchProvider({
+      apiKey: 'synthetic', model: 'mock', prompt: 'generic', transport, onUsage,
+    });
+    await provider.researchConnector(input);
+    expect(transport).toHaveBeenCalledTimes(1);
+    expect(onUsage).toHaveBeenCalledOnce();
+    expect(onUsage).toHaveBeenCalledWith({
+      llmCalls: 1, webSearches: 1, inputTokens: 120,
+      outputTokens: 30, cachedInputTokens: 80,
+    });
+  });
+  it('does not transform failed transport into invented usage', async () => {
+    const onUsage = vi.fn();
+    const provider = new OpenAIBrandConnectorResearchProvider({
+      apiKey:'synthetic', model:'mock', prompt:'generic', onUsage,
+      transport: async () => {throw Error('network failed');},
+    });
+    await expect(provider.researchConnector(input)).rejects.toThrow('CONNECTOR_RESEARCH_FAILED');
+    expect(onUsage).not.toHaveBeenCalled();
+  });
+});
+
+describe('Brand paid-call preflight limits', () => {
+  it('rejects attempts to raise output ceilings', () => {
+    expect(() => new OpenAIBrandConnectorResearchProvider({
+      apiKey:'fixture', model:'test-model', prompt:'fixture',
+      maxOutputTokens:1801, transport:async()=>response(),
+    })).toThrow('CONNECTOR_BUDGET_BOUND_INVALID');
+  });
+});
+
+describe('Brand admission completion accounting',()=>{
+  it('marks usage as known only after the SDK supplies usage statistics',async()=>{
+    const admission={reserve:vi.fn(async()=>({id:'reserved',reservedUsd:1})),
+      complete:vi.fn(async()=>undefined)};
+    const provider=new OpenAIBrandConnectorResearchProvider({
+      apiKey:'synthetic',model:'mock-model',prompt:'generic',costAdmission:admission,
+      transport:async()=>response({usage:{input_tokens:10,output_tokens:20,total_tokens:30,
+        input_tokens_details:{cached_tokens:0,cache_write_tokens:0},
+        output_tokens_details:{reasoning_tokens:0}}}),
+    });
+    await provider.researchConnector(input);
+    expect(admission.reserve).toHaveBeenCalledOnce();
+    expect(admission.complete).toHaveBeenCalledWith({id:'reserved',reservedUsd:1},true);
   });
 });

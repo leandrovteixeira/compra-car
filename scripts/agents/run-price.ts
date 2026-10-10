@@ -1,4 +1,5 @@
 import { mkdir, writeFile } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -19,6 +20,8 @@ import {
 import { BrandConnectorSupabaseAdapter } from '@compra-car/adapter-supabase/brand-connectors';
 import { loadAgentEnvironment } from './agent-environment';
 import { redactSecrets } from './report-writer';
+import { recordEngineeringRunEvent } from './engineering-run-log';
+import { engineeringFailureReason } from './engineering-failure-reason';
 
 function safePriceFailure(error: unknown): string {
   if (!(error instanceof Error)) return 'PRICE_AGENT_FAILED';
@@ -166,7 +169,7 @@ async function operationalResearch(env: Readonly<Record<string, string | undefin
         if (seen.has(entry.url)) continue;
         seen.add(entry.url);
         if (!entryAppliesToTarget(entry, target.model)) continue;
-        const sourceKind = connectorEntryPriceKind(entry as any) ?? kindForEntry(entry.type);
+        const sourceKind = connectorEntryPriceKind(entry as Parameters<typeof connectorEntryPriceKind>[0]) ?? kindForEntry(entry.type);
         if (!sourceKind) continue;
 
         let pending = requestCache.get(entry.url);
@@ -216,8 +219,12 @@ export async function runPriceCli(
     persistence?: Pick<AgentPlatformRepository, 'persistRunBundle'>;
   } = {},
 ): Promise<number> {
+  const started = performance.now();
+  const attemptId = randomUUID();
+  let attemptedBrand = 'unknown';
   try {
     const { brand, persistFindings } = parse(args);
+    attemptedBrand = brand;
     env = await loadAgentEnvironment(root, env);
 
     let agent = dependencies.agent;
@@ -285,6 +292,17 @@ export async function runPriceCli(
     );
 
     if (persistFindings) await persistence!.persistRunBundle(clean.bundle);
+    try {
+      const usages = clean.research.usage ?? [];
+      await recordEngineeringRunEvent(resolve(root,'.local-reports/agents/engineering/run-events.jsonl'),{
+        schemaVersion:'engineering-run-event-v1',runId:clean.bundle.run.id,agent:'price',
+        environment:'qa',timestamp:new Date().toISOString(),status:'SUCCESS',
+        durationMs:Math.max(0,performance.now()-started),
+        estimatedCostUsd:usages.length ? usages.reduce((sum,item)=>sum+item.estimatedCostUsd,0) : null,
+        llmCalls:usages.length ? usages.length : null,sourceFingerprint:null,
+        findingCount:clean.bundle.findings.length,failures:[],
+      });
+    } catch { /* Engineering telemetry never changes the canonical run outcome. */ }
 
     log(
       [
@@ -336,6 +354,13 @@ export async function runPriceCli(
     );
     return 0;
   } catch (error) {
+    try { await recordEngineeringRunEvent(resolve(root,'.local-reports/agents/engineering/run-events.jsonl'),{
+      schemaVersion:'engineering-run-event-v1',runId:attemptId,agent:'price',environment:'qa',
+      timestamp:new Date().toISOString(),status:'FAILED',durationMs:Math.max(0,performance.now()-started),
+      estimatedCostUsd:null,llmCalls:null,sourceFingerprint:null,findingCount:null,
+      failures:[{targetId:attemptId,brand:attemptedBrand,model:'unknown',sourceType:'agent',
+        reason:engineeringFailureReason(error,'price'),sourceStructure:'unknown'}],
+    }); } catch { /* preserve original failure */ }
     log(safePriceFailure(error));
     return 1;
   }

@@ -1,4 +1,5 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -12,10 +13,13 @@ import {
   type BrandConnectorResearchProvider,
 } from '@compra-car/core/agents';
 import type { AgentPlatformRepository } from '@compra-car/core/agent-platform';
-import { OpenAIBrandConnectorResearchProvider } from '@compra-car/adapter-openai';
+import { OpenAIBrandConnectorResearchProvider, type AgentCostAdmission } from '@compra-car/adapter-openai';
 import { redactSecrets } from './report-writer';
 import { loadAgentEnvironment } from './agent-environment';
 import { safeAgentFailure } from './agent-diagnostics';
+import { observeBrandConnectorResearch } from './brand-connector-telemetry';
+import { recordEngineeringRunEvent } from './engineering-run-log';
+import { engineeringFailureReason } from './engineering-failure-reason';
 export function parseBrandConnectorArguments(args: readonly string[]) {
   const values = args[0] === '--' ? args.slice(1) : args,
     options = new Map<string, string>();
@@ -59,10 +63,15 @@ export async function runBrandConnectorCli(
     repository?: BrandConnectorRepository;
     persistence?: Pick<AgentPlatformRepository, 'persistRunBundle'>;
     research?: BrandConnectorResearchProvider;
+    costAdmission?: AgentCostAdmission;
   } = {},
 ): Promise<number> {
+  const started = performance.now();
+  const attemptId = randomUUID();
+  let attemptedBrand = 'unknown';
   try {
     const options = parseBrandConnectorArguments(args);
+    attemptedBrand = options.brand;
     env = await loadAgentEnvironment(root, env);
     if (
       options.provider === 'openai' &&
@@ -99,6 +108,10 @@ export async function runBrandConnectorCli(
             )
           : undefined
         : ((await repository!.getActiveConnector(options.brand, options.market)) ?? undefined);
+    const apiUsage: { value: {
+      llmCalls: number; webSearches: number; inputTokens: number | null;
+      outputTokens: number | null; cachedInputTokens: number | null;
+    } | null } = { value: null };
     const research =
       dependencies.research ??
       (options.provider === 'fixture'
@@ -106,12 +119,15 @@ export async function runBrandConnectorCli(
         : new OpenAIBrandConnectorResearchProvider({
             apiKey: env.OPENAI_API_KEY ?? '',
             model: env.OPENAI_AGENT_MODEL ?? '',
+            costAdmission: dependencies.costAdmission,
+            onUsage: (usage) => { apiUsage.value = usage; },
             prompt: await readFile(
               resolve(root, 'docs/agents/prompts/brand-connector-agent-v1.md'),
               'utf8',
             ),
           }));
-    const bundle = await new BrandConnectorAgent(research).run(
+    const telemetry = observeBrandConnectorResearch(research);
+    const bundle = await new BrandConnectorAgent(telemetry.research).run(
       { brand: options.brand, market: options.market, mode: options.mode, activeConnector },
       undefined,
       options.provider,
@@ -157,6 +173,62 @@ export async function runBrandConnectorCli(
         '',
       ].join('\n'),
     );
+    // Separate report: never mutate the canonical AgentRunBundle or persisted findings.
+    const metrics = telemetry.snapshot();
+    if (metrics) {
+      await writeFile(
+        resolve(directory, bundle.run.id + '.telemetry.json'),
+        JSON.stringify({ runId: bundle.run.id, brand: clean.run.brand, market: clean.run.market,
+          mode: options.mode, provider: options.provider, ...metrics,
+          ...(apiUsage.value ?? {}) }, null, 2) + '\n',
+      );
+    }
+    // Shadow-only optimization signal. Research was already executed normally.
+    // An unchanged connector definition is NOT proof that the official sources
+    // remain fresh. Never skip calls or claim realized savings from this signal.
+    if (options.mode === 'health-check' && activeConnector) {
+      const reportedFingerprint = finding.payload.connectorFingerprint;
+      const sameDefinition =
+        typeof reportedFingerprint === 'string' &&
+        reportedFingerprint === activeConnector.fingerprint;
+      await writeFile(
+        resolve(directory, bundle.run.id + '.engineering-shadow.json'),
+        JSON.stringify({
+          schemaVersion: 'engineering-brand-shadow-v1',
+          runId: bundle.run.id,
+          brand: clean.run.brand,
+          mode: options.mode,
+          sameConnectorDefinition: sameDefinition,
+          sourceFreshnessVerified: false,
+          acceptedReplayVerified: false,
+          reuseEligible: false,
+          llmCallsAvoided: 0,
+          reason: sameDefinition
+            ? 'SOURCE_FRESHNESS_AND_ACCEPTED_REPLAY_REQUIRED'
+            : 'CONNECTOR_CHANGED_OR_UNVERIFIED',
+        }, null, 2) + '\n',
+      );
+    }
+    // Best effort observability, never modify the canonical run/finding.
+    try {
+      await recordEngineeringRunEvent(
+        resolve(root, '.local-reports/agents/engineering/run-events.jsonl'),
+        {
+          schemaVersion:'engineering-run-event-v1',
+          runId:bundle.run.id,
+          agent:'brand-connector',
+          environment:'qa',
+          timestamp:new Date().toISOString(),
+          status:'SUCCESS',
+          durationMs:Math.max(0,performance.now()-started),
+          estimatedCostUsd:null,
+          llmCalls:apiUsage.value?.llmCalls ?? (options.provider==='fixture' ? 0 : null),
+          sourceFingerprint:null,
+          findingCount:clean.findings.length,
+          failures:[],
+        },
+      );
+    } catch { /* Log errors cannot change canonical outcome. */ }
     if (options.persistFindings) await persistence!.persistRunBundle(clean);
     log(
       'Run: ' +
@@ -169,6 +241,16 @@ export async function runBrandConnectorCli(
     );
     return 0;
   } catch (error) {
+    try { await recordEngineeringRunEvent(
+      resolve(root,'.local-reports/agents/engineering/run-events.jsonl'),{
+        schemaVersion:'engineering-run-event-v1',runId:attemptId,
+        agent:'brand-connector',environment:'qa',timestamp:new Date().toISOString(),
+        status:'FAILED',durationMs:Math.max(0,performance.now()-started),
+        estimatedCostUsd:null,llmCalls:null,sourceFingerprint:null,findingCount:null,
+        failures:[{targetId:attemptId,brand:attemptedBrand,model:'unknown',
+          sourceType:'agent',reason:engineeringFailureReason(error,'brand-connector'),sourceStructure:'unknown'}],
+      },
+    ); } catch { /* preserve original failure */ }
     log(safeAgentFailure('BRAND_CONNECTOR_FAILED', error));
     return 1;
   }

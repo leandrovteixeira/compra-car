@@ -1,0 +1,46 @@
+name: Engineering Agent 22.5 validation
+on:
+  push:
+    branches:
+      - sprint-22-5-engineering-agent
+  pull_request:
+    paths:
+      - 'packages/core/**'
+      - 'packages/adapter-openai/**'
+      - 'scripts/agents/**'
+      - '.github/workflows/engineering-22-5.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      OPENAI_API_KEY: ''
+      SUPABASE_SERVER_KEY: ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Engineering scoped typecheck
+        run: |
+          pnpm --filter @compra-car/core typecheck
+          pnpm --filter @compra-car/adapter-openai typecheck
+          pnpm --filter @compra-car/agents typecheck
+      - name: Engineering scoped tests
+        run: |
+          pnpm --filter @compra-car/core test
+          pnpm --filter @compra-car/adapter-openai test
+          pnpm --filter @compra-car/agents test
+      - name: Engineering scoped lint
+        run: |
+          pnpm --filter @compra-car/core lint
+          pnpm --filter @compra-car/adapter-openai lint
+          pnpm --filter @compra-car/agents lint

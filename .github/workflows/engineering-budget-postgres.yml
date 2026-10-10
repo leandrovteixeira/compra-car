@@ -1,0 +1,70 @@
+name: Engineering budget PostgreSQL integration
+on:
+  push:
+    branches: [sprint-22-5-engineering-agent]
+    paths:
+      - '.github/workflows/engineering-budget-postgres.yml'
+      - 'supabase/migrations/20261009180000_sprint_22_5_agent_spend_budget.sql'
+  pull_request:
+    paths:
+      - '.github/workflows/engineering-budget-postgres.yml'
+      - 'supabase/migrations/20261009180000_sprint_22_5_agent_spend_budget.sql'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  postgres-admission:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    services:
+      postgres:
+        image: public.ecr.aws/docker/library/postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: engineering_qa_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d engineering_qa_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: engineering_qa_test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare Supabase-compatible roles
+        run: |
+          psql -v ON_ERROR_STOP=1 -c 'create role service_role; create role anon; create role authenticated;'
+      - name: Apply draft migration to disposable PostgreSQL
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261009180000_sprint_22_5_agent_spend_budget.sql
+      - name: Atomic concurrent reserve and over-budget refusal
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -c "insert into public.agent_spend_budgets (budget_key, cap_usd) values ('offline-qa', 2);"
+          psql -v ON_ERROR_STOP=1 -c "select public.agent_spend_reserve('offline-qa','luna',1.25);" > /tmp/first.txt 2>&1 &
+          FIRST=$!
+          psql -v ON_ERROR_STOP=1 -c "select public.agent_spend_reserve('offline-qa','luna',1.25);" > /tmp/second.txt 2>&1 &
+          SECOND=$!
+          set +e
+          wait "$FIRST"; A=$?
+          wait "$SECOND"; B=$?
+          set -e
+          if [ "$(( (A == 0) + (B == 0) ))" -ne 1 ]; then
+            echo "Expected exactly one reserve success; got $A and $B"
+            exit 1
+          fi
+          REMAINING="$(psql -At -c "select reserved_usd from public.agent_spend_budgets where budget_key='offline-qa';")"
+          test "$REMAINING" = "1.250000"
+          PENDING="$(psql -At -c "select count(*) from public.agent_spend_reservations where budget_key='offline-qa' and status='PENDING';")"
+          test "$PENDING" = "1"
+          ID="$(psql -At -c "select id from public.agent_spend_reservations where budget_key='offline-qa' limit 1;")"
+          psql -v ON_ERROR_STOP=1 -c "select public.agent_spend_complete('$ID', false);"
+          UNKNOWN="$(psql -At -c "select status from public.agent_spend_reservations where id='$ID';")"
+          test "$UNKNOWN" = "UNKNOWN"
+          STILL="$(psql -At -c "select reserved_usd from public.agent_spend_budgets where budget_key='offline-qa';")"
+          test "$STILL" = "1.250000"
+          echo 'PostgreSQL atomic budget and unknown-usage retention PASS'

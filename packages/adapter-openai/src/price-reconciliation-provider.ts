@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import Ajv from 'ajv';
+import type { ResponseCreateParamsNonStreaming } from 'openai/resources/responses/responses';
 import type {
   BrandConnector,
   PriceAiUsage,
@@ -238,7 +239,7 @@ export class OpenAIPriceReconciliationProvider implements PriceReconciliationPro
                 filters: { allowed_domains: [...connector.allowedDomains] },
                 user_location: { type: 'approximate', country: connector.market },
                 return_token_budget: 'default',
-              } as any,
+              } as unknown as NonNullable<ResponseCreateParamsNonStreaming['tools']>[number],
             ],
             tool_choice: 'required',
             include: ['web_search_call.action.sources'],
