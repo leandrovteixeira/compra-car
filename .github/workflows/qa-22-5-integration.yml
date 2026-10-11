@@ -38,4 +38,4 @@ jobs:
         run: |
           pnpm --filter @compra-car/core lint
           pnpm --filter @compra-car/adapter-openai exec eslint src/agent-cost-admission.ts src/price-reconciliation-provider.ts src/brand-connector-research-provider.ts test/agent-cost-admission.test.ts test/price-reconciliation-provider.test.ts --max-warnings=0
-          pnpm --filter @compra-car/agents lint
+          pnpm --filter @compra-car/agents exec eslint agent-job-worker.ts run-price.ts run-brand-connector.ts run-new-product-check.ts engineering*.ts test/engineering*.test.ts --max-warnings=0
