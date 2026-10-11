@@ -2,7 +2,7 @@ import {describe,it,expect,vi} from 'vitest';
 import {journalWorkerJob,sanitizeWorkerFailure} from '../engineering-worker-telemetry';
 describe('QA queued agent learning events',()=>{
  it('writes a success row for a Brand job without model output or secrets',async()=>{
-  const upsert=vi.fn(async (_value:Record<string,unknown>, _options:{onConflict:string})=>({error:null}));
+  const upsert=vi.fn(async (...args:[Record<string,unknown>,{onConflict:string}])=>{void args;return {error:null};});
   const db={from:vi.fn(()=>({upsert}))};
   await journalWorkerJob(db,{
    runId:'11111111-1111-4111-8111-111111111111',
@@ -14,7 +14,7 @@ describe('QA queued agent learning events',()=>{
   }),{onConflict:'run_id,agent'});
  });
  it('redacts raw error messages and records MMV failures',async()=>{
-  const upsert=vi.fn(async (_value:Record<string,unknown>, _options:{onConflict:string})=>({error:null}));
+  const upsert=vi.fn(async (...args:[Record<string,unknown>,{onConflict:string}])=>{void args;return {error:null};});
   await journalWorkerJob({from:()=>({upsert})},{
     runId:'22222222-2222-4222-8222-222222222222',
     jobType:'MMV_DISCOVERY',brand:'VW',startedAtMs:Date.now(),
