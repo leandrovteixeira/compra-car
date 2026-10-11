@@ -229,7 +229,7 @@ describe('Price Agent', () => {
     expect(reconciliation.reconcile).not.toHaveBeenCalled();
   });
 
-  it('selects current price targets from the latest completed model year run', async () => {
+  it('selects ACCEPT-reviewed product years from the latest completed run', async () => {
     const run = {
       id: '11111111-1111-4111-8111-111111111111',
       agentType: 'PRODUCT_YEAR',
@@ -286,7 +286,6 @@ describe('Price Agent', () => {
     );
     expect(result?.runId).toBe(run.id);
     expect(result?.pairs).toEqual([
-      { mmvIdentity: 'jeep|compass|longitude', modelYear: 2026 },
       { mmvIdentity: 'jeep|renegade|willys', modelYear: 2027 },
     ]);
   });
