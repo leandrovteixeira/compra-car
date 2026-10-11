@@ -20,3 +20,5 @@ export * from './agent-platform-supabase-adapter';
 export * from './canonical-mmv-supabase-adapter';
 
 export * from './canonical-model-year-supabase-adapter';
+
+export * from './price-agent-context';
