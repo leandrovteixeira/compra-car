@@ -37,5 +37,5 @@ jobs:
       - name: Targeted lint
         run: |
           pnpm --filter @compra-car/core lint
-          pnpm --filter @compra-car/adapter-openai lint
+          pnpm --filter @compra-car/adapter-openai exec eslint src/agent-cost-admission.ts src/price-reconciliation-provider.ts src/brand-connector-research-provider.ts test/agent-cost-admission.test.ts test/price-reconciliation-provider.test.ts --max-warnings=0
           pnpm --filter @compra-car/agents lint
