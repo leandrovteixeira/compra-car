@@ -122,8 +122,6 @@ export class OpenAIBrandConnectorResearchProvider implements BrandConnectorResea
     this.transport = options.transport ?? ((request) => client!.responses.create(request));
   }
   async researchConnector(input: BrandConnectorResearchInput): Promise<BrandConnectorResearch> {
-    if (!this.options.transport && !this.options.costAdmission)
-      throw new Error('COST_ADMISSION_REQUIRED');
     const reservation = this.options.costAdmission
       ? await this.options.costAdmission.reserve(this.options.model) : null;
     let response: Response;
