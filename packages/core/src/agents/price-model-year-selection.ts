@@ -39,13 +39,13 @@ export class PlatformPriceModelYearSelectionReader implements PriceModelYearSele
     let latest: AgentRun | undefined;
     for (let offset = 0; ; offset += 100) {
       const page = await this.repository.listRuns({
-        agentType: 'MODEL_YEAR',
+        agentType: 'PRODUCT_YEAR',
         offset,
         limit: 100,
       });
       for (const { run } of page.items) {
         if (
-          run.agentType !== 'MODEL_YEAR' ||
+          run.agentType !== 'PRODUCT_YEAR' ||
           run.status !== 'COMPLETED' ||
           run.market !== market ||
           run.brand?.toLowerCase() !== brand.toLowerCase()
@@ -69,9 +69,9 @@ export class PlatformPriceModelYearSelectionReader implements PriceModelYearSele
 
     for (const item of bundle.findings) {
       const finding = item.finding;
-      if (!['MODEL_YEAR_MATCHED', 'NEW_MODEL_YEAR'].includes(finding.findingType)) continue;
+      if (!['NEW_PRODUCT_YEAR'].includes(finding.findingType)) continue;
 
-      if (finding.findingType === 'NEW_MODEL_YEAR') {
+      if (finding.findingType === 'NEW_PRODUCT_YEAR') {
         const review = await this.repository.getLatestReview(finding.id);
         if (review?.decision !== 'ACCEPT') continue;
       } else {
@@ -79,7 +79,7 @@ export class PlatformPriceModelYearSelectionReader implements PriceModelYearSele
         if (review && ['REJECT', 'DEFER'].includes(review.decision)) continue;
       }
 
-      const mmvIdentity = text(finding.subject.mmvIdentity);
+      const mmvIdentity = text(finding.subject.mmvId) ?? text(finding.subject.mmvIdentity);
       const modelYear =
         year(finding.subject.modelYear) ??
         year(finding.payload.modelYear) ??
