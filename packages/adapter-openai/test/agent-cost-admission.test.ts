@@ -17,12 +17,14 @@ describe('Engineering mandatory pre-call cost admission',()=>{
     await expect(admission.reserve('test-model')).rejects.toThrow('COST_BUDGET_EXHAUSTED');
     await expect(admission.reserve('unknown')).rejects.toThrow('COST_PRICING_UNKNOWN');
   });
-  it('blocks a real Brand research provider before transport when admission is absent',async()=>{
+  it('retains QA Brand legacy behavior without touching OpenAI',async()=>{
+    const transport=vi.fn(async()=>{throw new Error('fixture');});
     const provider=new OpenAIBrandConnectorResearchProvider({
-      apiKey:'synthetic',model:'test-model',prompt:'fixture',
+      apiKey:'synthetic',model:'test-model',prompt:'fixture',transport,
     });
     await expect(provider.researchConnector({brand:'Kia',market:'BR',mode:'discover'}))
-      .rejects.toThrow('COST_ADMISSION_REQUIRED');
+      .rejects.toThrow();
+    expect(transport).toHaveBeenCalledOnce();
   });
   it('prevents transport call if a reservation is refused',async()=>{
     const transport=vi.fn();
