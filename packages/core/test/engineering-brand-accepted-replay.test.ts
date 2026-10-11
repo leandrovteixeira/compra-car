@@ -9,7 +9,7 @@ const evidence:BrandReplayEvidence={connector,independentReview:true,
  reviewReference:'externally-reviewed-run',
  snapshots:[{brand:'Kia',market:'BR',sourceUrl:'https://www.kia.com.br/',
   sourceContentSha256:'a'.repeat(64),capturedAt:'2026-10-09T12:00:00Z'}]};
-const research={observedBrandLabel:'Kia',market:'BR',candidateDomains:['kia.com.br'],
+const research={canonicalBrand:'Kia',aliases:[],observedBrandLabel:'Kia',market:'BR',candidateDomains:['kia.com.br'],
  sourceEntries:connector.sourceEntries,searchHints:[],terminologyHints:[],confidence:0.95,warnings:[],
  evidence:[{url:'https://www.kia.com.br/',title:'Official',excerpt:'Fixture only'}],
  verificationSummary:'fixture',checksPerformed:['checked'],driftDetected:false};
