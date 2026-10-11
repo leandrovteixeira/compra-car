@@ -232,7 +232,7 @@ describe('Price Agent', () => {
   it('selects current price targets from the latest completed model year run', async () => {
     const run = {
       id: '11111111-1111-4111-8111-111111111111',
-      agentType: 'MODEL_YEAR',
+      agentType: 'PRODUCT_YEAR',
       status: 'COMPLETED',
       market: 'BR',
       brand: 'Jeep',
@@ -242,7 +242,7 @@ describe('Price Agent', () => {
     const matched = {
       finding: {
         id: '22222222-2222-4222-8222-222222222222',
-        findingType: 'MODEL_YEAR_MATCHED',
+        findingType: 'NEW_PRODUCT_YEAR',
         subject: { mmvIdentity: 'jeep|compass|longitude', modelYear: 2026 },
         payload: {},
         proposal: null,
@@ -252,7 +252,7 @@ describe('Price Agent', () => {
     const acceptedNew = {
       finding: {
         id: '33333333-3333-4333-8333-333333333333',
-        findingType: 'NEW_MODEL_YEAR',
+        findingType: 'NEW_PRODUCT_YEAR',
         subject: { mmvIdentity: 'jeep|renegade|willys' },
         payload: { modelYear: 2027 },
         proposal: { modelYear: 2027 },
@@ -262,7 +262,7 @@ describe('Price Agent', () => {
     const deferred = {
       finding: {
         id: '44444444-4444-4444-8444-444444444444',
-        findingType: 'NEW_MODEL_YEAR',
+        findingType: 'NEW_PRODUCT_YEAR',
         subject: { mmvIdentity: 'jeep|commander|limited' },
         payload: { modelYear: 2028 },
         proposal: { modelYear: 2028 },
