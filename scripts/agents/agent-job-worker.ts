@@ -3,6 +3,7 @@ import { createLegacySupabaseClient } from '@compra-car/adapter-supabase';
 import { runNewProductCheckCli } from './run-new-product-check';
 import { runBrandConnectorCli } from './run-brand-connector';
 import { runModelYearCli } from './run-model-year';
+import { runPriceCli } from './run-price';
 import { monitorBrandSources } from './source-monitor';
 import { journalWorkerJob } from './engineering-worker-telemetry';
 
@@ -112,6 +113,8 @@ async function execute(job: JobRow) {
       log,
       repositoryRoot,
     );
+  } else if (job.job_type === 'PRICE_INTELLIGENCE') {
+    code = await runPriceCli(['--brand',job.brand,'--persist-findings'],env,log,repositoryRoot);
   } else if (job.job_type === 'SOURCE_MONITOR') {
     const result = await monitorBrandSources(client, job.brand, job.market);
     console.log('[source-monitor]', job.id, JSON.stringify(result));
