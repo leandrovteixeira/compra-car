@@ -4,7 +4,6 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   DeterministicFirstPriceResearch,
-  PlatformPriceModelYearSelectionReader,
   PriceAgent,
   connectorEntryPriceKind,
   makePriceSnapshot,
@@ -139,7 +138,7 @@ async function supplementalMappingSnapshots(
 
 async function operationalResearch(env: Readonly<Record<string, string | undefined>>) {
   const requestCache = new Map<string, Promise<{ body: string; finalUrl: string } | null>>();
-  const reconciliation = env.OPENAI_API_KEY?.trim()
+  const reconciliation = env.PRICE_AGENT_LLM_ENABLED === '1' && env.OPENAI_API_KEY?.trim()
     ? new (await import('@compra-car/adapter-openai')).OpenAIPriceReconciliationProvider({
         apiKey: env.OPENAI_API_KEY,
         models: ['gpt-5.6-luna', 'gpt-5.6-terra', 'gpt-5.6-sol'],
@@ -245,10 +244,10 @@ export async function runPriceCli(
       telemetry = new PriceAgentSupabaseTelemetry(client);
 
       agent ??= new PriceAgent({
-        catalog: new PriceAgentSupabaseCatalogReader(
-          client,
-          new PlatformPriceModelYearSelectionReader(platform),
-        ),
+        // The QA Product Year registry now uses UUID MMV identities. The legacy
+        // Price selection reader uses text identities and would silently drop
+        // valid targets; use the active catalog until a registry-backed reader lands.
+        catalog: new PriceAgentSupabaseCatalogReader(client),
         connector: connectors,
         research: await operationalResearch(env),
       });
@@ -257,7 +256,8 @@ export async function runPriceCli(
     const result = await agent.run(
       brand,
       'BR',
-      env.OPENAI_API_KEY?.trim() ? 'hybrid' : 'deterministic',
+      env.PRICE_AGENT_LLM_ENABLED === '1' && env.OPENAI_API_KEY?.trim()
+        ? 'hybrid' : 'deterministic',
     );
 
     if (telemetry) {
