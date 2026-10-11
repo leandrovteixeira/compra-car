@@ -12,11 +12,10 @@ import {
 import type { AgentPlatformRepository } from '@compra-car/core/agent-platform';
 import {
   AgentPlatformSupabaseAdapter,
-  PriceAgentSupabaseCatalogReader,
-  PriceAgentSupabaseTelemetry,
   createLegacySupabaseClient,
 } from '@compra-car/adapter-supabase';
 import { BrandConnectorSupabaseAdapter } from '@compra-car/adapter-supabase/brand-connectors';
+import { PriceAgentSupabaseCatalogReader, PriceAgentSupabaseTelemetry } from '@compra-car/adapter-supabase/price-agent-context';
 import { loadAgentEnvironment } from './agent-environment';
 import { redactSecrets } from './report-writer';
 import { recordEngineeringRunEvent } from './engineering-run-log';
