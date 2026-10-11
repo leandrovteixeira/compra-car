@@ -1,0 +1,41 @@
+name: QA 22.5 Integration Validation
+on:
+  push:
+    branches: [sprint-22-5-qa-integrated]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      OPENAI_API_KEY: ''
+      SUPABASE_SERVER_KEY: ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Core typecheck
+        run: pnpm --filter @compra-car/core typecheck
+      - name: OpenAI adapter typecheck
+        run: pnpm --filter @compra-car/adapter-openai typecheck
+      - name: Supabase adapter typecheck
+        run: pnpm --filter @compra-car/adapter-supabase typecheck
+      - name: Agent and worker typecheck
+        run: pnpm --filter @compra-car/agents typecheck
+      - name: Price and Engineering scoped tests
+        run: |
+          pnpm --filter @compra-car/core exec vitest run test/price-agent.test.ts test/engineering-brand-replay.test.ts test/engineering-golden-benchmark.test.ts
+          pnpm --filter @compra-car/agents exec vitest run test/engineering-run-log.test.ts test/engineering-worker-telemetry.test.ts
+      - name: Targeted lint
+        run: |
+          pnpm --filter @compra-car/core lint
+          pnpm --filter @compra-car/adapter-openai lint
+          pnpm --filter @compra-car/agents lint
