@@ -564,7 +564,9 @@ export class LegacySupabaseAdapter
       .from('specs')
       .select(SPEC_COLUMNS)
       .eq('is_active', true)
-      .in('id', equipmentIds);
+      .in('id', equipmentIds)
+      .order('display_order')
+      .order('id');
     if (specError) throw queryError('specs da comparação', specError);
 
     const specs = (specData ?? []) as unknown as LegacySpecRow[];
