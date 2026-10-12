@@ -76,10 +76,20 @@ export function toComparisonPageData(result: ComparisonResult): ComparisonPageVi
     }),
   );
 
-  const categories = result.categories.map((category) =>
+  // Preserve the production ordering contract: display_order within each category,
+  // then order category blocks by the earliest displayed specification.
+  const categories = [...result.categories]
+    .sort((a, b) =>
+      Math.min(...a.rows.map(r => r.item.sortOrder ?? Number.MAX_SAFE_INTEGER)) -
+      Math.min(...b.rows.map(r => r.item.sortOrder ?? Number.MAX_SAFE_INTEGER)) ||
+      a.category.localeCompare(b.category, 'pt-BR'),
+    ).map((category) =>
     Object.freeze({
       name: category.category,
-      rows: category.rows.map((row) => {
+      rows: [...category.rows].sort((a, b) =>
+        (a.item.sortOrder ?? Number.MAX_SAFE_INTEGER) - (b.item.sortOrder ?? Number.MAX_SAFE_INTEGER) ||
+        a.item.label.localeCompare(b.item.label, 'pt-BR'),
+      ).map((row) => {
         const rawValues = result.vehicles.map((vehicle) => {
           const value = row.valuesByVehicle[String(vehicle.id)];
           if (!value) throw new Error('Resultado de comparação incompleto.');

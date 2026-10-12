@@ -22,7 +22,8 @@ export function sanitizeWorkerFailure(value:unknown):string{
 }
 export async function journalWorkerJob(db:WorkerLearningDb,event:WorkerLearningEvent):Promise<void>{
   const agent=event.jobType==='MMV_DISCOVERY'?'mmv-discovery':
-    event.jobType==='BRAND_CONNECTOR'?'brand-connector':null;
+    event.jobType==='BRAND_CONNECTOR'?'brand-connector':
+    event.jobType==='PRICE_INTELLIGENCE'?'price':null;
   if(!agent)return;
   const runId=/^[0-9a-f-]{36}$/iu.test(event.runId)?event.runId:null;
   if(!runId)return;

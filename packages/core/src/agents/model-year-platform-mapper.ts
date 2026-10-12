@@ -2,7 +2,6 @@ import { createHash } from 'node:crypto';
 import type {
   AgentFindingBundle,
   AgentFindingType,
-  AgentObject,
   AgentRunBundle,
 } from '../agent-platform/types';
 import {

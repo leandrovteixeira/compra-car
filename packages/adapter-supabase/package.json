@@ -6,7 +6,8 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
-    "./brand-connectors": "./src/brand-connector-supabase-adapter.ts"
+    "./brand-connectors": "./src/brand-connector-supabase-adapter.ts",
+    "./price-agent-context": "./src/price-agent-context.ts"
   },
   "types": "./src/index.ts",
   "scripts": {

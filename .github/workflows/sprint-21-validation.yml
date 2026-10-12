@@ -4,10 +4,12 @@ on:
   push:
     branches:
       - sprint-21-model-year-agent
+      - sprint-22-5-qa-integrated
   pull_request:
     branches:
       - sprint-20-mmv-discovery-agent
       - sprint-21-model-year-agent
+      - sprint-22-5-qa-telemetry-bridge
     paths:
       - 'packages/core/**'
       - 'packages/adapter-supabase/**'

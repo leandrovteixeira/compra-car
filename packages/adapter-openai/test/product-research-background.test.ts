@@ -74,7 +74,8 @@ describe('background MMV execution', () => {
       result('completed', { output_text: '{"candidates":[]}' }),
     ]);
     const active = fixtureActiveConnector({ ...volkswagenConnectorFixture, brand: 'VW' });
-    const repository = { getActiveConnector: vi.fn(async () => active) };
+    const repository = { getActiveConnector: vi.fn(async () => active),
+      resolveBrandIdentity: vi.fn(async () => ({id:'11111111-1111-4111-8111-111111111111',market:'BR',canonicalKey:'vw',canonicalName:'VW',aliases:[]})) };
     await new NewProductCheckAgent({
       research: provider,
       connectorResolver: new OperationalBrandConnectorResolver(repository),

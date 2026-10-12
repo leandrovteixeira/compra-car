@@ -1,0 +1,77 @@
+{
+  "schemaVersion": "engineering-brand-source-inventory-v1",
+  "capturedDate": "2026-10-09",
+  "independentlyReviewed": false,
+  "provenance": "official manufacturer web pages; preliminary discovery, not frozen raw HTML snapshot",
+  "brands": [
+    {
+      "brand": "Kia",
+      "market": "BR",
+      "urls": [
+        {
+          "url": "https://www.kia.com.br/",
+          "kind": "MODEL_INDEX",
+          "modelLabelsObserved": [
+            "Sorento",
+            "EV9",
+            "EV5",
+            "Stonic MHEV",
+            "Niro HEV",
+            "Sportage MHEV",
+            "Carnival HEV",
+            "Bongo",
+            "Tasman"
+          ],
+          "notes": "Source page displays SUV, commercial and pickup entries; models must be reverified at actual capture."
+        },
+        {
+          "url": "https://www.kia.com.br/sorento/",
+          "kind": "MODEL_PAGE",
+          "modelLabelsObserved": [
+            "Sorento"
+          ],
+          "notes": "Official model page with specification tab."
+        }
+      ]
+    },
+    {
+      "brand": "Volkswagen",
+      "market": "BR",
+      "urls": [
+        {
+          "url": "https://www.vw.com.br/pt/carros.html",
+          "kind": "MODEL_INDEX",
+          "modelLabelsObserved": [
+            "Tiguan R-Line",
+            "Tera",
+            "Nivus",
+            "T-Cross",
+            "Taos",
+            "Polo Track",
+            "Polo",
+            "Golf GTI",
+            "Virtus",
+            "Jetta",
+            "Saveiro",
+            "Amarok",
+            "ID.4",
+            "ID. Buzz"
+          ],
+          "notes": "Page displays category model list; this is not a canonical trim inventory."
+        },
+        {
+          "url": "https://www.vw.com.br/pt/configurador.html",
+          "kind": "CONFIGURATOR",
+          "modelLabelsObserved": [
+            "Tera",
+            "Nivus",
+            "T-Cross",
+            "Taos",
+            "Polo Track"
+          ],
+          "notes": "Observed subset only, not a complete configurator inventory."
+        }
+      ]
+    }
+  ]
+}
