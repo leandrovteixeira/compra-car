@@ -174,7 +174,14 @@ export function AdminProductList({ products }: AdminProductListProps) {
               return (
                 <Fragment key={product.id}>
                   {opened?.id === product.id && opened.mode === 'duplicate' && editor(product, 'duplicate')}
-                  <tr className="align-middle transition-colors odd:bg-white even:bg-[#F8FAFB] hover:bg-[#EAF1F4]">
+                  <tr
+                    className="cursor-pointer align-middle transition-colors odd:bg-white even:bg-[#F8FAFB] hover:bg-[#EAF1F4]"
+                    onClick={(event) => {
+                      const target = event.target;
+                      if (target instanceof Element && target.closest('a, button, input, select, textarea, label')) return;
+                      router.push(`/admin/products/${product.id}/specs`);
+                    }}
+                  >
                     <td>
                       <Link className="block font-semibold text-[#1A1D21] hover:underline"
                         href={`/admin/products/${product.id}/specs`} title="Abrir ficha técnica">
