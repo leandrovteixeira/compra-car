@@ -54,8 +54,6 @@ export function AdminSidebar() {
           {groups.map((item) => {
             const children = item.children ?? [];
             const open = openGroup === item.label;
-            const groupHasActivePage = children.some((child) => child.href &&
-              (pathname === child.href || pathname.startsWith(child.href + '/')));
             const itemClass = 'flex h-11 w-full items-center gap-3 rounded-md px-4 text-left text-sm text-white/85 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-[#9ABCC8]';
             return <li key={item.label}>
               {children.length ? (
