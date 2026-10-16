@@ -531,3 +531,14 @@ select.ui-field,
   background-repeat: no-repeat;
   padding-right: 36px;
 }
+
+
+/* Carboot shared button scale (P/M/G). Apply equal sizes within a view. */
+.cc-btn {display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;border-radius:6px;font-family:inherit;font-weight:600;line-height:1.2;white-space:nowrap;}
+.cc-btn--p {min-height:32px;min-width:96px;padding:0 12px;font-size:12px;}
+.cc-btn--m {min-height:40px;min-width:144px;padding:0 16px;font-size:13px;}
+.cc-btn--g {min-height:48px;min-width:192px;padding:0 20px;font-size:14px;}
+.cc-btn--primary {background:#1A1D21!important;color:#FFFFFF!important;}
+.cc-btn--primary:disabled {background:#A5A5A5!important;color:#FFFFFF!important;}
+.cc-btn--secondary {background:#EAF1F4!important;color:#1A1D21!important;}
+.cc-btn:disabled {opacity:.55;cursor:not-allowed;}
