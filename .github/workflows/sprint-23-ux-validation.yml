@@ -1,0 +1,38 @@
+name: Sprint 23 UX Validation
+on:
+  push:
+    branches: [sprint-23-ux-react-qa]
+  pull_request:
+    branches: [sprint-22-5-qa-integrated]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      OPENAI_API_KEY: ''
+      SUPABASE_SERVER_KEY: ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Core typecheck
+        run: pnpm --filter @compra-car/core typecheck
+      - name: Supabase adapter typecheck
+        run: pnpm --filter @compra-car/adapter-supabase typecheck
+      - name: Web typecheck
+        run: pnpm --filter @compra-car/web typecheck
+      - name: Administrative specs tests
+        run: pnpm --filter @compra-car/web exec vitest run test/admin-product-specs.test.ts
+      - name: Web build
+        run: pnpm --filter @compra-car/web build
