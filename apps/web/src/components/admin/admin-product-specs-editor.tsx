@@ -137,7 +137,7 @@ export function AdminProductSpecsEditor({
         ) : null}
       </div>
 
-      <div className="max-h-[calc(100dvh-17rem)] overflow-auto">
+      <div data-spec-scroll-frame className="max-h-[calc(100dvh-17rem)] overflow-auto">
         <div className="sticky top-0 z-20 grid grid-cols-[minmax(15rem,1fr)_minmax(15rem,24rem)_14rem] gap-3 bg-[#DCE8ED] px-4 py-3 text-xs font-semibold uppercase text-[#1A1D21]"><span>Especificação</span><span className="text-center">Valor</span><span className="text-center">Unidade</span></div>
         {groups.map((group) => {
           const groupCounts = counts.byGroup[group.name]!;
