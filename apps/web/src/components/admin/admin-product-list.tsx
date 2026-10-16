@@ -218,7 +218,7 @@ export function AdminProductList({ products }: AdminProductListProps) {
                         <button type="submit" form={`catalog-edit-${product.id}`} disabled={pending}
                           className="cc-btn cc-btn--p cc-btn--primary">{pending ? 'SALVANDO…' : 'SALVAR'}</button>
                       ) : (
-                        <button type="button" disabled={pending} onClick={() => start(product, 'edit')}
+                        <button type="button" disabled={pending} onClick={(event) => { event.stopPropagation(); window.setTimeout(() => start(product, 'edit'), 0); }}
                           className="cc-btn cc-btn--p cc-btn--secondary">EDITAR</button>
                       )}
                     </td>
