@@ -184,10 +184,26 @@ export function AdminProductList({ products }: AdminProductListProps) {
                     }}
                   >
                     <td>
-                      <Link className="block font-semibold text-[#1A1D21] hover:underline"
-                        href={`/admin/products/${product.id}/specs`} title="Abrir ficha técnica">
-                        {identity}
-                      </Link>
+                      {opened?.id === product.id && opened.mode === 'edit' && draft ? (
+                        <form id={`catalog-edit-${product.id}`} onSubmit={(event) => submit(event, product, 'edit')}
+                          className="grid grid-cols-[1fr_1fr_2fr_5rem] items-center gap-2">
+                          <select aria-label="Marca" className={cellInput} value={draft.brand}
+                            onChange={(e) => setDraft({ ...draft, brand: e.target.value })}>
+                            {[...new Set([...brands, draft.brand])].sort().map((brand) => <option key={brand} value={brand}>{brand}</option>)}
+                          </select>
+                          <input aria-label="Modelo" className={cellInput} required value={draft.model}
+                            onChange={(e) => setDraft({ ...draft, model: e.target.value })}/>
+                          <input aria-label="Versão" className={cellInput} required value={draft.version}
+                            onChange={(e) => setDraft({ ...draft, version: e.target.value })}/>
+                          <input aria-label="Ano-modelo" className={cellInput} required inputMode="numeric" value={draft.modelYear}
+                            onChange={(e) => setDraft({ ...draft, modelYear: e.target.value })}/>
+                        </form>
+                      ) : (
+                        <Link className="block font-semibold text-[#1A1D21] hover:underline"
+                          href={`/admin/products/${product.id}/specs`} title="Abrir ficha técnica">{identity}</Link>
+                      )}
+                      {opened?.id === product.id && opened.mode === 'edit' && message &&
+                        <p role="alert" className="mt-1 text-xs text-red-700">{message}</p>}
                     </td>
                     <td className="text-center">
                       <AdminProductStatusToggle productId={product.id} productName={identity}
@@ -206,7 +222,6 @@ export function AdminProductList({ products }: AdminProductListProps) {
                         className="inline-flex min-h-9 items-center justify-center rounded-md px-3 text-xs font-semibold text-[#1A1D21] hover:bg-[#DCE8ED]">DUPLICAR</button>
                     </td>
                   </tr>
-                  {opened?.id === product.id && opened.mode === 'edit' && editor(product, 'edit')}
                 </Fragment>
               );
             })}
