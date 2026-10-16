@@ -37,7 +37,7 @@ export function AdminSidebar() {
       onBlurCapture={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) setHovered(false);
       }}
-      className={`sticky top-[var(--app-topbar-height)] hidden h-[calc(100dvh-var(--app-topbar-height))] shrink-0 flex-col overflow-visible bg-[#1A1D21] text-white transition-[width] duration-200 lg:flex ${expanded ? 'w-[264px]' : 'w-[76px]'}`}>
+      className={`sticky top-[var(--app-topbar-height)] hidden h-[calc(100dvh-var(--app-topbar-height))] shrink-0 flex-col overflow-visible bg-[#1A1D21] text-white shadow-[6px_0_18px_rgba(26,29,33,0.16)] transition-[width] duration-200 lg:flex ${expanded ? 'w-[264px]' : 'w-[76px]'}`}>
       <div className="flex min-h-[88px] items-center gap-2 overflow-hidden px-[13px]">
         <img alt="Carboot" src="/carboot/logo-icon.svg"
           className="size-[49px] shrink-0 object-contain"/>
