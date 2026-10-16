@@ -169,10 +169,12 @@ describe('admin product specs UI state', () => {
     expect(editor).toContain('bg-[#EAF1F4]');
     expect(editor).toContain('bg-[#F8FAFB]');
     expect(editor).toContain('grid-cols-[minmax(15rem,1fr)_minmax(12rem,24rem)_6rem]');
-    expect(editor).toContain('<option value="unknown">Não informado</option>');
-    expect(editor).toContain('<option value="present">Presente</option>');
-    expect(editor).toContain('<option value="absent">Ausente</option>');
+    expect(editor).toContain('<AdminSpecDropdown');
+    expect(editor).toContain("value: 'unknown', label: 'Não informado'");
+    expect(editor).toContain("value: 'present', label: 'Presente'");
+    expect(editor).toContain("value: 'absent', label: 'Ausente'");
     expect(editor).toContain('field.options.map((option)');
+    expect(editor).toContain('formatNumericForDisplay');
     expect(editor).toContain("field.kind === 'numeric' ? field.unit : '—'");
     expect(editor).toContain('Descartar');
     expect(editor).not.toContain('window.alert');
