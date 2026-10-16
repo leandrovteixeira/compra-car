@@ -26,8 +26,9 @@ export function AdminSpecDropdown({ label, value, options, onChange }: Props) {
       if (!bounds) return;
       const below = window.innerHeight - bounds.bottom - 8;
       const above = bounds.top - 8;
-      const showBelow = below >= 140 || below >= above;
-      const maxHeight = Math.max(40, Math.min(220, showBelow ? below : above));
+      // Prefer a short drawer immediately below its trigger rather than floating far above.
+      const showBelow = below >= 44;
+      const maxHeight = Math.max(32, Math.min(220, showBelow ? below : above));
       setPlacement({
         left: bounds.left,
         top: showBelow ? bounds.bottom + 4 : bounds.top - maxHeight - 4,
