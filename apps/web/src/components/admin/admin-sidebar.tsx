@@ -8,17 +8,23 @@ import { adminNavigationItems } from './admin-navigation';
 /** Shared desktop navigation for the Carboot administration workspace. */
 export function AdminSidebar() {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
+  const [pinned, setPinned] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const expanded = pinned || hovered;
   return (
     <aside
       aria-label="Menu administrativo"
-      className={`sticky top-[var(--app-topbar-height)] hidden h-[calc(100dvh-var(--app-topbar-height))] shrink-0 flex-col overflow-y-auto border-r border-[#D6DEE3] bg-white transition-[width] duration-200 lg:flex ${collapsed ? 'w-[76px]' : 'w-[232px]'}`}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onFocusCapture={() => setHovered(true)}
+      onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setHovered(false); }}
+      className={`sticky top-[var(--app-topbar-height)] hidden h-[calc(100dvh-var(--app-topbar-height))] shrink-0 flex-col overflow-y-auto border-r border-[#D6DEE3] bg-white transition-[width] duration-200 lg:flex ${expanded ? 'w-[232px]' : 'w-[76px]'}`}
     >
       <div className="flex min-h-14 items-center justify-between border-b border-[#EAF1F4] px-3">
-        {!collapsed && <span className="text-xs font-bold uppercase tracking-widest text-[#1A1D21]">Navegação</span>}
-        <button aria-label={collapsed ? 'Expandir menu' : 'Recolher menu'} aria-expanded={!collapsed}
+        {expanded && <span className="text-xs font-bold uppercase tracking-widest text-[#1A1D21]">Navegação</span>}
+        <button aria-label={pinned ? 'Desafixar menu' : 'Fixar menu expandido'} aria-pressed={pinned} aria-expanded={expanded}
           className="flex size-9 items-center justify-center rounded-md text-[#1A1D21] hover:bg-[#EAF1F4]"
-          onClick={() => setCollapsed((value) => !value)} type="button">{collapsed ? '»' : '«'}</button>
+          onClick={() => setPinned((value) => !value)} type="button">{pinned ? '«' : '»'}</button>
       </div>
       <nav aria-label="Seções administrativas" className="flex-1 p-2">
         <ul className="space-y-1">
@@ -32,12 +38,12 @@ export function AdminSidebar() {
                   <Link href={item.href} title={item.label} aria-current={active ? 'page' : undefined}
                     className={`flex min-h-10 items-center gap-3 rounded-md px-3 text-sm transition ${active ? 'bg-[#DCE8ED] font-semibold text-[#1A1D21]' : 'text-[#526670] hover:bg-[#EAF1F4]'}`}>
                     <span aria-hidden="true" className="inline-flex w-5 shrink-0 justify-center font-semibold">{index + 1}</span>
-                    {!collapsed && <span>{item.label}</span>}
+                    {expanded && <span>{item.label}</span>}
                   </Link>
-                ) : !collapsed ? (
+                ) : expanded ? (
                   <p className="px-3 pt-3 text-[11px] font-bold uppercase tracking-wider text-[#526670]">{item.label}</p>
                 ) : null}
-                {children.length > 0 && !collapsed && (
+                {children.length > 0 && expanded && (
                   <ul className="ml-5 border-l border-[#D6DEE3] pl-2">
                     {children.map((child) => {
                       const selected = pathname === child.href || pathname.startsWith(child.href + '/');
