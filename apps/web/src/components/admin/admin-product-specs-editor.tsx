@@ -176,14 +176,14 @@ export function AdminProductSpecsEditor({
                           {field.kind === 'numeric' ? (
                             <input aria-label={field.label} className="min-h-9 min-w-0 rounded-md border border-[#D6DEE3] bg-white px-3 text-right text-sm tabular-nums focus:border-[#9ABCC8] focus:outline-none" inputMode="decimal" value={field.value} onChange={(event) => update(field, { ...field, value: event.target.value })} />
                           ) : field.kind === 'binary' ? (
-                            <select aria-label={field.label} className="min-h-9 w-full rounded-md border border-[#D6DEE3] bg-white px-3 text-sm focus:border-[#9ABCC8] focus:outline-none" value={field.present === null ? 'unknown' : field.present ? 'present' : 'absent'} onChange={(event) => update(field, { ...field, present: event.target.value === 'unknown' ? null : event.target.value === 'present' })}>
-                              <option value="unknown">Não informado</option><option value="present">Presente</option><option value="absent">Ausente</option>
-                            </select>
+                            <AdminSpecDropdown label={field.label}
+                              value={field.present === null ? 'unknown' : field.present ? 'present' : 'absent'}
+                              options={[{ value: 'unknown', label: 'Não informado' }, { value: 'present', label: 'Presente' }, { value: 'absent', label: 'Ausente' }]}
+                              onChange={(v) => update(field, { ...field, present: v === 'unknown' ? null : v === 'present' })}/>
                           ) : (
-                            <select aria-label={field.label} className="min-h-9 w-full rounded-md border border-[#D6DEE3] bg-white px-3 text-sm focus:border-[#9ABCC8] focus:outline-none" value={field.selectedSpecId ?? ''} onChange={(event) => update(field, { ...field, selectedSpecId: event.target.value || null })}>
-                              <option value="">Não informado</option>
-                              {field.options.map((option) => <option key={option.specId} value={option.specId}>{option.label}</option>)}
-                            </select>
+                            <AdminSpecDropdown label={field.label} value={field.selectedSpecId ?? ''}
+                              options={[{ value: '', label: 'Não informado' }, ...field.options.map((option) => ({ value: option.specId, label: option.label }))]}
+                              onChange={(v) => update(field, { ...field, selectedSpecId: v || null })}/>
                           )}
                           <span className="text-center text-xs text-[#61747B]">{field.kind === 'numeric' ? field.unit : '—'}</span>
                         </div>
