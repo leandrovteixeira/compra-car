@@ -96,7 +96,7 @@ export function AdminProductSpecsEditor({
               : 'Nenhuma alteração pendente'}
           </p>
           <button
-            className="inline-flex min-h-10 items-center justify-center rounded-md bg-[#EAF1F4] px-4 text-sm font-semibold text-[#1A1D21] disabled:opacity-40"
+            className="inline-flex h-10 w-36 shrink-0 items-center justify-center rounded-md bg-[#EAF1F4] px-4 text-sm font-semibold text-[#1A1D21] disabled:opacity-40"
             disabled={!changed || pending}
             onClick={() => {
               setModel(baseline);
@@ -107,12 +107,12 @@ export function AdminProductSpecsEditor({
             Descartar
           </button>
           <button
-            className="inline-flex min-h-10 items-center justify-center rounded-md bg-[#1A1D21] px-4 text-sm font-semibold text-white disabled:opacity-40"
+            className="inline-flex h-10 w-36 shrink-0 items-center justify-center rounded-md bg-[#1A1D21] px-4 text-sm font-semibold text-white disabled:opacity-40"
             disabled={!changed || pending}
             onClick={save}
             type="button"
           >
-            {pending ? 'Salvando…' : 'Salvar alterações'}
+            {pending ? 'SALVANDO…' : 'SALVAR'}
           </button>
         </div>
         {feedback ? (
@@ -129,7 +129,6 @@ export function AdminProductSpecsEditor({
         <div className="sticky top-0 z-20 grid grid-cols-[minmax(15rem,1fr)_minmax(12rem,24rem)_6rem] gap-3 bg-[#DCE8ED] px-4 py-3 text-xs font-semibold uppercase text-[#1A1D21]"><span>Especificação</span><span>Valor</span><span>Unidade</span></div>
         {groups.map((group) => {
           const groupCounts = counts.byGroup[group.name]!;
-          let previousEquipment = '';
           return (
             <details
               className="border-b border-[#D6DEE3] bg-white"
@@ -144,32 +143,15 @@ export function AdminProductSpecsEditor({
               </summary>
               <div className="divide-y divide-border border-t border-border">
                 {group.fields.map((field) => {
-                  const showEquipment = field.equipmentGroup !== previousEquipment;
-                  previousEquipment = field.equipmentGroup;
                   return (
                     <div
                       className={`px-4 py-2 ${group.fields.indexOf(field) % 2 ? 'bg-[#F8FAFB]' : 'bg-white'}`}
                       key={field.kind === 'scale' ? field.key : field.specId}
                     >
-                      {showEquipment ? (
-                        <h3 className="mb-1 text-[0.6875rem] font-semibold uppercase tracking-wide text-text-muted">
-                          {field.equipmentGroup}
-                        </h3>
-                      ) : null}
                       <div className="grid grid-cols-[minmax(15rem,1fr)_minmax(12rem,24rem)_6rem] items-center gap-3 md:min-h-7">
                         <div>
                           <p className="text-[0.8125rem] font-medium leading-4 text-text-primary">
                             {field.label}
-                          </p>
-                          {field.specSet !== field.label ? (
-                            <p className="text-[0.6875rem] leading-3 text-text-muted">
-                              {field.specSet}
-                            </p>
-                          ) : null}
-                          <p className="text-[0.625rem] leading-3 text-text-muted">
-                            {field.kind === 'scale'
-                              ? field.options.map((o) => o.code).join(' · ')
-                              : field.code}
                           </p>
                         </div>
                         <div className="contents">
