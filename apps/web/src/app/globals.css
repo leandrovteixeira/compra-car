@@ -517,3 +517,17 @@ dialog {
 .comparison-scroll::-webkit-scrollbar-thumb:hover {
   background: var(--color-text-muted);
 }
+
+
+/* Sprint 23: native selects share the official Figma icon_arrow geometry.
+   The graphite SVG retains the exact original vector paths. */
+select.ui-field,
+.admin-specs-field-grid select,
+.admin-catalog-workspace select {
+  appearance: none;
+  background-image: url('/carboot/arrow-graphite.svg');
+  background-size: 14px 14px;
+  background-position: right 12px center;
+  background-repeat: no-repeat;
+  padding-right: 36px;
+}
