@@ -189,7 +189,7 @@ export function AdminProductList({ products }: AdminProductListProps) {
                           className="grid grid-cols-[1fr_1fr_2fr_5rem] items-center gap-2">
                           <select aria-label="Marca" className={cellInput} value={draft.brand}
                             onChange={(e) => setDraft({ ...draft, brand: e.target.value })}>
-                            {[...new Set([...brands, draft.brand])].sort().map((brand) => <option key={brand} value={brand}>{brand}</option>)}
+                            {[...new Set([...brands, draft.brand])].sort((a,b) => a.localeCompare(b,'pt-BR',{sensitivity:'base'})).map((brand) => <option key={brand} value={brand}>{brand}</option>)}
                           </select>
                           <input aria-label="Modelo" className={cellInput} required value={draft.model}
                             onChange={(e) => setDraft({ ...draft, model: e.target.value })}/>
