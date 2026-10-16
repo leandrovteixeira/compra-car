@@ -85,7 +85,7 @@ export function AdminProductList({ products }: AdminProductListProps) {
           router.refresh();
         } else {
           const firstError = Object.values(result.fieldErrors).flat()[0];
-          setMessage(result.message || firstError || 'Revise os campos informados.');
+          setMessage(('message' in result && typeof result.message === 'string' ? result.message : '') || firstError || 'Revise os campos informados.');
         }
       } catch {
         setMessage('Não foi possível salvar. Nenhuma alteração foi confirmada.');
