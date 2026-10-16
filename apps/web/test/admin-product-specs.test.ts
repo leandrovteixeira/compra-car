@@ -183,7 +183,7 @@ describe('admin product specs UI state', () => {
 
   it('uses a single editable value column with a passive unit label', () => {
     const editor = source('../src/components/admin/admin-product-specs-editor.tsx');
-    expect(editor).toContain('minmax(12rem,1fr)_6rem');
+    expect(editor).toContain('minmax(15rem,1fr)_minmax(12rem,24rem)_6rem');
     expect(editor).toContain("field.kind === 'numeric' ? field.unit : '—'");
   });
 
