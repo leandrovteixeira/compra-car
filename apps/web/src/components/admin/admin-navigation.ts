@@ -8,10 +8,10 @@ export interface AdminNavigationItem {
 export const adminNavigationItems: readonly AdminNavigationItem[] = [
   { href: '/admin', label: 'Home', status: 'active' },
   { label: 'Veículos', status: 'active', children: [
+    { href: '/admin/products', label: 'Cadastro de Modelos', status: 'active' },
     { href: '/ver-modelo', label: 'Fichas Técnicas', status: 'active' },
     { href: '/comparar', label: 'Comparar Modelos', status: 'active' },
     { label: 'Comparar Especificações', status: 'planned' },
-    { href: '/admin/products', label: 'Cadastro MMVY', status: 'active' },
   ] },
   { label: 'Preços', status: 'active', children: [
     { href: '/admin/prices', label: 'Lista de Preços', status: 'active' },
