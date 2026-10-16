@@ -33,7 +33,7 @@ function draftFrom(product: AdminProductListItem, mode: Mode): Draft {
     modelYear: mode === 'duplicate'
       ? String(Number(product.modelYear) + 1)
       : product.modelYear,
-    productionYear: product.productionYear,
+    productionYear: mode === 'duplicate' ? String(Number(product.modelYear) + 1) : product.productionYear,
     isActive: mode === 'edit' ? product.isActive : false,
     isPublic: mode === 'edit' ? product.isPublic : false,
   };
@@ -71,7 +71,8 @@ export function AdminProductList({ products }: AdminProductListProps) {
     data.set('version', draft.version);
     data.set('modelYear', draft.modelYear);
     // Preserved for the legacy canonical contract; PY is not user-editable in the new catalog.
-    data.set('productionYear', draft.productionYear);
+    // Keep the legacy required field synchronized with MY until the canonical model drops PY.
+    data.set('productionYear', mode === 'duplicate' ? draft.modelYear : draft.productionYear);
     data.set('isActive', String(draft.isActive));
     data.set('isPublic', String(draft.isPublic));
     setMessage(null);
