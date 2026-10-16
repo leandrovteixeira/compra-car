@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { adminNavigationItems } from './admin-navigation';
+import { UserMenu } from '../user-menu';
 
 const names: Record<string,string> = {
   Home: 'home', 'Veículos':'car', Preços:'docs', 'Inteligência':'intelligence',
@@ -20,14 +21,13 @@ function DropdownArrow({ open }: { readonly open: boolean }) {
     className={`size-4 object-contain transition-transform ${open ? 'rotate-180' : ''}`}/>;
 }
 
-export function AdminSidebar() {
+export function AdminSidebar({ displayName, logoutAction }: { readonly displayName: string; readonly logoutAction: () => Promise<never> }) {
   const pathname = usePathname();
   const [hovered, setHovered] = useState(false);
   const [pinned] = useState(false);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const expanded = hovered || pinned;
   const groups = adminNavigationItems.filter((item) => item.label !== 'Conta');
-  const account = adminNavigationItems.find((item) => item.label === 'Conta');
 
   return (
     <aside aria-label="Menu administrativo"
@@ -96,14 +96,19 @@ export function AdminSidebar() {
       </nav>
       <div className="mx-3 h-px bg-white/20"/>
       <div className="p-2">
-        {account?.href ? (
-          <Link href={account.href} title="Conta"
-            className="flex h-11 items-center gap-3 rounded-md px-4 text-sm text-white/85 hover:bg-white/10">
-            <NavIcon name="Conta"/>{expanded && <span>Conta</span>}
-          </Link>
+        {expanded ? (
+          <UserMenu displayName={displayName} logoutAction={logoutAction}
+            roleLabel="Administrador" sidebar />
         ) : (
-          <div title="Conta" aria-label="Conta" className="flex h-11 items-center gap-3 rounded-md px-4 text-sm text-white/85">
-            <NavIcon name="Conta"/>{expanded && <span>Conta</span>}
+          <div className="relative group/account">
+            <button type="button" aria-label="Conta" onClick={() => setHovered(true)}
+              className="flex h-11 items-center rounded-md px-4 text-white/85">
+              <NavIcon name="Conta"/>
+            </button>
+            <div className="absolute bottom-0 left-full hidden pl-2 group-focus-within/account:block group-hover/account:block">
+              <UserMenu displayName={displayName} logoutAction={logoutAction}
+                roleLabel="Administrador" sidebar />
+            </div>
           </div>
         )}
       </div>
