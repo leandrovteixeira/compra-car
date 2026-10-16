@@ -26,10 +26,11 @@ export function AdminSpecDropdown({ label, value, options, onChange }: Props) {
       if (!bounds) return;
       const below = window.innerHeight - bounds.bottom - 8;
       const above = bounds.top - 8;
-      const maxHeight = Math.min(220, Math.max(96, below >= 120 ? below : above));
+      const showBelow = below >= 140 || below >= above;
+      const maxHeight = Math.max(40, Math.min(220, showBelow ? below : above));
       setPlacement({
         left: bounds.left,
-        top: below >= 120 ? bounds.bottom + 4 : Math.max(4, bounds.top - maxHeight - 4),
+        top: showBelow ? bounds.bottom + 4 : bounds.top - maxHeight - 4,
         width: bounds.width,
         maxHeight,
       });
