@@ -96,7 +96,7 @@ export function AdminProductSpecsEditor({
               : 'Nenhuma alteração pendente'}
           </p>
           <button
-            className="inline-flex h-10 w-36 shrink-0 items-center justify-center rounded-md bg-[#EAF1F4] px-4 text-sm font-semibold text-[#1A1D21] disabled:opacity-40"
+            className="cc-btn cc-btn--m cc-btn--secondary"
             disabled={!changed || pending}
             onClick={() => {
               setModel(baseline);
@@ -107,7 +107,7 @@ export function AdminProductSpecsEditor({
             Descartar
           </button>
           <button
-            className="inline-flex h-10 w-36 shrink-0 items-center justify-center rounded-md bg-[#1A1D21] px-4 text-sm font-semibold text-white disabled:opacity-40"
+            className="cc-btn cc-btn--m cc-btn--primary"
             disabled={!changed || pending}
             onClick={save}
             type="button"
