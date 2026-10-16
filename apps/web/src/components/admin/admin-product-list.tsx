@@ -139,11 +139,11 @@ export function AdminProductList({ products }: AdminProductListProps) {
                 </>
               )}
               <button type="submit" disabled={pending}
-                className="inline-flex h-10 min-w-24 items-center justify-center rounded-md bg-[#1A1D21] px-3 text-xs font-semibold text-white disabled:opacity-50">
+                className="cc-btn cc-btn--p cc-btn--primary">
                 {pending ? 'SALVANDO…' : 'SALVAR'}
               </button>
               <button type="button" disabled={pending} onClick={cancel}
-                className="inline-flex h-10 min-w-24 items-center justify-center rounded-md bg-white px-3 text-xs font-semibold text-[#1A1D21] disabled:opacity-50">
+                className="cc-btn cc-btn--p cc-btn--secondary">
                 CANCELAR
               </button>
             </div>
@@ -214,12 +214,22 @@ export function AdminProductList({ products }: AdminProductListProps) {
                         field="isPublic" isActive={product.isActive} value={product.isPublic}/>
                     </td>
                     <td className="text-center">
-                      <button type="button" disabled={pending} onClick={() => start(product, 'edit')}
-                        className="inline-flex min-h-9 items-center justify-center rounded-md px-3 text-xs font-semibold text-[#1A1D21] hover:bg-[#DCE8ED]">EDITAR</button>
+                      {opened?.id === product.id && opened.mode === 'edit' ? (
+                        <button type="submit" form={`catalog-edit-${product.id}`} disabled={pending}
+                          className="cc-btn cc-btn--p cc-btn--primary">{pending ? 'SALVANDO…' : 'SALVAR'}</button>
+                      ) : (
+                        <button type="button" disabled={pending} onClick={() => start(product, 'edit')}
+                          className="cc-btn cc-btn--p cc-btn--secondary">EDITAR</button>
+                      )}
                     </td>
                     <td className="text-center">
-                      <button type="button" disabled={pending} onClick={() => start(product, 'duplicate')}
-                        className="inline-flex min-h-9 items-center justify-center rounded-md px-3 text-xs font-semibold text-[#1A1D21] hover:bg-[#DCE8ED]">DUPLICAR</button>
+                      {opened?.id === product.id && opened.mode === 'edit' ? (
+                        <button type="button" disabled={pending} onClick={cancel}
+                          className="cc-btn cc-btn--p cc-btn--secondary">CANCELAR</button>
+                      ) : (
+                        <button type="button" disabled={pending} onClick={() => start(product, 'duplicate')}
+                          className="cc-btn cc-btn--p cc-btn--secondary">DUPLICAR</button>
+                      )}
                     </td>
                   </tr>
                 </Fragment>
