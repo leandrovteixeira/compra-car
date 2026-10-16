@@ -372,6 +372,7 @@ export class LegacySupabaseAdapter
       .from('specs')
       .select(SPEC_COLUMNS)
       .eq('is_active', true)
+      .order('display_order')
       .order('id');
     if (error) throw queryError('catálogo administrativo de specs', error);
     return ((data ?? []) as unknown as LegacySpecRow[]).map((row) => {
@@ -389,11 +390,12 @@ export class LegacySupabaseAdapter
         id: String(row.id),
         code: row.code,
         type: row.type as AdministrativeSpecCatalogItem['type'],
-        groupName: row.group_name,
-        equipmentGroup: row.equipment_group,
-        specSet: row.spec_set,
-        detail: row.detail,
+        groupName: row.group_name_pt?.trim() || row.group_name,
+        equipmentGroup: row.equipment_group_pt?.trim() || row.equipment_group,
+        specSet: row.spec_set_pt?.trim() || row.spec_set,
+        detail: row.display_pt?.trim() || row.detail_pt?.trim() || row.detail,
         unit: row.unit?.trim() || null,
+        displayOrder: row.display_order == null ? null : Number(row.display_order),
       };
     });
   }
