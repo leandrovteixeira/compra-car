@@ -6,6 +6,7 @@ import type {
   AdministrativeSpecSubmission,
 } from '@compra-car/contracts';
 import { useMemo, useState, useTransition } from 'react';
+import { AdminSpecDropdown } from './admin-spec-dropdown';
 
 import {
   countAdministrativeSpecs,
