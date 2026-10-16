@@ -138,7 +138,7 @@ export function AdminProductSpecsEditor({
       </div>
 
       <div className="max-h-[calc(100dvh-17rem)] overflow-auto">
-        <div className="sticky top-0 z-20 grid grid-cols-[minmax(15rem,1fr)_minmax(12rem,24rem)_6rem] gap-3 bg-[#DCE8ED] px-4 py-3 text-xs font-semibold uppercase text-[#1A1D21]"><span>Especificação</span><span>Valor</span><span>Unidade</span></div>
+        <div className="sticky top-0 z-20 grid grid-cols-[minmax(15rem,1fr)_minmax(15rem,24rem)_14rem] gap-3 bg-[#DCE8ED] px-4 py-3 text-xs font-semibold uppercase text-[#1A1D21]"><span>Especificação</span><span>Valor</span><span>Unidade</span></div>
         {groups.map((group) => {
           const groupCounts = counts.byGroup[group.name]!;
           return (
@@ -160,7 +160,7 @@ export function AdminProductSpecsEditor({
                       className={`px-4 py-2 ${group.fields.indexOf(field) % 2 ? 'bg-[#F8FAFB]' : 'bg-white'}`}
                       key={field.kind === 'scale' ? field.key : field.specId}
                     >
-                      <div className="grid grid-cols-[minmax(15rem,1fr)_minmax(12rem,24rem)_6rem] items-center gap-3 md:min-h-7">
+                      <div className="grid grid-cols-[minmax(15rem,1fr)_minmax(15rem,24rem)_14rem] items-center gap-3 md:min-h-7">
                         <div>
                           <p className="text-[0.8125rem] font-medium leading-4 text-text-primary">
                             {field.label}
