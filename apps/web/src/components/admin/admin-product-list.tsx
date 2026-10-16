@@ -109,7 +109,7 @@ export function AdminProductList({ products }: AdminProductListProps) {
                 <span className="sr-only">Marca</span>
                 <select aria-label="Marca" className={cellInput} value={draft.brand}
                   onChange={(e) => setDraft({ ...draft, brand: e.target.value })}>
-                  {[...new Set([...brands, draft.brand])].sort().map((brand) => (
+                  {[...new Set([...brands, draft.brand])].sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' })).map((brand) => (
                     <option key={brand} value={brand}>{brand}</option>
                   ))}
                 </select>
