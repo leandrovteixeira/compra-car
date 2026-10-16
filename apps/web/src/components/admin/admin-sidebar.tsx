@@ -38,12 +38,14 @@ export function AdminSidebar() {
         if (!event.currentTarget.contains(event.relatedTarget)) setHovered(false);
       }}
       className={`sticky top-[var(--app-topbar-height)] hidden h-[calc(100dvh-var(--app-topbar-height))] shrink-0 flex-col overflow-visible bg-[#1A1D21] text-white transition-[width] duration-200 lg:flex ${expanded ? 'w-[264px]' : 'w-[76px]'}`}>
-      <div className="flex min-h-[88px] items-center px-3">
-        {expanded ? (
-          <img alt="Carboot" src="/carboot/logo-full.svg" className="h-[54px] w-[225px] object-contain object-left"/>
-        ) : (
-          <img alt="Carboot" src="/carboot/logo-icon.svg" className="mx-auto size-[49px] object-contain"/>
-        )}
+      <div className="flex min-h-[88px] items-center gap-2 overflow-hidden px-[13px]">
+        <img alt="Carboot" src="/carboot/logo-icon.svg"
+          className="size-[49px] shrink-0 object-contain"/>
+        <div aria-hidden="true"
+          className={`relative h-[52px] min-w-0 overflow-hidden transition-[width,opacity] duration-200 ${expanded ? 'w-[165px] opacity-100' : 'w-0 opacity-0'}`}>
+          <img alt="" src="/carboot/logo-full.svg"
+            className="absolute left-[-47px] top-0 h-[52px] w-[198px] max-w-none object-contain"/>
+        </div>
       </div>
       <div className="mx-3 h-px bg-white/20"/>
       <nav aria-label="Navegação Carboot" className="min-h-0 flex-1 overflow-y-auto px-2 py-3">
