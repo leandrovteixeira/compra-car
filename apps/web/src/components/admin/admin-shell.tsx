@@ -25,15 +25,15 @@ const mobileAdminLinks: readonly NavigationLink[] = adminNavigationItems.flatMap
 export function AdminShell({ children, displayName, profile }: AdminShellProps) {
   return (
     <div className="min-h-dvh bg-canvas text-text-primary">
-      <ApplicationTopbar
+      <div className="lg:hidden"><ApplicationTopbar
         area="admin"
         displayName={displayName}
         logoutAction={logout}
         navigationLinks={mobileAdminLinks}
         profile={profile}
-      />
+      /></div>
       <div className="lg:flex lg:items-start">
-        <AdminSidebar />
+        <AdminSidebar displayName={displayName} logoutAction={logout} />
         <main className="min-w-0 w-full flex-1 px-4 py-5 sm:px-6 lg:px-8 lg:py-6">
           {children}
         </main>
