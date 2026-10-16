@@ -168,7 +168,7 @@ describe('admin product specs UI state', () => {
     expect(editor).toContain('bg-[#DCE8ED]');
     expect(editor).toContain('bg-[#EAF1F4]');
     expect(editor).toContain('bg-[#F8FAFB]');
-    expect(editor).toContain('admin-specs-field-grid');
+    expect(editor).toContain('grid-cols-[minmax(15rem,1fr)_minmax(12rem,24rem)_6rem]');
     expect(editor).toContain('<option value="unknown">Não informado</option>');
     expect(editor).toContain('<option value="present">Presente</option>');
     expect(editor).toContain('<option value="absent">Ausente</option>');
