@@ -168,7 +168,7 @@ describe('admin product specs UI state', () => {
     expect(editor).toContain('bg-[#DCE8ED]');
     expect(editor).toContain('bg-[#EAF1F4]');
     expect(editor).toContain('bg-[#F8FAFB]');
-    expect(editor).toContain('grid-cols-[minmax(15rem,1fr)_minmax(12rem,24rem)_6rem]');
+    expect(editor).toContain('grid-cols-[minmax(15rem,1fr)_minmax(15rem,24rem)_14rem]');
     expect(editor).toContain('<AdminSpecDropdown');
     expect(editor).toContain("value: 'unknown', label: 'Não informado'");
     expect(editor).toContain("value: 'present', label: 'Presente'");
@@ -185,7 +185,7 @@ describe('admin product specs UI state', () => {
 
   it('uses a single editable value column with a passive unit label', () => {
     const editor = source('../src/components/admin/admin-product-specs-editor.tsx');
-    expect(editor).toContain('minmax(15rem,1fr)_minmax(12rem,24rem)_6rem');
+    expect(editor).toContain('minmax(15rem,1fr)_minmax(15rem,24rem)_14rem');
     expect(editor).toContain("field.kind === 'numeric' ? field.unit : '—'");
   });
 
