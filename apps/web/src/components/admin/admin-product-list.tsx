@@ -1,7 +1,7 @@
 'use client';
 
 import type { AdminProductListItem } from '@/server/admin-product-service';
-import { Fragment, useState, useTransition } from 'react';
+import { Fragment, useState, useTransition, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -62,7 +62,7 @@ export function AdminProductList({ products }: AdminProductListProps) {
     setMessage(null);
   };
 
-  const submit = (event: React.FormEvent<HTMLFormElement>, product: AdminProductListItem, mode: Mode) => {
+  const submit = (event: FormEvent<HTMLFormElement>, product: AdminProductListItem, mode: Mode) => {
     event.preventDefault();
     if (!draft || pending) return;
     const data = new FormData();
@@ -177,7 +177,7 @@ export function AdminProductList({ products }: AdminProductListProps) {
                   <tr className="align-middle transition-colors odd:bg-white even:bg-[#F8FAFB] hover:bg-[#EAF1F4]">
                     <td>
                       <Link className="block font-semibold text-[#1A1D21] hover:underline"
-                        href={\`/admin/products/\${product.id}/specs\`} title="Abrir ficha técnica">
+                        href={`/admin/products/${product.id}/specs`} title="Abrir ficha técnica">
                         {identity}
                       </Link>
                     </td>
