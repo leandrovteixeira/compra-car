@@ -23,7 +23,7 @@ function DropdownArrow({ open }: { readonly open: boolean }) {
 export function AdminSidebar() {
   const pathname = usePathname();
   const [hovered, setHovered] = useState(false);
-  const [pinned, setPinned] = useState(false);
+  const [pinned] = useState(false);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const expanded = hovered || pinned;
   const groups = adminNavigationItems.filter((item) => item.label !== 'Conta');
@@ -107,11 +107,6 @@ export function AdminSidebar() {
           </div>
         )}
       </div>
-      <button type="button" aria-label={pinned ? 'Desafixar sidebar' : 'Fixar sidebar expandida'}
-        aria-pressed={pinned} onClick={() => setPinned((value) => !value)}
-        className="absolute bottom-3 right-1 translate-x-1/2 rounded-full border border-[#D6DEE3] bg-white px-1.5 py-0.5 text-xs text-[#1A1D21] shadow-md">
-        {pinned ? '«' : '»'}
-      </button>
     </aside>
   );
 }
