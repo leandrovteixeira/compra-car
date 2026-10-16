@@ -157,15 +157,16 @@ export function AdminProductList({ products }: AdminProductListProps) {
   return (
     <div className="admin-catalog-table-frame overflow-hidden rounded-lg border border-[#D6DEE3] bg-white">
       <div className="admin-catalog-table-scroll overflow-x-auto">
-        <table className="ui-table min-w-[52rem] lg:min-w-0">
+        <table className="ui-table w-full min-w-[68rem] table-fixed">
           <caption className="sr-only">Veículos cadastrados</caption>
+          <colgroup><col /><col style={{ width: 160 }} /><col style={{ width: 160 }} /><col style={{ width: 160 }} /><col style={{ width: 160 }} /></colgroup>
           <thead className="admin-catalog-table-header bg-[#DCE8ED]">
             <tr>
-              <th className="w-[52%]" scope="col">Veículo</th>
-              <th className="w-28 text-center" scope="col">Atividade</th>
-              <th className="w-28 text-center" scope="col">Publicação</th>
-              <th className="w-44 text-center" scope="col">Editar</th>
-              <th className="w-28 text-center" scope="col">Duplicar</th>
+              <th scope="col">Veículo</th>
+              <th className="text-center" scope="col">Atividade</th>
+              <th className="text-center" scope="col">Publicação</th>
+              <th className="text-center" scope="col">Editar</th>
+              <th className="text-center" scope="col">Duplicar</th>
             </tr>
           </thead>
           <tbody>
