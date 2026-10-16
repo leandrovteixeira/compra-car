@@ -25,6 +25,18 @@ interface AdminProductSpecsEditorProps {
   >;
 }
 
+function formatNumericForDisplay(raw: string): string {
+  const value = raw.trim();
+  if (!value) return '';
+  // Accept pt-BR grouped input or a compact integer/decimal entered by the user.
+  if (/^-?\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?$/.test(value)) return value;
+  const normalized = /^-?\d+\.\d{1,2}$/.test(value) ? value.replace('.', ',') : value;
+  if (!/^-?\d+(?:,\d{1,2})?$/.test(normalized)) return raw;
+  const [integer, decimal] = normalized.split(',');
+  const grouped = integer.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return decimal === undefined ? grouped : grouped + ',' + decimal;
+}
+
 function replaceField(
   model: AdministrativeProductSpecsModel,
   target: AdministrativeSpecField,
@@ -156,7 +168,7 @@ export function AdminProductSpecsEditor({
                         </div>
                         <div className="contents">
                           {field.kind === 'numeric' ? (
-                            <input aria-label={field.label} className="min-h-9 min-w-0 rounded-md border border-[#D6DEE3] bg-white px-3 text-right text-sm tabular-nums focus:border-[#9ABCC8] focus:outline-none" inputMode="decimal" value={field.value} onChange={(event) => update(field, { ...field, value: event.target.value })} />
+                            <input aria-label={field.label} className="min-h-9 min-w-0 rounded-md border border-[#D6DEE3] bg-white px-3 text-right text-sm tabular-nums focus:border-[#9ABCC8] focus:outline-none" inputMode="decimal" value={field.value} onChange={(event) => update(field, { ...field, value: event.target.value })} onBlur={(event) => update(field, { ...field, value: formatNumericForDisplay(event.target.value) })} />
                           ) : field.kind === 'binary' ? (
                             <AdminSpecDropdown label={field.label}
                               value={field.present === null ? 'unknown' : field.present ? 'present' : 'absent'}
