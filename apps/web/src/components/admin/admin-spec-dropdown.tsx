@@ -24,11 +24,18 @@ export function AdminSpecDropdown({ label, value, options, onChange }: Props) {
     function position() {
       const bounds = ref.current?.getBoundingClientRect();
       if (!bounds) return;
-      const below = window.innerHeight - bounds.bottom - 8;
-      const above = bounds.top - 8;
-      // Prefer a short drawer immediately below its trigger rather than floating far above.
-      const showBelow = below >= 44;
-      const maxHeight = Math.max(32, Math.min(220, showBelow ? below : above));
+      const scrollFrame = ref.current?.closest('[data-spec-scroll-frame]');
+      const frame = scrollFrame?.getBoundingClientRect();
+      const topLimit = Math.max(4, frame?.top ?? 4);
+      const bottomLimit = Math.min(window.innerHeight - 4, frame?.bottom ?? window.innerHeight - 4);
+      const below = Math.max(0, bottomLimit - bounds.bottom - 4);
+      const above = Math.max(0, bounds.top - topLimit - 4);
+      // Use the available space inside the specifications frame, not the full viewport.
+      // Flip upward when the menu would be clipped by the frame's bottom edge.
+      const idealHeight = Math.min(220, options.length * 40 + 8);
+      const showBelow = below >= idealHeight || (below >= 120 && below >= above);
+      const available = showBelow ? below : above;
+      const maxHeight = Math.max(0, Math.min(idealHeight, available));
       setPlacement({
         left: bounds.left,
         top: showBelow ? bounds.bottom + 4 : bounds.top - maxHeight - 4,
@@ -43,7 +50,7 @@ export function AdminSpecDropdown({ label, value, options, onChange }: Props) {
     function onKey(event: KeyboardEvent) {
       if (event.key === 'Escape') { setOpen(false); ref.current?.querySelector('button')?.focus(); }
     }
-    const onScroll = () => setOpen(false);
+    const onScroll = () => position();
     position();
     window.addEventListener('resize', position);
     window.addEventListener('scroll', onScroll, true);
