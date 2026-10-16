@@ -145,12 +145,6 @@ export function AdminProductSpecsEditor({
                 {group.fields.map((field) => {
                   const showEquipment = field.equipmentGroup !== previousEquipment;
                   previousEquipment = field.equipmentGroup;
-                  const empty =
-                    field.kind === 'binary'
-                      ? field.present === null
-                      : field.kind === 'numeric'
-                        ? field.value === ''
-                        : !field.selectedSpecId;
                   return (
                     <div
                       className={`px-4 py-2 ${group.fields.indexOf(field) % 2 ? 'bg-[#F8FAFB]' : 'bg-white'}`}
