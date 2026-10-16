@@ -73,7 +73,7 @@ export function AdminProductSpecsEditor({
   }
 
   return (
-    <section className="min-w-0">
+    <section className="min-w-0 overflow-hidden rounded-lg border border-[#D6DEE3] bg-white">
       <div className="sticky top-0 z-30 border-b border-[#D6DEE3] bg-white px-4 py-3">
         <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
           <label className="min-w-0 flex-1 lg:max-w-md">
@@ -124,18 +124,18 @@ export function AdminProductSpecsEditor({
         ) : null}
       </div>
 
-      <div className="mt-3 max-h-[calc(100dvh-17rem)] space-y-2 overflow-auto">
+      <div className="max-h-[calc(100dvh-17rem)] overflow-auto">
         <div className="sticky top-0 z-20 grid grid-cols-[minmax(15rem,1fr)_minmax(12rem,24rem)_6rem] gap-3 bg-[#DCE8ED] px-4 py-3 text-xs font-semibold uppercase text-[#1A1D21]"><span>Especificação</span><span>Valor</span><span>Unidade</span></div>
         {groups.map((group) => {
           const groupCounts = counts.byGroup[group.name]!;
           let previousEquipment = '';
           return (
             <details
-              className="overflow-hidden border border-[#D6DEE3] bg-white"
+              className="border-b border-[#D6DEE3] bg-white"
               key={group.name}
               open={query ? true : undefined}
             >
-              <summary className="flex min-h-8 cursor-pointer items-center justify-between gap-3 bg-[#EAF1F4] px-3 py-1 text-[0.8125rem] font-semibold text-text-primary">
+              <summary className="sticky top-11 z-10 flex min-h-9 cursor-pointer items-center justify-between gap-3 bg-[#EAF1F4] px-4 py-2 text-[0.8125rem] font-semibold text-text-primary">
                 {group.name}
                 <span className="text-xs font-normal text-text-muted">
                   {groupCounts.filled} / {groupCounts.total}
@@ -155,7 +155,7 @@ export function AdminProductSpecsEditor({
                           {field.equipmentGroup}
                         </h3>
                       ) : null}
-                      <div className="admin-specs-field-grid md:min-h-7">
+                      <div className="grid grid-cols-[minmax(15rem,1fr)_minmax(12rem,24rem)_6rem] items-center gap-3 md:min-h-7">
                         <div>
                           <p className="text-[0.8125rem] font-medium leading-4 text-text-primary">
                             {field.label}
@@ -171,7 +171,7 @@ export function AdminProductSpecsEditor({
                               : field.code}
                           </p>
                         </div>
-                        <div className="grid grid-cols-[minmax(12rem,1fr)_6rem] items-center gap-3">
+                        <div className="contents">
                           {field.kind === 'numeric' ? (
                             <input aria-label={field.label} className="min-h-9 min-w-0 rounded-md border border-[#D6DEE3] bg-white px-3 text-right text-sm tabular-nums focus:border-[#9ABCC8] focus:outline-none" inputMode="decimal" value={field.value} onChange={(event) => update(field, { ...field, value: event.target.value })} />
                           ) : field.kind === 'binary' ? (
