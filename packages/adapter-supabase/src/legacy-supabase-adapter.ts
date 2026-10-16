@@ -393,7 +393,9 @@ export class LegacySupabaseAdapter
         groupName: row.group_name_pt?.trim() || row.group_name,
         equipmentGroup: row.equipment_group_pt?.trim() || row.equipment_group,
         specSet: row.spec_set_pt?.trim() || row.spec_set,
-        detail: row.display_pt?.trim() || row.detail_pt?.trim() || row.detail,
+        detail: row.type === 'scale'
+          ? (row.detail_pt?.trim() || row.detail)
+          : (row.display_pt?.trim() || row.detail_pt?.trim() || row.detail),
         unit: row.unit?.trim() || null,
         displayOrder: row.display_order == null ? null : Number(row.display_order),
       };
