@@ -542,3 +542,6 @@ select.ui-field,
 .cc-btn--primary:disabled {background:#A5A5A5!important;color:#FFFFFF!important;}
 .cc-btn--secondary {background:#EAF1F4!important;color:#1A1D21!important;}
 .cc-btn:disabled {opacity:.55;cursor:not-allowed;}
+
+/* The table component's TH rule otherwise overrides the approved Carboot header surface. */
+.admin-catalog-table-header th { background: #DCE8ED; }
