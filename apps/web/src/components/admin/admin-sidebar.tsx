@@ -1,26 +1,23 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { adminNavigationItems } from './admin-navigation';
 
-const paths: Record<string, ReactNode> = {
-  Home: <><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" /></>,
-  'Veículos': <><path d="m5 11 2-6h10l2 6" /><rect x="3" y="11" width="18" height="8" rx="2" /><circle cx="7" cy="16" r="1" /><circle cx="17" cy="16" r="1" /><path d="M5 19v2m14-2v2" /></>,
-  'Preços': <><path d="M6 3h9l4 4v14H6z" /><path d="M15 3v5h4M9 12h7M9 16h7" /></>,
-  'Inteligência': <><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4M4.9 4.9l2.8 2.8m8.6 8.6 2.8 2.8m0-14.2-2.8 2.8m-8.6 8.6-2.8 2.8"/></>,
-  'Educação': <><ellipse cx="12" cy="12" rx="10" ry="4" /><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)" /><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)" /><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" /></>,
-  'Agentes': <><rect x="4" y="7" width="16" height="13" rx="3" /><path d="M12 3v4M9 3h6M8 13h.01M16 13h.01M9 17h6" /></>,
-  'Configurações': <><circle cx="12" cy="12" r="3"/><path d="M10 2h4l1 3 2 1 3-1 2 4-2 2v2l2 2-2 4-3-1-2 1-1 3h-4l-1-3-2-1-3 1-2-4 2-2v-2L2 9l2-4 3 1 2-1z"/></>,
-  'Conta': <><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></>,
+const names: Record<string,string> = {
+  Home: 'home', 'Veículos':'car', Preços:'docs', 'Inteligência':'intelligence',
+  'Educação':'atom', Agentes:'bot', 'Configurações':'config', Conta:'account'
 };
 
 function NavIcon({ name }: { readonly name: string }) {
-  return <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none"
-    stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round">
-    {paths[name] ?? paths.Home}
-  </svg>;
+  return <img alt="" aria-hidden="true" src={`/carboot/${names[name] ?? 'home'}.svg`}
+    className="size-[22px] shrink-0 object-contain"/>;
+}
+
+function DropdownArrow({ open }: { readonly open: boolean }) {
+  return <img alt="" aria-hidden="true" src="/carboot/arrow.svg"
+    className={`size-4 object-contain transition-transform ${open ? 'rotate-180' : ''}`}/>;
 }
 
 export function AdminSidebar() {
@@ -41,12 +38,12 @@ export function AdminSidebar() {
         if (!event.currentTarget.contains(event.relatedTarget)) setHovered(false);
       }}
       className={`sticky top-[var(--app-topbar-height)] hidden h-[calc(100dvh-var(--app-topbar-height))] shrink-0 flex-col overflow-visible bg-[#1A1D21] text-white transition-[width] duration-200 lg:flex ${expanded ? 'w-[264px]' : 'w-[76px]'}`}>
-      <div className="flex min-h-[88px] items-center gap-2 px-4">
-        <span aria-hidden="true" className="grid size-10 shrink-0 grid-cols-2 gap-[3px] p-1">
-          <span className="bg-[#9ABCC8]"/><span className="bg-[#EF7732]"/>
-          <span className="bg-white"/><span className="bg-[#9ABCC8]"/>
-        </span>
-        {expanded && <span className="truncate text-xl font-semibold tracking-tight">carboot</span>}
+      <div className="flex min-h-[88px] items-center px-3">
+        {expanded ? (
+          <img alt="Carboot" src="/carboot/logo-full.svg" className="h-[54px] w-[225px] object-contain object-left"/>
+        ) : (
+          <img alt="Carboot" src="/carboot/logo-icon.svg" className="mx-auto size-[49px] object-contain"/>
+        )}
       </div>
       <div className="mx-3 h-px bg-white/20"/>
       <nav aria-label="Navegação Carboot" className="min-h-0 flex-1 overflow-y-auto px-2 py-3">
@@ -62,7 +59,7 @@ export function AdminSidebar() {
                   onClick={() => { setHovered(true); setOpenGroup(open ? null : item.label); }}
                   className={itemClass}>
                   <span className="shrink-0"><NavIcon name={item.label}/></span>
-                  {expanded && <><span className="min-w-0 flex-1 truncate">{item.label}</span><span aria-hidden="true" className="text-[#9ABCC8]">{open ? '⌃' : '⌄'}</span></>}
+                  {expanded && <><span className="min-w-0 flex-1 truncate">{item.label}</span><span aria-hidden="true" className="text-[#9ABCC8]"><DropdownArrow open={open}/></span></>}
                 </button>
               ) : item.href ? (
                 <Link title={!expanded ? item.label : undefined} href={item.href}
