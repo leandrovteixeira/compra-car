@@ -132,7 +132,7 @@
 
   .admin-catalog-workspace {
     position: sticky;
-    top: var(--admin-topbar-height);
+    top: 0;
     display: grid;
     height: calc(100dvh - var(--admin-topbar-height));
     grid-template-rows: auto auto minmax(0, 1fr);
