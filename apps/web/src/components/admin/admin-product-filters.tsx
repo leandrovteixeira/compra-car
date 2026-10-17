@@ -48,7 +48,7 @@ export function AdminProductFilters({ values }: AdminProductFiltersProps) {
       aria-label="Filtros do catálogo"
       className="bg-transparent py-3"
     >
-      <div className="grid items-end gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(15rem,1fr)_8rem_8rem_2.25rem_auto]">
+      <div className="grid items-end gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(15rem,1fr)_8rem_8rem_3rem_auto]">
         <label className="relative sm:col-span-2 lg:col-span-1">
           <img src="/carboot/search.svg" alt="" aria-hidden="true" className="pointer-events-none absolute left-3 bottom-[11px] size-[18px] object-contain"/>
           <span aria-hidden="true" className="mb-1 block text-xs font-semibold invisible">Buscar</span><span className="sr-only">Buscar marca, modelo ou versão</span>
@@ -89,7 +89,7 @@ export function AdminProductFilters({ values }: AdminProductFiltersProps) {
           </select>
         </label>
         <button
-          className="flex size-10 items-center justify-center rounded-md hover:bg-[#EAF1F4] focus-visible:outline-2 focus-visible:outline-[#9ABCC8]" aria-label="Limpar filtros" title="Limpar filtros"
+          className="mx-auto flex size-10 items-center justify-center rounded-md hover:bg-[#EAF1F4] focus-visible:outline-2 focus-visible:outline-[#9ABCC8]" aria-label="Limpar filtros" title="Limpar filtros"
           onClick={() => {
             setSearch('');
             startTransition(() => router.replace(pathname, { scroll: false }));
