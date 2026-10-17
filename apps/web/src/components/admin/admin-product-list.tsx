@@ -200,7 +200,7 @@ export function AdminProductList({ products }: AdminProductListProps) {
                             onChange={(e) => setDraft({ ...draft, modelYear: e.target.value })}/>
                         </form>
                       ) : (
-                        <Link className="block text-[0.8125rem] font-semibold text-[#1A1D21] hover:underline"
+                        <Link className="block cc-type-data !font-semibold text-[#1A1D21] hover:underline"
                           href={`/admin/products/${product.id}/specs`} title="Abrir ficha técnica">{identity}</Link>
                       )}
                       {opened?.id === product.id && opened.mode === 'edit' && message &&
