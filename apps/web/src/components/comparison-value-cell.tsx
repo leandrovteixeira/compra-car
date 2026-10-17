@@ -20,7 +20,8 @@ function AdvantageCheck() {
       role="img"
       title="Vantagem"
     >
-      <img src="/carboot/check.svg" alt="" aria-hidden="true" className="size-4 object-contain" />   </span>
+      <img src="/carboot/check_bold.svg" alt="" aria-hidden="true" className="size-4 object-contain" />
+    </span>
   );
 }
 
