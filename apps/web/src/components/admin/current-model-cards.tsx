@@ -13,6 +13,11 @@ const imageByModel: Readonly<Record<string, string>> = {
   'byd|song pro': 'https://shfsjyjxmgwnlexmdkcs.supabase.co/storage/v1/object/public/vehicle-images/bud_song_pro.webp',
 };
 
+function displayModel(value: string): string {
+  const normalized = value.trim().toLocaleLowerCase('pt-BR');
+  return normalized ? normalized.charAt(0).toLocaleUpperCase('pt-BR') + normalized.slice(1) : normalized;
+}
+
 function normalize(value: string): string {
   return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').trim();
 }
@@ -37,21 +42,21 @@ export function CurrentModelCards({ cards }: Props) {
             className="h-11 w-full rounded-md border border-[#D6DEE3] bg-white pl-10 pr-4 text-sm text-[#1A1D21] outline-none focus:border-[#9ABCC8] focus:ring-2 focus:ring-[#9ABCC8]/30" />
         </label>
       </div>
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {visible.map((card) => {
           const key = normalize(card.brand) + '|' + normalize(card.model);
           const photo = imageByModel[key];
           return (
             <Link key={card.brand + '|' + card.model}
               href={`/admin/ver-ficha-tecnica/modelo?brand=${encodeURIComponent(card.brand)}&model=${encodeURIComponent(card.model)}`}
-              className="group relative flex aspect-[1.7] flex-col justify-end overflow-hidden rounded-xl border border-[#D6DEE3] bg-[#1A1D21] p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl">
+              className="group relative flex aspect-[1.85] flex-col justify-end overflow-hidden rounded-xl border border-[#D6DEE3] bg-[#1A1D21] p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl">
               {photo && <img src={photo} alt={card.brand + ' ' + card.model}
                 className="absolute inset-0 h-full w-full object-cover" />}
               <div className="absolute inset-0 bg-gradient-to-t from-[#1A1D21]/95 via-[#1A1D21]/30 to-transparent" />
               <div className="relative">
                 <p className="text-[11px] font-medium uppercase tracking-[0.08em] leading-4 text-[#EF7732]">{card.brand}</p>
-                <h2 className="mt-1 text-3xl font-bold leading-8 text-[#FFFFFF]">{card.model}</h2>
-                <p className="mt-1 text-xs leading-4 text-[#9ABCC8]">
+                <h2 className="mt-0.5 text-2xl font-bold leading-7 text-[#FFFFFF]">{displayModel(card.model)}</h2>
+                <p className="mt-0.5 text-xs leading-4 text-[#9ABCC8]">
                   {card.versions.length} {card.versions.length === 1 ? 'versão atual' : 'versões atuais'}
                 </p>
               </div>
