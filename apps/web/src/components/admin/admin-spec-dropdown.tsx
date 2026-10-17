@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useId } from 'react';
 import { createPortal } from 'react-dom';
 
-interface Option { readonly value: string; readonly label: string }
+interface Option { readonly value: string; readonly label: string; readonly icon?: 'spec_available' | 'spec_optional' | 'spec_not_available' }
 interface Props {
   readonly label: string;
   readonly value: string;
@@ -70,7 +70,7 @@ export function AdminSpecDropdown({ label, value, options, onChange }: Props) {
         aria-controls={open ? menuId : undefined}
         onClick={() => setOpen((prev) => !prev)}
         className="flex h-9 w-full items-center justify-between gap-2 rounded-md border border-[#D6DEE3] bg-white px-3 text-left font-sans text-[13px] leading-tight font-normal text-[#1A1D21] focus-visible:outline-2 focus-visible:outline-[#9ABCC8]">
-        <span className="min-w-0 truncate">{selected?.label ?? 'Não informado'}</span>
+        <span className="flex min-w-0 items-center gap-2">{selected?.icon && <img src={`/carboot/${selected.icon}.svg`} alt="" aria-hidden="true" className="size-4 shrink-0" />}<span className="truncate">{selected?.label ?? 'Indisponível'}</span></span>
         <img alt="" src="/carboot/arrow-graphite.svg" className={`size-3.5 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}/>
       </button>
       {open && createPortal(
@@ -81,7 +81,7 @@ export function AdminSpecDropdown({ label, value, options, onChange }: Props) {
             <button key={option.value} role="option" aria-selected={option.value === value}
               type="button" onClick={() => { onChange(option.value); setOpen(false); }}
               className={`block min-h-9 w-full px-3 py-2 text-left font-sans text-[13px] leading-snug hover:bg-[#EAF1F4] ${option.value === value ? 'bg-[#EAF1F4] font-medium text-[#1A1D21]' : 'text-[#526670]'}`}>
-              {option.label}
+              <span className="flex items-center gap-2">{option.icon && <img src={`/carboot/${option.icon}.svg`} alt="" aria-hidden="true" className="size-4 shrink-0" />}{option.label}</span>
             </button>
           ))}
         </div>, document.body)}
