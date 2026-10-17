@@ -52,7 +52,7 @@ export function AdminProductFilters({ values }: AdminProductFiltersProps) {
           <span className="sr-only">Buscar marca, modelo ou versão</span>
           <input
             autoComplete="off"
-            className={controlClass}
+            className={`${controlClass} !pl-10`}
             name="search"
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Buscar marca, modelo ou versão..."
