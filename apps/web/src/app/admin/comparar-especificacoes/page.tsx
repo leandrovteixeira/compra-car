@@ -21,7 +21,7 @@ export default async function ComparisonPage({ searchParams }: ComparisonPagePro
   const params = await searchParams;
   const cards = await loadCurrentModelCards();
   const options = cards.flatMap(card => card.versions.map(version => ({
-    id: version.id, label: `${card.brand} ${card.model} ${version.version} — ${version.model_year}`,
+    id: version.id, label: `${card.brand} ${card.model} ${version.version} ${version.model_year}`,
   })));
   const initialIds = typeof params.vehicles === 'string' ? params.vehicles.split(',') : [];
   if (!params.vehicles) return <main className="min-w-0 py-2 text-text-primary">
@@ -54,7 +54,7 @@ export default async function ComparisonPage({ searchParams }: ComparisonPagePro
       <div className="mx-auto w-full max-w-[100rem]">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Comparar Especificações</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">Comparar Especificações</h1><p className="mt-1 text-sm text-text-muted">Compare versões lado a lado.</p>
           </div>
           <div className="self-start sm:self-auto">
             <CarbootBackLink href="/admin/comparar-especificacoes" label="Voltar aos modelos" />
