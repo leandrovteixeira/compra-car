@@ -139,7 +139,7 @@ export function AdminProductSpecsEditor({
       </div>
 
       <div data-spec-scroll-frame className="max-h-[calc(100dvh-17rem)] overflow-auto">
-        <div className="sticky top-0 z-20 grid grid-cols-[minmax(15rem,1fr)_minmax(15rem,24rem)_14rem] gap-3 bg-[#DCE8ED] px-4 py-3 text-xs font-semibold uppercase text-[#1A1D21]"><span>Especificação</span><span className="text-center">Valor</span><span className="text-center">Unidade</span></div>
+        <div className="sticky top-0 z-20 grid h-11 grid-cols-[minmax(15rem,1fr)_minmax(15rem,24rem)_14rem] items-center gap-3 bg-[#DCE8ED] px-4 text-xs font-semibold uppercase text-[#1A1D21]"><span>Especificação</span><span className="text-center">Valor</span><span className="text-center">Unidade</span></div>
         {groups.map((group) => {
           const groupCounts = counts.byGroup[group.name]!;
           return (
@@ -148,7 +148,7 @@ export function AdminProductSpecsEditor({
               key={group.name}
               open={query ? true : undefined}
             >
-              <summary className="sticky top-11 z-10 flex min-h-9 cursor-pointer items-center justify-between gap-3 bg-[#EAF1F4] px-4 py-2 text-[0.8125rem] font-semibold text-text-primary">
+              <summary className="sticky top-11 z-10 flex h-9 cursor-pointer items-center justify-between gap-3 bg-[#EAF1F4] px-4 text-[0.8125rem] font-semibold text-text-primary">
                 {group.name}
                 <span className="text-xs font-normal text-text-muted">
                   {groupCounts.filled} / {groupCounts.total}
