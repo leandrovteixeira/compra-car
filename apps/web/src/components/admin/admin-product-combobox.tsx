@@ -24,7 +24,7 @@ function optionLabel(option: ManualPriceBatchProductOptionDto): string {
     Boolean,
   );
   // Display only model year in the UI; preserve the underlying product ID.
-  const mmvy = option.displayName.replace(/\\b(\\d{4})\\s*\\/\\s*(\\d{4})\\b/g, '$2');
+  const mmvy = option.displayName.replace(/\b(\d{4})\s*\/\s*(\d{4})\b/g, '$2');
   return `${mmvy}${status.length ? ` (${status.join(', ')})` : ''}`;
 }
 
