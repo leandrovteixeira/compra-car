@@ -14,7 +14,11 @@ export default async function ViewModelCardsPage(){
       {cards.map(card=><Link key={card.brand+'|'+card.model}
         href={`/admin/ver-ficha-tecnica/modelo?brand=${encodeURIComponent(card.brand)}&model=${encodeURIComponent(card.model)}`}
         className="group relative flex aspect-[1.7] flex-col justify-end overflow-hidden rounded-xl border border-[#D6DEE3] bg-[#1A1D21] p-6 text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#3D5962] via-[#1A1D21] to-[#13171B]"/>
+          {card.brand.toLocaleLowerCase('pt-BR') === 'byd' && card.model.toLocaleLowerCase('pt-BR').replace(/[^a-z0-9]/g,'') === 'atto2' && (
+            <img src="https://shfsjyjxmgwnlexmdkcs.supabase.co/storage/v1/object/public/vehicle-images/byd_atto2.webp"
+              alt="BYD Atto 2" className="absolute inset-0 h-full w-full object-cover" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#1A1D21]/95 via-[#1A1D21]/30 to-transparent"/>
           <div className="relative">
             <p className="text-xs uppercase tracking-widest text-[#9ABCC8]">{card.brand}</p>
             <h2 className="mt-2 text-3xl font-semibold">{card.model}</h2>
