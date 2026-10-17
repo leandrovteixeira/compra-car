@@ -23,7 +23,9 @@ function optionLabel(option: ManualPriceBatchProductOptionDto): string {
   const status = [!option.isActive ? 'inativo' : '', !option.isPublic ? 'privado' : ''].filter(
     Boolean,
   );
-  return `${option.displayName}${status.length ? ` (${status.join(', ')})` : ''}`;
+  // Display only model year in the UI; preserve the underlying product ID.
+  const mmvy = option.displayName.replace(/\\b(\\d{4})\\s*\\/\\s*(\\d{4})\\b/g, '$2');
+  return `${mmvy}${status.length ? ` (${status.join(', ')})` : ''}`;
 }
 
 export function AdminProductCombobox({
@@ -86,7 +88,7 @@ export function AdminProductCombobox({
       <label className={hideLabel ? 'sr-only' : labelClassName} htmlFor={`${listboxId}-input`}>
         {label}
       </label>
-      <div className={hideLabel ? 'relative' : 'relative mt-1'}>
+      <div className={hideLabel ? 'relative' : 'relative mt-1'}><img src="/carboot/search.svg" alt="" aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-[18px] -translate-y-1/2 object-contain" />
         <input
           aria-autocomplete="list"
           aria-controls={listboxId}
@@ -96,7 +98,7 @@ export function AdminProductCombobox({
           aria-describedby={errorDescriptionId}
           aria-expanded={open}
           aria-invalid={error}
-          className={`${fieldClassName} pr-10 placeholder:text-text-muted disabled:cursor-not-allowed disabled:opacity-60`}
+          className={`${fieldClassName} !pl-10 pr-10 placeholder:text-text-muted disabled:cursor-not-allowed disabled:opacity-60`}
           disabled={disabled}
           id={`${listboxId}-input`}
           ref={inputRef}
@@ -141,7 +143,7 @@ export function AdminProductCombobox({
             }}
             type="button"
           >
-            ×
+            <img src="/carboot/close.svg" alt="" aria-hidden="true" className="mx-auto size-4 object-contain" />
           </button>
         ) : null}
       </div>
