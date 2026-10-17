@@ -27,8 +27,8 @@ export function CurrentModelCards({ cards }: Props) {
 
   return (
     <>
-      <div className="mb-6 flex items-center gap-3">
-        <label className="relative block w-full max-w-[42rem]">
+      <div className="mb-6">
+        <label className="relative block w-full">
           <img src="/carboot/search.svg" alt="" aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-[18px] -translate-y-1/2 object-contain"/>
           <span className="sr-only">Buscar marca ou modelo</span>
           <input type="search" value={search} onChange={(event) => setSearch(event.target.value)}
@@ -36,9 +36,6 @@ export function CurrentModelCards({ cards }: Props) {
             placeholder="Buscar marca ou modelo..."
             className="h-11 w-full rounded-md border border-[#D6DEE3] bg-white pl-10 pr-4 text-sm text-[#1A1D21] outline-none focus:border-[#9ABCC8] focus:ring-2 focus:ring-[#9ABCC8]/30" />
         </label>
-        <span className="shrink-0 text-xs text-[#61747B]" aria-live="polite">
-          {visible.length} {visible.length === 1 ? 'modelo' : 'modelos'}
-        </span>
       </div>
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         {visible.map((card) => {
