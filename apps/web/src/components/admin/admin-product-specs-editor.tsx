@@ -159,7 +159,7 @@ export function AdminProductSpecsEditor({
             >
               <summary className="sticky top-11 z-10 flex h-9 cursor-pointer items-center justify-between gap-3 bg-[#EAF1F4] px-4 text-[0.8125rem] font-semibold text-text-primary">
                 {group.name}
-                <span className="text-xs font-normal text-text-muted">
+                <span className="cc-type-label !font-normal text-text-muted">
                   {groupCounts.filled} / {groupCounts.total}
                 </span>
               </summary>
@@ -172,7 +172,7 @@ export function AdminProductSpecsEditor({
                     >
                       <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,32%)_minmax(5rem,12%)] items-center gap-2 md:min-h-7">
                         <div>
-                          <p className="text-[0.8125rem] font-medium leading-4 text-text-primary">
+                          <p className="cc-type-data !font-medium text-text-primary">
                             {field.label}
                           </p>
                         </div>
