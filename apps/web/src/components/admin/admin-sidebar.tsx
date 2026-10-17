@@ -32,10 +32,10 @@ export function AdminSidebar({ displayName, logoutAction }: { readonly displayNa
   return (
     <aside aria-label="Menu administrativo"
       onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseLeave={() => { setHovered(false); setOpenGroup(null); }}
       onFocusCapture={() => setHovered(true)}
       onBlurCapture={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) setHovered(false);
+        if (!event.currentTarget.contains(event.relatedTarget)) { setHovered(false); setOpenGroup(null); }
       }}
       className={`sticky top-0 hidden h-dvh shrink-0 flex-col overflow-visible bg-[#1A1D21] text-white shadow-[6px_0_18px_rgba(26,29,33,0.16)] transition-[width] duration-200 lg:flex ${expanded ? 'w-[264px]' : 'w-[76px]'}`}>
       <div className="flex min-h-[88px] items-center gap-2 overflow-hidden px-[13px]">
