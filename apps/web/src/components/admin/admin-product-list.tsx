@@ -40,7 +40,7 @@ function draftFrom(product: AdminProductListItem, mode: Mode): Draft {
 }
 
 const cellInput =
-  'h-10 w-full min-w-0 rounded-md border border-[#D6DEE3] bg-white px-2 text-sm text-[#1A1D21] focus:border-[#9ABCC8] focus:outline-none focus:ring-2 focus:ring-[#9ABCC8]/25';
+  'h-8 w-full min-w-0 rounded-md border border-[#D6DEE3] bg-white px-2 text-sm text-[#1A1D21] focus:border-[#9ABCC8] focus:outline-none focus:ring-2 focus:ring-[#9ABCC8]/25';
 
 export function AdminProductList({ products }: AdminProductListProps) {
   const router = useRouter();
@@ -177,10 +177,10 @@ export function AdminProductList({ products }: AdminProductListProps) {
                 <Fragment key={product.id}>
                   {opened?.id === product.id && opened.mode === 'duplicate' && editor(product, 'duplicate')}
                   <tr
-                    className="group cursor-pointer align-middle transition-colors odd:bg-white even:bg-[#F8FAFB] hover:bg-[#EAF1F4]"
+                    className={`group cursor-pointer align-middle transition-colors ${opened?.id === product.id ? "bg-[#EAF1F4]" : opened ? "odd:bg-white even:bg-[#F8FAFB]" : "odd:bg-white even:bg-[#F8FAFB] hover:bg-[#EAF1F4]"}`}
                     onClick={(event) => {
                       const target = event.target;
-                      if (target instanceof Element && target.closest('a, button, input, select, textarea, label')) return;
+                      if (opened || (target instanceof Element && target.closest('a, button, input, select, textarea, label'))) return;
                       router.push(`/admin/products/${product.id}/specs`);
                     }}
                   >
@@ -219,7 +219,7 @@ export function AdminProductList({ products }: AdminProductListProps) {
                         <button type="submit" form={`catalog-edit-${product.id}`} disabled={pending}
                           className="cc-btn cc-btn--p cc-btn--primary">{pending ? 'Salvando…' : 'Salvar'}</button>
                       ) : (
-                        <button type="button" disabled={pending} onClick={(event) => { event.stopPropagation(); window.setTimeout(() => start(product, 'edit'), 0); }}
+                        <button type="button" disabled={pending || Boolean(opened)} onClick={(event) => { event.stopPropagation(); window.setTimeout(() => start(product, 'edit'), 0); }}
                           className="cc-btn cc-btn--p cc-btn--secondary admin-catalog-action">Editar</button>
                       )}
                     </td>
@@ -228,7 +228,7 @@ export function AdminProductList({ products }: AdminProductListProps) {
                         <button type="button" disabled={pending} onClick={cancel}
                           className="cc-btn cc-btn--p cc-btn--secondary admin-catalog-action">Cancelar</button>
                       ) : (
-                        <button type="button" disabled={pending} onClick={() => start(product, 'duplicate')}
+                        <button type="button" disabled={pending || Boolean(opened)} onClick={() => start(product, 'duplicate')}
                           className="cc-btn cc-btn--p cc-btn--secondary admin-catalog-action">Duplicar</button>
                       )}
                     </td>
