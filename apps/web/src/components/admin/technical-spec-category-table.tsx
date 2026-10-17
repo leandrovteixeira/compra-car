@@ -51,7 +51,7 @@ export function TechnicalSpecCategoryTable({ categories, versions }: {
           </tr>
           {!isCollapsed && category.rows.map((row, index) => <tr key={row.id} className={index % 2 ? 'bg-[#F8FAFB]' : 'bg-white'}>
             <th scope="row" className={`sticky left-0 border-b border-[#E5EBEE] px-4 py-3 text-left text-xs font-medium ${index % 2 ? 'bg-[#F8FAFB]' : 'bg-white'}`}>{row.label}</th>
-            {row.values.map((value, index) => <td key={versions[index]?.id ?? index} className="border-b border-[#E5EBEE] px-3 py-3 text-center text-xs">{value === "●" || value === "—" ? <img src={`/carboot/spec_${value === "●" ? "available" : "not_available"}.svg`} alt={value === "●" ? "Disponível" : "Indisponível"} title={value === "●" ? "Disponível" : "Indisponível"} className="mx-auto size-5 object-contain" /> : value}</td>)}
+            {row.values.map((value, index) => <td key={versions[index]?.id ?? index} className="border-b border-[#E5EBEE] px-3 py-3 text-center text-xs">{(value === "spec_available" || value === "spec_not_available") ? <img src={`/carboot/${value}.svg`} alt={value === "spec_available" ? "Disponível" : "Indisponível"} title={value === "spec_available" ? "Disponível" : "Indisponível"} className="mx-auto size-5 object-contain" /> : value}</td>)}
           </tr>)}
         </tbody>;
       })}
