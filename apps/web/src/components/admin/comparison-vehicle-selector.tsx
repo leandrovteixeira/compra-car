@@ -39,7 +39,7 @@ export function ComparisonVehicleSelector({ options, initialIds = [], maxVehicle
   const remove = (id: string) => setSelected(current => current.filter(value => value !== id));
   return <section className={'min-w-0'}>
     <div className="flex min-w-0 flex-wrap items-center gap-2 py-3">
-      <div ref={root} className="relative min-w-[15rem] flex-1"><img src="/carboot/search.svg" alt="" aria-hidden="true" className="pointer-events-none absolute left-3 top-[18px] z-10 size-[18px] -translate-y-1/2 object-contain" />
+      <div ref={root} className="relative min-w-[15rem] flex-1"><img src="/carboot/search.svg" alt="" aria-hidden="true" className="pointer-events-none absolute left-3 top-5 z-10 size-[18px] -translate-y-1/2 object-contain" />
         <input type="search" value={query} onChange={event => { setQuery(event.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
           onBlur={() => window.setTimeout(() => setOpen(false), 120)}
@@ -47,7 +47,7 @@ export function ComparisonVehicleSelector({ options, initialIds = [], maxVehicle
           disabled={selected.length >= maxVehicles}
           aria-label="Adicionar veículo à comparação" aria-expanded={open}
           placeholder={selected.length >= maxVehicles ? `Limite de ${maxVehicles} veículos atingido` : 'Buscar marca, modelo ou versão...'}
-          className="ui-field w-full !pl-10 !pr-4 text-[0.8125rem]" />
+          className="ui-field !h-10 !min-h-10 w-full !pl-10 !pr-4 text-[0.8125rem]" />
         {open && selected.length < maxVehicles && <div className="absolute inset-x-0 top-full z-50 mt-1 max-h-60 overflow-y-auto rounded-md border border-[#D6DEE3] bg-white p-1 shadow-lg">
           {filtered.length ? filtered.map(option => <button type="button" key={option.id}
             onMouseDown={event => event.preventDefault()} onClick={() => add(String(option.id))}
