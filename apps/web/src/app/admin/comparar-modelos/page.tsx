@@ -9,7 +9,7 @@ function parseRadius(v:string|readonly string[]|undefined):SellerScoreRadius{con
 function money(v:number){return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0}).format(v);}
 function score(v:number|null){return v===null?'N/D':v.toFixed(1).replace('.',',');}
 export default async function SellerModelPage({searchParams}:Props){const params=await searchParams;const radius=parseRadius(params.radius);const raw=Number(first(params.product));const id=Number.isSafeInteger(raw)&&raw>0?raw:null;const result=await loadSellerModelScore(id,radius);
-return <section className="min-w-0 bg-background py-2 text-text-primary"><div className="mx-auto w-full max-w-[100rem]">
+return <section className="min-w-0 bg-background text-text-primary"><div className="mx-auto w-full max-w-[100rem]">
  <CatalogPageHeading title="Comparar Modelos" description="Valor percebido contra veículos de preço semelhante." />
  <div className="mt-3"><SellerModelPicker options={result.options} radius={radius} showLabel={false} basePath="/admin/comparar-modelos"/></div>
  {!result.selected?<div className="ui-surface mt-3 flex min-h-64 items-center justify-center text-center"><div><h2 className="text-lg font-semibold">Escolha um modelo</h2><p className="mt-1 text-sm text-text-muted">Use a busca acima para abrir o score e o radar.</p></div></div>:
