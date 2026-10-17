@@ -172,12 +172,12 @@ export function AdminProductSpecsEditor({
                             <input aria-label={field.label} className="min-h-8 min-w-0 rounded-md border border-[#D6DEE3] bg-white px-2 text-right text-[0.8125rem] tabular-nums focus:border-[#9ABCC8] focus:outline-none" inputMode="decimal" value={field.value} onChange={(event) => update(field, { ...field, value: event.target.value })} onBlur={(event) => update(field, { ...field, value: formatNumericForDisplay(event.target.value) })} />
                           ) : field.kind === 'binary' ? (
                             <AdminSpecDropdown label={field.label}
-                              value={field.present === null ? 'unknown' : field.present ? 'present' : 'absent'}
-                              options={[{ value: 'unknown', label: 'Não informado' }, { value: 'present', label: 'Presente' }, { value: 'absent', label: 'Ausente' }]}
-                              onChange={(v) => update(field, { ...field, present: v === 'unknown' ? null : v === 'present' })}/>
+                              value={field.present === true ? 'available' : 'not_available'}
+                              options={[{ value: 'available', label: 'Disponível', icon: 'spec_available' }, { value: 'not_available', label: 'Indisponível', icon: 'spec_not_available' }]}
+                              onChange={(v) => update(field, { ...field, present: v === 'available' })}/>
                           ) : (
                             <AdminSpecDropdown label={field.label} value={field.selectedSpecId ?? ''}
-                              options={[{ value: '', label: 'Não informado' }, ...field.options.map((option) => ({ value: option.specId, label: option.label }))]}
+                              options={[{ value: '', label: 'Indisponível' }, ...field.options.map((option) => ({ value: option.specId, label: option.label }))]}
                               onChange={(v) => update(field, { ...field, selectedSpecId: v || null })}/>
                           )}
                           <span className="text-center text-xs text-[#61747B]">{field.kind === 'numeric' ? field.unit : '—'}</span>
