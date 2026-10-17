@@ -9,7 +9,7 @@ export const adminNavigationItems: readonly AdminNavigationItem[] = [
   { href: '/admin', label: 'Home', status: 'active' },
   { label: 'Veículos', status: 'active', children: [
     { href: '/admin/products', label: 'Cadastro de Modelos', status: 'active' },
-    { href: '/admin/ver-ficha-tecnica', label: 'Ver Ficha Técnica', status: 'active' },
+    { href: '/admin/ver-ficha-tecnica', label: 'Fichas Técnicas', status: 'active' },
     { href: '/comparar', label: 'Comparar Modelos', status: 'active' },
     { label: 'Comparar Especificações', status: 'planned' },
   ] },
