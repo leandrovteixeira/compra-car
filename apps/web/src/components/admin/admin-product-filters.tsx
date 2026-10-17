@@ -12,7 +12,7 @@ interface AdminProductFiltersProps {
 }
 
 const controlClass =
-  'ui-field min-h-9 text-[0.8125rem] focus:border-selection-strong focus:ring-selection-strong/25';
+  'ui-field !h-10 !min-h-10 text-[0.8125rem] focus:border-selection-strong focus:ring-selection-strong/25';
 
 export function AdminProductFilters({ values }: AdminProductFiltersProps) {
   const pathname = usePathname();
@@ -51,7 +51,7 @@ export function AdminProductFilters({ values }: AdminProductFiltersProps) {
       <div className="grid items-end gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(15rem,1fr)_8rem_8rem_2.25rem_auto]">
         <label className="relative sm:col-span-2 lg:col-span-1">
           <img src="/carboot/search.svg" alt="" aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-[18px] -translate-y-1/2 object-contain"/>
-          <span className="sr-only">Buscar marca, modelo ou versão</span>
+          <span aria-hidden="true" className="mb-1 block text-xs font-semibold invisible">Buscar</span><span className="sr-only">Buscar marca, modelo ou versão</span>
           <input
             autoComplete="off"
             className={`${controlClass} !pl-10`}
@@ -89,7 +89,7 @@ export function AdminProductFilters({ values }: AdminProductFiltersProps) {
           </select>
         </label>
         <button
-          className="flex size-9 items-center justify-center rounded-md hover:bg-[#EAF1F4] focus-visible:outline-2 focus-visible:outline-[#9ABCC8]" aria-label="Limpar filtros" title="Limpar filtros"
+          className="flex size-10 items-center justify-center rounded-md hover:bg-[#EAF1F4] focus-visible:outline-2 focus-visible:outline-[#9ABCC8]" aria-label="Limpar filtros" title="Limpar filtros"
           onClick={() => {
             setSearch('');
             startTransition(() => router.replace(pathname, { scroll: false }));
@@ -98,7 +98,7 @@ export function AdminProductFilters({ values }: AdminProductFiltersProps) {
         >
           <img src="/carboot/close.svg" alt="" aria-hidden="true" className="size-4 object-contain"/>
         </button>
-        <Link href="/admin/products/new" className="cc-btn cc-btn--p cc-btn--primary">Novo veículo</Link>
+        <Link href="/admin/products/new" className="cc-btn cc-btn--m cc-btn--primary !min-w-[112px]">Novo veículo</Link>
       </div>
       <p aria-live="polite" className="mt-1 min-h-4 text-xs text-text-muted">
         {pending ? 'Atualizando resultados…' : ''}
