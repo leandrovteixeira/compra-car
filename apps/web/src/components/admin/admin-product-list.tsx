@@ -141,11 +141,11 @@ export function AdminProductList({ products }: AdminProductListProps) {
               )}
               <button type="submit" disabled={pending}
                 className="cc-btn cc-btn--p cc-btn--primary">
-                {pending ? 'SALVANDO…' : 'SALVAR'}
+                {pending ? 'Salvando…' : 'Salvar'}
               </button>
               <button type="button" disabled={pending} onClick={cancel}
                 className="cc-btn cc-btn--p cc-btn--secondary admin-catalog-action">
-                CANCELAR
+                Cancelar
               </button>
             </div>
             {message && <p role="alert" className="mt-2 text-sm text-red-700">{message}</p>}
@@ -217,19 +217,19 @@ export function AdminProductList({ products }: AdminProductListProps) {
                     <td className="text-center">
                       {opened?.id === product.id && opened.mode === 'edit' ? (
                         <button type="submit" form={`catalog-edit-${product.id}`} disabled={pending}
-                          className="cc-btn cc-btn--p cc-btn--primary">{pending ? 'SALVANDO…' : 'SALVAR'}</button>
+                          className="cc-btn cc-btn--p cc-btn--primary">{pending ? 'Salvando…' : 'Salvar'}</button>
                       ) : (
                         <button type="button" disabled={pending} onClick={(event) => { event.stopPropagation(); window.setTimeout(() => start(product, 'edit'), 0); }}
-                          className="cc-btn cc-btn--p cc-btn--secondary admin-catalog-action">EDITAR</button>
+                          className="cc-btn cc-btn--p cc-btn--secondary admin-catalog-action">Editar</button>
                       )}
                     </td>
                     <td className="text-center">
                       {opened?.id === product.id && opened.mode === 'edit' ? (
                         <button type="button" disabled={pending} onClick={cancel}
-                          className="cc-btn cc-btn--p cc-btn--secondary admin-catalog-action">CANCELAR</button>
+                          className="cc-btn cc-btn--p cc-btn--secondary admin-catalog-action">Cancelar</button>
                       ) : (
                         <button type="button" disabled={pending} onClick={() => start(product, 'duplicate')}
-                          className="cc-btn cc-btn--p cc-btn--secondary admin-catalog-action">DUPLICAR</button>
+                          className="cc-btn cc-btn--p cc-btn--secondary admin-catalog-action">Duplicar</button>
                       )}
                     </td>
                   </tr>
