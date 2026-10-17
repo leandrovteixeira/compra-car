@@ -42,10 +42,8 @@ export function TechnicalSpecCategoryTable({ categories, versions }: {
               <button type="button" aria-expanded={!isCollapsed} onClick={() => toggle(category.name)}
                 className="flex min-h-9 w-full items-center justify-between gap-3 px-4 py-2 text-left hover:bg-[#DCE8ED] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#9ABCC8]">
                 <span>{category.name}</span>
-                <span className="flex items-center gap-3 text-xs font-normal text-[#61747B]">
-                  <span>{category.rows.length} especificações</span>
-                  <span aria-hidden="true" className={`text-base transition-transform ${isCollapsed ? '' : 'rotate-180'}`}>⌄</span>
-                </span>
+                <img src="/carboot/arrow.svg" alt="" aria-hidden="true"
+                  className={`size-4 shrink-0 object-contain transition-transform ${isCollapsed ? '' : 'rotate-180'}`} />
               </button>
             </th>
           </tr>
