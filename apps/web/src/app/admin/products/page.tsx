@@ -21,7 +21,7 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
   const result = await loadAdminProducts(parsed.filters, undefined, parsed.values.search);
 
   return (
-    <section className="admin-catalog-workspace pt-2">
+    <section className="admin-catalog-workspace">
       <div className="admin-catalog-page-header">
         <CatalogPageHeading title="Cadastro de Modelos" description="Consulte e administre o catálogo de veículos." />
       </div>
