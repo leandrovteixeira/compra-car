@@ -144,7 +144,7 @@ export function AdminProductList({ products }: AdminProductListProps) {
                 {pending ? 'SALVANDO…' : 'SALVAR'}
               </button>
               <button type="button" disabled={pending} onClick={cancel}
-                className="cc-btn cc-btn--p cc-btn--secondary">
+                className="cc-btn cc-btn--p cc-btn--secondary admin-catalog-action">
                 CANCELAR
               </button>
             </div>
@@ -177,7 +177,7 @@ export function AdminProductList({ products }: AdminProductListProps) {
                 <Fragment key={product.id}>
                   {opened?.id === product.id && opened.mode === 'duplicate' && editor(product, 'duplicate')}
                   <tr
-                    className="cursor-pointer align-middle transition-colors odd:bg-white even:bg-[#F8FAFB] hover:bg-[#EAF1F4]"
+                    className="group cursor-pointer align-middle transition-colors odd:bg-white even:bg-[#F8FAFB] hover:bg-[#EAF1F4]"
                     onClick={(event) => {
                       const target = event.target;
                       if (target instanceof Element && target.closest('a, button, input, select, textarea, label')) return;
@@ -200,7 +200,7 @@ export function AdminProductList({ products }: AdminProductListProps) {
                             onChange={(e) => setDraft({ ...draft, modelYear: e.target.value })}/>
                         </form>
                       ) : (
-                        <Link className="block font-semibold text-[#1A1D21] hover:underline"
+                        <Link className="block text-[0.8125rem] font-semibold text-[#1A1D21] hover:underline"
                           href={`/admin/products/${product.id}/specs`} title="Abrir ficha técnica">{identity}</Link>
                       )}
                       {opened?.id === product.id && opened.mode === 'edit' && message &&
@@ -220,16 +220,16 @@ export function AdminProductList({ products }: AdminProductListProps) {
                           className="cc-btn cc-btn--p cc-btn--primary">{pending ? 'SALVANDO…' : 'SALVAR'}</button>
                       ) : (
                         <button type="button" disabled={pending} onClick={(event) => { event.stopPropagation(); window.setTimeout(() => start(product, 'edit'), 0); }}
-                          className="cc-btn cc-btn--p cc-btn--secondary">EDITAR</button>
+                          className="cc-btn cc-btn--p cc-btn--secondary admin-catalog-action">EDITAR</button>
                       )}
                     </td>
                     <td className="text-center">
                       {opened?.id === product.id && opened.mode === 'edit' ? (
                         <button type="button" disabled={pending} onClick={cancel}
-                          className="cc-btn cc-btn--p cc-btn--secondary">CANCELAR</button>
+                          className="cc-btn cc-btn--p cc-btn--secondary admin-catalog-action">CANCELAR</button>
                       ) : (
                         <button type="button" disabled={pending} onClick={() => start(product, 'duplicate')}
-                          className="cc-btn cc-btn--p cc-btn--secondary">DUPLICAR</button>
+                          className="cc-btn cc-btn--p cc-btn--secondary admin-catalog-action">DUPLICAR</button>
                       )}
                     </td>
                   </tr>
