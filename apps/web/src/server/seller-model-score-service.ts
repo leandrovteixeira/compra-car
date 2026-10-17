@@ -79,7 +79,7 @@ interface OwnershipMetrics {
   readonly consumption: number | null;
 }
 function labelFor(p: ProductRow) {
-  return `${p.brand} ${p.model} ${p.version} — ${p.model_year}`;
+  return `${p.brand} ${p.model} ${p.version} ${p.model_year}`;
 }
 function displayCategory(c: string) {
   return (
