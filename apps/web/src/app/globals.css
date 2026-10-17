@@ -545,3 +545,8 @@ select.ui-field,
 
 /* The table component's TH rule otherwise overrides the approved Carboot header surface. */
 .admin-catalog-table-header th { background: #DCE8ED; }
+
+/* S23: actions stay legible on highlighted/hovered catalog rows. */
+.admin-catalog-action {text-transform:none;letter-spacing:0;font-weight:600;}
+.admin-catalog-table-scroll tbody tr:hover .admin-catalog-action,
+.admin-catalog-table-scroll tbody tr:focus-within .admin-catalog-action {background:#1A1D21!important;color:#FFFFFF!important;}
