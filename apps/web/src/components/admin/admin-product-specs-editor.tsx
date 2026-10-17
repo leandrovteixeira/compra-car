@@ -25,6 +25,15 @@ interface AdminProductSpecsEditorProps {
   >;
 }
 
+function displayUnit(unit: string | null): string {
+  if (!unit) return '—';
+  const labels: Readonly<Record<string, string>> = {
+    inch: 'polegadas', inches: 'polegadas', in: 'polegadas',
+    years: 'anos', year: 'ano', unit: 'unidade', units: 'unidades',
+  };
+  return labels[unit.trim().toLowerCase()] ?? unit;
+}
+
 function formatNumericForDisplay(raw: string): string {
   const value = raw.trim();
   if (!value) return '';
@@ -180,7 +189,7 @@ export function AdminProductSpecsEditor({
                               options={[{ value: '', label: 'Indisponível' }, ...field.options.map((option) => ({ value: option.specId, label: option.label }))]}
                               onChange={(v) => update(field, { ...field, selectedSpecId: v || null })}/>
                           )}
-                          <span className="text-center text-xs text-[#61747B]">{field.kind === 'numeric' ? field.unit : '—'}</span>
+                          <span className="text-center text-xs text-[#61747B]">{field.kind === 'numeric' ? displayUnit(field.unit) : '—'}</span>
                         </div>
                       </div>
                     </div>
