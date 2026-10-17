@@ -46,12 +46,14 @@ export default async function CurrentModelSpecsPage({searchParams}:Props){
     return [value,spec.display_unit_pt||spec.unit||''].filter(Boolean).join(' ');
   }
   return <section className="min-w-0">
-    <Link href="/admin/ver-ficha-tecnica" className="text-sm text-[#526670] hover:underline">← Voltar aos modelos</Link>
-    <h1 className="mt-4 text-2xl font-semibold">{selected.brand} {selected.model}</h1>
-    <p className="mt-1 text-sm text-[#61747B]">Versões atuais ordenadas por preço público, do menor para o maior.</p>
-    <div className="mt-5 overflow-auto rounded-lg border border-[#D6DEE3] bg-white">
+    <header className="sticky top-0 z-30 -mx-3 bg-[#F6F7F8]/95 px-3 py-3 backdrop-blur-sm">
+      <Link href="/admin/ver-ficha-tecnica" className="text-sm text-[#526670] hover:underline">← Voltar aos modelos</Link>
+      <h1 className="mt-2 text-2xl font-semibold">{selected.brand} {selected.model}</h1>
+      <p className="mt-1 text-sm text-[#61747B]">Versões atuais ordenadas por preço público, do menor para o maior.</p>
+    </header>
+    <div className="mt-3 max-h-[calc(100dvh-13rem)] overflow-auto rounded-lg border border-[#D6DEE3] bg-white">
       <table className="w-full min-w-[900px] table-fixed border-collapse text-sm">
-        <thead className="sticky top-0 z-10 bg-[#DCE8ED] text-[#1A1D21]">
+        <thead className="sticky top-0 z-20 bg-[#DCE8ED] text-[#1A1D21]">
           <tr><th className="sticky left-0 w-64 bg-[#DCE8ED] px-4 py-4 text-left">Especificação</th>
             {selected.versions.map(version=><th key={version.id} className="min-w-44 px-3 py-4 text-center">
               <div className="font-semibold">{version.version}</div>
