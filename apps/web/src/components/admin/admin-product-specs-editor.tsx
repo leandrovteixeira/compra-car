@@ -95,14 +95,14 @@ export function AdminProductSpecsEditor({
   }
 
   return (
-    <section className="w-full min-w-0 overflow-hidden rounded-lg border border-[#D6DEE3] bg-white">
-      <div className="sticky top-0 z-30 border-b border-[#D6DEE3] bg-white px-4 py-3">
+    <section className="w-full min-w-0 overflow-hidden bg-white">
+      <div className="sticky top-0 z-30 border-b border-[#D6DEE3] bg-[#F6F7F8] px-0 py-3">
         <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
           <label className="relative min-w-0 flex-1 lg:max-w-md">
             <img src="/carboot/search.svg" alt="" aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-[18px] -translate-y-1/2 object-contain"/>
             <span className="sr-only">Buscar especificações</span>
             <input
-              className="ui-field min-h-9 !pl-10 text-[0.8125rem]"
+              className="ui-field !h-10 !min-h-10 !pl-10 text-[0.8125rem]"
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Buscar especificações..."
               type="search"
@@ -118,7 +118,8 @@ export function AdminProductSpecsEditor({
               : 'Nenhuma alteração pendente'}
           </p>
           <button
-            className="cc-btn cc-btn--m cc-btn--secondary"
+            aria-label="Descartar alterações" title="Descartar alterações"
+            className="flex size-10 shrink-0 items-center justify-center rounded-md hover:bg-[#EAF1F4] disabled:opacity-50"
             disabled={!changed || pending}
             onClick={() => {
               setModel(baseline);
@@ -126,7 +127,7 @@ export function AdminProductSpecsEditor({
             }}
             type="button"
           >
-            Descartar
+            <img src="/carboot/close.svg" alt="" aria-hidden="true" className="size-4 object-contain" />
           </button>
           <button
             className="cc-btn cc-btn--m cc-btn--primary"
@@ -134,7 +135,7 @@ export function AdminProductSpecsEditor({
             onClick={save}
             type="button"
           >
-            {pending ? 'SALVANDO…' : 'SALVAR'}
+            {pending ? 'Salvando…' : 'Salvar'}
           </button>
         </div>
         {feedback ? (
