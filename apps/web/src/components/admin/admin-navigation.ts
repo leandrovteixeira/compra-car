@@ -10,8 +10,8 @@ export const adminNavigationItems: readonly AdminNavigationItem[] = [
   { label: 'Veículos', status: 'active', children: [
     { href: '/admin/products', label: 'Cadastro de Modelos', status: 'active' },
     { href: '/admin/ver-ficha-tecnica', label: 'Fichas Técnicas', status: 'active' },
-    { href: '/comparar', label: 'Comparar Modelos', status: 'active' },
-    { label: 'Comparar Especificações', status: 'planned' },
+    { href: '/admin/comparar-modelos', label: 'Comparar Modelos', status: 'active' },
+    { href: '/admin/comparar-especificacoes', label: 'Comparar Especificações', status: 'active' },
   ] },
   { label: 'Preços', status: 'active', children: [
     { href: '/admin/prices', label: 'Lista de Preços', status: 'active' },
