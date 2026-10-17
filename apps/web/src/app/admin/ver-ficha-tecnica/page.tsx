@@ -18,6 +18,10 @@ export default async function ViewModelCardsPage(){
             <img src="https://shfsjyjxmgwnlexmdkcs.supabase.co/storage/v1/object/public/vehicle-images/byd_atto2.webp"
               alt="BYD Atto 2" className="absolute inset-0 h-full w-full object-cover" />
           )}
+          {card.brand.toLocaleLowerCase('pt-BR') === 'byd' && card.model.toLocaleLowerCase('pt-BR').replace(/[^a-z0-9]/g,'') === 'songpro' && (
+            <img src="https://shfsjyjxmgwnlexmdkcs.supabase.co/storage/v1/object/public/vehicle-images/bud_song_pro.webp"
+              alt="BYD Song Pro" className="absolute inset-0 h-full w-full object-cover" />
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-[#1A1D21]/95 via-[#1A1D21]/30 to-transparent"/>
           <div className="relative">
             <p className="text-xs uppercase tracking-widest text-[#9ABCC8]">{card.brand}</p>
