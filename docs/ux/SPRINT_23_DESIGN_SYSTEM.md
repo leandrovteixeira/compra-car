@@ -55,3 +55,11 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - Inspecionar pixel alignment, altura dos campos, espaçamentos, ícones e cabeçalhos sticky.
 - Testar edição de linha e abertura/fechamento das categorias.
 - Rodar build, typecheck e testes relevantes antes de promover; produção intocada.
+
+
+## Sprint 23.6 — Layout stabilization (2026-10-17)
+- Figma source: https://www.figma.com/design/gFQSLkSSh3LZ0fHTWr06DT/compra-car?node-id=167-2 (page **UX - Design Systems**). Editable standards are visual references, not a substitute for QA.
+- Shared page heading labels: Cadastro de Modelos, Fichas Técnicas, Comparar Modelos, Comparar Especificações. Specification editor: **Especificações**, subtitle **Gestão de especificações e equipamentos**.
+- Page header: title, subtitle, 1px divider, flat toolbar, 40px controls. Initial/comparison results must preserve the exact position of header, toolbar and selected vehicle cards; render results below, without changing top container width/margins.
+- Specification editor uses the shared header, divider, search, close/discard icon and Save primary action; maintain position of VALOR and UNIDADE headers when groups expand (stable scrollbar gutter and identical grid column template).
+- Remaining validation: compare screenshots at identical browser zoom and sidebar state for all screens. Figma graphics are reference; only declare pixel accuracy after browser QA. No production changes.
