@@ -50,7 +50,7 @@ export function AdminProductFilters({ values }: AdminProductFiltersProps) {
     >
       <div className="grid items-end gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(15rem,1fr)_8rem_8rem_2.25rem_auto]">
         <label className="relative sm:col-span-2 lg:col-span-1">
-          <img src="/carboot/search.svg" alt="" aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-[18px] -translate-y-1/2 object-contain"/>
+          <img src="/carboot/search.svg" alt="" aria-hidden="true" className="pointer-events-none absolute left-3 bottom-[11px] size-[18px] object-contain"/>
           <span aria-hidden="true" className="mb-1 block text-xs font-semibold invisible">Buscar</span><span className="sr-only">Buscar marca, modelo ou versão</span>
           <input
             autoComplete="off"
