@@ -45,7 +45,7 @@ export default async function CurrentModelSpecsPage({searchParams}:Props){
     const spec=group[0];if(!spec)return '—';
     const v=valueMap.get(`${id}|${spec.id}`);
     if(!v)return '—';
-    if(spec.type==='binary') return v.is_present===true?'●':'—';
+    if(spec.type==='binary') return v.is_present===true?'spec_available':'spec_not_available';
     if(v.value===null)return '—';
     const numeric=Number(v.value)*(spec.display_multiplier??1);
     const value=Number.isFinite(numeric)?new Intl.NumberFormat('pt-BR',{maximumFractionDigits:2}).format(numeric):String(v.value);
