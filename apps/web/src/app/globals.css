@@ -557,3 +557,7 @@ select.ui-field,
 /* S23: actions stay legible on highlighted/hovered catalog rows. */
 .admin-catalog-action {text-transform:none;letter-spacing:0;font-weight:600;}
 /* Actions retain their own normal colors even when the row is highlighted. */
+
+/* S23: normal row hover darkens actions; active edit suppresses all other hover/disabled tint. */
+.admin-catalog-table-scroll table[data-editing="false"] tbody tr:hover .admin-catalog-action {background:#1A1D21!important;color:#FFFFFF!important;}
+.admin-catalog-table-scroll table[data-editing="true"] .admin-catalog-action:disabled {opacity:1!important;background:#EAF1F4!important;color:#1A1D21!important;}
