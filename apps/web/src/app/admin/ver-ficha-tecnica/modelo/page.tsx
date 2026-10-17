@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { CarbootBackLink } from '@/components/carboot-back-link';
 import { requireRole } from '@/auth/authorization';
 import { createLegacySupabaseClientFromEnv } from '@compra-car/adapter-supabase';
