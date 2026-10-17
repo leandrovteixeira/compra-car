@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export interface ComparisonVehicleOption {
@@ -8,49 +8,71 @@ export interface ComparisonVehicleOption {
   readonly label: string;
 }
 
-export function ComparisonVehicleSelector({ options, initialIds = [] }: {
+function normalize(text: string) {
+  return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR');
+}
+
+export function ComparisonVehicleSelector({ options, initialIds = [], maxVehicles = 3, compact = false }: {
   readonly options: readonly ComparisonVehicleOption[];
   readonly initialIds?: readonly string[];
+  readonly maxVehicles?: number;
+  readonly compact?: boolean;
 }) {
   const router = useRouter();
-  const [selected, setSelected] = useState<string[]>(() => [
-    initialIds[0] ?? '', initialIds[1] ?? '',
-    ...(initialIds[2] ? [initialIds[2]] : []),
-  ]);
+  const [selected, setSelected] = useState<string[]>(() => [...new Set(initialIds.filter(id => options.some(option => String(option.id) === id)))].slice(0, maxVehicles));
   const [query, setQuery] = useState('');
+  const [open, setOpen] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+  const selectedSet = new Set(selected);
   const filtered = useMemo(() => {
-    const term = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-    if (!term) return options;
-    return options.filter(option => option.label.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(term));
-  }, [options, query]);
-  const valid = selected.length >= 2 && selected.every(Boolean) && new Set(selected).size === selected.length;
-  const choose = (index: number, id: string) => setSelected(previous => previous.map((value, i) => i === index ? id : value));
-  return <section className="mt-5 rounded-lg border border-[#D6DEE3] bg-white p-4">
-    <h2 className="text-base font-semibold">Selecionar veículos</h2>
-    <p className="mt-1 text-xs text-[#61747B]">Escolha pelo menos dois veículos. O primeiro será a referência para vantagens e diferenças.</p>
-    <label className="mt-4 block text-xs font-medium text-[#526670]">
-      Filtrar catálogo
-      <input type="search" value={query} onChange={event => setQuery(event.target.value)}
-        className="ui-field mt-1 w-full" placeholder="Buscar marca, modelo ou versão..." />
-    </label>
-    <div className="mt-3 grid gap-3 lg:grid-cols-3">
-      {selected.map((value, index) => <label key={index} className="min-w-0 text-xs font-medium text-[#526670]">
-        {index === 0 ? 'Principal' : `Concorrente ${index}`}
-        <select className="ui-field mt-1 w-full min-w-0" value={value} onChange={event => choose(index, event.target.value)}>
-          <option value="">Selecione um veículo</option>
-          {options.filter(option => option.id.toString() === value || (filtered.some(item => item.id === option.id) && !selected.some((id, i) => i !== index && id === option.id.toString())))
-            .map(option => <option key={option.id} value={option.id}>{option.label}</option>)}
-        </select>
-      </label>)}
+    const term = normalize(query.trim());
+    return (term ? options.filter(option => normalize(option.label).includes(term)) : options)
+      .filter(option => !selectedSet.has(String(option.id))).slice(0, 12);
+  }, [options, query, selected.join('|')]);
+  const add = (id: string) => {
+    if (!id || selected.length >= maxVehicles || selectedSet.has(id)) return;
+    setSelected(current => [...current, id]);
+    setQuery('');
+    setOpen(false);
+    root.current?.querySelector('input')?.focus();
+  };
+  const remove = (id: string) => setSelected(current => current.filter(value => value !== id));
+  return <section className={compact ? 'min-w-0 py-2' : 'mt-3 min-w-0 rounded-lg border border-[#D6DEE3] bg-white p-3'}>
+    <div className="flex flex-wrap items-center gap-3">
+      <div ref={root} className="relative min-w-[15rem] flex-1">
+        <input type="search" value={query} onChange={event => { setQuery(event.target.value); setOpen(true); }}
+          onFocus={() => setOpen(true)}
+          onBlur={() => window.setTimeout(() => setOpen(false), 120)}
+          onKeyDown={event => { if (event.key === 'Escape') setOpen(false); if (event.key === 'Enter' && filtered[0]) { event.preventDefault(); add(String(filtered[0].id)); } }}
+          disabled={selected.length >= maxVehicles}
+          aria-label="Adicionar veículo à comparação" aria-expanded={open}
+          placeholder={selected.length >= maxVehicles ? `Limite de ${maxVehicles} veículos atingido` : 'Buscar marca, modelo ou versão...'}
+          className="ui-field w-full text-[0.8125rem]" />
+        {open && selected.length < maxVehicles && <div className="absolute inset-x-0 top-full z-50 mt-1 max-h-60 overflow-y-auto rounded-md border border-[#D6DEE3] bg-white p-1 shadow-lg">
+          {filtered.length ? filtered.map(option => <button type="button" key={option.id}
+            onMouseDown={event => event.preventDefault()} onClick={() => add(String(option.id))}
+            className="block min-h-9 w-full rounded px-3 py-2 text-left text-[0.8125rem] hover:bg-[#EAF1F4]">
+            {option.label}
+          </button>) : <p className="px-3 py-2 text-xs text-[#61747B]">Nenhuma versão encontrada.</p>}
+        </div>}
+      </div>
+      <span className="whitespace-nowrap text-xs text-[#61747B]">{selected.length} / {maxVehicles} veículos</span>
+      <button type="button" disabled={selected.length < 2}
+        onClick={() => router.push(`/admin/comparar-especificacoes?vehicles=${selected.join(',')}`)}
+        className="cc-btn cc-btn--m cc-btn--primary">Comparar especificações</button>
     </div>
-    <div className="mt-4 flex flex-wrap items-center gap-2">
-      {selected.length < 3 && <button type="button" className="cc-btn cc-btn--p cc-btn--secondary" onClick={() => setSelected(previous => [...previous, ''])}>Adicionar concorrente</button>}
-      {selected.length === 3 && <button type="button" className="cc-btn cc-btn--p cc-btn--secondary" onClick={() => setSelected(previous => previous.slice(0, 2))}>Remover terceiro</button>}
-      <button type="button" disabled={!valid} className="cc-btn cc-btn--m cc-btn--primary"
-        onClick={() => router.push(`/admin/comparar-especificacoes?vehicles=${selected.join(',')}`)}>
-        Comparar especificações
-      </button>
-      {!valid && <span className="text-xs text-[#61747B]">Selecione dois ou três veículos diferentes.</span>}
-    </div>
+    {selected.length > 0 && <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
+      {selected.map((id, index) => {
+        const option = options.find(item => String(item.id) === id);
+        return <div key={id} className="flex min-w-0 items-center gap-2 rounded-md border border-[#D6DEE3] bg-[#F8FAFB] px-3 py-2">
+          <div className="min-w-0 flex-1">
+            <span className="block text-[10px] font-semibold uppercase tracking-wide text-[#61747B]">{index === 0 ? 'Principal' : 'Veículo ' + (index + 1)}</span>
+            <span className="block truncate text-[0.8125rem] font-medium" title={option?.label}>{option?.label ?? id}</span>
+          </div>
+          <button type="button" onClick={() => remove(id)} aria-label={`Remover ${option?.label ?? id}`}
+            className="shrink-0 rounded p-1 text-base text-[#526670] hover:bg-[#DCE8ED]">×</button>
+        </div>;
+      })}
+    </div>}
   </section>;
 }
