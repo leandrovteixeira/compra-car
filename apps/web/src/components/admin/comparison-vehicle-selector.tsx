@@ -39,7 +39,7 @@ export function ComparisonVehicleSelector({ options, initialIds = [], maxVehicle
   const remove = (id: string) => setSelected(current => current.filter(value => value !== id));
   return <section className={compact ? 'min-w-0 py-2' : 'mt-3 min-w-0 rounded-lg border border-[#D6DEE3] bg-white p-3'}>
     <div className="flex flex-wrap items-center gap-3">
-      <div ref={root} className="relative min-w-[15rem] flex-1">
+      <div ref={root} className="relative min-w-[15rem] flex-1"><img src="/carboot/search.svg" alt="" aria-hidden="true" className="pointer-events-none absolute left-3 top-[18px] z-10 size-[18px] -translate-y-1/2 object-contain" />
         <input type="search" value={query} onChange={event => { setQuery(event.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
           onBlur={() => window.setTimeout(() => setOpen(false), 120)}
@@ -47,7 +47,7 @@ export function ComparisonVehicleSelector({ options, initialIds = [], maxVehicle
           disabled={selected.length >= maxVehicles}
           aria-label="Adicionar veículo à comparação" aria-expanded={open}
           placeholder={selected.length >= maxVehicles ? `Limite de ${maxVehicles} veículos atingido` : 'Buscar marca, modelo ou versão...'}
-          className="ui-field w-full text-[0.8125rem]" />
+          className="ui-field w-full !pl-10 !pr-4 text-[0.8125rem]" />
         {open && selected.length < maxVehicles && <div className="absolute inset-x-0 top-full z-50 mt-1 max-h-60 overflow-y-auto rounded-md border border-[#D6DEE3] bg-white p-1 shadow-lg">
           {filtered.length ? filtered.map(option => <button type="button" key={option.id}
             onMouseDown={event => event.preventDefault()} onClick={() => add(String(option.id))}
@@ -70,7 +70,7 @@ export function ComparisonVehicleSelector({ options, initialIds = [], maxVehicle
             <span className="block truncate text-[0.8125rem] font-medium" title={option?.label}>{option?.label ?? id}</span>
           </div>
           <button type="button" onClick={() => remove(id)} aria-label={`Remover ${option?.label ?? id}`}
-            className="shrink-0 rounded p-1 text-base text-[#526670] hover:bg-[#DCE8ED]">×</button>
+            className="shrink-0 rounded p-1 hover:bg-[#DCE8ED]"><img src="/carboot/close.svg" alt="" aria-hidden="true" className="size-4 object-contain" /></button>
         </div>;
       })}
     </div>}
