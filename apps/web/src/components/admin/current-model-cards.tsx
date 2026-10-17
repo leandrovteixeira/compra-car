@@ -52,9 +52,9 @@ export function CurrentModelCards({ cards }: Props) {
                 className="absolute inset-0 h-full w-full object-cover" />}
               <div className="absolute inset-0 bg-gradient-to-t from-[#1A1D21]/95 via-[#1A1D21]/30 to-transparent" />
               <div className="relative">
-                <p className="text-xs uppercase tracking-widest text-[#9ABCC8]">{card.brand}</p>
-                <h2 className="mt-2 text-3xl font-semibold text-[#EF7732]">{card.model}</h2>
-                <p className="mt-2 text-xs text-white">
+                <p className="text-[11px] font-medium uppercase tracking-[0.08em] leading-4 text-[#EF7732]">{card.brand}</p>
+                <h2 className="mt-1 text-3xl font-bold leading-8 text-[#FFFFFF]">{card.model}</h2>
+                <p className="mt-1 text-xs leading-4 text-[#9ABCC8]">
                   {card.versions.length} {card.versions.length === 1 ? 'versão atual' : 'versões atuais'}
                 </p>
               </div>
