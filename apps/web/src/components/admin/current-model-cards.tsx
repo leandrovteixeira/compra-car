@@ -28,7 +28,8 @@ export function CurrentModelCards({ cards }: Props) {
   return (
     <>
       <div className="mb-6 flex items-center gap-3">
-        <label className="relative block w-full max-w-[42rem]">\n          <img src="/carboot/search.svg" alt="" aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-[18px] -translate-y-1/2 object-contain"/>
+        <label className="relative block w-full max-w-[42rem]">
+          <img src="/carboot/search.svg" alt="" aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-[18px] -translate-y-1/2 object-contain"/>
           <span className="sr-only">Buscar marca ou modelo</span>
           <input type="search" value={search} onChange={(event) => setSearch(event.target.value)}
             aria-label="Buscar marca ou modelo"
