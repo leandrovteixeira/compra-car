@@ -148,8 +148,8 @@ export function AdminProductSpecsEditor({
         ) : null}
       </div>
 
-      <div data-spec-scroll-frame className="w-full min-w-0 max-h-[calc(100dvh-17rem)] overflow-auto">
-        <div className="sticky top-0 z-20 grid h-11 grid-cols-[minmax(0,1fr)_minmax(0,32%)_minmax(5rem,12%)] items-center gap-3 bg-[#DCE8ED] px-4 text-xs font-semibold uppercase text-[#1A1D21]"><span>Especificação</span><span className="text-center">Valor</span><span className="text-center">Unidade</span></div>
+      <div data-spec-scroll-frame className="w-full min-w-0 max-h-[calc(100dvh-17rem)] overflow-y-scroll overflow-x-hidden [scrollbar-gutter:stable]">
+        <div className="sticky top-0 z-20 grid h-11 grid-cols-[minmax(0,56fr)_minmax(0,32fr)_minmax(5rem,12fr)] items-center gap-3 bg-[#DCE8ED] px-4 text-xs font-semibold uppercase text-[#1A1D21]"><span>Especificação</span><span className="text-center">Valor</span><span className="text-center">Unidade</span></div>
         {groups.map((group) => {
           const groupCounts = counts.byGroup[group.name]!;
           return (
@@ -171,7 +171,7 @@ export function AdminProductSpecsEditor({
                       className={`px-3 py-1.5 ${group.fields.indexOf(field) % 2 ? 'bg-[#F8FAFB]' : 'bg-white'}`}
                       key={field.kind === 'scale' ? field.key : field.specId}
                     >
-                      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,32%)_minmax(5rem,12%)] items-center gap-2 md:min-h-7">
+                      <div className="grid grid-cols-[minmax(0,56fr)_minmax(0,32fr)_minmax(5rem,12fr)] items-center gap-2 md:min-h-7">
                         <div>
                           <p className="cc-type-data !font-medium text-text-primary">
                             {field.label}
