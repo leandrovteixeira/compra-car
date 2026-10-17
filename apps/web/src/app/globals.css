@@ -556,5 +556,4 @@ select.ui-field,
 
 /* S23: actions stay legible on highlighted/hovered catalog rows. */
 .admin-catalog-action {text-transform:none;letter-spacing:0;font-weight:600;}
-.admin-catalog-table-scroll tbody tr:hover .admin-catalog-action,
-.admin-catalog-table-scroll tbody tr:focus-within .admin-catalog-action {background:#1A1D21!important;color:#FFFFFF!important;}
+/* Actions retain their own normal colors even when the row is highlighted. */
