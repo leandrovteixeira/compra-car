@@ -1,4 +1,5 @@
 import { CarbootBackLink } from '@/components/carboot-back-link';
+import { CatalogPageHeading } from '@/components/admin/catalog-page-heading';
 
 import { filterComparisonCategories } from '@/application/comparison/comparison-filter';
 import { parseComparisonMode } from '@/application/comparison/comparison-view-model';
@@ -25,8 +26,7 @@ export default async function ComparisonPage({ searchParams }: ComparisonPagePro
   })));
   const initialIds = typeof params.vehicles === 'string' ? params.vehicles.split(',') : [];
   if (!params.vehicles) return <main className="min-w-0 py-2 text-text-primary">
-    <h1 className="text-2xl font-semibold">Comparar Especificações</h1>
-    <p className="mt-1 text-sm text-text-muted">Compare versões lado a lado.</p>
+    <CatalogPageHeading title="Comparar Especificações" description="Compare versões lado a lado." />
     <ComparisonVehicleSelector options={options} />
   </main>;
   const result = await loadComparisonPage(params.vehicles);
@@ -52,15 +52,7 @@ export default async function ComparisonPage({ searchParams }: ComparisonPagePro
   return (
     <main className="min-w-0 overflow-x-hidden bg-background py-2 text-text-primary">
       <div className="mx-auto w-full max-w-[100rem]">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Comparar Especificações</h1><p className="mt-1 text-sm text-text-muted">Compare versões lado a lado.</p>
-          </div>
-          <div className="self-start sm:self-auto">
-            <CarbootBackLink href="/admin/comparar-especificacoes" label="Voltar aos modelos" />
-          </div>
-        </div>
-
+        <CatalogPageHeading title="Comparar Especificações" description="Compare versões lado a lado." />
         <ComparisonVehicleSelector options={options} initialIds={initialIds} compact />
         <div className="mt-2">
           <ComparisonToolbar mode={mode} />
