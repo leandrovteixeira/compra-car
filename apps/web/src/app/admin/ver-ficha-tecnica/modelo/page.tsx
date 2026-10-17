@@ -1,4 +1,5 @@
 import { CarbootBackLink } from '@/components/carboot-back-link';
+import { TechnicalSpecCategoryTable } from '@/components/admin/technical-spec-category-table';
 import { requireRole } from '@/auth/authorization';
 import { createLegacySupabaseClientFromEnv } from '@compra-car/adapter-supabase';
 import { loadCurrentModelCards } from '@/server/public-model-catalog';
@@ -44,7 +45,7 @@ export default async function CurrentModelSpecsPage({searchParams}:Props){
     const spec=group[0];if(!spec)return '—';
     const v=valueMap.get(`${id}|${spec.id}`);
     if(!v)return '—';
-    if(spec.type==='binary') return v.is_present===true?'Presente':v.is_present===false?'Ausente':'—';
+    if(spec.type==='binary') return v.is_present===true?'●':'—';
     if(v.value===null)return '—';
     const numeric=Number(v.value)*(spec.display_multiplier??1);
     const value=Number.isFinite(numeric)?new Intl.NumberFormat('pt-BR',{maximumFractionDigits:2}).format(numeric):String(v.value);
@@ -56,25 +57,16 @@ export default async function CurrentModelSpecsPage({searchParams}:Props){
       <h1 className="mt-2 text-2xl font-semibold">{selected.brand} {selected.model}</h1>
       <p className="mt-1 text-sm text-[#61747B]">Versões atuais ordenadas por preço público, do menor para o maior.</p>
     </header>
-    <div className="mt-3 max-h-[calc(100dvh-13rem)] overflow-auto rounded-lg border border-[#D6DEE3] bg-white">
-      <table className="w-full min-w-[900px] table-fixed border-collapse text-sm">
-        <thead className="sticky top-0 z-20 bg-[#DCE8ED] text-[#1A1D21]">
-          <tr><th className="sticky left-0 w-64 bg-[#DCE8ED] px-4 py-4 text-left">Especificação</th>
-            {selected.versions.map(version=><th key={version.id} className="min-w-44 px-3 py-4 text-center">
-              <div className="font-semibold">{version.version}</div>
-              <div className="mt-1 text-xs font-normal">{version.model_year}</div>
-              <div className="mt-2 text-sm">{money(version.price)}</div>
-            </th>)}
-          </tr>
-        </thead>
-        {categoryOrder.map(category=><tbody key={category}>
-          <tr key={`category-${category}`} className="bg-[#EAF1F4]"><th colSpan={selected.versions.length+1} className="sticky left-0 border-b border-[#D6DEE3] px-4 py-2 text-left text-[0.8125rem] font-semibold text-[#1A1D21]">{category}</th></tr>
-          {categoryRows.get(category)!.map((group,index)=><tr key={group[0]!.id} className={index%2?'bg-[#F8FAFB]':'bg-white'}>
-            <th scope="row" className={`sticky left-0 border-b border-[#E5EBEE] px-4 py-3 text-left text-xs font-medium ${index%2?'bg-[#F8FAFB]':'bg-white'}`}>{label(group)}</th>
-            {selected.versions.map(v=><td key={v.id} className="border-b border-[#E5EBEE] px-3 py-3 text-center text-xs">{cell(group,v.id)}</td>)}
-          </tr>)}
-        </tbody>)}
-      </table>
-    </div>
+    <TechnicalSpecCategoryTable
+      versions={selected.versions.map(v => ({ id: v.id, version: v.version, modelYear: v.model_year, price: money(v.price) }))}
+      categories={categoryOrder.map(category => ({
+        name: category,
+        rows: categoryRows.get(category)!.map(group => ({
+          id: group[0]!.id,
+          label: label(group),
+          values: selected.versions.map(version => cell(group, version.id)),
+        })),
+      }))}
+    />
   </section>;
 }
