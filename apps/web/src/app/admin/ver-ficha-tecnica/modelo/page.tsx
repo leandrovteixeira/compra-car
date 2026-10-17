@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { CarbootBackLink } from '@/components/carboot-back-link';
 import { requireRole } from '@/auth/authorization';
 import { createLegacySupabaseClientFromEnv } from '@compra-car/adapter-supabase';
 import { loadCurrentModelCards } from '@/server/public-model-catalog';
@@ -13,7 +13,7 @@ export default async function CurrentModelSpecsPage({searchParams}:Props){
   const {brand,model}=await searchParams;
   const all=await loadCurrentModelCards();
   const selected=all.find(x=>x.brand===brand && x.model===model);
-  if(!selected) return <section><Link href="/admin/ver-ficha-tecnica" className="text-sm text-[#526670]">← Voltar aos modelos</Link><h1 className="mt-5 text-xl">Modelo não encontrado</h1></section>;
+  if(!selected) return <section><CarbootBackLink href="/admin/ver-ficha-tecnica"/><h1 className="mt-5 text-xl">Modelo não encontrado</h1></section>;
   const ids=selected.versions.map(x=>x.id);
   const client=createLegacySupabaseClientFromEnv();
   const [{data:specs,error:specError},{data:values,error:valuesError}]=await Promise.all([
