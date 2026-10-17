@@ -7,7 +7,7 @@ export default async function ViewModelCardsPage() {
   await requireRole('admin');
   const cards = await loadCurrentModelCards();
   return (
-    <section className="min-h-[calc(100dvh-6rem)] pt-2">
+    <section className="min-h-[calc(100dvh-6rem)]">
       <CatalogPageHeading title="Fichas Técnicas" description="Escolha a marca e o modelo para consultar as versões atuais." />
       <CurrentModelCards cards={cards} />
     </section>
