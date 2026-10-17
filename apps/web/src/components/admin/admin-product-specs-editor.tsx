@@ -98,7 +98,7 @@ export function AdminProductSpecsEditor({
     <section className="w-full min-w-0 overflow-hidden bg-white">
       <div className="sticky top-0 z-30 border-b border-[#D6DEE3] bg-[#F6F7F8] px-0 py-3">
         <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
-          <label className="relative min-w-0 flex-1 lg:max-w-md">
+          <label className="relative min-w-0 flex-[1_1_auto]">
             <img src="/carboot/search.svg" alt="" aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-[18px] -translate-y-1/2 object-contain"/>
             <span className="sr-only">Buscar especificações</span>
             <input
@@ -130,7 +130,7 @@ export function AdminProductSpecsEditor({
             <img src="/carboot/close.svg" alt="" aria-hidden="true" className="size-4 object-contain" />
           </button>
           <button
-            className="cc-btn cc-btn--m cc-btn--primary"
+            className="cc-btn cc-btn--m cc-btn--primary !min-w-[112px]"
             disabled={!changed || pending}
             onClick={save}
             type="button"
