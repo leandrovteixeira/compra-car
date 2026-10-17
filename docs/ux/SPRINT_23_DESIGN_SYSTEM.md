@@ -63,3 +63,9 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - Page header: title, subtitle, 1px divider, flat toolbar, 40px controls. Initial/comparison results must preserve the exact position of header, toolbar and selected vehicle cards; render results below, without changing top container width/margins.
 - Specification editor uses the shared header, divider, search, close/discard icon and Save primary action; maintain position of VALOR and UNIDADE headers when groups expand (stable scrollbar gutter and identical grid column template).
 - Remaining validation: compare screenshots at identical browser zoom and sidebar state for all screens. Figma graphics are reference; only declare pixel accuracy after browser QA. No production changes.
+
+## Sprint 23.6.1 — Especificações header and toolbar (2026-10-17)
+- Align Especificações header to the common page Y-offset using `pt-2`, equivalent to other core UX screens.
+- Remove `lg:max-w-md` from specifications search: flexible search uses remaining horizontal space, retaining 40px height and official search icon.
+- Keep 40px close/discard beside the search, and Save at the far right with 40px primary control.
+- Figma visual measurement/interaction contract: [UX — Design Systems](https://www.figma.com/design/gFQSLkSSh3LZ0fHTWr06DT/compra-car?node-id=167-2), `Sprint 23 • Spacing, sizing, interaction contracts` frame. All spacings are targets until browser QA confirms them.
