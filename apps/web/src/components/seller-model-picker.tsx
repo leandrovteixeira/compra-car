@@ -51,7 +51,7 @@ export function SellerModelPicker({ options, radius, showLabel = true, basePath 
       <input
         id="seller-model-search"
         aria-label={showLabel ? undefined : 'Buscar modelo'}
-        className={`ui-field !pl-10 ${showLabel ? 'mt-1' : ''}`}
+        className={`ui-field !h-10 !min-h-10 !pl-10 ${showLabel ? 'mt-1' : ''}`}
         autoComplete="off"
         onChange={(event) => {
           setSearch(event.target.value);
