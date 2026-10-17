@@ -37,8 +37,8 @@ export function ComparisonVehicleSelector({ options, initialIds = [], maxVehicle
     root.current?.querySelector('input')?.focus();
   };
   const remove = (id: string) => setSelected(current => current.filter(value => value !== id));
-  return <section className={compact ? 'min-w-0 py-2' : 'mt-3 min-w-0 rounded-lg border border-[#D6DEE3] bg-white p-3'}>
-    <div className="flex flex-wrap items-center gap-3">
+  return <section className={'min-w-0'}>
+    <div className="flex min-w-0 flex-wrap items-center gap-2 py-3">
       <div ref={root} className="relative min-w-[15rem] flex-1"><img src="/carboot/search.svg" alt="" aria-hidden="true" className="pointer-events-none absolute left-3 top-[18px] z-10 size-[18px] -translate-y-1/2 object-contain" />
         <input type="search" value={query} onChange={event => { setQuery(event.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
@@ -61,7 +61,7 @@ export function ComparisonVehicleSelector({ options, initialIds = [], maxVehicle
         onClick={() => router.push(`/admin/comparar-especificacoes?vehicles=${selected.join(',')}`)}
         className="cc-btn cc-btn--m cc-btn--primary">Comparar especificações</button>
     </div>
-    {selected.length > 0 && <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
+    {selected.length > 0 && <div className="mb-2 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
       {selected.map((id, index) => {
         const option = options.find(item => String(item.id) === id);
         return <div key={id} className="flex min-w-0 items-center gap-2 rounded-md border border-[#D6DEE3] bg-[#F8FAFB] px-3 py-2">
