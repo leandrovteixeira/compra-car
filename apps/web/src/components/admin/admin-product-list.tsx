@@ -226,7 +226,7 @@ export function AdminProductList({ products }: AdminProductListProps) {
                     <td className="text-center">
                       {opened?.id === product.id && opened.mode === 'edit' ? (
                         <button type="button" disabled={pending} onClick={cancel}
-                          className="cc-btn cc-btn--p cc-btn--secondary admin-catalog-action">Cancelar</button>
+                          className="cc-btn cc-btn--p border border-[#D6DEE3] !bg-white !text-[#1A1D21] hover:!bg-[#F8FAFB]">Cancelar</button>
                       ) : (
                         <button type="button" disabled={pending || Boolean(opened)} onClick={() => start(product, 'duplicate')}
                           className="cc-btn cc-btn--p cc-btn--secondary admin-catalog-action">Duplicar</button>
