@@ -95,7 +95,7 @@ export function AdminProductSpecsEditor({
   }
 
   return (
-    <section className="min-w-0 overflow-hidden rounded-lg border border-[#D6DEE3] bg-white">
+    <section className="w-full min-w-0 overflow-hidden rounded-lg border border-[#D6DEE3] bg-white">
       <div className="sticky top-0 z-30 border-b border-[#D6DEE3] bg-white px-4 py-3">
         <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
           <label className="relative min-w-0 flex-1 lg:max-w-md">
@@ -147,8 +147,8 @@ export function AdminProductSpecsEditor({
         ) : null}
       </div>
 
-      <div data-spec-scroll-frame className="max-h-[calc(100dvh-17rem)] overflow-auto">
-        <div className="sticky top-0 z-20 grid h-11 grid-cols-[minmax(15rem,1fr)_minmax(15rem,24rem)_14rem] items-center gap-3 bg-[#DCE8ED] px-4 text-xs font-semibold uppercase text-[#1A1D21]"><span>Especificação</span><span className="text-center">Valor</span><span className="text-center">Unidade</span></div>
+      <div data-spec-scroll-frame className="w-full min-w-0 max-h-[calc(100dvh-17rem)] overflow-auto">
+        <div className="sticky top-0 z-20 grid h-11 grid-cols-[minmax(0,1fr)_minmax(0,32%)_minmax(5rem,12%)] items-center gap-3 bg-[#DCE8ED] px-4 text-xs font-semibold uppercase text-[#1A1D21]"><span>Especificação</span><span className="text-center">Valor</span><span className="text-center">Unidade</span></div>
         {groups.map((group) => {
           const groupCounts = counts.byGroup[group.name]!;
           return (
@@ -170,7 +170,7 @@ export function AdminProductSpecsEditor({
                       className={`px-3 py-1.5 ${group.fields.indexOf(field) % 2 ? 'bg-[#F8FAFB]' : 'bg-white'}`}
                       key={field.kind === 'scale' ? field.key : field.specId}
                     >
-                      <div className="grid grid-cols-[minmax(15rem,1fr)_minmax(15rem,24rem)_14rem] items-center gap-2 md:min-h-7">
+                      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,32%)_minmax(5rem,12%)] items-center gap-2 md:min-h-7">
                         <div>
                           <p className="text-[0.8125rem] font-medium leading-4 text-text-primary">
                             {field.label}
