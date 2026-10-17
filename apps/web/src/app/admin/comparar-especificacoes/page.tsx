@@ -7,6 +7,8 @@ import { ComparisonTable } from '@/components/comparison-table';
 import { ComparisonToolbar } from '@/components/comparison-toolbar';
 import { APP_NAME } from '@/config/app-identity';
 import { loadComparisonPage } from '@/server/comparison-service';
+import { loadCurrentModelCards } from '@/server/public-model-catalog';
+import { ComparisonVehicleSelector } from '@/components/admin/comparison-vehicle-selector';
 
 interface ComparisonPageProps {
   readonly searchParams: Promise<{
@@ -20,7 +22,7 @@ function BackToSelection() {
   return (
     <Link
       className="ui-button ui-button--secondary ui-button--compact gap-1.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
-      href="/admin/comparar-modelos"
+      href="/admin/comparar-especificacoes"
     >
       <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 16 16">
         <path
@@ -31,13 +33,23 @@ function BackToSelection() {
           strokeWidth="1.5"
         />
       </svg>
-      Voltar aos modelos
+      Alterar seleção
     </Link>
   );
 }
 
 export default async function ComparisonPage({ searchParams }: ComparisonPageProps) {
   const params = await searchParams;
+  const cards = await loadCurrentModelCards();
+  const options = cards.flatMap(card => card.versions.map(version => ({
+    id: version.id, label: `${card.brand} ${card.model} ${version.version} — ${version.model_year}`,
+  })));
+  const initialIds = typeof params.vehicles === 'string' ? params.vehicles.split(',') : [];
+  if (!params.vehicles) return <main className="min-w-0 py-2 text-text-primary">
+    <h1 className="text-2xl font-semibold">Comparar Especificações</h1>
+    <p className="mt-1 text-sm text-text-muted">Compare versões lado a lado.</p>
+    <ComparisonVehicleSelector options={options} />
+  </main>;
   const result = await loadComparisonPage(params.vehicles);
 
   if (!result.ok) {
@@ -45,7 +57,7 @@ export default async function ComparisonPage({ searchParams }: ComparisonPagePro
       <main className="flex min-h-[30rem] items-center justify-center bg-background px-4 py-8 text-text-primary">
         <div className="w-full max-w-xl">
           <ComparisonState
-            action={<BackToSelection />}
+            action={<ComparisonVehicleSelector options={options} initialIds={initialIds} />}
             description={result.error.message}
             kind="error"
             title="Não foi possível comparar"
@@ -76,6 +88,7 @@ export default async function ComparisonPage({ searchParams }: ComparisonPagePro
           </div>
         </div>
 
+        <ComparisonVehicleSelector options={options} initialIds={initialIds} />
         <div className="mt-5">
           <ComparisonToolbar mode={mode} />
         </div>
