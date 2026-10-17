@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useId } from 'react';
 import { createPortal } from 'react-dom';
 
-interface Option { readonly value: string; readonly label: string; readonly icon?: 'spec_available' | 'spec_optional' | 'spec_not_available' }
+interface Option { readonly value: string; readonly label: string; readonly icon?: 'spec_available' | 'spec_optional' | 'spec_not_available'; readonly disabled?: boolean }
 interface Props {
   readonly label: string;
   readonly value: string;
@@ -78,9 +78,9 @@ export function AdminSpecDropdown({ label, value, options, onChange }: Props) {
           style={{ position: 'fixed', left: placement.left, top: placement.top, width: placement.width, maxHeight: placement.maxHeight, zIndex: 9999 }}
           className="overflow-y-auto rounded-md border border-[#D6DEE3] bg-white py-1 shadow-xl">
           {options.map((option) => (
-            <button key={option.value} role="option" aria-selected={option.value === value}
+            <button key={option.value} role="option" aria-selected={option.value === value} aria-disabled={option.disabled} disabled={option.disabled}
               type="button" onClick={() => { onChange(option.value); setOpen(false); }}
-              className={`block min-h-9 w-full px-3 py-2 text-left font-sans text-[13px] leading-snug hover:bg-[#EAF1F4] ${option.value === value ? 'bg-[#EAF1F4] font-medium text-[#1A1D21]' : 'text-[#526670]'}`}>
+              className={`block min-h-9 w-full px-3 py-2 text-left font-sans text-[13px] leading-snug hover:bg-[#EAF1F4] disabled:cursor-not-allowed disabled:opacity-45 ${option.value === value ? 'bg-[#EAF1F4] font-medium text-[#1A1D21]' : 'text-[#526670]'}`}>
               <span className="flex items-center gap-2">{option.icon && <img src={`/carboot/${option.icon}.svg`} alt="" aria-hidden="true" className="size-4 shrink-0" />}{option.label}</span>
             </button>
           ))}
