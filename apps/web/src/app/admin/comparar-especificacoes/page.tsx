@@ -25,7 +25,7 @@ export default async function ComparisonPage({ searchParams }: ComparisonPagePro
     id: version.id, label: `${card.brand} ${card.model} ${version.version} ${version.model_year}`,
   })));
   const initialIds = typeof params.vehicles === 'string' ? params.vehicles.split(',') : [];
-  if (!params.vehicles) return <main className="min-w-0 py-2 text-text-primary">
+  if (!params.vehicles) return <main className="min-w-0 text-text-primary">
     <CatalogPageHeading title="Comparar Especificações" description="Compare versões lado a lado." />
     <ComparisonVehicleSelector options={options} />
   </main>;
@@ -50,7 +50,7 @@ export default async function ComparisonPage({ searchParams }: ComparisonPagePro
   const categories = filterComparisonCategories(result.data.categories, mode);
 
   return (
-    <main className="min-w-0 overflow-x-hidden bg-background py-2 text-text-primary">
+    <main className="min-w-0 overflow-x-hidden bg-background text-text-primary">
       <div className="mx-auto w-full max-w-[100rem]">
         <CatalogPageHeading title="Comparar Especificações" description="Compare versões lado a lado." />
         <ComparisonVehicleSelector options={options} initialIds={initialIds} compact />
