@@ -158,7 +158,7 @@ export function AdminProductList({ products }: AdminProductListProps) {
   return (
     <div className="admin-catalog-table-frame min-w-0 overflow-hidden rounded-lg border border-[#D6DEE3] bg-white">
       <div className="admin-catalog-table-scroll min-w-0 w-full overflow-auto">
-        <table className="ui-table w-full min-w-[56rem] table-fixed">
+        <table data-editing={opened ? "true" : "false"} className="ui-table w-full min-w-[56rem] table-fixed">
           <caption className="sr-only">Veículos cadastrados</caption>
           <colgroup><col /><col style={{ width: "11%" }} /><col style={{ width: "11%" }} /><col style={{ width: "11%" }} /><col style={{ width: "11%" }} /></colgroup>
           <thead className="admin-catalog-table-header bg-[#DCE8ED]">
