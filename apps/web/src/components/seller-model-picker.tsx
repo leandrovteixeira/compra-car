@@ -8,13 +8,14 @@ interface Props {
   readonly options: readonly SellerModelOption[];
   readonly radius: SellerScoreRadius;
   readonly showLabel?: boolean;
+  readonly basePath?: string;
 }
 
 function normalize(value: string) {
   return value.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('pt-BR');
 }
 
-export function SellerModelPicker({ options, radius, showLabel = true }: Props) {
+export function SellerModelPicker({ options, radius, showLabel = true, basePath = '/ver-modelo' }: Props) {
   const root = useRef<HTMLDivElement>(null);
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
@@ -68,7 +69,7 @@ export function SellerModelPicker({ options, radius, showLabel = true }: Props) 
             filtered.map((option) => (
               <Link
                 className="block rounded-md px-3 py-2 text-sm text-text-secondary hover:bg-surface-muted hover:text-text-primary"
-                href={`/ver-modelo?product=${option.id}&radius=${radius}`}
+                href={`${basePath}?product=${option.id}&radius=${radius}`}
                 key={option.id}
                 onClick={() => {
                   setOpen(false);
