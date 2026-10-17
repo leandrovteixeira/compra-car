@@ -8,7 +8,7 @@ import { AdminProductError } from '@/components/admin/admin-product-error';
 import { AdminProductFilters } from '@/components/admin/admin-product-filters';
 import { AdminProductList } from '@/components/admin/admin-product-list';
 import { EmptyState } from '@/components/admin/empty-state';
-import { PageHeader } from '@/components/admin/page-header';
+import { CatalogPageHeading } from '@/components/admin/catalog-page-heading';
 import { loadAdminProducts } from '@/server/admin-product-service';
 
 interface AdminProductsPageProps {
@@ -23,19 +23,7 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
   return (
     <section className="admin-catalog-workspace">
       <div className="admin-catalog-page-header">
-        <PageHeader
-          actions={
-            <Link
-              className="ui-button ui-button--primary ui-button--action"
-              href="/admin/products/new"
-            >
-              Novo veículo
-            </Link>
-          }
-          compact
-          description="Consulte e administre o catálogo de veículos."
-          title="Veículos"
-        />
+        <CatalogPageHeading title="Veículos" description="Consulte e administre o catálogo de veículos." />
       </div>
       <div className="admin-catalog-toolbar">
         <AdminProductFilters values={parsed.values} />
