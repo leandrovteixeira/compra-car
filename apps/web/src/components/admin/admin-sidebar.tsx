@@ -38,13 +38,13 @@ export function AdminSidebar({ displayName, logoutAction }: { readonly displayNa
         if (!event.currentTarget.contains(event.relatedTarget)) { setHovered(false); setOpenGroup(null); }
       }}
       className={`sticky top-0 hidden h-dvh shrink-0 flex-col overflow-visible bg-[#1A1D21] text-white shadow-[6px_0_18px_rgba(26,29,33,0.16)] transition-[width] duration-200 lg:flex ${expanded ? 'w-[264px]' : 'w-[76px]'}`}>
-      <div className="flex min-h-[88px] items-center gap-2 overflow-hidden px-[13px]">
-        <img alt="Carboot" src="/carboot/logo-icon.svg"
-          className="size-[49px] shrink-0 object-contain"/>
+      <div className="flex min-h-[88px] items-center gap-0 overflow-hidden px-[14px]">
+        <img alt="Carboot" src="/carboot/icon_logo_official.svg"
+          className="size-12 shrink-0 object-contain"/>
         <div aria-hidden="true"
-          className={`relative h-[52px] min-w-0 overflow-hidden transition-[width,opacity] duration-200 ${expanded ? 'w-[165px] opacity-100' : 'w-0 opacity-0'}`}>
-          <img alt="" src="/carboot/logo-full.svg"
-            className="absolute left-[-47px] top-0 h-[52px] w-[198px] max-w-none object-contain"/>
+          className={`h-12 shrink-0 overflow-hidden transition-[width,opacity] duration-200 ${expanded ? 'w-[180px] opacity-100' : 'w-0 opacity-0'}`}>
+          <img alt="" src="/carboot/name_logo_official.svg"
+            className="h-12 w-[180px] max-w-none object-contain"/>
         </div>
       </div>
       <div className="mx-3 h-px bg-white/20"/>
