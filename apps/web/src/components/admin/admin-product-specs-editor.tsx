@@ -158,10 +158,10 @@ export function AdminProductSpecsEditor({
                 {group.fields.map((field) => {
                   return (
                     <div
-                      className={`px-4 py-2 ${group.fields.indexOf(field) % 2 ? 'bg-[#F8FAFB]' : 'bg-white'}`}
+                      className={`px-3 py-1.5 ${group.fields.indexOf(field) % 2 ? 'bg-[#F8FAFB]' : 'bg-white'}`}
                       key={field.kind === 'scale' ? field.key : field.specId}
                     >
-                      <div className="grid grid-cols-[minmax(15rem,1fr)_minmax(15rem,24rem)_14rem] items-center gap-3 md:min-h-7">
+                      <div className="grid grid-cols-[minmax(15rem,1fr)_minmax(15rem,24rem)_14rem] items-center gap-2 md:min-h-7">
                         <div>
                           <p className="text-[0.8125rem] font-medium leading-4 text-text-primary">
                             {field.label}
@@ -169,7 +169,7 @@ export function AdminProductSpecsEditor({
                         </div>
                         <div className="contents">
                           {field.kind === 'numeric' ? (
-                            <input aria-label={field.label} className="min-h-9 min-w-0 rounded-md border border-[#D6DEE3] bg-white px-3 text-right text-sm tabular-nums focus:border-[#9ABCC8] focus:outline-none" inputMode="decimal" value={field.value} onChange={(event) => update(field, { ...field, value: event.target.value })} onBlur={(event) => update(field, { ...field, value: formatNumericForDisplay(event.target.value) })} />
+                            <input aria-label={field.label} className="min-h-8 min-w-0 rounded-md border border-[#D6DEE3] bg-white px-2 text-right text-[0.8125rem] tabular-nums focus:border-[#9ABCC8] focus:outline-none" inputMode="decimal" value={field.value} onChange={(event) => update(field, { ...field, value: event.target.value })} onBlur={(event) => update(field, { ...field, value: formatNumericForDisplay(event.target.value) })} />
                           ) : field.kind === 'binary' ? (
                             <AdminSpecDropdown label={field.label}
                               value={field.present === null ? 'unknown' : field.present ? 'present' : 'absent'}
