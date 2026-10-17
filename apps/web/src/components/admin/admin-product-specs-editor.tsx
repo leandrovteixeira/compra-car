@@ -182,7 +182,7 @@ export function AdminProductSpecsEditor({
                           ) : field.kind === 'binary' ? (
                             <AdminSpecDropdown label={field.label}
                               value={field.present === true ? 'available' : 'not_available'}
-                              options={[{ value: 'available', label: 'Disponível', icon: 'spec_available' }, { value: 'not_available', label: 'Indisponível', icon: 'spec_not_available' }]}
+                              options={[{ value: 'available', label: 'Disponível', icon: 'spec_available' }, { value: 'optional', label: 'Opcional (em breve)', icon: 'spec_optional', disabled: true }, { value: 'not_available', label: 'Indisponível', icon: 'spec_not_available' }]}
                               onChange={(v) => update(field, { ...field, present: v === 'available' })}/>
                           ) : (
                             <AdminSpecDropdown label={field.label} value={field.selectedSpecId ?? ''}
