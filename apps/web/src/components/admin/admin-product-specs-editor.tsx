@@ -89,10 +89,10 @@ export function AdminProductSpecsEditor({
     <section className="min-w-0 overflow-hidden rounded-lg border border-[#D6DEE3] bg-white">
       <div className="sticky top-0 z-30 border-b border-[#D6DEE3] bg-white px-4 py-3">
         <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
-          <label className="min-w-0 flex-1 lg:max-w-md">
+          <label className="relative min-w-0 flex-1 lg:max-w-md">\n            <img src="/carboot/search.svg" alt="" aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-[18px] -translate-y-1/2 object-contain"/>
             <span className="sr-only">Buscar especificações</span>
             <input
-              className="ui-field min-h-9 text-[0.8125rem]"
+              className="ui-field min-h-9 !pl-10 text-[0.8125rem]"
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Buscar especificações..."
               type="search"
