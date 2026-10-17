@@ -11,6 +11,7 @@ export interface AdministrativeSpecCatalogItem {
   readonly specSet: string;
   readonly detail: string;
   readonly unit: string | null;
+  readonly displayOrder?: number | null;
 }
 
 export interface AdministrativeProductSpecValue {
@@ -32,6 +33,7 @@ interface AdministrativeSpecBase {
   readonly equipmentGroup: string;
   readonly specSet: string;
   readonly searchText: string;
+  readonly displayOrder?: number | null;
 }
 
 export interface AdministrativeNumericSpec extends AdministrativeSpecBase {
@@ -153,7 +155,7 @@ export function formatAdministrativeNumeric(value: number | null): string {
   if (value === null) return '';
   return new Intl.NumberFormat('pt-BR', {
     maximumFractionDigits: 2,
-    useGrouping: false,
+    useGrouping: true,
   }).format(value);
 }
 

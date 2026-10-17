@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { logout } from '../../app/actions/auth';
 import { ApplicationTopbar } from '../application-topbar';
 import type { NavigationLink } from '../authenticated-navigation-policy';
-import { AdminNav } from './admin-nav';
+import { AdminSidebar } from './admin-sidebar';
 import { adminNavigationItems } from './admin-navigation';
 
 interface AdminShellProps {
@@ -25,21 +25,16 @@ const mobileAdminLinks: readonly NavigationLink[] = adminNavigationItems.flatMap
 export function AdminShell({ children, displayName, profile }: AdminShellProps) {
   return (
     <div className="min-h-dvh bg-canvas text-text-primary">
-      <ApplicationTopbar
+      <div className="lg:hidden"><ApplicationTopbar
         area="admin"
         displayName={displayName}
         logoutAction={logout}
         navigationLinks={mobileAdminLinks}
         profile={profile}
-      />
-      <div className="lg:grid lg:grid-cols-[13.5rem_minmax(0,1fr)]">
-        <aside className="hidden border-r border-border bg-surface lg:sticky lg:top-[var(--app-topbar-height)] lg:block lg:h-[calc(100dvh-var(--app-topbar-height))] lg:p-3">
-          <p className="mb-2 px-2.5 text-[0.6875rem] font-semibold uppercase tracking-wide text-text-muted">
-            Administração
-          </p>
-          <AdminNav />
-        </aside>
-        <main className="mx-auto min-w-0 w-full max-w-7xl px-4 py-6 sm:px-5 lg:px-6 lg:pb-8 lg:pt-0">
+      /></div>
+      <div className="lg:flex lg:items-start">
+        <AdminSidebar displayName={displayName} logoutAction={logout} />
+        <main className="min-w-0 w-full flex-1 px-4 py-5 sm:px-6 lg:px-8 lg:py-6">
           {children}
         </main>
       </div>

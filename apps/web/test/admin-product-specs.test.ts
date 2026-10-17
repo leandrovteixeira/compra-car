@@ -165,37 +165,28 @@ describe('admin product specs UI state', () => {
     expect(page).toContain('title="Especificações e equipamentos"');
     expect(editor).toContain('placeholder="Buscar especificações..."');
     expect(page).toContain('sticky');
-    expect(editor).toContain('admin-specs-toolbar');
-    expect(editor).toContain('admin-specs-toolbar border-b border-border bg-surface px-3 py-2');
-    expect(editor).toContain('admin-specs-field-grid');
-    expect(editor.match(/admin-specs-value-column/g)).toHaveLength(3);
-    expect(editor).toContain('admin-specs-numeric-control');
-    expect(editor).toContain('ui-button ui-button--compact min-w-8');
-    expect(editor).toContain('min-h-8 cursor-pointer');
-    expect(editor).toContain('w-16 text-xs text-text-muted');
-    expect(editor).toContain('flex justify-start');
-    expect(editor).toContain('<details');
-    expect(editor).toContain('<option value="">-</option>');
-    expect(editor).toContain('role="radiogroup"');
-    expect(editor).toContain("label: 'Não informado'");
-    expect(editor).toContain("label: 'Não possui'");
+    expect(editor).toContain('bg-[#DCE8ED]');
+    expect(editor).toContain('bg-[#EAF1F4]');
+    expect(editor).toContain('bg-[#F8FAFB]');
+    expect(editor).toContain('grid-cols-[minmax(15rem,1fr)_minmax(15rem,24rem)_14rem]');
+    expect(editor).toContain('<AdminSpecDropdown');
+    expect(editor).toContain("value: 'unknown', label: 'Não informado'");
+    expect(editor).toContain("value: 'present', label: 'Presente'");
+    expect(editor).toContain("value: 'absent', label: 'Ausente'");
+    expect(editor).toContain('field.options.map((option)');
+    expect(editor).toContain('formatNumericForDisplay');
+    expect(editor).toContain("field.kind === 'numeric' ? field.unit : '—'");
+    expect(editor).toContain('Descartar');
     expect(editor).not.toContain('window.alert');
     expect(list).toContain('href={`/admin/products/${product.id}/specs`}');
     expect(edit).toContain('href={`/admin/products/${id}/specs`}');
     expect(form).toContain('href={`/admin/products/${productId}/specs`}');
   });
 
-  it('shares one bounded value-column origin across every editable control kind', () => {
-    const css = source('../src/app/globals.css');
+  it('uses a single editable value column with a passive unit label', () => {
     const editor = source('../src/components/admin/admin-product-specs-editor.tsx');
-
-    expect(css).toContain('grid-template-columns: minmax(0, 28rem) minmax(0, 22rem)');
-    expect(css).toContain('max-width: 52rem');
-    expect(css).toMatch(/\.admin-specs-value-column\s*{[^}]*max-width: 22rem/s);
-    expect(css).toMatch(/\.admin-specs-value-column\s*{[^}]*justify-self: start/s);
-    expect(css).toContain('grid-template-columns: minmax(0, 9rem) 4rem');
-    expect(editor).not.toContain('justify-self-end');
-    expect(editor).toContain('min-h-8 cursor-pointer');
+    expect(editor).toContain('minmax(15rem,1fr)_minmax(15rem,24rem)_14rem');
+    expect(editor).toContain("field.kind === 'numeric' ? field.unit : '—'");
   });
 
   it('preserves local state on save failure and replaces it only on success', () => {
