@@ -38,7 +38,7 @@ export function TechnicalSpecCategoryTable({ categories, versions }: {
         const isCollapsed = collapsed.has(category.name);
         return <tbody key={category.name}>
           <tr className="bg-[#EAF1F4]">
-            <th colSpan={versions.length + 1} className="sticky left-0 border-b border-[#D6DEE3] p-0 text-left text-[0.8125rem] font-semibold text-[#1A1D21]">
+            <th colSpan={versions.length + 1} className="sticky left-0 border-b border-[#D6DEE3] p-0 text-left cc-type-data !font-semibold text-[#1A1D21]">
               <button type="button" aria-expanded={!isCollapsed} onClick={() => toggle(category.name)}
                 className="flex min-h-9 w-full items-center justify-between gap-3 px-4 py-2 text-left hover:bg-[#EAF1F4] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#9ABCC8]">
                 <span>{category.name}</span>
