@@ -1,4 +1,6 @@
 import { CarbootBackLink } from '@/components/carboot-back-link';
+import { CatalogPageHeading } from '@/components/admin/catalog-page-heading';
+import { TechnicalSheetActions } from '@/components/admin/technical-sheet-actions';
 import { TechnicalSpecCategoryTable } from '@/components/admin/technical-spec-category-table';
 import { requireRole } from '@/auth/authorization';
 import { createLegacySupabaseClientFromEnv } from '@compra-car/adapter-supabase';
@@ -52,11 +54,8 @@ export default async function CurrentModelSpecsPage({searchParams}:Props){
     return [value,spec.display_unit_pt||spec.unit||''].filter(Boolean).join(' ');
   }
   return <section className="min-w-0">
-    <header className="sticky top-0 z-30 -mx-3 bg-[#F6F7F8]/95 px-3 py-3 backdrop-blur-sm">
-      <CarbootBackLink href="/admin/ver-ficha-tecnica" className="text-[#526670]" label="Voltar aos modelos" />
-      <h1 className="mt-2 text-2xl font-semibold">{selected.brand} {selected.model}</h1>
-      <p className="mt-1 text-sm text-[#61747B]">Versões atuais ordenadas por preço público, do menor para o maior.</p>
-    </header>
+    <CatalogPageHeading title={`${selected.brand} ${selected.model}`} description="Versões atuais ordenadas por preço público, do menor para o maior." />
+    <TechnicalSheetActions />
     <TechnicalSpecCategoryTable
       versions={selected.versions.map(v => ({ id: v.id, version: v.version, modelYear: v.model_year, price: money(v.price) }))}
       categories={categoryOrder.map(category => ({
