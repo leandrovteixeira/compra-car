@@ -63,7 +63,7 @@ export function ComparisonVehicleSelector({ options, initialIds = [], maxVehicle
         onClick={() => router.push(`${basePath}?vehicles=${selected.join(',')}`)}
         className="cc-btn cc-btn--m cc-btn--primary">{actionLabel}</button>
     </div>
-    {selected.length > 0 && <div className="mb-1 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
+    {selected.length > 0 && <div className="mb-1 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4" style={{ gridTemplateColumns: selected.length <= 4 ? `repeat(${selected.length}, minmax(0, 1fr))` : undefined }}>
       {selected.map((id, index) => {
         const option = options.find(item => String(item.id) === id);
         return <div key={id} className="flex min-w-0 items-center gap-2 rounded-md border border-[#D6DEE3] bg-[#F8FAFB] px-2 py-1.5">
