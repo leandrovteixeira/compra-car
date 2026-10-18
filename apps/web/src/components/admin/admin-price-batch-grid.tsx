@@ -111,32 +111,23 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
   return (
     <form id="manual-price-batch-form" action={formAction} autoComplete="off" className="space-y-3">
       {pending && <ComparisonLoadingOverlay />}
-      <div className="flex flex-wrap items-center gap-2 py-3">
+      <div className="flex min-h-10 flex-wrap items-center gap-3 py-3">
         <Link href="/admin/prices" className="cc-outline-icon-action">
-          <img src="/carboot/back.svg" alt="" aria-hidden="true" className="size-4" /> Voltar aos preços
+          <img src="/carboot/back.svg" alt="" aria-hidden="true" className="size-4" />
+          Voltar aos preços
         </Link>
-        <button type="submit" disabled={pending || filledCount === 0} className="cc-btn cc-btn--m cc-btn--primary !h-10">
-          {pending ? 'Salvando…' : 'Salvar preços'}
-        </button>
+        {state.status !== 'idle' && (
+          <p
+            aria-live="polite"
+            role={state.status === 'success' ? 'status' : 'alert'}
+            className={`min-w-0 flex-1 text-sm ${state.status === 'success' ? 'text-[#16854A]' : 'text-[#B4493A]'}`}
+          >
+            {state.message}
+            {state.status === 'success' && state.batchId ? ` Lote #${state.batchId}.` : ''}
+          </p>
+        )}
       </div>
       <input name="rows" type="hidden" value={JSON.stringify(rows)} />
-
-      {state.status !== 'idle' ? (
-        <div
-          aria-live="polite"
-          className={`rounded-xl border p-4 text-sm ${
-            state.status === 'success'
-              ? 'border-emerald-800 bg-emerald-950/30 text-emerald-200'
-              : 'border-rose-800 bg-rose-950/30 text-rose-200'
-          }`}
-          role={state.status === 'success' ? 'status' : 'alert'}
-        >
-          {state.message}
-          {state.status === 'success' ? (
-            <span className="ml-1 text-emerald-300/80">Lote #{state.batchId}.</span>
-          ) : null}
-        </div>
-      ) : null}
 
       <div className="ui-table-frame">
         <div className="hidden min-h-8 grid-cols-[minmax(18rem,2fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_3rem] items-center gap-3 border-b border-border bg-[#DCE8ED] px-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-text-muted md:grid">
@@ -245,6 +236,10 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
           {filledCount}/100 linhas preenchidas. O salvamento é atômico e publica os preços informados.
         </p>
 
+        <button type="submit" disabled={pending || filledCount === 0}
+          className="cc-btn cc-btn--m cc-btn--primary !h-10">
+          {pending ? 'Salvando…' : 'Salvar preços'}
+        </button>
       </div>
     </form>
   );
