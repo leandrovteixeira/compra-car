@@ -181,7 +181,7 @@ export function AdminProductList({ products, initialNew = false }: AdminProductL
           router.replace('/admin/products',{scroll:false});
           router.refresh();
         } else {
-          setMessage(result.message || Object.values(result.fieldErrors).flat()[0] || 'Revise os campos.');
+          setMessage(('message' in result && typeof result.message === 'string' ? result.message : '') || Object.values(result.fieldErrors).flat()[0] || 'Revise os campos.');
         }
       } catch {
         setMessage('Não foi possível cadastrar o veículo.');
