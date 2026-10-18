@@ -250,3 +250,10 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - O resultado filtrado é recuperado integralmente das páginas internas antes de aplicar ordenação final; o usuário continua vendo apenas scroll, sem paginação.
 - **Vigência Até** recebe link de ordenação ascendente/descendente. Datas abertas (`null`, apresentadas como `—`) são mantidas ao fim em ambas as direções; demais datas ordenadas cronologicamente.
 - Não alterar valores, estados, vigências ou dados de produção durante teste de ordenação.
+
+## Sprint 23.16.3 — Ícones de ordenação e loading único (2026-10-18)
+- Cabeçalhos ordenáveis usam os SVGs oficiais de Elementos: `icon_order 1` (neutro) e `icon_back 1` (direcional, rotacionado para ascendente e descendente). Arquivos: `/carboot/order.svg` e `/carboot/sort_back.svg`. Nunca usar caracteres `↕`, `↑` ou `↓` nos cabeçalhos da Lista de Preços.
+- `/admin/prices/loading.tsx` deixa de exibir skeleton cinza e reutiliza `/admin/loading.tsx`, com logo oficial e texto **Carregando**.
+- `products`, `ver-ficha-tecnica`, `comparar-modelos`, `comparar-especificacoes` têm fallbacks de rota que reutilizam o loading global. Formulários e filtros que fazem server actions continuam usando o overlay compartilhado durante suas consultas.
+- Loadings de rota são mostrados somente durante espera efetiva de navegação; cache ou resposta imediata podem não tornar a animação visível. Não usar atraso artificial.
+- Próxima etapa: refinamento detalhado de **Cadastrar Políticas**, sem modificar a semântica financeira.
