@@ -78,3 +78,13 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - Selection UI currently enforces three models and server rejects more than three. Corporate eight is **not enabled** until authenticated tier entitlements exist. Do not infer Corporate from admin.
 - Cost/benefit and equipment-per-currency ranking explicitly deferred; monetary price is not a divisor of the ten canonical dimension scores.
 - Verify performance of catalog-wide data loads before approving eight models, and run a baseline-vs-result alignment check in QA.
+
+## Sprint 23.8 — Radar compacto e controle de visibilidade (2026-10-18)
+- Título do painel: **Radar de avaliação**; descrição: **Avaliação de modelos por categorias de especificações.**
+- Radar: fundo `#F6F7F8`, malha e eixos `#EAF1F4`, 0.8px; série 1.5px, em foco 2px; preenchimento 7.5%. Labels menores e peso normal.
+- Ícone de olho por veículo, com `aria-label`: oculta/mostra somente sua série no radar. Mantém valor e coluna na tabela; ao ocultar, o dado permanece disponível.
+- Clique na legenda ou número da coluna: destaca série e coluna daquele veículo. Clique novamente remove o foco. Séries não selecionadas ficam esmaecidas.
+- Radar e tabela no mesmo grid, ocupando a altura útil do viewport desktop; tabela com 10 dimensões + média, linhas distribuídas proporcionalmente.
+- Cards em grid de até quatro colunas desktop, preparado para oito cards em duas linhas. O limite efetivo permanece três até autorização por plano no servidor.
+- Objetivo de QA: desktop 1920x1080 sem scroll vertical; em telas menores é permitido scroll. Testar com sidebar aberta/fechada e com modelos cujos nomes são longos.
+- Figma: [UX — Design Systems](https://www.figma.com/design/gFQSLkSSh3LZ0fHTWr06DT/compra-car?node-id=167-2), quadro **Sprint 23 • Radar interactions and compact viewport**.
