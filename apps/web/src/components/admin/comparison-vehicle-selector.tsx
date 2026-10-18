@@ -12,11 +12,13 @@ function normalize(text: string) {
   return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR');
 }
 
-export function ComparisonVehicleSelector({ options, initialIds = [], maxVehicles = 3, compact = false }: {
+export function ComparisonVehicleSelector({ options, initialIds = [], maxVehicles = 3, compact = false, basePath = '/admin/comparar-especificacoes', actionLabel = 'Comparar especificações' }: {
   readonly options: readonly ComparisonVehicleOption[];
   readonly initialIds?: readonly string[];
   readonly maxVehicles?: number;
   readonly compact?: boolean;
+  readonly basePath?: string;
+  readonly actionLabel?: string;
 }) {
   const router = useRouter();
   const [selected, setSelected] = useState<string[]>(() => [...new Set(initialIds.filter(id => options.some(option => String(option.id) === id)))].slice(0, maxVehicles));
@@ -58,8 +60,8 @@ export function ComparisonVehicleSelector({ options, initialIds = [], maxVehicle
       </div>
       <span className="whitespace-nowrap text-xs text-[#61747B]">{selected.length} / {maxVehicles} veículos</span>
       <button type="button" disabled={selected.length < 2}
-        onClick={() => router.push(`/admin/comparar-especificacoes?vehicles=${selected.join(',')}`)}
-        className="cc-btn cc-btn--m cc-btn--primary">Comparar especificações</button>
+        onClick={() => router.push(`${basePath}?vehicles=${selected.join(',')}`)}
+        className="cc-btn cc-btn--m cc-btn--primary">{actionLabel}</button>
     </div>
     {selected.length > 0 && <div className="mb-2 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
       {selected.map((id, index) => {
