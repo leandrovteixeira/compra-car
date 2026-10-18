@@ -157,15 +157,9 @@ export async function loadSellerModelScore(
       categories: Object.freeze([]),
     };
   const selectedPrice = priceByProduct.get(selectedProduct.id)!;
-  const minPrice = selectedPrice * (1 - radius / 100);
-  const maxPrice = selectedPrice * (1 + radius / 100);
-  const peerIds = products
-    .filter((p) => {
-      const price = priceByProduct.get(p.id)!;
-      return price >= minPrice && price <= maxPrice;
-    })
-    .map((p) => p.id);
-  if (peerIds.length < 2)
+  // Canonical benchmark: all eligible priced/public/current models, independent of MSRP.
+  const peerIds = products.map((p) => p.id);
+  if (peerIds.length === 0)
     return {
       options,
       selected: { id: selectedProduct.id, label: labelFor(selectedProduct), price: selectedPrice },
