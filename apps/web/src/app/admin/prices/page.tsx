@@ -1,6 +1,5 @@
 import {
   parseAdminPriceFilters,
-  parseAdminPricePage,
   parseAdminPriceSort,
   type AdminPriceQuery,
 } from '@/application/admin/admin-price-query';
@@ -9,7 +8,7 @@ import { AdminPriceError } from '@/components/admin/admin-price-error';
 import { AdminPriceFilters } from '@/components/admin/admin-price-filters';
 import { AdminPriceManager } from '@/components/admin/admin-price-manager';
 import { CatalogPageHeading } from '@/components/admin/catalog-page-heading';
-import { loadAdminProductPublicPrices } from '@/server/admin-product-public-price-service';
+import { loadAllAdminProductPublicPrices } from '@/server/admin-product-public-price-service';
 import { loadAdminProducts } from '@/server/admin-product-service';
 import { withDevTiming } from '@/server/dev-timing';
 import { createProductPublicPriceAction, publishProductPublicPriceAction, updateProductPublicPriceAction } from './actions';
@@ -21,14 +20,12 @@ interface AdminPricesPageProps {
 export default async function AdminPricesPage({ searchParams }: AdminPricesPageProps) {
   await requireRole('admin');
   const params = await searchParams;
-  const page = parseAdminPricePage(params);
   const sorting = parseAdminPriceSort(params);
   const filters = parseAdminPriceFilters(params);
   const [result, productsResult] = await withDevTiming('pricing.page.list', () =>
     Promise.all([
       withDevTiming('pricing.listBasePrices', () =>
-        loadAdminProductPublicPrices({
-          page,
+        loadAllAdminProductPublicPrices({
           ...sorting,
           search: filters.search || undefined,
           status: filters.status === 'all' ? undefined : filters.status,
