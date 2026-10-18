@@ -9,6 +9,7 @@ import type {
 import { formatPtBrMoneyInput, ptBrMoneyCaretPosition } from '@compra-car/core';
 import { useActionState, useEffect, useRef, useState } from 'react';
 
+import Link from 'next/link';
 import { EMPTY_MANUAL_PRICE_BATCH_ROW } from '@/application/admin/manual-price-batch';
 import { AdminProductCombobox } from '@/components/admin/admin-product-combobox';
 import { ComparisonLoadingOverlay } from '@/components/admin/comparison-loading-overlay';
@@ -110,6 +111,14 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
   return (
     <form id="manual-price-batch-form" action={formAction} autoComplete="off" className="space-y-3">
       {pending && <ComparisonLoadingOverlay />}
+      <div className="flex flex-wrap items-center gap-2 py-3">
+        <Link href="/admin/prices" className="cc-outline-icon-action">
+          <img src="/carboot/back.svg" alt="" aria-hidden="true" className="size-4" /> Voltar aos preços
+        </Link>
+        <button type="submit" disabled={pending || filledCount === 0} className="cc-btn cc-btn--m cc-btn--primary !h-10">
+          {pending ? 'Salvando…' : 'Salvar preços'}
+        </button>
+      </div>
       <input name="rows" type="hidden" value={JSON.stringify(rows)} />
 
       {state.status !== 'idle' ? (
