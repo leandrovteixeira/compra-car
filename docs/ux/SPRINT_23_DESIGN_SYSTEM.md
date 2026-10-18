@@ -216,3 +216,10 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - Badges atuais são CSS de largura dinâmica, não imagens. **Veículos:** texto Inter 12px, peso 500, padding horizontal 8px e vertical 2px, borda 1px, `border-radius:9999px`. **Preços:** texto Inter 12px/peso 500, padding horizontal 10px e vertical 4px, borda 1px. Altura nominal aproximada 22px nos veículos, 26px em preços (varia com métricas de fonte/line-height); largura resulta do texto + padding, não há largura fixa.
 - Positivos: borda `#AFE3C3`, fundo `#F1FAF5`, texto `#16854A`. Negativos/inativos: borda `#D6DEE3`, fundo `#F3F5F6`, texto `#839198` (veículos). Preços expirados/demais: borda `#D6DEE3`, fundo `#F1F3F5`, texto `#697786`. Requer revisão: borda `#EDD19A`, fundo `#FFF8E8`, texto `#9B6A19`.
 - Esses são **valores atuais de implementação** para referência de reconstrução, não medidas verificadas por ferramenta de inspeção no navegador. Preferir criar um componente tokenizado de badge para harmonizar a altura (sugestão futura: 24px fixos).
+
+## Sprint 23.14.7 — Native CSS badges, shared loading, inline price correction
+- All native CSS status pills are 24px tall; avoid SVG badges in tables.
+- All branded loading overlays and route fallbacks say only **Carregando**, regardless of source (comparison, pricing or catalog).
+- List of Prices opens price, startsOn, endsOn inputs **in their own table cells**, without modal/drawer. Save/Cancel replace Editar/Corrigir in the action column; other rows retain positions.
+- For editable draft states, Save uses existing validated update action. For published records, Corrigir uses existing validated creation action and creates **a new draft** from changed price/date values; original published record remains unchanged. Supersession and overlapping periods must be addressed before enabling one-step publication of corrections.
+- QA must verify numerical formats, date validation, cancel/refresh and persistent history. The old dialog component is retained in code for other usages but is no longer opened by pricing list action buttons.
