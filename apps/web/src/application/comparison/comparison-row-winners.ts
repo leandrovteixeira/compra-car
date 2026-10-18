@@ -6,7 +6,7 @@ import { PRESENCE_DISPLAY_VALUE } from './comparison-mapper';
  * For numeric rows, the engine's reference-relative outcome establishes whether
  * high or low is favorable; no direction is guessed where evidence conflicts.
  */
-export function comparisonRowWinners(values: readonly ComparisonCellDto[]): readonly boolean[] {
+export function comparisonRowWinners(values: readonly ComparisonCellDto[], label = ''): readonly boolean[] {
   const none = values.map(() => false);
   if (values.length < 2) return none;
   if (values.every(value => value.type !== 'numeric')) {
@@ -28,6 +28,18 @@ export function comparisonRowWinners(values: readonly ComparisonCellDto[]): read
   if (valid.length === numbers.length && valid.every(n => Math.abs(n-reference) < 0.000001)) {
     return numbers.map(() => true);
   }
+  // Explicit physical direction wins over legacy pairwise outcomes, whose
+  // reference-relative meaning must not be mistaken for larger/smaller.
+  const normalized = label.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase();
+  const lowerIsBetter = /eficiencia energetica.*mj\\s*\\/\\s*km|consumo.*l\\s*\\/\\s*100|emissoes|co2|tempo de aceleracao|distancia de frenagem/.test(normalized);
+  const higherIsBetter = /capacidade|carga|tracao|tanque de combustivel|volume|porta-malas|autonomia|consumo.*km\\s*\\/\\s*l|consumo urbano|consumo rodoviario/.test(normalized);
+  if (lowerIsBetter || higherIsBetter) {
+    const best = lowerIsBetter ? Math.min(...valid) : Math.max(...valid);
+    return numbers.map(n => n !== null && Math.abs(n-best) < 0.000001);
+  }
+  // Unknown preference: do not put an orange check on an arbitrary value.
+  return none;
+  /* Legacy pairwise direction (not safe for row-wide ranking).
   const directions = values.slice(1).flatMap((v,i) => {
     const n = numbers[i+1];
     if (n === null || n === reference) return [];
@@ -39,4 +51,5 @@ export function comparisonRowWinners(values: readonly ComparisonCellDto[]): read
   const eligible = numbers.filter((n): n is number => n !== null);
   const best = directions[0] === 'max' ? Math.max(...eligible) : Math.min(...eligible);
   return numbers.map(n => n !== null && Math.abs(n-best) < 0.000001);
+  */
 }
