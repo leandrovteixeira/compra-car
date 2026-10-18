@@ -167,3 +167,9 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 
 ## Sprint 23.13.4 — Vertical alignment of inline create actions
 - The real table cells preserve exact horizontal alignment with Editar/Duplicar. Add 24px of internal top spacing before Save and Cancel so their control baselines align with the four vehicle inputs below the row caption. Verify visually in QA.
+
+## Sprint 23.14 — Pricing UX / stage A (2026-10-18)
+- Start with Lista de Preços, preserving pricing logic and all existing publication operations. Header is the shared CatalogPageHeading: title `Lista de Preços`, subtitle and divider.
+- Pricing toolbar now includes search with official magnifying-glass icon and 40px input, 40px Status dropdown, official close reset, Cadastrar políticas secondary action and Cadastrar preços primary graphite action.
+- Pricing MMVY labels omit separator dash before model year. No financial formulas or price status semantics changed.
+- Stage B backlog: Cadastrar Preços batch and Cadastrar Políticas workspace UI consolidation, with functional regression checks prior to QA approval. Do not touch Production.
