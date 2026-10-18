@@ -11,6 +11,7 @@ import { useActionState, useEffect, useRef, useState } from 'react';
 
 import { EMPTY_MANUAL_PRICE_BATCH_ROW } from '@/application/admin/manual-price-batch';
 import { AdminProductCombobox } from '@/components/admin/admin-product-combobox';
+import { ComparisonLoadingOverlay } from '@/components/admin/comparison-loading-overlay';
 import { buttonClassName, fieldClassName } from '@compra-car/ui';
 
 type BatchAction = (
@@ -107,7 +108,8 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
   }
 
   return (
-    <form action={formAction} autoComplete="off" className="space-y-5">
+    <form action={formAction} autoComplete="off" className="space-y-3">
+      {pending && <ComparisonLoadingOverlay />}
       <input name="rows" type="hidden" value={JSON.stringify(rows)} />
 
       {state.status !== 'idle' ? (
@@ -128,7 +130,7 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
       ) : null}
 
       <div className="ui-table-frame">
-        <div className="hidden min-h-8 grid-cols-[minmax(18rem,2fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_3rem] items-center gap-3 border-b border-border bg-surface-muted px-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-text-muted md:grid">
+        <div className="hidden min-h-8 grid-cols-[minmax(18rem,2fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_3rem] items-center gap-3 border-b border-border bg-[#DCE8ED] px-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-text-muted md:grid">
           <span>Veículo</span>
           <span>Preço público</span>
           <span>Início</span>
