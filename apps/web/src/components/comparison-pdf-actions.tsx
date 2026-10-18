@@ -24,30 +24,8 @@ export function triggerComparisonPdfDownload(pdfUrl: string): void {
   anchor.remove();
 }
 
-function DownloadIcon() {
-  return (
-    <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 20 20">
-      <path
-        d="M10 3v9m0 0 3.5-3.5M10 12 6.5 8.5M4 15.5h12"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.7"
-      />
-    </svg>
-  );
-}
-
-function ShareIcon() {
-  return (
-    <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 20 20">
-      <circle cx="5" cy="10" r="2" stroke="currentColor" strokeWidth="1.6" />
-      <circle cx="14.5" cy="5" r="2" stroke="currentColor" strokeWidth="1.6" />
-      <circle cx="14.5" cy="15" r="2" stroke="currentColor" strokeWidth="1.6" />
-      <path d="m6.8 9.1 5.9-3.2m-5.9 5 5.9 3.2" stroke="currentColor" strokeWidth="1.6" />
-    </svg>
-  );
-}
+function DownloadIcon() { return <img src="/carboot/download.svg" alt="" aria-hidden="true" className="size-4 object-contain" />; }
+function ShareIcon() { return <img src="/carboot/share.svg" alt="" aria-hidden="true" className="size-4 object-contain" />; }
 
 export function ComparisonPdfActions({ pdfUrl }: ComparisonPdfActionsProps) {
   const [isSharing, setIsSharing] = useState(false);
