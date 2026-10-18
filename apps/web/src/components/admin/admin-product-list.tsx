@@ -8,10 +8,12 @@ import {
   duplicateAdminProductInlineAction,
   updateAdminProductInlineAction,
 } from '@/app/admin/products/actions';
+import { createAdminProductAction } from '@/app/admin/products/new/actions';
 import { AdminProductStatusToggle } from './admin-product-status-toggle';
 
 interface AdminProductListProps {
   readonly products: readonly AdminProductListItem[];
+  readonly initialNew?: boolean;
 }
 
 type Mode = 'edit' | 'duplicate';
@@ -42,10 +44,12 @@ function draftFrom(product: AdminProductListItem, mode: Mode): Draft {
 const cellInput =
   'h-8 w-full min-w-0 rounded-md border border-[#D6DEE3] bg-white px-2 text-sm text-[#1A1D21] focus:border-[#9ABCC8] focus:outline-none focus:ring-2 focus:ring-[#9ABCC8]/25';
 
-export function AdminProductList({ products }: AdminProductListProps) {
+export function AdminProductList({ products, initialNew = false }: AdminProductListProps) {
   const router = useRouter();
   const [opened, setOpened] = useState<{ id: string; mode: Mode } | null>(null);
+  const [creating, setCreating] = useState(initialNew);
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [newDraft, setNewDraft] = useState({brand:'',model:'',version:'',modelYear:''});
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const brands = [...new Set(products.map((p) => p.brand))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
@@ -57,6 +61,7 @@ export function AdminProductList({ products }: AdminProductListProps) {
   };
 
   const cancel = () => {
+    setCreating(false);
     setOpened(null);
     setDraft(null);
     setMessage(null);
@@ -155,6 +160,34 @@ export function AdminProductList({ products }: AdminProductListProps) {
     );
   };
 
+  const create = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (pending) return;
+    const data = new FormData();
+    for (const [key,value] of Object.entries(newDraft)) data.set(key,value.trim());
+    data.set('productionYear',newDraft.modelYear.trim());
+    data.set('isActive','false');
+    data.set('isPublic','false');
+    setMessage(null);
+    startTransition(async () => {
+      try {
+        const result = await createAdminProductAction({
+          status:'idle', values:{brand:'',model:'',version:'',modelYear:'',productionYear:'',isActive:false,isPublic:false},fieldErrors:{}
+        },data);
+        if(result.status==='success') {
+          setNewDraft({brand:'',model:'',version:'',modelYear:''});
+          setCreating(false);
+          router.replace('/admin/products',{scroll:false});
+          router.refresh();
+        } else {
+          setMessage(result.message || Object.values(result.fieldErrors).flat()[0] || 'Revise os campos.');
+        }
+      } catch {
+        setMessage('Não foi possível cadastrar o veículo.');
+      }
+    });
+  };
+
   return (
     <div className="admin-catalog-table-frame min-w-0 overflow-hidden rounded-lg border border-[#D6DEE3] bg-white">
       <div className="admin-catalog-table-scroll min-w-0 w-full overflow-auto">
@@ -171,6 +204,28 @@ export function AdminProductList({ products }: AdminProductListProps) {
             </tr>
           </thead>
           <tbody>
+            {creating && <tr className="border-l-4 border-l-[#EF7732] bg-[#F4F9FB]">
+              <td colSpan={5} className="px-3 py-3">
+                <form onSubmit={create}>
+                  <p className="mb-2 text-xs font-semibold text-[#61747B]">NOVO VEÍCULO — CADASTRO MANUAL</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {(['brand','model','version','modelYear'] as const).map((field) => (
+                      <label key={field} className={field==='version' ? 'min-w-[12rem] flex-[2_1_18rem]' : 'min-w-[7.5rem] flex-[1_1_9rem]'}>
+                        <span className="sr-only">{{brand:'Marca',model:'Modelo',version:'Versão',modelYear:'Ano-modelo'}[field]}</span>
+                        <input className={cellInput} required value={newDraft[field]}
+                          placeholder={{brand:'Marca',model:'Modelo',version:'Versão',modelYear:'Ano-modelo'}[field]}
+                          inputMode={field==='modelYear'?'numeric':undefined}
+                          onChange={e=>setNewDraft(d=>({...d,[field]:e.target.value}))}/>
+                      </label>
+                    ))}
+                    <button type="submit" disabled={pending} className="cc-btn cc-btn--p cc-btn--primary">{pending?'Salvando…':'Salvar'}</button>
+                    <button type="button" disabled={pending} onClick={()=>{cancel();router.replace('/admin/products',{scroll:false});}}
+                      className="cc-btn cc-btn--p cc-btn--secondary">Cancelar</button>
+                  </div>
+                  {message && <p role="alert" className="mt-2 text-xs text-red-700">{message}</p>}
+                </form>
+              </td>
+            </tr>}
             {products.map((product) => {
               const identity = [product.brand, product.model, product.version, product.modelYear].join(' ');
               return (
