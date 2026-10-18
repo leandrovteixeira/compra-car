@@ -23,19 +23,19 @@ export function TechnicalSheetActions() {
   }
   return <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 py-3 print:hidden">
     <button type="button" onClick={() => router.push('/admin/ver-ficha-tecnica')}
-      className="cc-btn cc-btn--m cc-btn--secondary flex items-center gap-2">
+      className="cc-outline-icon-action">
       <img src="/carboot/back.svg" alt="" aria-hidden="true" className="size-4 object-contain" />
       Voltar aos modelos
     </button>
     <div className="flex items-center gap-2">
       <button type="button" onClick={() => window.print()}
         title="Abrir impressão do navegador; selecione Salvar como PDF"
-        className="cc-btn cc-btn--m cc-btn--secondary flex items-center gap-2">
+        className="cc-outline-icon-action">
         <img src="/carboot/download.svg" alt="" aria-hidden="true" className="size-4 object-contain" />
         Salvar PDF
       </button>
       <button type="button" onClick={() => void share()} disabled={sharing}
-        className="cc-btn cc-btn--m cc-btn--secondary flex items-center gap-2">
+        className="cc-outline-icon-action">
         <img src="/carboot/share.svg" alt="" aria-hidden="true" className="size-4 object-contain" />
         {sharing ? 'Preparando…' : 'Compartilhar'}
       </button>
