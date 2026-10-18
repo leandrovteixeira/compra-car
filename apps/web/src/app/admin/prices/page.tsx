@@ -57,7 +57,7 @@ export default async function AdminPricesPage({ searchParams }: AdminPricesPageP
             page={result.data}
             products={productsResult.data.map((product) => ({
               id: product.id,
-              label: `${product.brand} ${product.model} ${product.version} — ${product.modelYear}`,
+              label: `${product.brand} ${product.model} ${product.version} ${product.modelYear}`,
             }))}
             updateAction={updateProductPublicPriceAction}
             publishAction={publishProductPublicPriceAction}
