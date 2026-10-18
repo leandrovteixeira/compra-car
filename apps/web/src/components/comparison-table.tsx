@@ -129,12 +129,7 @@ export function ComparisonTable({ vehicles, categories, mode }: ComparisonTableP
                         >
                           {row.label}
                         </span>
-                        <span
-                          className="mt-0.5 block truncate text-[0.625rem] font-normal leading-3 text-text-muted min-[769px]:text-[0.6875rem]"
-                          title={row.equipmentGroup}
-                        >
-                          {row.equipmentGroup}
-                        </span>
+
                       </th>
                       {row.values.map((value, index) => {
                         const isAdvantage = winners[index] ?? false;
