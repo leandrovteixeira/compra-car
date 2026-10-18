@@ -42,11 +42,11 @@ export function MultiModelRadar({vehicles}: {readonly vehicles:readonly RadarVeh
           {categories.map((c,i)=>{const [x,y]=point(i,categories.length,1.19);return <text key={c.key} x={x} y={y} textAnchor={x<160?'end':x>180?'start':'middle'} dominantBaseline="middle" fontSize="10" fontWeight="400" fill="#526670">{c.label}</text>;})}
         </svg>
       </div>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 pt-1">
-        {vehicles.map((v,i)=><div key={v.id} className="flex min-w-0 items-center gap-1">
-          <button type="button" onClick={()=>focus(v.id)} aria-pressed={focused===v.id} title="Destacar modelo" className={`flex items-center gap-1.5 rounded px-1 py-1 text-[11px] ${focused===v.id?'bg-[#DCE8ED]':''}`} style={{opacity:show(v.id)?1:.42}}>
+      <div className={`grid w-full gap-2 pt-2 grid-cols-1 sm:grid-cols-2 ${vehicles.length <= 2 ? 'lg:grid-cols-2' : vehicles.length === 3 ? 'lg:grid-cols-3' : 'lg:grid-cols-4'}`}>
+        {vehicles.map((v,i)=><div key={v.id} className={`flex min-w-0 items-center gap-1 rounded-md border border-[#D6DEE3] px-2 py-1 ${focused===v.id?'bg-[#EAF1F4]':'bg-white'}`}>
+          <button type="button" onClick={()=>focus(v.id)} aria-pressed={focused===v.id} title={v.label} className="flex min-w-0 flex-1 items-center gap-1.5 rounded py-1 text-left text-[12px] hover:text-[#1A1D21]" style={{opacity:show(v.id)?1:.42}}>
             <span className="size-2.5 shrink-0 rounded-sm" style={{backgroundColor:COLORS[i%COLORS.length]}}/>
-            <span className="max-w-36 truncate">{i+1}. {v.label}</span>
+            <span className="min-w-0 truncate font-medium">{i+1}. {v.label}</span>
           </button>
           <button type="button" onClick={()=>setHidden(current=>current.includes(v.id)?current.filter(id=>id!==v.id):[...current,v.id])} aria-label={`${show(v.id)?'Ocultar':'Mostrar'} ${v.label} no radar`} aria-pressed={show(v.id)} title={show(v.id)?'Ocultar no radar':'Mostrar no radar'} className="grid size-7 shrink-0 place-items-center rounded text-[#526670] hover:bg-[#DCE8ED]"><Eye hidden={!show(v.id)}/></button>
         </div>)}
