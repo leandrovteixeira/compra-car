@@ -203,3 +203,8 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - Technical sheet detail page uses `CatalogPageHeading` with model title, subtitle and 1px divider. Below: consistent horizontal toolbar with Voltar aos modelos, Salvar PDF and Compartilhar using official Figma back/download/share SVG assets.
 - Technical sheet sharing uses native share API when supported, otherwise copies the URL. `Salvar PDF` opens the browser print dialog, where user selects Save as PDF; **there is no dedicated server-side technical sheet PDF endpoint yet**. Print CSS expands technical table and avoids clipping its scroll container.
 - Check page screenshot and browser print preview before calling visual/print release approved.
+
+## Sprint 23.14.5 — Ações padronizadas e retorno aos badges CSS
+- Ações **Voltar**, **Salvar/Baixar PDF** e **Compartilhar** compartilham `cc-outline-icon-action` nas telas de Ficha Técnica e Comparar Especificações: fundo branco `#FFFFFF`, borda 1px `#D6DEE3`, ícone SVG oficial grafite `#1A1D21` em 16px, texto Inter 12px/600, altura fixa 40px e largura 170px no desktop (mobile flexível). Download e Share têm dimensões rigorosamente iguais.
+- Status de veículo (Ativo, Inativo, Público, Privado) e preço (Vigente, Rascunho, Expirado etc.) usam novamente **pílulas CSS discretas**, com borda e fundo suave. Não renderizar os badges SVG rejeitados. SVGs são mantidos como assets de referência para eventual redesenho.
+- Qualquer mudança visual deve manter a lógica de download e compartilhamento já existente; no detalhe da ficha técnica, Salvar PDF continua usando o diálogo de impressão do navegador.
