@@ -152,3 +152,10 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - First 56% of the new row (Veículo column) holds four compact inline controls: Marca, Modelo, Versão and Ano-modelo. Two 11% spacer columns keep Atividade and Publicação clear. Salvar and Cancelar occupy the last two 11% columns aligned with Editar and Duplicar.
 - Search and filters: Ativo, Público and Especificações use equal-width 8rem desktop columns and uniform 40px controls.
 - Validate no layout shift when opening/closing, changing filters or triggering scroll; responsive narrow screens may need horizontal table scroll. Production remains untouched.
+
+## Sprint 23.13.2 — Catalog saving indicator and scrollbar (2026-10-18)
+- Catalog mutations (create, edit, duplicate) use the existing branded dimmed loading overlay with official white-background logo while the server action remains pending. No artificial timers.
+- Inline Save/Cancel buttons use vertically centered flex cells, aligned with Editar/Duplicar column tracks.
+- Catalog list scrollbar uses browser-native scrolling with themed scrollbar width 10px (WebKit/Chromium), track `#F6F7F8`, thumb `#9ABCC8`, hover `#61747B`, rounded thumb and 2px inset border. Firefox uses thin scrollbar and `scrollbar-color`.
+- Native scrollbar arrow buttons vary by browser/OS; do not emulate fake arrow controls that risk breaking accessibility.
+- QA: verify scrollbar stability and Save/Cancel alignment on desktop, and overlay appearance on slow catalog create/edit/duplicate.
