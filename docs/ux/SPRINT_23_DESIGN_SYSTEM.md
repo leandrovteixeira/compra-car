@@ -266,3 +266,9 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - Operações de edição/arquivamento do workspace usam `ComparisonLoadingOverlay` com logo oficial e texto `Carregando` enquanto pendentes.
 - Fluxos de cálculo, período especial, duplicação de base, ofertas e persistência mantidos; **não** houve alteração de regras comerciais, SQL ou dados na rodada.
 - Próximo checkpoint de QA: revisar captura de tela da página com veículo selecionado, período mensal/especial, políticas existentes, criação e combinação de ofertas. Modais legados ainda requerem uma segunda revisão visual.
+
+## Sprint 23.17.1 — Correção de alinhamento em Cadastrar Políticas (2026-10-18)
+- Cabeçalho de contexto comercial: Modelo/Versão, Competência e Preço válido alinhados pelo topo (`items-start`); o campo Competência tem 40px, e suas informações auxiliares aparecem abaixo sem arrastar a searchbar verticalmente.
+- Barra de colunas da grade de novas políticas deve ficar sempre **acima** dos campos, como parte do fluxo normal (`position: static`, sem sticky/overlay), com altura mínima 36px, fundo `#DCE8ED` e border `#D6DEE3`.
+- Ações principais **Adicionar preço** e **Salvar políticas** usam `cc-btn--primary`, grafite `#1A1D21`, altura 40px. Botões secundários permanecem neutros.
+- Critério de QA: cabeçalho não se move ao selecionar veículo, títulos Tipo/Prazo/Taxa/Entrada/Valor/Rebate/Ações visíveis acima dos inputs, sem sobreposição, em 1920×1080.
