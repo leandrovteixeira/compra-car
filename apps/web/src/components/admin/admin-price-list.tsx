@@ -25,12 +25,12 @@ interface AdminPriceListProps {
 }
 
 function statusClass(status: PricingWorkflowStatus, expired: boolean): string {
-  if (expired) return 'border-slate-600 bg-slate-800/70 text-slate-200';
+  if (expired) return 'border-[#D6DEE3] bg-[#F1F3F5] text-[#697786]';
   return status === 'published'
-    ? 'border-emerald-800 bg-emerald-950/50 text-emerald-300'
+    ? 'border-[#AFE3C3] bg-[#EAF8EF] text-[#16854A]'
     : status === 'needs_review'
-      ? 'border-amber-800 bg-amber-950/50 text-amber-300'
-      : 'border-slate-700 bg-slate-900 text-slate-300';
+      ? 'border-[#EDD19A] bg-[#FFF8E8] text-[#9B6A19]'
+      : 'border-[#D6DEE3] bg-[#F1F3F5] text-[#697786]';
 }
 
 function hrefWithParams(currentParams: URLSearchParams, changes: Readonly<Record<string, string | null>>): string {
@@ -57,12 +57,12 @@ function SortHeader({
   const direction = active && page.direction === 'asc' ? 'desc' : 'asc';
   return (
     <th
-      className="font-semibold bg-[#DCE8ED]"
+      className={`font-semibold bg-[#DCE8ED] ${field === "vehicle" ? "text-left" : "text-center"}`}
       scope="col"
       aria-sort={active ? (page.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
     >
       <Link
-        className="inline-flex items-center gap-1 rounded hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus"
+        className={`inline-flex items-center gap-1 rounded hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus ${field === "vehicle" ? "" : "justify-center"}`}
         href={hrefWithParams(currentParams, {
           page: null,
           sort: field,
@@ -95,7 +95,7 @@ export function AdminPriceList({ page, onEdit, onCorrect, publishAction, onPubli
               <SortHeader page={page} field="startsOn">
                 Vigência De
               </SortHeader>
-              <th scope="col" className="bg-[#DCE8ED] font-semibold">Vigência Até</th>
+              <th scope="col" className="bg-[#DCE8ED] text-center font-semibold">Vigência Até</th>
               <SortHeader page={page} field="status">
                 Status
               </SortHeader>
@@ -111,23 +111,19 @@ export function AdminPriceList({ page, onEdit, onCorrect, publishAction, onPubli
                 <td className="whitespace-nowrap">
                   <span className="cc-type-data font-semibold text-[#1A1D21]">{price.product.brand} {price.product.model} {price.product.version} {price.product.modelYear}</span>
                 </td>
-                <td className="whitespace-nowrap font-semibold text-text-primary">
+                <td className="whitespace-nowrap text-center font-semibold text-text-primary">
                   <p>{formatAdminPrice(price.money.amount, price.money.currencyCode)}</p>
                 </td>
-                <td className="whitespace-nowrap text-text-secondary">
+                <td className="whitespace-nowrap text-center text-text-secondary">
                   <p>{formatAdminDate(price.startsOn)}</p>
 
                 </td>
                 <td className="whitespace-nowrap text-text-secondary">{price.endsOn ? formatAdminDate(price.endsOn) : "—"}</td>
-                <td>
+                <td className="text-center">
                   <span
-                    className="inline-flex items-center justify-center"
+                    className={`inline-flex min-w-[6.25rem] items-center justify-center rounded-full border px-2 py-0.5 text-xs font-semibold ${statusClass(price.status, isAdminPriceExpired(price.status, price.endsOn, operationalDate))}`}
                   >
-                    {(() => {
-                      const label = adminPriceVisualStatusLabel(price.status, price.startsOn, price.endsOn, operationalDate);
-                      const icon = label === 'Vigente' ? 'vigente' : label === 'Expirado' ? 'expired' : label === 'Rascunho' ? 'draft' : null;
-                      return icon ? <img src={`/carboot/status_${icon}.svg`} alt={label} className="h-5 w-auto max-w-28 object-contain" /> : label;
-                    })()}
+                    {adminPriceVisualStatusLabel(price.status, price.startsOn, price.endsOn, operationalDate)}
                   </span>
                 </td>
                 <td className="whitespace-nowrap text-text-secondary">
@@ -180,29 +176,7 @@ export function AdminPriceList({ page, onEdit, onCorrect, publishAction, onPubli
         <p>
           {page.total} {page.total === 1 ? 'preço encontrado' : 'preços encontrados'}
         </p>
-        {page.pageCount > 1 ? (
-          <nav aria-label="Paginação de preços públicos" className="flex items-center gap-2">
-            {page.page > 1 ? (
-              <Link
-                className={buttonClassName({ size: 'action', variant: 'secondary' })}
-                href={hrefWithParams(currentParams, { page: String(page.page - 1) })}
-              >
-                Anterior
-              </Link>
-            ) : null}
-            <span>
-              Página {page.page} de {page.pageCount}
-            </span>
-            {page.page < page.pageCount ? (
-              <Link
-                className={buttonClassName({ size: 'action', variant: 'secondary' })}
-                href={hrefWithParams(currentParams, { page: String(page.page + 1) })}
-              >
-                Próxima
-              </Link>
-            ) : null}
-          </nav>
-        ) : null}
+
       </div>
     </div>
   );
