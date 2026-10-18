@@ -27,9 +27,10 @@ export default async function AdminPricesPage({ searchParams }: AdminPricesPageP
       withDevTiming('pricing.listBasePrices', () =>
         loadAllAdminProductPublicPrices({
           ...sorting,
+          sort: sorting.sort === 'endsOn' ? 'startsOn' : sorting.sort,
           search: filters.search || undefined,
           status: filters.status === 'all' ? undefined : filters.status,
-        }),
+        }, sorting.sort === 'endsOn' ? 'endsOn' : undefined),
       ),
       withDevTiming('pricing.listProductOptions', () => loadAdminProducts()),
     ]),
