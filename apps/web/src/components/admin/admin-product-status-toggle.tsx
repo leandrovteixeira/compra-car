@@ -57,11 +57,7 @@ export function AdminProductStatusToggle({
     <>
       <button
         type="button"
-        className={`ui-badge cursor-pointer transition hover:brightness-125 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-wait disabled:opacity-60 ${
-          value
-            ? 'border-emerald-800 bg-emerald-950/50 text-emerald-300'
-            : 'border-border bg-surface-muted text-text-muted'
-        }`}
+        className="inline-flex items-center justify-center border-0 bg-transparent p-0 cursor-pointer transition hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-wait disabled:opacity-60"
         onClick={toggle}
         disabled={pending || publicationBlocked}
         title={publicationBlocked ? publicationHelp : undefined}
@@ -74,7 +70,7 @@ export function AdminProductStatusToggle({
         }
         aria-describedby={error ? errorId : undefined}
       >
-        {label}
+        <img src={`/carboot/status_${field === "isActive" ? (value ? "active" : "inactive") : (value ? "public" : "private")}.svg`} alt={label} className="h-5 w-auto max-w-24 object-contain" />
       </button>
       {error ? (
         <span id={errorId} role="alert" className="block text-xs text-red-400">
