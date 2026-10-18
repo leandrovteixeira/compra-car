@@ -109,7 +109,7 @@ export function AdminPriceList({ page, onEdit, onCorrect, publishAction, onPubli
             {page.items.map((price) => (
               <tr className="group align-middle transition-colors hover:!bg-[#EAF1F4]" key={price.id}>
                 <td className="whitespace-nowrap">
-                  <span className="cc-type-data font-semibold text-[#1A1D21]">{price.product.brand} {price.product.model} {price.product.version} {price.product.modelYear}</span>
+                  <span className="cc-type-data !font-semibold text-[#1A1D21]">{price.product.brand} {price.product.model} {price.product.version} {price.product.modelYear}</span>
                 </td>
                 <td className="whitespace-nowrap text-center font-semibold text-text-primary">
                   <p>{formatAdminPrice(price.money.amount, price.money.currencyCode)}</p>
@@ -118,7 +118,7 @@ export function AdminPriceList({ page, onEdit, onCorrect, publishAction, onPubli
                   <p>{formatAdminDate(price.startsOn)}</p>
 
                 </td>
-                <td className="whitespace-nowrap text-text-secondary">{price.endsOn ? formatAdminDate(price.endsOn) : "—"}</td>
+                <td className="whitespace-nowrap text-center text-text-secondary">{price.endsOn ? formatAdminDate(price.endsOn) : "—"}</td>
                 <td className="text-center">
                   <span
                     className={`inline-flex items-center justify-center rounded-full border px-2.5 py-1 text-xs font-medium ${statusClass(price.status, isAdminPriceExpired(price.status, price.endsOn, operationalDate))}`}
@@ -126,7 +126,7 @@ export function AdminPriceList({ page, onEdit, onCorrect, publishAction, onPubli
                     {adminPriceVisualStatusLabel(price.status, price.startsOn, price.endsOn, operationalDate)}
                   </span>
                 </td>
-                <td className="whitespace-nowrap text-text-secondary">
+                <td className="whitespace-nowrap text-center text-text-secondary">
                   <p>{formatAdminDate(price.updatedAt)}</p>
                 </td>
                 <td className="text-center">
