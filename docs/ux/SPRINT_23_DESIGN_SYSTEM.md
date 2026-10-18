@@ -111,3 +111,12 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - Admin sidebar adds official `icon_chat 1` and `icon_news 1` icons at 22px. Links lead to `/admin/chat` and `/admin/news` pages explicitly labeled *Em breve*. These features are placeholders only, not active services.
 - Figma visual contract: UX — Design Systems, frame **Sprint 23 • Loading and navigation**.
 - Next roadmap phase: unify price list/input/policies page shell, toolbar, hierarchy, component sizes and responsive behavior; keep production untouched.
+
+## Sprint 23.10 — Pending-query loading and specifications density (2026-10-18)
+- Root admin route `loading.tsx` remains for initial server-route fallback. On explicit comparisons and mode-filter navigations, use `ComparisonLoadingOverlay` backed by React transition pending state to visibly dim the current page (`#1A1D21/35`), blur 2px, show branded logo ring and `Carregando comparação...`. Do not simulate a delay. Validate pending indication against QA response timing.
+- Sidebar displays **News** before **Chat**, both placeholder destinations; use official Elementos icons.
+- Comparing specifications on desktop uses viewport-sized flex layout; preserve page heading, selected MMVY cards and mode toolbar while only the `comparison-scroll` table region scrolls.
+- Mode switch buttons align vertically with download/share buttons, and the mode description is inline alongside modes to reclaim height.
+- Compare table uses 13px desktop label/numeric typography and compact line height; verify density against other pages without reducing readability.
+- Figma: UX — Design Systems / `Sprint 23 • Comparison query loading and inner scroll` frame 181:2.
+- QA pending: compare two/three models at 1920x1080, inspect scroll containment and overlay on slow query; browser-specific behavior is not yet approved.
