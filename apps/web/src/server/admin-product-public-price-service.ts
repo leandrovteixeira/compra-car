@@ -81,3 +81,29 @@ export async function publishAdminProductPublicPrice(formData: FormData): Promis
     };
   }
 }
+
+/**
+ * Fetches the complete filtered result set for a scrollable admin list.
+ * Pagination remains an internal repository concern; the UI never drops records.
+ * Sequential batches bound database concurrency on large catalogs.
+ */
+export async function loadAllAdminProductPublicPrices(
+  input: ListProductPublicPricesInput = {},
+): Promise<AdminProductPublicPriceListResult> {
+  const first = await loadAdminProductPublicPrices({ ...input, page: 1 });
+  if (!first.ok || first.data.pageCount <= 1) return first;
+  const items = [...first.data.items];
+  for (let start = 2; start <= first.data.pageCount; start += 6) {
+    const end = Math.min(first.data.pageCount, start + 5);
+    const pages = await Promise.all(
+      Array.from({ length: end - start + 1 }, (_, index) =>
+        loadAdminProductPublicPrices({ ...input, page: start + index }),
+      ),
+    );
+    if (pages.some(page => !page.ok)) return { ok: false };
+    for (const page of pages) {
+      if (page.ok) items.push(...page.data.items);
+    }
+  }
+  return { ok: true, data: { ...first.data, page: 1, pageCount: 1, items } };
+}
