@@ -127,3 +127,11 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - Missing/ambiguous/inconsistent numerical results do **not** receive a guessed winner check. Preserve the displayed values and their types. Business semantics and ranking directions must be revisited if the comparison engine exposes dedicated winner metadata.
 - The new `icon_logo_official_whiteBG 1` SVG from Figma Elementos is saved as `/carboot/icon_logo_official_whiteBG.svg`; both route loading fallback and dimmed comparison-query overlay use it instead of the older generic icon. Sidebar keeps its own dark-background logo unchanged.
 - Verify two- and three-vehicle numeric winner/tie outcomes and check placement in QA before declaring completed.
+
+## Sprint 23.12 — Correção crítica de direção de vantagem (2026-10-18)
+- Corrigido erro da inferência baseada em `comparison === advantage/disadvantage` contra o primeiro veículo: não é uma regra válida para determinar a direção física entre todos os modelos.
+- Vencedores de métricas com preferência **ascendente** (maior é melhor): capacidade, carga, tração, volume, porta-malas, tanque, autonomia, consumo em km/L.
+- Preferência **descendente** (menor é melhor): eficiência energética em MJ/km, emissões/CO₂, tempo de aceleração, distância de frenagem, consumo em L/100 km.
+- Empates no valor ótimo recebem check todos; nulos não recebem. Em métricas sem semântica verificada, check numérico fica oculto, não arbitrariamente invertido.
+- Eficiência energética recebe duas casas decimais em pt-BR (`1,36 MJ/Km`); os demais formatos preservados.
+- Pendência prioritária: formalizar direção por código de especificação (catálogo canônico com `higher_is_better/lower_is_better/neutral`), validar engine e todos os 196 itens com testes de regressão antes de liberar checks amplamente. Esta é mitigação segura, não auditoria completa.
