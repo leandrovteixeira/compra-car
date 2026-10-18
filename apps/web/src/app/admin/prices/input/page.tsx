@@ -1,9 +1,8 @@
 import Link from 'next/link';
-import { buttonClassName } from '@compra-car/ui';
 
 import { requireRole } from '@/auth/authorization';
 import { AdminPriceBatchGrid } from '@/components/admin/admin-price-batch-grid';
-import { PageHeader } from '@/components/admin/page-header';
+import { CatalogPageHeading } from '@/components/admin/catalog-page-heading';
 import { loadManualPriceBatchProductOptions } from '@/server/manual-price-batch-service';
 import { withDevTiming } from '@/server/dev-timing';
 
@@ -15,21 +14,14 @@ export default async function AdminPriceInputPage() {
 
   return (
     <>
-      <PageHeader
-        sticky
-        actions={
-          <Link
-            className={buttonClassName({ size: 'action', variant: 'secondary' })}
-            href="/admin/prices"
-          >
-            Voltar para preços
-          </Link>
-        }
-        description="Informe até 100 preços de uma vez. O lote é persistente, atômico e cria somente rascunhos para revisão posterior."
-        eyebrow="Pricing"
-        title="Entrada de preços em lote"
-      />
-      <section className="mt-5" aria-label="Lote manual de preços públicos">
+      <CatalogPageHeading title="Cadastrar Preços" description="Informe até 100 preços de uma vez; os registros são salvos como rascunhos para revisão." />
+      <div className="flex items-center py-3">
+        <Link href="/admin/prices" className="cc-outline-icon-action">
+          <img src="/carboot/back.svg" alt="" aria-hidden="true" className="size-4" />
+          Voltar aos preços
+        </Link>
+      </div>
+      <section className="mt-0" aria-label="Lote manual de preços públicos">
         {!products.ok ? (
           <div
             className="rounded-lg border border-status-error/40 bg-rose-950/10 px-5 py-8 text-center"
