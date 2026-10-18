@@ -275,7 +275,7 @@ export function CommercialPolicyWorkspace(props: {
       {pending && <ComparisonLoadingOverlay />}
       <section
         data-testid="monthly-operation-header"
-        className="grid items-end gap-3 border-b border-[#D6DEE3] bg-transparent pb-3 lg:grid-cols-[minmax(18rem,11fr)_minmax(14rem,5fr)_minmax(13rem,4fr)]"
+        className="grid items-start gap-3 border-b border-[#D6DEE3] bg-transparent pb-3 lg:grid-cols-[minmax(18rem,11fr)_minmax(14rem,5fr)_minmax(13rem,4fr)]"
       >
         <div className="min-w-0">
           <AdminProductCombobox
@@ -329,7 +329,7 @@ export function CommercialPolicyWorkspace(props: {
             <div className="mt-1">
               {!publicPrices.length ? (
                 <button
-                  className={buttonClassName({ size: 'action', variant: 'interactive' })}
+                  className="cc-btn cc-btn--m cc-btn--primary !h-10"
                   onClick={() => setPriceDialogOpen(true)}
                   type="button"
                 >
