@@ -237,11 +237,13 @@ export function AdminProductList({ products, brands, initialNew = false }: Admin
                 </td>
                 <td aria-label="Inativo" className="text-center"/>
                 <td aria-label="Privado" className="text-center"/>
-                <td className="text-center">
+                <td className="text-center align-middle">
+                  <div className="h-6" aria-hidden="true" />
                   <button type="submit" form="catalog-new-vehicle" disabled={pending}
                     className="cc-btn cc-btn--p cc-btn--primary">{pending?'Salvando…':'Salvar'}</button>
                 </td>
-                <td className="text-center">
+                <td className="text-center align-middle">
+                  <div className="h-6" aria-hidden="true" />
                   <button type="button" disabled={pending}
                     onClick={()=>{cancel();router.replace('/admin/products',{scroll:false});}}
                     className="cc-btn cc-btn--p cc-btn--secondary admin-catalog-action">Cancelar</button>
