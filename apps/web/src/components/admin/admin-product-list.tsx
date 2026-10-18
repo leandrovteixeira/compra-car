@@ -209,45 +209,42 @@ export function AdminProductList({ products, brands, initialNew = false }: Admin
           </thead>
           <tbody>
             {creating && (
-              <tr className="bg-[#F4F9FB]">
-                <td colSpan={5} className="!p-0">
-                  <form onSubmit={create} className="px-3 py-3 shadow-[inset_4px_0_0_#EF7732]">
+              <tr className="bg-[#F4F9FB] shadow-[inset_4px_0_0_#EF7732]">
+                <td>
+                  <form id="catalog-new-vehicle" onSubmit={create}>
                     <p className="mb-2 text-xs font-semibold text-[#61747B]">NOVO VEÍCULO — CADASTRO MANUAL</p>
-                    <div className="grid grid-cols-[minmax(0,56fr)_repeat(4,minmax(0,11fr))] items-center gap-0">
-                      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)_minmax(0,2fr)_minmax(5rem,.8fr)] gap-2 pr-2">
-                        <label className="min-w-0">
-                          <span className="sr-only">Marca</span>
-                          <select aria-label="Marca" required className={cellInput} value={newDraft.brand}
-                            onChange={event=>setNewDraft(d=>({...d,brand:event.target.value}))}>
-                            <option value="">Marca...</option>
-                            {brands.map(brand=><option key={brand} value={brand}>{brand}</option>)}
-                          </select>
+                    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)_minmax(0,2fr)_minmax(5rem,.8fr)] gap-2">
+                      <label className="min-w-0">
+                        <span className="sr-only">Marca</span>
+                        <select aria-label="Marca" required className={cellInput} value={newDraft.brand}
+                          onChange={event=>setNewDraft(d=>({...d,brand:event.target.value}))}>
+                          <option value="">Marca...</option>
+                          {brands.map(brand=><option key={brand} value={brand}>{brand}</option>)}
+                        </select>
+                      </label>
+                      {(['model','version','modelYear'] as const).map(field=>(
+                        <label key={field} className="min-w-0">
+                          <span className="sr-only">{{model:'Modelo',version:'Versão',modelYear:'Ano-modelo'}[field]}</span>
+                          <input className={cellInput} required value={newDraft[field]}
+                            placeholder={{model:'Modelo',version:'Versão',modelYear:'Ano-modelo'}[field]}
+                            inputMode={field==='modelYear'?'numeric':undefined}
+                            onChange={event=>setNewDraft(d=>({...d,[field]:event.target.value}))}/>
                         </label>
-                        {(['model','version','modelYear'] as const).map(field=>(
-                          <label key={field} className="min-w-0">
-                            <span className="sr-only">{{model:'Modelo',version:'Versão',modelYear:'Ano-modelo'}[field]}</span>
-                            <input className={cellInput} required value={newDraft[field]}
-                              placeholder={{model:'Modelo',version:'Versão',modelYear:'Ano-modelo'}[field]}
-                              inputMode={field==='modelYear'?'numeric':undefined}
-                              onChange={event=>setNewDraft(d=>({...d,[field]:event.target.value}))}/>
-                          </label>
-                        ))}
-                      </div>
-                      <span aria-hidden="true"/>
-                      <span aria-hidden="true"/>
-                      <div className="flex items-center justify-center">
-                        <button type="submit" disabled={pending} className="cc-btn cc-btn--p cc-btn--primary w-[min(100%,6rem)]">
-                          {pending?'Salvando…':'Salvar'}
-                        </button>
-                      </div>
-                      <div className="flex items-center justify-center">
-                        <button type="button" disabled={pending}
-                          onClick={()=>{cancel();router.replace('/admin/products',{scroll:false});}}
-                          className="cc-btn cc-btn--p cc-btn--secondary w-[min(100%,6rem)]">Cancelar</button>
-                      </div>
+                      ))}
                     </div>
                     {message && <p role="alert" className="mt-2 text-xs text-red-700">{message}</p>}
                   </form>
+                </td>
+                <td aria-label="Inativo" className="text-center"/>
+                <td aria-label="Privado" className="text-center"/>
+                <td className="text-center">
+                  <button type="submit" form="catalog-new-vehicle" disabled={pending}
+                    className="cc-btn cc-btn--p cc-btn--primary">{pending?'Salvando…':'Salvar'}</button>
+                </td>
+                <td className="text-center">
+                  <button type="button" disabled={pending}
+                    onClick={()=>{cancel();router.replace('/admin/products',{scroll:false});}}
+                    className="cc-btn cc-btn--p cc-btn--secondary admin-catalog-action">Cancelar</button>
                 </td>
               </tr>
             )}
