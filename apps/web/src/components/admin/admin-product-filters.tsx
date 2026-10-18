@@ -3,11 +3,12 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState, useTransition } from 'react';
 
-import Link from 'next/link';
+
 
 import type { AdminProductFilterValues } from '@/application/admin/admin-product-filters';
 
 interface AdminProductFiltersProps {
+  readonly onNew?: never;
   readonly values: AdminProductFilterValues;
 }
 
@@ -48,7 +49,7 @@ export function AdminProductFilters({ values }: AdminProductFiltersProps) {
       aria-label="Filtros do catálogo"
       className="bg-transparent py-3"
     >
-      <div className="grid items-end gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(15rem,1fr)_8rem_8rem_3rem_auto]">
+      <div className="grid items-end gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(15rem,1fr)_8rem_8rem_10rem_3rem_auto]">
         <label className="relative sm:col-span-2 lg:col-span-1">
           <img src="/carboot/search.svg" alt="" aria-hidden="true" className="pointer-events-none absolute left-3 bottom-[11px] size-[18px] object-contain"/>
           <span aria-hidden="true" className="mb-1 block text-xs font-semibold invisible">Buscar</span><span className="sr-only">Buscar marca, modelo ou versão</span>
@@ -88,6 +89,15 @@ export function AdminProductFilters({ values }: AdminProductFiltersProps) {
             <option value="false">Privados</option>
           </select>
         </label>
+        <label className="text-xs font-semibold text-text-secondary">
+          Especificações
+          <select className={`${controlClass} mt-1`} value={values.specifications}
+            onChange={event => navigate({ specifications: event.target.value })}>
+            <option value="">Todas</option>
+            <option value="not_started">Não iniciada</option>
+            <option value="filled">Preenchida</option>
+          </select>
+        </label>
         <button
           className="mx-auto flex size-10 items-center justify-center rounded-md hover:bg-[#EAF1F4] focus-visible:outline-2 focus-visible:outline-[#9ABCC8]" aria-label="Limpar filtros" title="Limpar filtros"
           onClick={() => {
@@ -98,7 +108,7 @@ export function AdminProductFilters({ values }: AdminProductFiltersProps) {
         >
           <img src="/carboot/close.svg" alt="" aria-hidden="true" className="size-4 object-contain"/>
         </button>
-        <Link href="/admin/products/new" className="cc-btn cc-btn--m cc-btn--primary !min-w-[112px]">Novo veículo</Link>
+        <button type="button" onClick={() => navigate({ new: "1" })} className="cc-btn cc-btn--m cc-btn--primary !min-w-[112px]">Novo veículo</button>
       </div>
       <p aria-live="polite" className="mt-1 min-h-4 text-xs text-text-muted">
         {pending ? 'Atualizando resultados…' : ''}
