@@ -23,7 +23,7 @@ export function TechnicalSpecCategoryTable({ categories, versions }: {
     else next.add(name);
     return next;
   });
-  return <div className="mt-3 max-h-[calc(100dvh-13rem)] overflow-auto rounded-lg border border-[#D6DEE3] bg-white">
+  return <div className="technical-sheet-table-scroll max-h-[calc(100dvh-15rem)] overflow-auto rounded-lg border border-[#D6DEE3] bg-white">
     <table className="w-full min-w-[900px] table-fixed border-collapse text-sm">
       <thead className="sticky top-0 z-20 bg-[#DCE8ED] text-[#1A1D21]">
         <tr><th className="sticky left-0 w-64 bg-[#DCE8ED] px-4 py-4 text-left">Especificação</th>
