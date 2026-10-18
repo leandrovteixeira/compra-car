@@ -1,6 +1,8 @@
 'use client';
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useTransition } from 'react';
+import { ComparisonLoadingOverlay } from '@/components/admin/comparison-loading-overlay';
 
 import { buildComparisonPdfUrl } from '@/application/comparison/comparison-pdf-url';
 import type { ComparisonMode } from '@/application/comparison/comparison-view-model';
@@ -23,6 +25,7 @@ const modeDescriptions: Record<ComparisonMode, string> = {
 };
 
 export function ComparisonToolbar({ mode }: ComparisonToolbarProps) {
+  const [pending, startTransition] = useTransition();
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -34,12 +37,13 @@ export function ComparisonToolbar({ mode }: ComparisonToolbarProps) {
     if (nextMode === 'complete') params.delete('mode');
     else params.set('mode', nextMode);
     const query = params.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    startTransition(() => router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false }));
   }
 
   return (
-    <div className="flex flex-col gap-2 border-y border-border bg-surface px-2 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-3">
-      <div className="min-w-0">
+    <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 border-y border-border bg-surface px-2 py-1.5 sm:px-3">
+      {pending && <ComparisonLoadingOverlay />}
+      <div className="flex min-w-0 flex-wrap items-center gap-3">
         <fieldset>
           <legend className="sr-only">Modo da comparação</legend>
           <div
@@ -69,7 +73,7 @@ export function ComparisonToolbar({ mode }: ComparisonToolbarProps) {
             ))}
           </div>
         </fieldset>
-        <p aria-live="polite" className="mt-1.5 text-xs text-text-muted">
+        <p aria-live="polite" className="text-xs text-text-muted">
           {modeDescriptions[mode]}
         </p>
       </div>
