@@ -42,7 +42,7 @@ export async function createManualPriceBatchAction(
     const payload = data as {batchId:number;createdCount:number};
     revalidatePath('/admin/prices');
     return {status:'success',rows:[{...EMPTY_MANUAL_PRICE_BATCH_ROW}],rowErrors:{},
-      batchId:payload.batchId,createdCount:payload.createdCount,
+      batchId:String(payload.batchId),createdCount:payload.createdCount,
       message:`${payload.createdCount} preço(s) cadastrado(s) e publicado(s).`};
   } catch (error) {
     console.error('Manual price batch Server Action failed.', { actionCorrelationId, error });
