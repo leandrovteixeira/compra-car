@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState, useTransition } from 'react';
 
 import type { AdminPriceFilterValues } from '@/application/admin/admin-price-query';
+import { ComparisonLoadingOverlay } from '@/components/admin/comparison-loading-overlay';
 
 interface AdminPriceFiltersProps {
   readonly values: AdminPriceFilterValues;
@@ -46,6 +47,7 @@ export function AdminPriceFilters({ values }: AdminPriceFiltersProps) {
 
   return (
     <section aria-label="Filtros de preços públicos" className="bg-transparent py-3">
+      {pending && <ComparisonLoadingOverlay />}
       <div className="grid items-end gap-2 lg:grid-cols-[minmax(15rem,1fr)_10rem_3rem_auto_auto]">
         <label className="relative">
           <img src="/carboot/search.svg" alt="" aria-hidden="true" className="pointer-events-none absolute bottom-[11px] left-3 size-[18px] object-contain" />
