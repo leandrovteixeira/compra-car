@@ -24,6 +24,10 @@ export function comparisonRowWinners(values: readonly ComparisonCellDto[]): read
   const numbers = values.map(v => parse(v.displayValue));
   const reference = numbers[0];
   if (reference === null) return none;
+  const valid = numbers.filter((n): n is number => n !== null);
+  if (valid.length === numbers.length && valid.every(n => Math.abs(n-reference) < 0.000001)) {
+    return numbers.map(() => true);
+  }
   const directions = values.slice(1).flatMap((v,i) => {
     const n = numbers[i+1];
     if (n === null || n === reference) return [];
