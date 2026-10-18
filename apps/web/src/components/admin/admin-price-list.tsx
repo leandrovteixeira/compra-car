@@ -17,6 +17,7 @@ import {
 interface AdminPriceListProps {
   readonly page: ProductPublicPriceListPageDto;
   readonly onEdit: (id: string, opener: HTMLButtonElement) => void;
+  readonly onCorrect: (id: string, opener: HTMLButtonElement) => void;
   readonly publishAction: (
     formData: FormData,
   ) => Promise<{ readonly ok: boolean; readonly message: string }>;
@@ -75,7 +76,7 @@ function SortHeader({
   );
 }
 
-export function AdminPriceList({ page, onEdit, publishAction, onPublished }: AdminPriceListProps) {
+export function AdminPriceList({ page, onEdit, onCorrect, publishAction, onPublished }: AdminPriceListProps) {
   const operationalDate = operationalDateInSaoPaulo();
   const currentParams = useSearchParams();
   return (
@@ -120,7 +121,7 @@ export function AdminPriceList({ page, onEdit, publishAction, onPublished }: Adm
                 <td className="whitespace-nowrap text-text-secondary">{price.endsOn ? formatAdminDate(price.endsOn) : "—"}</td>
                 <td>
                   <span
-                    className={`inline-flex items-center rounded-full border px-2 py-1 text-xs font-semibold ${statusClass(price.status, isAdminPriceExpired(price.status, price.endsOn, operationalDate))}`}
+                    className="inline-flex items-center justify-center"
                   >
                     {(() => {
                       const label = adminPriceVisualStatusLabel(price.status, price.startsOn, price.endsOn, operationalDate);
@@ -143,7 +144,7 @@ export function AdminPriceList({ page, onEdit, publishAction, onPublished }: Adm
                         Editar
                       </button>
                     ) : (
-                      <Link href="/admin/prices/input" title="Preço publicado: criar um novo rascunho para correção, preservando o histórico" className="cc-btn cc-btn--p cc-btn--secondary admin-catalog-action group-hover:!bg-[#1A1D21] group-hover:!text-white">Corrigir</Link>
+                      <button type="button" title="Criar rascunho de correção sem modificar o preço publicado" onClick={event => onCorrect(price.id, event.currentTarget)} className="cc-btn cc-btn--p cc-btn--secondary admin-catalog-action group-hover:!bg-[#1A1D21] group-hover:!text-white">Corrigir</button>
                     )}
                     {price.status === 'draft' || price.status === 'needs_review' ? (
                       <form
