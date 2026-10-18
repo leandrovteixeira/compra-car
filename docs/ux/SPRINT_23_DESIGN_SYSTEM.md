@@ -239,3 +239,8 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - Preços publicados com início futuro aparecem como **Previsto**; preços publicados dentro da vigência aparecem como **Vigente**. `Fim` inexistente continua como `—`.
 - Testes obrigatórios para aceite: editar valor publicado mantendo início antigo; corrigir datas sem sobreposição; rejeitar conflito entre períodos; verificar evento de auditoria; cadastrar lote manual de teste com preço futuro e constatar status Previsto; lote inválido deve gravar zero linhas.
 - Toda alteração nesta rodada somente em QA; **não aplicar migration ou código em produção**.
+
+## Sprint 23.16.1 — Posicionamento de salvar e mensagens no lote (2026-10-18)
+- No cadastro de preços em lote, manter somente **Voltar aos preços** na barra superior; mensagens de sucesso e erro ficam inline à direita do botão, sem faixa/card separado que aumente a altura da página.
+- **Salvar preços** volta para a barra inferior, abaixo das linhas, alinhado à direita do contador. Permanece grafite, com altura de 40px e desabilitado enquanto o lote estiver vazio ou salvando.
+- Respostas de erro usam `role=alert`, sucesso `role=status`, sem alterar os campos nem o fluxo financeiro.
