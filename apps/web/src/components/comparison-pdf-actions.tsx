@@ -11,8 +11,7 @@ interface ComparisonPdfActionsProps {
   readonly pdfUrl: string;
 }
 
-const actionClassName =
-  'ui-button ui-button--secondary ui-button--compact flex-1 gap-1.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus sm:flex-none';
+const actionClassName = 'cc-outline-icon-action';
 
 export function triggerComparisonPdfDownload(pdfUrl: string): void {
   const anchor = document.createElement('a');
@@ -44,7 +43,7 @@ export function ComparisonPdfActions({ pdfUrl }: ComparisonPdfActionsProps) {
   }
 
   return (
-    <div className="flex w-full min-w-0 gap-1.5 sm:w-auto">
+    <div className="flex w-full min-w-0 flex-wrap gap-2 sm:w-auto">
       <a className={actionClassName} download={COMPARISON_PDF_FILENAME} href={pdfUrl}>
         <DownloadIcon />
         <span>Baixar PDF</span>
