@@ -244,3 +244,9 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - No cadastro de preços em lote, manter somente **Voltar aos preços** na barra superior; mensagens de sucesso e erro ficam inline à direita do botão, sem faixa/card separado que aumente a altura da página.
 - **Salvar preços** volta para a barra inferior, abaixo das linhas, alinhado à direita do contador. Permanece grafite, com altura de 40px e desabilitado enquanto o lote estiver vazio ou salvando.
 - Respostas de erro usam `role=alert`, sucesso `role=status`, sem alterar os campos nem o fluxo financeiro.
+
+## Sprint 23.16.2 — Ordenação Lista de Preços
+- A ordenação alfabética de Veículo considera a identidade MMVY completa, com `Intl.Collator('pt-BR', { sensitivity: 'base', numeric: true })` e desempate determinístico por ID.
+- O resultado filtrado é recuperado integralmente das páginas internas antes de aplicar ordenação final; o usuário continua vendo apenas scroll, sem paginação.
+- **Vigência Até** recebe link de ordenação ascendente/descendente. Datas abertas (`null`, apresentadas como `—`) são mantidas ao fim em ambas as direções; demais datas ordenadas cronologicamente.
+- Não alterar valores, estados, vigências ou dados de produção durante teste de ordenação.
