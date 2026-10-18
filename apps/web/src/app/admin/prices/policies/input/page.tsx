@@ -1,8 +1,7 @@
 import Link from 'next/link';
-import { buttonClassName } from '@compra-car/ui';
 import { requireRole } from '@/auth/authorization';
 import { CommercialPolicyWorkspace } from '@/components/admin/commercial-policy-workspace';
-import { PageHeader } from '@/components/admin/page-header';
+import { CatalogPageHeading } from '@/components/admin/catalog-page-heading';
 import { loadManualPolicyBatchOptions } from '@/server/manual-policy-batch-service';
 import { withDevTiming } from '@/server/dev-timing';
 import {
@@ -59,21 +58,14 @@ export default async function AdminPolicyInputPage({ searchParams }: AdminPolicy
   ]);
   return (
     <>
-      <PageHeader
-        sticky
-        eyebrow="Pricing"
-        title="Criar políticas"
-        description="Workspace comercial unificado por veículo para políticas e combinações."
-        actions={
-          <Link
-            className={buttonClassName({ size: 'action', variant: 'secondary' })}
-            href="/admin/prices"
-          >
-            Voltar para preços
-          </Link>
-        }
-      />
-      <section className="mt-5">
+      <CatalogPageHeading title="Cadastrar Políticas" description="Gerencie políticas e combinações comerciais por veículo." />
+      <div className="flex items-center py-3">
+        <Link href="/admin/prices" className="cc-outline-icon-action">
+          <img src="/carboot/back.svg" alt="" aria-hidden="true" className="size-4" />
+          Voltar aos preços
+        </Link>
+      </div>
+      <section className="mt-0">
         <CommercialPolicyWorkspace
           key={`${competence}:${commercialPeriod.kind}:${commercialPeriod.start}:${commercialPeriod.end}`}
           policyAction={createManualPolicyBatchAction}
