@@ -8,12 +8,11 @@ import { requireRole } from '@/auth/authorization';
 import { AdminPriceError } from '@/components/admin/admin-price-error';
 import { AdminPriceFilters } from '@/components/admin/admin-price-filters';
 import { AdminPriceManager } from '@/components/admin/admin-price-manager';
-import { PageHeader } from '@/components/admin/page-header';
+import { CatalogPageHeading } from '@/components/admin/catalog-page-heading';
 import { loadAdminProductPublicPrices } from '@/server/admin-product-public-price-service';
 import { loadAdminProducts } from '@/server/admin-product-service';
 import { withDevTiming } from '@/server/dev-timing';
 import { publishProductPublicPriceAction, updateProductPublicPriceAction } from './actions';
-import Link from 'next/link';
 
 interface AdminPricesPageProps {
   readonly searchParams: Promise<AdminPriceQuery>;
@@ -45,28 +44,7 @@ export default async function AdminPricesPage({ searchParams }: AdminPricesPageP
       style={{ gridTemplateRows: 'auto auto minmax(0, 1fr)' }}
     >
       <div className="admin-pricing-page-header">
-        <PageHeader
-          compact
-          actions={
-            <div className="flex flex-wrap gap-3">
-              <Link
-                className="ui-button ui-button--primary ui-button--action"
-                href="/admin/prices/input"
-              >
-                Criar preços
-              </Link>
-              <Link
-                className="ui-button ui-button--secondary ui-button--action"
-                href="/admin/prices/policies/input"
-              >
-                Criar políticas
-              </Link>
-            </div>
-          }
-          description="Cadastre e edite rascunhos de preços públicos dos veículos."
-          eyebrow="Pricing"
-          title="Preços públicos"
-        />
+        <CatalogPageHeading title="Lista de Preços" description="Consulte, revise e publique preços públicos dos veículos." />
       </div>
       <div className="admin-pricing-toolbar">
         <AdminPriceFilters values={filters} />
