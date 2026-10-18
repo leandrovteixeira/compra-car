@@ -45,8 +45,8 @@ export function ComparisonTable({ vehicles, categories, mode }: ComparisonTableP
 
   const rowCount = categories.reduce((total, category) => total + category.rows.length, 0);
   return (
-    <section aria-label="Tabela de comparação" className="min-w-0">
-      <div className="mb-2 flex items-center justify-between gap-4 px-1 text-xs text-text-muted">
+    <section aria-label="Tabela de comparação" className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <div className="mb-1 flex shrink-0 items-center justify-between gap-4 px-1 text-xs text-text-muted">
         <p>
           {rowCount} {rowCount === 1 ? 'item comparado' : 'itens comparados'}
         </p>
@@ -63,10 +63,10 @@ export function ComparisonTable({ vehicles, categories, mode }: ComparisonTableP
         </p>
       </div>
 
-      <div className="overflow-hidden border border-border bg-surface">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden border border-border bg-surface">
         <div
           aria-label="Comparação rolável de veículos"
-          className="comparison-scroll max-h-[min(72dvh,52rem)] overflow-auto overscroll-contain"
+          className="comparison-scroll min-h-0 flex-1 overflow-auto overscroll-contain"
           role="region"
           tabIndex={0}
         >
@@ -123,7 +123,7 @@ export function ComparisonTable({ vehicles, categories, mode }: ComparisonTableP
                         scope="row"
                       >
                         <span
-                          className="line-clamp-2 block text-xs font-medium leading-4 text-text-primary min-[769px]:text-sm min-[769px]:leading-5"
+                          className="line-clamp-2 block text-xs font-medium leading-4 text-text-primary min-[769px]:text-[0.8125rem] min-[769px]:leading-4"
                           title={row.label}
                         >
                           {row.label}
@@ -145,7 +145,7 @@ export function ComparisonTable({ vehicles, categories, mode }: ComparisonTableP
 
                         return (
                           <td
-                            className="w-[7.5rem] min-w-[7.5rem] max-w-[7.5rem] border-b border-r border-border bg-surface px-2 py-2 text-center align-middle text-xs font-semibold tabular-nums text-text-secondary transition-colors last:border-r-0 group-hover:bg-selection min-[769px]:w-56 min-[769px]:min-w-56 min-[769px]:max-w-56 min-[769px]:px-3 min-[769px]:text-sm"
+                            className="w-[7.5rem] min-w-[7.5rem] max-w-[7.5rem] border-b border-r border-border bg-surface px-2 py-2 text-center align-middle text-xs font-semibold tabular-nums text-text-secondary transition-colors last:border-r-0 group-hover:bg-selection min-[769px]:w-56 min-[769px]:min-w-56 min-[769px]:max-w-56 min-[769px]:px-3 min-[769px]:text-[0.8125rem]"
                             key={vehicles[index]?.id}
                           >
                             <ComparisonValueCell isAdvantage={isAdvantage} value={value} />
