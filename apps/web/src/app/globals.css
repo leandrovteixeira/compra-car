@@ -587,3 +587,15 @@ select.ui-field,
 /* Standardized table headers for Vehicles and Prices. */
 .admin-pricing-table-header th { background: #DCE8ED !important; }
 .admin-pricing-table-scroll tbody tr:hover > td { background: #EAF1F4 !important; }
+
+/* Technical sheet: printing the current view via browser Save as PDF. */
+@media print {
+  @page { size: A4 landscape; margin: 12mm; }
+  body, html { overflow: visible !important; background: white !important; }
+  aside[aria-label="Menu administrativo"] { display: none !important; }
+  .admin-shell main, main { overflow: visible !important; height: auto !important; max-height: none !important; }
+  [aria-label="Tabela de especificações"] { overflow: visible !important; max-height: none !important; }
+  .technical-sheet-table-scroll { overflow: visible !important; max-height: none !important; border: 0 !important; }
+  .technical-sheet-table-scroll thead { position: static !important; }
+  .technical-sheet-table-scroll tr { break-inside: avoid; }
+}
