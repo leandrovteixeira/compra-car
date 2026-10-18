@@ -56,7 +56,7 @@ function SortHeader({
   const direction = active && page.direction === 'asc' ? 'desc' : 'asc';
   return (
     <th
-      className="font-semibold"
+      className="font-semibold bg-[#DCE8ED]"
       scope="col"
       aria-sort={active ? (page.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
     >
@@ -83,7 +83,7 @@ export function AdminPriceList({ page, onEdit, publishAction, onPublished }: Adm
       <div className="admin-pricing-table-scroll overflow-auto">
         <table className={`${tableClassName} min-w-[56rem]`}>
           <caption className="sr-only">Preços públicos cadastrados</caption>
-          <thead className="admin-pricing-table-header">
+          <thead className="admin-pricing-table-header bg-[#DCE8ED]">
             <tr>
               <SortHeader page={page} field="vehicle">
                 Veículo
@@ -92,7 +92,7 @@ export function AdminPriceList({ page, onEdit, publishAction, onPublished }: Adm
                 Preço público
               </SortHeader>
               <SortHeader page={page} field="startsOn">
-                Início vigência
+                Vigência
               </SortHeader>
               <SortHeader page={page} field="status">
                 Status
@@ -100,21 +100,16 @@ export function AdminPriceList({ page, onEdit, publishAction, onPublished }: Adm
               <SortHeader page={page} field="updatedAt">
                 Atualizado em
               </SortHeader>
-              <th className="font-semibold" scope="col">
+              <th className="bg-[#DCE8ED] text-center font-semibold" scope="col">
                 Editar
               </th>
             </tr>
           </thead>
           <tbody>
             {page.items.map((price) => (
-              <tr className="align-top transition hover:bg-surface-muted" key={price.id}>
-                <td>
-                  <p className="font-semibold text-text-primary">
-                    {price.product.brand} {price.product.model}
-                  </p>
-                  <p className="mt-0.5 text-xs text-text-muted">
-                    {price.product.version} · {price.product.modelYear}
-                  </p>
+              <tr className="group align-middle transition-colors hover:!bg-[#EAF1F4]" key={price.id}>
+                <td className="whitespace-nowrap">
+                  <span className="cc-type-data font-semibold text-[#1A1D21]">{price.product.brand} {price.product.model} {price.product.version} {price.product.modelYear}</span>
                 </td>
                 <td className="whitespace-nowrap font-semibold text-text-primary">
                   <p>{formatAdminPrice(price.money.amount, price.money.currencyCode)}</p>
@@ -140,18 +135,18 @@ export function AdminPriceList({ page, onEdit, publishAction, onPublished }: Adm
                 <td className="whitespace-nowrap text-text-secondary">
                   <p>{formatAdminDate(price.updatedAt)}</p>
                 </td>
-                <td>
-                  <div className="flex gap-2">
+                <td className="text-center">
+                  <div className="flex items-center justify-center gap-2">
                     {isProductPublicPriceEditable(price.status) ? (
                       <button
-                        className={buttonClassName({ size: 'action', variant: 'secondary' })}
+                        className="cc-btn cc-btn--p cc-btn--secondary admin-catalog-action group-hover:!bg-[#1A1D21] group-hover:!text-white"
                         onClick={(event) => onEdit(price.id, event.currentTarget)}
                         type="button"
                       >
                         Editar
                       </button>
                     ) : (
-                      <span className="text-xs text-text-muted">Somente leitura</span>
+                      <Link href="/admin/prices/input" title="Preço publicado: criar um novo rascunho para correção, preservando o histórico" className="cc-btn cc-btn--p cc-btn--secondary admin-catalog-action group-hover:!bg-[#1A1D21] group-hover:!text-white">Corrigir</Link>
                     )}
                     {price.status === 'draft' || price.status === 'needs_review' ? (
                       <form
