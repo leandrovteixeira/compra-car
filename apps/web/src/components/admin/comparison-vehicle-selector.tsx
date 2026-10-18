@@ -63,10 +63,10 @@ export function ComparisonVehicleSelector({ options, initialIds = [], maxVehicle
         onClick={() => router.push(`${basePath}?vehicles=${selected.join(',')}`)}
         className="cc-btn cc-btn--m cc-btn--primary">{actionLabel}</button>
     </div>
-    {selected.length > 0 && <div className="mb-2 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
+    {selected.length > 0 && <div className="mb-1 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
       {selected.map((id, index) => {
         const option = options.find(item => String(item.id) === id);
-        return <div key={id} className="flex min-w-0 items-center gap-2 rounded-md border border-[#D6DEE3] bg-[#F8FAFB] px-3 py-2">
+        return <div key={id} className="flex min-w-0 items-center gap-2 rounded-md border border-[#D6DEE3] bg-[#F8FAFB] px-2 py-1.5">
           <div className="min-w-0 flex-1">
             <span className="block text-[10px] font-semibold uppercase tracking-wide text-[#61747B]">{index === 0 ? 'Principal' : 'Veículo ' + (index + 1)}</span>
             <span className="block truncate text-[0.8125rem] font-medium" title={option?.label}>{option?.label ?? id}</span>
