@@ -28,6 +28,7 @@ interface AdminPriceManagerProps {
   readonly page: ProductPublicPriceListPageDto;
   readonly products: readonly ProductPublicPriceProductOptionDto[];
   readonly updateAction: PriceAction;
+  readonly createAction: PriceAction;
   readonly publishAction: (
     formData: FormData,
   ) => Promise<{ readonly ok: boolean; readonly message: string }>;
@@ -318,20 +319,24 @@ export function AdminPriceManager({
   page,
   products,
   updateAction,
+  createAction,
   publishAction,
 }: AdminPriceManagerProps) {
   const router = useRouter();
   const openerRef = useRef<HTMLElement | null>(null);
   const [editing, setEditing] = useState<ProductPublicPriceListItemDto | null>(null);
+  const [correcting, setCorrecting] = useState<ProductPublicPriceListItemDto | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
 
   function close() {
     setEditing(null);
+    setCorrecting(null);
     requestAnimationFrame(() => openerRef.current?.focus());
   }
   function success(message: string) {
     setFeedback(message);
     setEditing(null);
+    setCorrecting(null);
     router.refresh();
     requestAnimationFrame(() => openerRef.current?.focus());
   }
@@ -353,6 +358,11 @@ export function AdminPriceManager({
       </div>
       {page.items.length ? (
         <AdminPriceList
+          onCorrect={(id, opener) => {
+            openerRef.current = opener;
+            setCorrecting(page.items.find(price => price.id === id) ?? null);
+            setEditing(null);
+          }}
           onEdit={(id, opener) => {
             openerRef.current = opener;
             setEditing(page.items.find((price) => price.id === id) ?? null);
@@ -370,6 +380,16 @@ export function AdminPriceManager({
           title="Nenhum preço público encontrado"
         />
       )}
+      {correcting ? (
+        <PriceDialog
+          action={createAction}
+          initialValues={{...valuesForPrice(correcting), id: '', lockVersion: ''}}
+          key={`correct-${correcting.id}`}
+          onClose={close}
+          onSuccess={success}
+          products={products}
+        />
+      ) : null}
       {editing ? (
         <PriceDialog
           action={updateAction}
