@@ -1,7 +1,7 @@
 'use client';
 
 import type { AdminProductListItem } from '@/server/admin-product-service';
-import { Fragment, useState, useTransition, type FormEvent } from 'react';
+import { Fragment, useEffect, useState, useTransition, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -48,6 +48,7 @@ export function AdminProductList({ products, initialNew = false }: AdminProductL
   const router = useRouter();
   const [opened, setOpened] = useState<{ id: string; mode: Mode } | null>(null);
   const [creating, setCreating] = useState(initialNew);
+  useEffect(() => { if (initialNew) setCreating(true); }, [initialNew]);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [newDraft, setNewDraft] = useState({brand:'',model:'',version:'',modelYear:''});
   const [message, setMessage] = useState<string | null>(null);
