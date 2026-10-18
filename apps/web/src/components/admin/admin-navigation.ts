@@ -29,5 +29,7 @@ export const adminNavigationItems: readonly AdminNavigationItem[] = [
     { href: '/admin/users', label: 'Usuários', status: 'active' },
     { href: '/admin/imports', label: 'Importações', status: 'active' },
   ] },
+  { label: 'Chat', status: 'planned' },
+  { label: 'News', status: 'planned' },
   { label: 'Conta', status: 'planned' },
 ];
