@@ -18,7 +18,7 @@ interface AdminProductsPageProps {
 export default async function AdminProductsPage({ searchParams }: AdminProductsPageProps) {
   await requireRole('admin');
   const parsed = parseAdminProductFilters(await searchParams);
-  const result = await loadAdminProducts(parsed.filters, undefined, parsed.values.search);
+  const result = await loadAdminProducts(parsed.filters, undefined, parsed.values.search, parsed.values.specifications);
 
   return (
     <section className="admin-catalog-workspace">
