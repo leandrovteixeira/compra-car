@@ -187,3 +187,11 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - Coluna Editar centraliza o botão na mesma posição de cabeçalho; para rascunho usar edição existente. Para preços publicados manter registro histórico imutável e oferecer fluxo de novo rascunho de correção. **Ainda não existe alteração retroativa segura de valores publicados**, isso exige contrato auditável de correção/supersessão. Não oferecer edição direta que contorne guardas existentes.
 - Status Vigente é atualmente um badge CSS de texto, **não é SVG de Elementos**. Migração de status/iconografia depende de aprovar o componente visual; manter sem ícone se a referência visual pede apenas badge.
 - Barra de ações: **Cadastrar preços** antes de **Cadastrar políticas**.
+
+## Sprint 23.14.3 — Public-price correction draft and official status SVGs (2026-10-18)
+- Pricing list: display dates separately as **Vigência De** and **Vigência Até**. Null end date shows `—` (no "até Sem término").
+- Pricing status badges: use official Figma Elementos SVG `vigente`, `draft` (Rascunho), `expired` (Expirado) from `public/carboot/status_*.svg`; other statuses remain text until equivalent assets are defined. Avoid additional nested badge styling when vector contains its own appearance.
+- Vehicle catalog uses `active`, `inactive`, `public`, `private` official status artwork. `paused` and `watching` assets are stored for future appropriate agent/monitor status screens, but not applied indiscriminately.
+- Exact header consistency: shared color `#DCE8ED` across vehicle/pricing admin tables, but legacy list and table wrappers may still differ in padding, sticky position and line height; visual QA is required before claiming pixel identity.
+- Existing published prices remain immutable through current update command. **Corrigir** opens a prefilled **new draft** via the existing creation action with product/amount/vigency inherited. The dialog states that the old published row remains unchanged. This is a safe preliminary correction workflow, *not yet automatic supersession*: ensure review and no overlapping published periods before release. Do not bypass workflow, don't claim direct historical edits.
+- UX action order: **Cadastrar preços**, then **Cadastrar políticas**.
