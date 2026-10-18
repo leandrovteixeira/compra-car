@@ -90,8 +90,8 @@ export function AdminPriceFilters({ values }: AdminPriceFiltersProps) {
         >
           <img src="/carboot/close.svg" alt="" className="size-4 object-contain" aria-hidden="true" />
         </button>
-        <Link href="/admin/prices/policies/input" className="cc-btn cc-btn--m cc-btn--secondary">Cadastrar políticas</Link>
         <Link href="/admin/prices/input" className="cc-btn cc-btn--m cc-btn--primary">Cadastrar preços</Link>
+        <Link href="/admin/prices/policies/input" className="cc-btn cc-btn--m cc-btn--secondary">Cadastrar políticas</Link>
       </div>
       <p aria-live="polite" className="mt-1 min-h-4 text-xs text-text-muted">
         {pending ? 'Atualizando resultados…' : ''}
