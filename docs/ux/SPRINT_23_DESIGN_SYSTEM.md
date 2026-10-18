@@ -135,3 +135,12 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - Empates no valor ótimo recebem check todos; nulos não recebem. Em métricas sem semântica verificada, check numérico fica oculto, não arbitrariamente invertido.
 - Eficiência energética recebe duas casas decimais em pt-BR (`1,36 MJ/Km`); os demais formatos preservados.
 - Pendência prioritária: formalizar direção por código de especificação (catálogo canônico com `higher_is_better/lower_is_better/neutral`), validar engine e todos os 196 itens com testes de regressão antes de liberar checks amplamente. Esta é mitigação segura, não auditoria completa.
+
+## Sprint 23.13 — Cadastro inline e filtro binário de especificações (2026-10-18)
+- `Novo veículo` no Cadastro de Modelos abre a linha editável no topo da lista (sem outra página). Campos: Marca, Modelo, Versão, Ano-modelo. Salvar/Cancelar reaproveitam as ações validadas de criação; nenhuma exigência de correspondência com MMV existente. Novo veículo nasce **Inativo e Privado**, inclusive antes de qualquer especificação. Ano de produção legado é sincronizado com ano-modelo até remoção do requisito na camada canônica.
+- Após criar: fechar edição, limpar `?new=1`, atualizar lista e ordenação alfabética. A rota legada `/admin/products/new` redireciona para o fluxo inline.
+- Na toolbar, filtro `Especificações`: **Todas**, **Não iniciada**, **Preenchida**. Sem coluna de status na listagem.
+- Estado **Não iniciada** = não existe especificação com valor numérico nem `is_present` explícito salva no banco. **Preenchida** = existe ao menos uma especificação salva (`value is not null OR is_present is not null`), independentemente da quantidade; não significa que esteja completa.
+- Status computado pela view `vw_admin_product_spec_started` do banco QA e migration `20261018153000_admin_product_spec_started_view.sql`. Não armazenar campo/flag duplicado no produto. Novos veículos podem abrir ficha de especificações vazia para preenchimento progressivo.
+- Figma: UX — Design Systems, frame **Sprint 23 • Inline vehicle creation and specification filter** (188:2). Os SVGs `finished`/`not_started` são opcionais e não são necessários no dropdown textual nativo.
+- Validação restante: confirmar build e criação manual em QA com entradas controladas, sem tocar Produção. Testar filtro com resultados vazios, edição de especificações e recálculo do status.
