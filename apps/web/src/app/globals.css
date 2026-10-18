@@ -599,3 +599,34 @@ select.ui-field,
   .technical-sheet-table-scroll thead { position: static !important; }
   .technical-sheet-table-scroll tr { break-inside: avoid; }
 }
+
+/* Shared print/share/back button for all technical and comparison screens. */
+.cc-outline-icon-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-sizing: border-box;
+  height: 40px;
+  min-height: 40px;
+  width: 170px;
+  flex: 0 0 170px;
+  padding: 0 12px;
+  border: 1px solid #D6DEE3;
+  border-radius: 6px;
+  background: #FFFFFF;
+  color: #1A1D21;
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+}
+.cc-outline-icon-action:hover { background: #F6F7F8; }
+.cc-outline-icon-action:focus-visible { outline: 2px solid #9ABCC8; outline-offset: 2px; }
+.cc-outline-icon-action:disabled { opacity: .55; cursor: wait; }
+.cc-outline-icon-action img { height: 16px; width: 16px; flex: none; }
+@media (max-width: 430px) {
+  .cc-outline-icon-action { width: auto; min-width: 132px; flex: 1 1 auto; }
+}
