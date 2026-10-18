@@ -104,3 +104,10 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - Cada card inclui cor, índice, nome MMVY truncável e olho fixo à direita; padding horizontal 8px, borda 1px #D6DEE3, tipografia Inter 12px medium.
 - Clicar no nome ativa/desativa o foco; o olho controla a visibilidade do polígono sem remover os scores da tabela. Card em foco usa #EAF1F4.
 - Documentado em Figma UX — Design Systems, quadro `Sprint 23 • Radar legend dynamic control grid` (frame 174:2). A autorização Corporate 8 segue pendente; limite atual 3.
+
+## Sprint 23.9 — Loading, official icons, Chat & News (2026-10-18)
+- `apps/web/src/app/admin/loading.tsx`: Next.js admin-segment loading fallback with official `icon_logo_official.svg`, 80px animated circular border, blue/orange, 56px centered logo and accessible loading text. This is a route-level Suspense fallback, not an artificial timer; confirm actual appearance with slower QA navigation.
+- Comparison-specification PDF actions now use the unchanged Figma vector paths `icon_download 1` and `icon_share 1`, imported under `public/carboot/download.svg` and `share.svg`, recolored to official graphite `#1A1D21`. Size 16px, existing PDF/download/share behaviors preserved.
+- Admin sidebar adds official `icon_chat 1` and `icon_news 1` icons at 22px. Links lead to `/admin/chat` and `/admin/news` pages explicitly labeled *Em breve*. These features are placeholders only, not active services.
+- Figma visual contract: UX — Design Systems, frame **Sprint 23 • Loading and navigation**.
+- Next roadmap phase: unify price list/input/policies page shell, toolbar, hierarchy, component sizes and responsive behavior; keep production untouched.
