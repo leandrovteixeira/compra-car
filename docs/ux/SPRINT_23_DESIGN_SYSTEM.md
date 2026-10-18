@@ -179,3 +179,11 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - Removidos metadados secundários redundantes da vista compacta: preço ID e criado em, preservados na base.
 - Overlay de consulta durante alterações de filtros de preços usa `ComparisonLoadingOverlay` e o estado `pending` da navegação. O `loading.tsx` de rota não garante overlay sobre a tela anterior no carregamento inicial por URL direta; não inventar timers para simulá-lo.
 - Validar no QA o comportamento visual, spinner durante filtros lentos e sort/paginação. Produção intocada.
+
+## Sprint 23.14.2 — Refinamento Lista de Preços (2026-10-18)
+- Mostrar MMVY em **uma linha**, sem separar Marca/Modelo e Versão/Ano-Modelo; permitir scroll horizontal da tabela em viewport reduzida.
+- Coluna de vigência intitulada **Vigência**.
+- Header da listagem utiliza `#DCE8ED` como outras tabelas administrativas; hover de linha utiliza `#EAF1F4`.
+- Coluna Editar centraliza o botão na mesma posição de cabeçalho; para rascunho usar edição existente. Para preços publicados manter registro histórico imutável e oferecer fluxo de novo rascunho de correção. **Ainda não existe alteração retroativa segura de valores publicados**, isso exige contrato auditável de correção/supersessão. Não oferecer edição direta que contorne guardas existentes.
+- Status Vigente é atualmente um badge CSS de texto, **não é SVG de Elementos**. Migração de status/iconografia depende de aprovar o componente visual; manter sem ícone se a referência visual pede apenas badge.
+- Barra de ações: **Cadastrar preços** antes de **Cadastrar políticas**.
