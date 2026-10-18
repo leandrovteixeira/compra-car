@@ -69,3 +69,12 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - Remove `lg:max-w-md` from specifications search: flexible search uses remaining horizontal space, retaining 40px height and official search icon.
 - Keep 40px close/discard beside the search, and Save at the far right with 40px primary control.
 - Figma visual measurement/interaction contract: [UX — Design Systems](https://www.figma.com/design/gFQSLkSSh3LZ0fHTWr06DT/compra-car?node-id=167-2), `Sprint 23 • Spacing, sizing, interaction contracts` frame. All spacings are targets until browser QA confirms them.
+
+## Sprint 23.7 — Global canonical radar (2026-10-17)
+- Compare Models uses selected MMVY cards and a multi-series radar over the ten categories.
+- Remove all MSRP ±3%, ±5%, ±10% band selectors from this page.
+- Every eligible current/public/priced vehicle is scored against the **same catalog-wide category reference**, independently of MSRP. Monetary perceived-value categories: highest eligible `vw_product_value_by_category.perceived_value` is 10. Space/Cargo: average of available feature-to-global-maximum ratios. Ownership: average of global maxima of energy, range, warranty, consumption, plus inverse ratio to global minimum of `fe`. Missing metrics remain N/D and are excluded from that model's available-category mean.
+- This definition reflects **current eligible catalog snapshot**; the maxima/minima change when catalog contents change. A frozen score requires an explicitly versioned benchmark snapshot in a future sprint.
+- Selection UI currently enforces three models and server rejects more than three. Corporate eight is **not enabled** until authenticated tier entitlements exist. Do not infer Corporate from admin.
+- Cost/benefit and equipment-per-currency ranking explicitly deferred; monetary price is not a divisor of the ten canonical dimension scores.
+- Verify performance of catalog-wide data loads before approving eight models, and run a baseline-vs-result alignment check in QA.
