@@ -12,7 +12,7 @@ import { CatalogPageHeading } from '@/components/admin/catalog-page-heading';
 import { loadAdminProductPublicPrices } from '@/server/admin-product-public-price-service';
 import { loadAdminProducts } from '@/server/admin-product-service';
 import { withDevTiming } from '@/server/dev-timing';
-import { publishProductPublicPriceAction, updateProductPublicPriceAction } from './actions';
+import { createProductPublicPriceAction, publishProductPublicPriceAction, updateProductPublicPriceAction } from './actions';
 
 interface AdminPricesPageProps {
   readonly searchParams: Promise<AdminPriceQuery>;
@@ -60,6 +60,7 @@ export default async function AdminPricesPage({ searchParams }: AdminPricesPageP
               label: `${product.brand} ${product.model} ${product.version} ${product.modelYear}`,
             }))}
             updateAction={updateProductPublicPriceAction}
+            createAction={createProductPublicPriceAction}
             publishAction={publishProductPublicPriceAction}
           />
         )}
