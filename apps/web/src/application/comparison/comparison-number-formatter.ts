@@ -57,7 +57,7 @@ export function formatComparisonNumericValue(
   value: number,
   metadata: ComparisonNumberMetadata,
 ): string {
-  const format = COMPARISON_NUMBER_FORMAT_BY_SPEC_CODE[metadata.code.trim().toUpperCase()];
+  const format = /efici[eê]ncia energ[eé]tica/i.test(metadata.label ?? '') ? 'two-decimals' : COMPARISON_NUMBER_FORMAT_BY_SPEC_CODE[metadata.code.trim().toUpperCase()];
   const formatter =
     format === 'integer'
       ? INTEGER_FORMAT
