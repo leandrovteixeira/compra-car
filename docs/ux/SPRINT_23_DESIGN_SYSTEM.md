@@ -159,3 +159,8 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - Catalog list scrollbar uses browser-native scrolling with themed scrollbar width 10px (WebKit/Chromium), track `#F6F7F8`, thumb `#9ABCC8`, hover `#61747B`, rounded thumb and 2px inset border. Firefox uses thin scrollbar and `scrollbar-color`.
 - Native scrollbar arrow buttons vary by browser/OS; do not emulate fake arrow controls that risk breaking accessibility.
 - QA: verify scrollbar stability and Save/Cancel alignment on desktop, and overlay appearance on slow catalog create/edit/duplicate.
+
+## Sprint 23.13.3 — Correção estrutural do alinhamento (2026-10-18)
+- A linha Novo Veículo deve conter as mesmas **cinco células HTML reais** das demais linhas: Veículo, Atividade, Publicação, Editar e Duplicar. Não simular estas colunas usando `colSpan=5` e um grid de percentuais interno; padding de célula, largura da tabela e scrollbar causavam desalinhamento.
+- Formulário com `id=catalog-new-vehicle` permanece dentro da primeira célula, contendo os quatro campos. Botão Salvar na quarta célula usa `form=catalog-new-vehicle` para acionar o submit externo ao formulário. Cancelar ocupa a quinta célula. Ambos herdam exatamente o alinhamento das ações existentes.
+- Critério QA: comparar centros horizontais de Salvar/Editar e Cancelar/Duplicar, com sidebar aberta/fechada e a linha criada no topo. Não considerar aprovado antes da verificação visual.
