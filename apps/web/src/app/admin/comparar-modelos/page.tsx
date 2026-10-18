@@ -26,7 +26,7 @@ export default async function CompareModelsPage({ searchParams }: Props) {
     overallScore: result.overallScore,
     categories: result.categories,
   }] : []);
-  return <main className="flex min-h-0 min-w-0 flex-col bg-background text-text-primary lg:h-[calc(100dvh-7.5rem)] lg:overflow-hidden">
+  return <main className="flex min-h-0 min-w-0 flex-col bg-background text-text-primary lg:h-[calc(100dvh-4.5rem)] lg:overflow-hidden">
     <CatalogPageHeading title="Comparar Modelos" description="Compare as notas canônicas dos veículos nas dez dimensões, independentemente do preço." />
     <ComparisonVehicleSelector
       options={first.options}
