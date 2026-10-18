@@ -31,15 +31,15 @@ export function MultiModelRadar({vehicles}: {readonly vehicles:readonly RadarVeh
   const show=(id:number)=>!hidden.includes(id);
   const focus=(id:number)=>setFocused(current=>current===id?null:id);
   return <section className="mt-2 grid min-h-0 min-w-0 flex-1 gap-3 lg:grid-cols-[minmax(0,1.55fr)_minmax(21rem,1fr)]">
-    <div className="flex min-h-0 min-w-0 flex-col rounded-lg border border-[#D6DEE3] bg-[#F6F7F8] p-3">
+    <div className="flex min-h-0 min-w-0 flex-col rounded-lg border border-[#D6DEE3] bg-white p-3">
       <h2 className="text-base font-semibold">Radar de avaliação</h2>
       <p className="mt-0.5 text-xs text-text-muted">Avaliação de modelos por categorias de especificações.</p>
       <div className="flex min-h-0 flex-1 items-center justify-center">
-        <svg role="img" aria-label="Avaliação de modelos por categorias de especificações" className="block h-full max-h-[min(52vh,540px)] min-h-0 w-full max-w-[610px]" preserveAspectRatio="xMidYMid meet" viewBox="0 0 340 340">
-          {[.25,.5,.75,1].map(level=><polygon key={level} points={categories.map((_,i)=>point(i,categories.length,level).join(',')).join(' ')} fill="none" stroke="#EAF1F4" strokeWidth=".8"/>)}
+        <svg role="img" aria-label="Avaliação de modelos por categorias de especificações" className="block h-full max-h-[min(62vh,620px)] min-h-0 w-full max-w-[760px]" preserveAspectRatio="xMidYMid meet" viewBox="0 0 340 340">
+          {[.25,.5,.75,1].map(level=><polygon key={level} points={categories.map((_,i)=>point(i,categories.length,level).join(',')).join(' ')} fill="none" stroke="#EAF1F4" strokeWidth="1"/>)}
           {categories.map((c,i)=>{const [x,y]=point(i,categories.length,1);return <line key={c.key} x1="170" y1="170" x2={x} y2={y} stroke="#EAF1F4" strokeWidth=".8"/>;})}
           {vehicles.map((v,i)=>{if(!show(v.id))return null;const dim=focused!==null&&focused!==v.id;return <polygon key={v.id} points={categories.map((c,j)=>point(j,categories.length,Math.max(0,Math.min(1,(v.categories.find(t=>t.key===c.key)?.score??0)/10))).join(',')).join(' ')} fill={COLORS[i%COLORS.length]} fillOpacity={dim?.015:.075} stroke={COLORS[i%COLORS.length]} strokeOpacity={dim?.18:1} strokeWidth={focused===v.id?2:1.5}/>;})}
-          {categories.map((c,i)=>{const [x,y]=point(i,categories.length,1.19);return <text key={c.key} x={x} y={y} textAnchor={x<160?'end':x>180?'start':'middle'} dominantBaseline="middle" fontSize="7" fontWeight="400" fill="#526670">{c.label}</text>;})}
+          {categories.map((c,i)=>{const [x,y]=point(i,categories.length,1.19);return <text key={c.key} x={x} y={y} textAnchor={x<160?'end':x>180?'start':'middle'} dominantBaseline="middle" fontSize="10" fontWeight="400" fill="#526670">{c.label}</text>;})}
         </svg>
       </div>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 pt-1">
