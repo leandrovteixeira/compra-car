@@ -27,7 +27,7 @@ interface AdminPriceListProps {
 function statusClass(status: PricingWorkflowStatus, expired: boolean): string {
   if (expired) return 'border-[#D6DEE3] bg-[#F1F3F5] text-[#697786]';
   return status === 'published'
-    ? 'border-[#AFE3C3] bg-[#EAF8EF] text-[#16854A]'
+    ? 'border-[#AFE3C3] bg-[#F1FAF5] text-[#16854A]'
     : status === 'needs_review'
       ? 'border-[#EDD19A] bg-[#FFF8E8] text-[#9B6A19]'
       : 'border-[#D6DEE3] bg-[#F1F3F5] text-[#697786]';
@@ -121,7 +121,7 @@ export function AdminPriceList({ page, onEdit, onCorrect, publishAction, onPubli
                 <td className="whitespace-nowrap text-text-secondary">{price.endsOn ? formatAdminDate(price.endsOn) : "—"}</td>
                 <td className="text-center">
                   <span
-                    className={`inline-flex min-w-[6.25rem] items-center justify-center rounded-full border px-2 py-0.5 text-xs font-semibold ${statusClass(price.status, isAdminPriceExpired(price.status, price.endsOn, operationalDate))}`}
+                    className={`inline-flex items-center justify-center rounded-full border px-2.5 py-1 text-xs font-medium ${statusClass(price.status, isAdminPriceExpired(price.status, price.endsOn, operationalDate))}`}
                   >
                     {adminPriceVisualStatusLabel(price.status, price.startsOn, price.endsOn, operationalDate)}
                   </span>
