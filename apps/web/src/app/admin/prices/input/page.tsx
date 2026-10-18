@@ -1,4 +1,3 @@
-import Link from 'next/link';
 
 import { requireRole } from '@/auth/authorization';
 import { AdminPriceBatchGrid } from '@/components/admin/admin-price-batch-grid';
@@ -15,12 +14,6 @@ export default async function AdminPriceInputPage() {
   return (
     <>
       <CatalogPageHeading title="Cadastrar Preços" description="Informe até 100 preços de uma vez; os registros são salvos como rascunhos para revisão." />
-      <div className="flex items-center py-3">
-        <Link href="/admin/prices" className="cc-outline-icon-action">
-          <img src="/carboot/back.svg" alt="" aria-hidden="true" className="size-4" />
-          Voltar aos preços
-        </Link>
-      </div>
       <section className="mt-0" aria-label="Lote manual de preços públicos">
         {!products.ok ? (
           <div
