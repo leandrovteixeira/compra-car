@@ -299,7 +299,7 @@ export function AdminPolicyBatchGrid({
 
       <div className="ui-table-frame overflow-x-auto lg:overflow-x-visible">
         <div
-          className={`${grid} admin-table-header hidden border-b border-border bg-[#DCE8ED] px-3 py-2 text-[0.6875rem] font-semibold uppercase tracking-wide text-text-muted lg:grid`}
+          className={`${grid} !static !top-auto hidden min-h-9 items-center border-b border-[#D6DEE3] bg-[#DCE8ED] px-3 py-2 text-[0.6875rem] font-semibold uppercase tracking-wide text-[#61747B] lg:grid`}
         >
           {productId === undefined ? <span>Veículo</span> : null}
           <span>Tipo</span>
@@ -549,7 +549,7 @@ export function AdminPolicyBatchGrid({
           ) : null}
         </div>
         <button
-          className={buttonClassName({ variant: 'interactive' })}
+          className="cc-btn cc-btn--m cc-btn--primary !h-10"
           disabled={
             pending ||
             filled === 0 ||
