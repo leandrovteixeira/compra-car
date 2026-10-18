@@ -195,3 +195,11 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - Exact header consistency: shared color `#DCE8ED` across vehicle/pricing admin tables, but legacy list and table wrappers may still differ in padding, sticky position and line height; visual QA is required before claiming pixel identity.
 - Existing published prices remain immutable through current update command. **Corrigir** opens a prefilled **new draft** via the existing creation action with product/amount/vigency inherited. The dialog states that the old published row remains unchanged. This is a safe preliminary correction workflow, *not yet automatic supersession*: ensure review and no overlapping published periods before release. Do not bypass workflow, don't claim direct historical edits.
 - UX action order: **Cadastrar preços**, then **Cadastrar políticas**.
+
+## Sprint 23.14.4 — Price-list CSS badges, full scroll & technical-sheet actions (2026-10-18)
+- Status badges temporarily revert to compact **CSS** in Prices and Vehicles. Do not use the rejected oversized SVGs, though retain assets in Elements/Git.
+- Prices: all headings and values centered except the MMVY column, whose text remains left-aligned. Header cells use `#DCE8ED`; hover cells `#EAF1F4`.
+- No visible pagination in Lista de Preços: the server retrieves all internal repository pages in bounded groups for the current filter/sort and displays them in one scrollable table; no truncation of records or financial rule changes.
+- Technical sheet detail page uses `CatalogPageHeading` with model title, subtitle and 1px divider. Below: consistent horizontal toolbar with Voltar aos modelos, Salvar PDF and Compartilhar using official Figma back/download/share SVG assets.
+- Technical sheet sharing uses native share API when supported, otherwise copies the URL. `Salvar PDF` opens the browser print dialog, where user selects Save as PDF; **there is no dedicated server-side technical sheet PDF endpoint yet**. Print CSS expands technical table and avoids clipping its scroll container.
+- Check page screenshot and browser print preview before calling visual/print release approved.
