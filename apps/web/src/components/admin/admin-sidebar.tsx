@@ -8,7 +8,7 @@ import { UserMenu } from '../user-menu';
 
 const names: Record<string,string> = {
   Home: 'home', 'Veículos':'car', Preços:'docs', 'Inteligência':'intelligence',
-  'Educação':'atom', Agentes:'bot', 'Configurações':'config', Conta:'account'
+  'Educação':'atom', Agentes:'bot', 'Configurações':'config', Chat:'chat', News:'news', Conta:'account'
 };
 
 function NavIcon({ name }: { readonly name: string }) {
