@@ -89,9 +89,10 @@ export async function publishAdminProductPublicPrice(formData: FormData): Promis
  */
 export async function loadAllAdminProductPublicPrices(
   input: ListProductPublicPricesInput = {},
+  displaySort?: 'endsOn',
 ): Promise<AdminProductPublicPriceListResult> {
   const first = await loadAdminProductPublicPrices({ ...input, page: 1 });
-  if (!first.ok || first.data.pageCount <= 1) return first;
+  if (!first.ok) return first;
   const items = [...first.data.items];
   for (let start = 2; start <= first.data.pageCount; start += 6) {
     const end = Math.min(first.data.pageCount, start + 5);
@@ -104,6 +105,27 @@ export async function loadAllAdminProductPublicPrices(
     for (const page of pages) {
       if (page.ok) items.push(...page.data.items);
     }
+  }
+  // Apply the final sort after retrieving every database page; a page-local sort
+  // cannot guarantee correct ordering of the full visible result set.
+  const field = displaySort ?? input.sort;
+  const direction = input.direction === 'asc' ? 1 : -1;
+  const collator = new Intl.Collator('pt-BR', { sensitivity: 'base', numeric: true });
+  if (field === 'vehicle' || field === 'endsOn') {
+    items.sort((a,b) => {
+      if (field === 'endsOn') {
+        if (a.endsOn === null && b.endsOn !== null) return 1;
+        if (b.endsOn === null && a.endsOn !== null) return -1;
+        const dates = (a.endsOn ?? '').localeCompare(b.endsOn ?? '');
+        if (dates !== 0) return direction * dates;
+      } else {
+        const vehicleName = (price: typeof a) =>
+          [price.product.brand,price.product.model,price.product.version,price.product.modelYear].join(' ');
+        const names = collator.compare(vehicleName(a),vehicleName(b));
+        if (names !== 0) return direction * names;
+      }
+      return String(a.id).localeCompare(String(b.id), 'pt-BR', { numeric: true });
+    });
   }
   return { ok: true, data: { ...first.data, page: 1, pageCount: 1, items } };
 }
