@@ -441,7 +441,7 @@ export function CommercialOfferBuilder({
       <div className="flex justify-end">
         <button
           disabled={pending || filledCount === 0 || hasConflict}
-          className="min-h-11 rounded-xl bg-sky-500 px-5 font-bold text-slate-950 disabled:opacity-50"
+          className="cc-btn cc-btn--m cc-btn--primary !h-10 disabled:opacity-50"
         >
           {pending ? 'Salvando…' : 'Salvar ofertas'}
         </button>
