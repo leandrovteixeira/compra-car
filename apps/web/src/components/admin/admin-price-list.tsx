@@ -81,7 +81,7 @@ export function AdminPriceList({ page, onEdit, publishAction, onPublished }: Adm
   return (
     <div className={`${tableFrameClassName} admin-pricing-table-frame`}>
       <div className="admin-pricing-table-scroll overflow-auto">
-        <table className={`${tableClassName} min-w-[64rem]`}>
+        <table className={`${tableClassName} min-w-[56rem]`}>
           <caption className="sr-only">Preços públicos cadastrados</caption>
           <thead className="admin-pricing-table-header">
             <tr>
@@ -92,19 +92,16 @@ export function AdminPriceList({ page, onEdit, publishAction, onPublished }: Adm
                 Preço público
               </SortHeader>
               <SortHeader page={page} field="startsOn">
-                Vigência
+                Início vigência
               </SortHeader>
               <SortHeader page={page} field="status">
                 Status
               </SortHeader>
-              <SortHeader page={page} field="publishedAt">
-                Publicação
-              </SortHeader>
               <SortHeader page={page} field="updatedAt">
-                Atualização
+                Atualizado em
               </SortHeader>
               <th className="font-semibold" scope="col">
-                Ações
+                Editar
               </th>
             </tr>
           </thead>
@@ -121,9 +118,6 @@ export function AdminPriceList({ page, onEdit, publishAction, onPublished }: Adm
                 </td>
                 <td className="whitespace-nowrap font-semibold text-text-primary">
                   <p>{formatAdminPrice(price.money.amount, price.money.currencyCode)}</p>
-                  <p className="mt-0.5 font-mono text-xs font-normal text-text-muted">
-                    Preço #{price.id}
-                  </p>
                 </td>
                 <td className="whitespace-nowrap text-text-secondary">
                   <p>{formatAdminDate(price.startsOn)}</p>
@@ -144,13 +138,7 @@ export function AdminPriceList({ page, onEdit, publishAction, onPublished }: Adm
                   </span>
                 </td>
                 <td className="whitespace-nowrap text-text-secondary">
-                  {price.publishedAt ? formatAdminDate(price.publishedAt) : 'Não publicado'}
-                </td>
-                <td className="whitespace-nowrap text-text-secondary">
                   <p>{formatAdminDate(price.updatedAt)}</p>
-                  <p className="mt-0.5 text-xs text-text-muted">
-                    Criado em {formatAdminDate(price.createdAt)}
-                  </p>
                 </td>
                 <td>
                   <div className="flex gap-2">
