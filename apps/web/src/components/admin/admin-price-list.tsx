@@ -92,17 +92,16 @@ export function AdminPriceList({ page, onEdit, publishAction, onPublished }: Adm
                 Preço público
               </SortHeader>
               <SortHeader page={page} field="startsOn">
-                Vigência
+                Vigência De
               </SortHeader>
+              <th scope="col" className="bg-[#DCE8ED] font-semibold">Vigência Até</th>
               <SortHeader page={page} field="status">
                 Status
               </SortHeader>
               <SortHeader page={page} field="updatedAt">
                 Atualizado em
               </SortHeader>
-              <th className="bg-[#DCE8ED] text-center font-semibold" scope="col">
-                Editar
-              </th>
+              <th className="bg-[#DCE8ED] text-center font-semibold" scope="col">Editar</th>
             </tr>
           </thead>
           <tbody>
@@ -116,20 +115,18 @@ export function AdminPriceList({ page, onEdit, publishAction, onPublished }: Adm
                 </td>
                 <td className="whitespace-nowrap text-text-secondary">
                   <p>{formatAdminDate(price.startsOn)}</p>
-                  <p className="mt-0.5 text-xs text-text-muted">
-                    até {formatAdminDate(price.endsOn)}
-                  </p>
+
                 </td>
+                <td className="whitespace-nowrap text-text-secondary">{price.endsOn ? formatAdminDate(price.endsOn) : "—"}</td>
                 <td>
                   <span
-                    className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${statusClass(price.status, isAdminPriceExpired(price.status, price.endsOn, operationalDate))}`}
+                    className={`inline-flex items-center rounded-full border px-2 py-1 text-xs font-semibold ${statusClass(price.status, isAdminPriceExpired(price.status, price.endsOn, operationalDate))}`}
                   >
-                    {adminPriceVisualStatusLabel(
-                      price.status,
-                      price.startsOn,
-                      price.endsOn,
-                      operationalDate,
-                    )}
+                    {(() => {
+                      const label = adminPriceVisualStatusLabel(price.status, price.startsOn, price.endsOn, operationalDate);
+                      const icon = label === 'Vigente' ? 'vigente' : label === 'Expirado' ? 'expired' : label === 'Rascunho' ? 'draft' : null;
+                      return icon ? <img src={`/carboot/status_${icon}.svg`} alt={label} className="h-5 w-auto max-w-28 object-contain" /> : label;
+                    })()}
                   </span>
                 </td>
                 <td className="whitespace-nowrap text-text-secondary">
