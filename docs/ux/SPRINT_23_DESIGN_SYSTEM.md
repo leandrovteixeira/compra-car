@@ -164,3 +164,6 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - A linha Novo Veículo deve conter as mesmas **cinco células HTML reais** das demais linhas: Veículo, Atividade, Publicação, Editar e Duplicar. Não simular estas colunas usando `colSpan=5` e um grid de percentuais interno; padding de célula, largura da tabela e scrollbar causavam desalinhamento.
 - Formulário com `id=catalog-new-vehicle` permanece dentro da primeira célula, contendo os quatro campos. Botão Salvar na quarta célula usa `form=catalog-new-vehicle` para acionar o submit externo ao formulário. Cancelar ocupa a quinta célula. Ambos herdam exatamente o alinhamento das ações existentes.
 - Critério QA: comparar centros horizontais de Salvar/Editar e Cancelar/Duplicar, com sidebar aberta/fechada e a linha criada no topo. Não considerar aprovado antes da verificação visual.
+
+## Sprint 23.13.4 — Vertical alignment of inline create actions
+- The real table cells preserve exact horizontal alignment with Editar/Duplicar. Add 24px of internal top spacing before Save and Cancel so their control baselines align with the four vehicle inputs below the row caption. Verify visually in QA.
