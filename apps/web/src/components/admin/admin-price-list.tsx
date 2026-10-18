@@ -3,6 +3,11 @@
 import type { ProductPublicPriceListPageDto, PricingWorkflowStatus } from '@compra-car/contracts';
 import { isProductPublicPriceEditable } from '@compra-car/core';
 import Link from 'next/link';
+import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import { createProductPublicPriceAction, updateProductPublicPriceAction } from '@/app/admin/prices/actions';
+import { amountToPtBrInput } from '@/application/admin/product-public-price-form';
+import { ComparisonLoadingOverlay } from '@/components/admin/comparison-loading-overlay';
 import { useSearchParams } from 'next/navigation';
 import { buttonClassName, tableClassName, tableFrameClassName } from '@compra-car/ui';
 
@@ -77,10 +82,45 @@ function SortHeader({
 }
 
 export function AdminPriceList({ page, onEdit, onCorrect, publishAction, onPublished }: AdminPriceListProps) {
+  const router = useRouter();
+  const [editingId,setEditingId] = useState<string | null>(null);
+  const [draft,setDraft] = useState({ amount:'', startsOn:'',endsOn:'' });
+  const [feedback,setFeedback] = useState('');
+  const [pending,startTransition] = useTransition();
   const operationalDate = operationalDateInSaoPaulo();
+  function openEditor(price: ProductPublicPriceListPageDto['items'][number]) {
+    setEditingId(price.id);
+    setFeedback('');
+    setDraft({ amount:amountToPtBrInput(price.money.amount),startsOn:price.startsOn,endsOn:price.endsOn ?? '' });
+  }
+  function save(price: ProductPublicPriceListPageDto['items'][number]) {
+    if(pending) return;
+    const data = new FormData();
+    data.set('id', isProductPublicPriceEditable(price.status) ? price.id : '');
+    data.set('lockVersion', isProductPublicPriceEditable(price.status) ? String(price.lockVersion) : '');
+    data.set('productId',String(price.product.id));
+    data.set('amount',draft.amount);
+    data.set('startsOn',draft.startsOn);
+    data.set('endsOn',draft.endsOn);
+    startTransition(async () => {
+      try {
+        const state = {status:'idle' as const,values:{id:'',productId:String(price.product.id),amount:'',startsOn:'',endsOn:'',lockVersion:''},fieldErrors:{}};
+        const result = isProductPublicPriceEditable(price.status)
+          ? await updateProductPublicPriceAction(state,data)
+          : await createProductPublicPriceAction(state,data);
+        if(result.status === 'success') {
+          setEditingId(null);
+          setFeedback(isProductPublicPriceEditable(price.status) ? 'Preço atualizado.' : 'Rascunho de correção criado; o preço publicado foi preservado.');
+          router.refresh();
+        } else setFeedback(('message' in result ? result.message : '') || 'Revise os campos de preço e vigência.');
+      } catch {setFeedback('Não foi possível salvar. Nenhuma alteração foi confirmada.');}
+    });
+  }
   const currentParams = useSearchParams();
   return (
     <div className={`${tableFrameClassName} admin-pricing-table-frame`}>
+      {pending && <ComparisonLoadingOverlay />}
+      {feedback && <p role="status" className="px-3 py-1 text-xs text-[#526670]">{feedback}</p>}
       <div className="admin-pricing-table-scroll overflow-auto">
         <table className={`${tableClassName} min-w-[56rem]`}>
           <caption className="sr-only">Preços públicos cadastrados</caption>
@@ -112,13 +152,13 @@ export function AdminPriceList({ page, onEdit, onCorrect, publishAction, onPubli
                   <span className="cc-type-data !font-semibold text-[#1A1D21]">{price.product.brand} {price.product.model} {price.product.version} {price.product.modelYear}</span>
                 </td>
                 <td className="whitespace-nowrap text-center font-semibold text-text-primary">
-                  <p>{formatAdminPrice(price.money.amount, price.money.currencyCode)}</p>
+                  {editingId === price.id ? <input aria-label="Preço público" className="ui-field !h-8 w-32 text-center text-xs" value={draft.amount} onChange={event=>setDraft(d=>({...d,amount:event.target.value}))} /> : <p>{formatAdminPrice(price.money.amount, price.money.currencyCode)}</p>}
                 </td>
                 <td className="whitespace-nowrap text-center text-text-secondary">
-                  <p>{formatAdminDate(price.startsOn)}</p>
+                  {editingId === price.id ? <input type="date" aria-label="Vigência De" className="ui-field !h-8 w-36 text-xs" value={draft.startsOn} onChange={event=>setDraft(d=>({...d,startsOn:event.target.value}))}/> : <p>{formatAdminDate(price.startsOn)}</p>}
 
                 </td>
-                <td className="whitespace-nowrap text-center text-text-secondary">{price.endsOn ? formatAdminDate(price.endsOn) : "—"}</td>
+                <td className="whitespace-nowrap text-center text-text-secondary">{editingId === price.id ? <input type="date" aria-label="Vigência Até" className="ui-field !h-8 w-36 text-xs" value={draft.endsOn} onChange={event=>setDraft(d=>({...d,endsOn:event.target.value}))} /> : price.endsOn ? formatAdminDate(price.endsOn) : "—"}</td>
                 <td className="text-center">
                   <span
                     className={`inline-flex items-center justify-center rounded-full border px-2.5 py-1 text-xs font-medium ${statusClass(price.status, isAdminPriceExpired(price.status, price.endsOn, operationalDate))}`}
@@ -131,18 +171,13 @@ export function AdminPriceList({ page, onEdit, onCorrect, publishAction, onPubli
                 </td>
                 <td className="text-center">
                   <div className="flex items-center justify-center gap-2">
-                    {isProductPublicPriceEditable(price.status) ? (
-                      <button
-                        className="cc-btn cc-btn--p cc-btn--secondary admin-catalog-action group-hover:!bg-[#1A1D21] group-hover:!text-white"
-                        onClick={(event) => onEdit(price.id, event.currentTarget)}
-                        type="button"
-                      >
-                        Editar
-                      </button>
-                    ) : (
-                      <button type="button" title="Criar rascunho de correção sem modificar o preço publicado" onClick={event => onCorrect(price.id, event.currentTarget)} className="cc-btn cc-btn--p cc-btn--secondary admin-catalog-action group-hover:!bg-[#1A1D21] group-hover:!text-white">Corrigir</button>
-                    )}
-                    {price.status === 'draft' || price.status === 'needs_review' ? (
+                    {editingId === price.id ? (
+                      <>
+                        <button type="button" disabled={pending} onClick={()=>save(price)} className="cc-btn cc-btn--p cc-btn--primary">Salvar</button>
+                        <button type="button" disabled={pending} onClick={()=>{setEditingId(null);setFeedback('');}} className="cc-btn cc-btn--p cc-btn--secondary">Cancelar</button>
+                      </>
+                    ) : <button type="button" disabled={pending || editingId !== null} onClick={()=>openEditor(price)} className="cc-btn cc-btn--p cc-btn--secondary admin-catalog-action group-hover:!bg-[#1A1D21] group-hover:!text-white">{isProductPublicPriceEditable(price.status)?'Editar':'Corrigir'}</button>}
+                    {editingId !== price.id && (price.status === 'draft' || price.status === 'needs_review') ? (
                       <form
                         action={async (data) => {
                           if (
