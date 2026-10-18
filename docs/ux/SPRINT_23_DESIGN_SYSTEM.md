@@ -173,3 +173,9 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - Pricing toolbar now includes search with official magnifying-glass icon and 40px input, 40px Status dropdown, official close reset, Cadastrar políticas secondary action and Cadastrar preços primary graphite action.
 - Pricing MMVY labels omit separator dash before model year. No financial formulas or price status semantics changed.
 - Stage B backlog: Cadastrar Preços batch and Cadastrar Políticas workspace UI consolidation, with functional regression checks prior to QA approval. Do not touch Production.
+
+## Sprint 23.14.1 — Recuperação do desenho original de Preços (2026-10-18)
+- Fonte Figma recuperada: página `UX — Preços`, frame **01 • Preços Públicos — listagem limpa / Vigente**, node `85:64` no arquivo `gFQSLkSSh3LZ0fHTWr06DT`. Layout simplificado da tabela: **Veículo, Preço Público, Início Vigência, Status, Atualizado em, Editar**; sem colunas independentes de Publicação. Manter ação Publicar nos rascunhos, sem alterar as regras financeiras.
+- Removidos metadados secundários redundantes da vista compacta: preço ID e criado em, preservados na base.
+- Overlay de consulta durante alterações de filtros de preços usa `ComparisonLoadingOverlay` e o estado `pending` da navegação. O `loading.tsx` de rota não garante overlay sobre a tela anterior no carregamento inicial por URL direta; não inventar timers para simulá-lo.
+- Validar no QA o comportamento visual, spinner durante filtros lentos e sort/paginação. Produção intocada.
