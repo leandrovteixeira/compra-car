@@ -9,6 +9,7 @@ import {
   updateAdminProductInlineAction,
 } from '@/app/admin/products/actions';
 import { createAdminProductAction } from '@/app/admin/products/new/actions';
+import { ComparisonLoadingOverlay } from './comparison-loading-overlay';
 import { AdminProductStatusToggle } from './admin-product-status-toggle';
 
 interface AdminProductListProps {
@@ -192,6 +193,7 @@ export function AdminProductList({ products, brands, initialNew = false }: Admin
 
   return (
     <div className="admin-catalog-table-frame min-w-0 overflow-hidden rounded-lg border border-[#D6DEE3] bg-white">
+      {pending && <ComparisonLoadingOverlay />}
       <div className="admin-catalog-table-scroll min-w-0 w-full overflow-auto [scrollbar-gutter:stable]">
         <table data-editing={opened ? "true" : "false"} className="ui-table w-full min-w-[56rem] table-fixed">
           <caption className="sr-only">Veículos cadastrados</caption>
@@ -233,12 +235,12 @@ export function AdminProductList({ products, brands, initialNew = false }: Admin
                       </div>
                       <span aria-hidden="true"/>
                       <span aria-hidden="true"/>
-                      <div className="flex justify-center">
+                      <div className="flex items-center justify-center">
                         <button type="submit" disabled={pending} className="cc-btn cc-btn--p cc-btn--primary w-[min(100%,6rem)]">
                           {pending?'Salvando…':'Salvar'}
                         </button>
                       </div>
-                      <div className="flex justify-center">
+                      <div className="flex items-center justify-center">
                         <button type="button" disabled={pending}
                           onClick={()=>{cancel();router.replace('/admin/products',{scroll:false});}}
                           className="cc-btn cc-btn--p cc-btn--secondary w-[min(100%,6rem)]">Cancelar</button>
