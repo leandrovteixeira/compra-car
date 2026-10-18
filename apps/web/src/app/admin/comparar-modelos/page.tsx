@@ -1,27 +1,43 @@
 import { CatalogPageHeading } from '@/components/admin/catalog-page-heading';
-import Link from 'next/link';
-import { SellerModelPicker } from '@/components/seller-model-picker';
-import { SellerModelRadar } from '@/components/seller-model-radar';
-import { loadSellerModelScore,type SellerScoreRadius } from '@/server/seller-model-score-service';
-interface Props{readonly searchParams:Promise<{readonly product?:string|readonly string[];readonly radius?:string|readonly string[]}>}
-function first(v:string|readonly string[]|undefined){return Array.isArray(v)?v[0]:v;}
-function parseRadius(v:string|readonly string[]|undefined):SellerScoreRadius{const n=Number(first(v));return n===3||n===10?n:5;}
-function money(v:number){return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0}).format(v);}
-function score(v:number|null){return v===null?'N/D':v.toFixed(1).replace('.',',');}
-export default async function SellerModelPage({searchParams}:Props){const params=await searchParams;const radius=parseRadius(params.radius);const raw=Number(first(params.product));const id=Number.isSafeInteger(raw)&&raw>0?raw:null;const result=await loadSellerModelScore(id,radius);
-return <section className="min-w-0 bg-background text-text-primary"><div className="mx-auto w-full max-w-[100rem]">
- <CatalogPageHeading title="Comparar Modelos" description="Valor percebido contra veículos de preço semelhante." />
- <div className="mt-3"><SellerModelPicker options={result.options} radius={radius} showLabel={false} basePath="/admin/comparar-modelos"/></div>
- {!result.selected?<div className="ui-surface mt-3 flex min-h-64 items-center justify-center text-center"><div><h2 className="text-lg font-semibold">Escolha um modelo</h2><p className="mt-1 text-sm text-text-muted">Use a busca acima para abrir o score e o radar.</p></div></div>:
- <section className="mt-3 min-w-0">
-  <div className="ui-surface !px-4 !py-3"><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-lg font-semibold">{result.selected.label}</h2><p className="text-sm text-text-muted">MSRP vigente: {money(result.selected.price)}</p></div><div className="flex items-center gap-2"><span className="text-xs font-semibold text-text-muted">Raio</span>{[3,5,10].map(v=><Link className={`ui-button ui-button--compact ${radius===v?'ui-button--primary':'ui-button--secondary'}`} href={`/admin/comparar-modelos?product=${result.selected!.id}&radius=${v}`} key={v}>±{v}%</Link>)}</div></div></div>
-  <div className="mt-3 grid gap-3 xl:h-[29rem] xl:grid-cols-[10rem_minmax(0,1fr)_28rem] xl:items-stretch">
-   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1 xl:grid-rows-2">
-    <div className="flex min-h-32 flex-col justify-between rounded-xl border border-border bg-surface-muted p-4 xl:min-h-0"><span className="text-sm font-semibold uppercase tracking-wide text-text-secondary">Score</span><strong className="self-center text-4xl font-semibold leading-none xl:text-5xl">{score(result.overallScore)}</strong><span className="text-center text-[0.6875rem] text-text-muted">valor percebido</span></div>
-    <div className="flex min-h-32 flex-col justify-between rounded-xl border border-border bg-surface-muted p-4 xl:min-h-0"><span className="text-sm font-semibold uppercase tracking-wide text-text-secondary">Modelos</span><strong className="self-center text-4xl font-semibold leading-none xl:text-5xl">{result.peerCount}</strong><span className="text-center text-[0.6875rem] text-text-muted">no raio de ±{radius}%</span></div>
-   </div>
-   <SellerModelRadar categories={result.categories}/>
-   <div className="ui-surface !p-4"><h2 className="text-base font-semibold">Notas por categoria</h2><div className="mt-3 grid grid-cols-2 gap-x-6">{result.categories.map(c=><div className="flex items-center justify-between gap-3 border-b border-border py-2" key={c.key}><span className="text-xs text-text-secondary">{c.label}</span><span className="text-sm font-semibold">{score(c.score)}</span></div>)}</div><p className="mt-3 text-[0.6875rem] leading-4 text-text-muted">10 = maior valor observado na categoria dentro do raio. Espaço + Carga usa dimensões físicas.</p></div>
-  </div>
- </section>}
-</div></section>}
+import { ComparisonVehicleSelector } from '@/components/admin/comparison-vehicle-selector';
+import { MultiModelRadar } from '@/components/admin/multi-model-radar';
+import { loadSellerModelScore } from '@/server/seller-model-score-service';
+
+interface Props {
+  readonly searchParams: Promise<{ readonly vehicles?: string | readonly string[] }>;
+}
+
+const MAX_VEHICLES = 3; // Upgrade to 8 only after account-tier entitlement is verified server-side.
+
+export default async function CompareModelsPage({ searchParams }: Props) {
+  const params = await searchParams;
+  const raw = typeof params.vehicles === 'string' ? params.vehicles.split(',') : [];
+  const ids = [...new Set(raw.map(Number))].filter(id => Number.isSafeInteger(id) && id > 0);
+  const malformed = Boolean(params.vehicles) && (raw.length !== ids.length || ids.length > MAX_VEHICLES);
+  // Radius no longer affects scores; the argument is retained for API compatibility.
+  const first = await loadSellerModelScore(null, 5);
+  const allowed = new Set(first.options.map(option => option.id));
+  const validIds = ids.filter(id => allowed.has(id));
+  const scores = malformed ? [] : await Promise.all(validIds.map(id => loadSellerModelScore(id, 5)));
+  const vehicles = scores.flatMap(result => result.selected ? [{
+    id: result.selected.id,
+    label: result.selected.label,
+    price: result.selected.price,
+    overallScore: result.overallScore,
+    categories: result.categories,
+  }] : []);
+  return <main className="min-w-0 bg-background text-text-primary">
+    <CatalogPageHeading title="Comparar Modelos" description="Compare as notas canônicas dos veículos nas dez dimensões, independentemente do preço." />
+    <ComparisonVehicleSelector
+      options={first.options}
+      initialIds={malformed ? [] : validIds.map(String)}
+      maxVehicles={MAX_VEHICLES}
+      basePath="/admin/comparar-modelos"
+      actionLabel="Comparar modelos"
+    />
+    {malformed && <p role="alert" className="my-2 text-sm text-status-error">Seleção inválida. Escolha até três modelos para comparar.</p>}
+    {vehicles.length < 2
+      ? <div className="ui-surface mt-2 flex min-h-52 items-center justify-center text-center"><div><h2 className="text-base font-semibold">Selecione pelo menos dois veículos</h2><p className="mt-1 text-sm text-text-muted">Use a busca acima; cada seleção será adicionada a um card.</p></div></div>
+      : <MultiModelRadar vehicles={vehicles}/>}
+  </main>;
+}
