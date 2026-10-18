@@ -5,7 +5,7 @@ import { isProductPublicPriceEditable } from '@compra-car/core';
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { createProductPublicPriceAction, updateProductPublicPriceAction } from '@/app/admin/prices/actions';
+import { correctPublishedProductPublicPriceAction, updateProductPublicPriceAction } from '@/app/admin/prices/actions';
 import { amountToPtBrInput } from '@/application/admin/product-public-price-form';
 import { ComparisonLoadingOverlay } from '@/components/admin/comparison-loading-overlay';
 import { useSearchParams } from 'next/navigation';
@@ -91,11 +91,7 @@ export function AdminPriceList({ page, onEdit, onCorrect, publishAction, onPubli
   function openEditor(price: ProductPublicPriceListPageDto['items'][number]) {
     setEditingId(price.id);
     setFeedback('');
-    const editable = isProductPublicPriceEditable(price.status);
-    const today = operationalDateInSaoPaulo();
-    const nextDay = new Date(Date.parse(price.startsOn + 'T00:00:00Z') + 86400000).toISOString().slice(0,10);
-    const correctionStart = editable ? price.startsOn : (today > price.startsOn ? today : nextDay);
-    setDraft({ amount:amountToPtBrInput(price.money.amount),startsOn:correctionStart,endsOn:price.endsOn && price.endsOn >= correctionStart ? price.endsOn : '' });
+    setDraft({ amount:amountToPtBrInput(price.money.amount),startsOn:price.startsOn,endsOn:price.endsOn ?? '' });
   }
   function save(price: ProductPublicPriceListPageDto['items'][number]) {
     if(pending) return;
@@ -104,8 +100,8 @@ export function AdminPriceList({ page, onEdit, onCorrect, publishAction, onPubli
     if (!/^\d{4}-\d{2}-\d{2}$/.test(draft.startsOn)) { setFeedback('Informe a data inicial da vigência.'); return; }
     if (draft.endsOn && draft.endsOn < draft.startsOn) { setFeedback('A vigência final não pode anteceder a inicial.'); return; }
     const data = new FormData();
-    data.set('id', isProductPublicPriceEditable(price.status) ? price.id : '');
-    data.set('lockVersion', isProductPublicPriceEditable(price.status) ? String(price.lockVersion) : '');
+    data.set('id', price.id);
+    data.set('lockVersion', String(price.lockVersion));
     data.set('productId',String(price.product.id));
     data.set('amount',draft.amount);
     data.set('startsOn',draft.startsOn);
@@ -115,13 +111,12 @@ export function AdminPriceList({ page, onEdit, onCorrect, publishAction, onPubli
         const state = {status:'idle' as const,values:{id:'',productId:String(price.product.id),amount:'',startsOn:'',endsOn:'',lockVersion:''},fieldErrors:{}};
         const result = isProductPublicPriceEditable(price.status)
           ? await updateProductPublicPriceAction(state,data)
-          : await createProductPublicPriceAction(state,data);
+          : await correctPublishedProductPublicPriceAction(state,data);
         if(result.status === 'success') {
           setEditingId(null);
           const editable = isProductPublicPriceEditable(price.status);
-          setFeedback(editable ? 'Preço atualizado.' : 'Rascunho de correção criado. Revise-o antes de publicar.');
-          if (!editable) router.replace('/admin/prices?status=draft', {scroll:false});
-          else router.refresh();
+          setFeedback(editable ? 'Preço atualizado.' : 'Preço corrigido, com histórico preservado na auditoria.');
+          router.refresh();
         } else {
           const errors = 'fieldErrors' in result && result.fieldErrors
             ? Object.values(result.fieldErrors).flat().filter(Boolean).join(' ')
