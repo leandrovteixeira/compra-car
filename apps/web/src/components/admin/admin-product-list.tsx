@@ -13,6 +13,7 @@ import { AdminProductStatusToggle } from './admin-product-status-toggle';
 
 interface AdminProductListProps {
   readonly products: readonly AdminProductListItem[];
+  readonly brands: readonly string[];
   readonly initialNew?: boolean;
 }
 
@@ -44,7 +45,7 @@ function draftFrom(product: AdminProductListItem, mode: Mode): Draft {
 const cellInput =
   'h-8 w-full min-w-0 rounded-md border border-[#D6DEE3] bg-white px-2 text-sm text-[#1A1D21] focus:border-[#9ABCC8] focus:outline-none focus:ring-2 focus:ring-[#9ABCC8]/25';
 
-export function AdminProductList({ products, initialNew = false }: AdminProductListProps) {
+export function AdminProductList({ products, brands, initialNew = false }: AdminProductListProps) {
   const router = useRouter();
   const [opened, setOpened] = useState<{ id: string; mode: Mode } | null>(null);
   const [creating, setCreating] = useState(initialNew);
@@ -53,7 +54,6 @@ export function AdminProductList({ products, initialNew = false }: AdminProductL
   const [newDraft, setNewDraft] = useState({brand:'',model:'',version:'',modelYear:''});
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const brands = [...new Set(products.map((p) => p.brand))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
 
   const start = (product: AdminProductListItem, mode: Mode) => {
     setOpened({ id: product.id, mode });
@@ -164,6 +164,7 @@ export function AdminProductList({ products, initialNew = false }: AdminProductL
   const create = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (pending) return;
+    if (!brands.includes(newDraft.brand)) { setMessage('Selecione uma marca cadastrada.'); return; }
     const data = new FormData();
     for (const [key,value] of Object.entries(newDraft)) data.set(key,value.trim());
     data.set('productionYear',newDraft.modelYear.trim());
@@ -191,7 +192,7 @@ export function AdminProductList({ products, initialNew = false }: AdminProductL
 
   return (
     <div className="admin-catalog-table-frame min-w-0 overflow-hidden rounded-lg border border-[#D6DEE3] bg-white">
-      <div className="admin-catalog-table-scroll min-w-0 w-full overflow-auto">
+      <div className="admin-catalog-table-scroll min-w-0 w-full overflow-auto [scrollbar-gutter:stable]">
         <table data-editing={opened ? "true" : "false"} className="ui-table w-full min-w-[56rem] table-fixed">
           <caption className="sr-only">Veículos cadastrados</caption>
           <colgroup><col /><col style={{ width: "11%" }} /><col style={{ width: "11%" }} /><col style={{ width: "11%" }} /><col style={{ width: "11%" }} /></colgroup>
@@ -205,28 +206,49 @@ export function AdminProductList({ products, initialNew = false }: AdminProductL
             </tr>
           </thead>
           <tbody>
-            {creating && <tr className="border-l-4 border-l-[#EF7732] bg-[#F4F9FB]">
-              <td colSpan={5} className="px-3 py-3">
-                <form onSubmit={create}>
-                  <p className="mb-2 text-xs font-semibold text-[#61747B]">NOVO VEÍCULO — CADASTRO MANUAL</p>
-                  <div className="flex flex-wrap items-center gap-2">
-                    {(['brand','model','version','modelYear'] as const).map((field) => (
-                      <label key={field} className={field==='version' ? 'min-w-[12rem] flex-[2_1_18rem]' : 'min-w-[7.5rem] flex-[1_1_9rem]'}>
-                        <span className="sr-only">{{brand:'Marca',model:'Modelo',version:'Versão',modelYear:'Ano-modelo'}[field]}</span>
-                        <input className={cellInput} required value={newDraft[field]}
-                          placeholder={{brand:'Marca',model:'Modelo',version:'Versão',modelYear:'Ano-modelo'}[field]}
-                          inputMode={field==='modelYear'?'numeric':undefined}
-                          onChange={e=>setNewDraft(d=>({...d,[field]:e.target.value}))}/>
-                      </label>
-                    ))}
-                    <button type="submit" disabled={pending} className="cc-btn cc-btn--p cc-btn--primary">{pending?'Salvando…':'Salvar'}</button>
-                    <button type="button" disabled={pending} onClick={()=>{cancel();router.replace('/admin/products',{scroll:false});}}
-                      className="cc-btn cc-btn--p cc-btn--secondary">Cancelar</button>
-                  </div>
-                  {message && <p role="alert" className="mt-2 text-xs text-red-700">{message}</p>}
-                </form>
-              </td>
-            </tr>}
+            {creating && (
+              <tr className="bg-[#F4F9FB]">
+                <td colSpan={5} className="!p-0">
+                  <form onSubmit={create} className="px-3 py-3 shadow-[inset_4px_0_0_#EF7732]">
+                    <p className="mb-2 text-xs font-semibold text-[#61747B]">NOVO VEÍCULO — CADASTRO MANUAL</p>
+                    <div className="grid grid-cols-[minmax(0,56fr)_repeat(4,minmax(0,11fr))] items-center gap-0">
+                      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)_minmax(0,2fr)_minmax(5rem,.8fr)] gap-2 pr-2">
+                        <label className="min-w-0">
+                          <span className="sr-only">Marca</span>
+                          <select aria-label="Marca" required className={cellInput} value={newDraft.brand}
+                            onChange={event=>setNewDraft(d=>({...d,brand:event.target.value}))}>
+                            <option value="">Marca...</option>
+                            {brands.map(brand=><option key={brand} value={brand}>{brand}</option>)}
+                          </select>
+                        </label>
+                        {(['model','version','modelYear'] as const).map(field=>(
+                          <label key={field} className="min-w-0">
+                            <span className="sr-only">{{model:'Modelo',version:'Versão',modelYear:'Ano-modelo'}[field]}</span>
+                            <input className={cellInput} required value={newDraft[field]}
+                              placeholder={{model:'Modelo',version:'Versão',modelYear:'Ano-modelo'}[field]}
+                              inputMode={field==='modelYear'?'numeric':undefined}
+                              onChange={event=>setNewDraft(d=>({...d,[field]:event.target.value}))}/>
+                          </label>
+                        ))}
+                      </div>
+                      <span aria-hidden="true"/>
+                      <span aria-hidden="true"/>
+                      <div className="flex justify-center">
+                        <button type="submit" disabled={pending} className="cc-btn cc-btn--p cc-btn--primary w-[min(100%,6rem)]">
+                          {pending?'Salvando…':'Salvar'}
+                        </button>
+                      </div>
+                      <div className="flex justify-center">
+                        <button type="button" disabled={pending}
+                          onClick={()=>{cancel();router.replace('/admin/products',{scroll:false});}}
+                          className="cc-btn cc-btn--p cc-btn--secondary w-[min(100%,6rem)]">Cancelar</button>
+                      </div>
+                    </div>
+                    {message && <p role="alert" className="mt-2 text-xs text-red-700">{message}</p>}
+                  </form>
+                </td>
+              </tr>
+            )}
             {products.map((product) => {
               const identity = [product.brand, product.model, product.version, product.modelYear].join(' ');
               return (
