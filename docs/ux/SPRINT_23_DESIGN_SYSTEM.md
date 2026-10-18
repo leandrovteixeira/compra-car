@@ -97,3 +97,10 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - Eye and focus interactions retained.
 - Figma frame: `Sprint 23 • Radar refinement v2` on UX — Design Systems.
 - Acceptance: no vertical scroll at target desktop viewport and no truncation of labels or legend. Browser QA pending.
+
+## Sprint 23.8.2 — Legenda inferior do radar em cards dinâmicos (2026-10-18)
+- Os MMVY abaixo do radar são controles em grade de largura total, não legenda flex alinhada apenas à esquerda.
+- Desktop: 2 modelos = 2 colunas iguais; 3 = 3; 4 = 4; 5–8 = 4 colunas com segunda linha. Mobile = 1; tablet = 2.
+- Cada card inclui cor, índice, nome MMVY truncável e olho fixo à direita; padding horizontal 8px, borda 1px #D6DEE3, tipografia Inter 12px medium.
+- Clicar no nome ativa/desativa o foco; o olho controla a visibilidade do polígono sem remover os scores da tabela. Card em foco usa #EAF1F4.
+- Documentado em Figma UX — Design Systems, quadro `Sprint 23 • Radar legend dynamic control grid` (frame 174:2). A autorização Corporate 8 segue pendente; limite atual 3.
