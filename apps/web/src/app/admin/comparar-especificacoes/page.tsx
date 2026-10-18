@@ -50,14 +50,14 @@ export default async function ComparisonPage({ searchParams }: ComparisonPagePro
   const categories = filterComparisonCategories(result.data.categories, mode);
 
   return (
-    <main className="min-w-0 overflow-x-hidden bg-background text-text-primary">
-      <div className="mx-auto w-full max-w-[100rem]">
+    <main className="flex min-h-0 min-w-0 flex-col overflow-hidden bg-background text-text-primary lg:h-[calc(100dvh-4.5rem)]">
+      <div className="mx-auto flex min-h-0 w-full max-w-[100rem] flex-1 flex-col">
         <CatalogPageHeading title="Comparar Especificações" description="Compare versões lado a lado." />
         <ComparisonVehicleSelector options={options} initialIds={initialIds} compact />
-        <div className="mt-2">
+        <div className="mt-1 shrink-0">
           <ComparisonToolbar mode={mode} />
         </div>
-        <div className="mt-2">
+        <div className="mt-1 flex min-h-0 flex-1 flex-col">
           <ComparisonTable categories={categories} mode={mode} vehicles={result.data.vehicles} />
         </div>
       </div>
