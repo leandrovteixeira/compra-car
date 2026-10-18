@@ -144,3 +144,11 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - Status computado pela view `vw_admin_product_spec_started` do banco QA e migration `20261018153000_admin_product_spec_started_view.sql`. Não armazenar campo/flag duplicado no produto. Novos veículos podem abrir ficha de especificações vazia para preenchimento progressivo.
 - Figma: UX — Design Systems, frame **Sprint 23 • Inline vehicle creation and specification filter** (188:2). Os SVGs `finished`/`not_started` são opcionais e não são necessários no dropdown textual nativo.
 - Validação restante: confirmar build e criação manual em QA com entradas controladas, sem tocar Produção. Testar filtro com resultados vazios, edição de especificações e recálculo do status.
+
+## Sprint 23.13.1 — Inline creation alignment and brands (2026-10-18)
+- Opening `Novo veículo` must never shift the list column header horizontally. The new row uses an inset orange selection indicator rather than `border-left`; the table scroll area reserves a stable scrollbar gutter.
+- New vehicle's **Marca** is a required SELECT populated from the existing full catalog, not the currently filtered vehicle rows. Do **not** permit typing or creating a new brand in Cadastro de Modelos. The server creation action independently validates membership in the existing-brand list.
+- Future scope: a separate **Administrar Marcas** administrative workflow will govern new brand registration, updates and aliases. This screen must not invent brands.
+- First 56% of the new row (Veículo column) holds four compact inline controls: Marca, Modelo, Versão and Ano-modelo. Two 11% spacer columns keep Atividade and Publicação clear. Salvar and Cancelar occupy the last two 11% columns aligned with Editar and Duplicar.
+- Search and filters: Ativo, Público and Especificações use equal-width 8rem desktop columns and uniform 40px controls.
+- Validate no layout shift when opening/closing, changing filters or triggering scroll; responsive narrow screens may need horizontal table scroll. Production remains untouched.
