@@ -242,7 +242,7 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-text-muted">
-          {filledCount}/100 linhas preenchidas. O salvamento é atômico e cria preços em rascunho.
+          {filledCount}/100 linhas preenchidas. O salvamento é atômico e publica os preços informados.
         </p>
 
       </div>
