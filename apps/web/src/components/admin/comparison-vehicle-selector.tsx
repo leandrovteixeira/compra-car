@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, useTransition } from 'react';
+import { ComparisonLoadingOverlay } from './comparison-loading-overlay';
 import { useRouter } from 'next/navigation';
 
 export interface ComparisonVehicleOption {
@@ -21,6 +22,7 @@ export function ComparisonVehicleSelector({ options, initialIds = [], maxVehicle
   readonly actionLabel?: string;
 }) {
   const router = useRouter();
+  const [pending, startTransition] = useTransition();
   const [selected, setSelected] = useState<string[]>(() => [...new Set(initialIds.filter(id => options.some(option => String(option.id) === id)))].slice(0, maxVehicles));
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
@@ -40,6 +42,7 @@ export function ComparisonVehicleSelector({ options, initialIds = [], maxVehicle
   };
   const remove = (id: string) => setSelected(current => current.filter(value => value !== id));
   return <section className={'min-w-0'}>
+    {pending && <ComparisonLoadingOverlay />}
     <div className="flex min-w-0 flex-wrap items-center gap-2 py-3">
       <div ref={root} className="relative min-w-[15rem] flex-1"><img src="/carboot/search.svg" alt="" aria-hidden="true" className="pointer-events-none absolute left-3 top-5 z-10 size-[18px] -translate-y-1/2 object-contain" />
         <input type="search" value={query} onChange={event => { setQuery(event.target.value); setOpen(true); }}
@@ -60,7 +63,7 @@ export function ComparisonVehicleSelector({ options, initialIds = [], maxVehicle
       </div>
       <span className="whitespace-nowrap text-xs text-[#61747B]">{selected.length} / {maxVehicles} veículos</span>
       <button type="button" disabled={selected.length < 2}
-        onClick={() => router.push(`${basePath}?vehicles=${selected.join(',')}`)}
+        onClick={() => startTransition(() => router.push(`${basePath}?vehicles=${selected.join(',')}`))}
         className="cc-btn cc-btn--m cc-btn--primary">{actionLabel}</button>
     </div>
     {selected.length > 0 && <div className={`mb-1 grid grid-cols-1 gap-2 md:grid-cols-2 ${selected.length === 2 ? "xl:grid-cols-2" : selected.length === 3 ? "xl:grid-cols-3" : "xl:grid-cols-4"}`}>
