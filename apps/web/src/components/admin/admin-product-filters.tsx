@@ -8,7 +8,6 @@ import { useCallback, useEffect, useState, useTransition } from 'react';
 import type { AdminProductFilterValues } from '@/application/admin/admin-product-filters';
 
 interface AdminProductFiltersProps {
-  readonly onNew?: never;
   readonly values: AdminProductFilterValues;
 }
 
@@ -49,7 +48,7 @@ export function AdminProductFilters({ values }: AdminProductFiltersProps) {
       aria-label="Filtros do catálogo"
       className="bg-transparent py-3"
     >
-      <div className="grid items-end gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(15rem,1fr)_8rem_8rem_10rem_3rem_auto]">
+      <div className="grid items-end gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(15rem,1fr)_8rem_8rem_8rem_3rem_auto]">
         <label className="relative sm:col-span-2 lg:col-span-1">
           <img src="/carboot/search.svg" alt="" aria-hidden="true" className="pointer-events-none absolute left-3 bottom-[11px] size-[18px] object-contain"/>
           <span aria-hidden="true" className="mb-1 block text-xs font-semibold invisible">Buscar</span><span className="sr-only">Buscar marca, modelo ou versão</span>
