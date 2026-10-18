@@ -13,7 +13,7 @@ export default async function AdminPriceInputPage() {
 
   return (
     <>
-      <CatalogPageHeading title="Cadastrar Preços" description="Informe até 100 preços de uma vez; os registros são salvos como rascunhos para revisão." />
+      <CatalogPageHeading title="Cadastrar Preços" description="Informe até 100 preços de uma vez; os preços manuais são publicados após a validação do lote." />
       <section className="mt-0" aria-label="Lote manual de preços públicos">
         {!products.ok ? (
           <div
