@@ -583,3 +583,7 @@ select.ui-field,
 .admin-catalog-table-scroll::-webkit-scrollbar-thumb { background: #9ABCC8; border: 2px solid #F6F7F8; border-radius: 8px; }
 .admin-catalog-table-scroll::-webkit-scrollbar-thumb:hover { background: #61747B; }
 .admin-catalog-table-scroll::-webkit-scrollbar-corner { background: #F6F7F8; }
+
+/* Standardized table headers for Vehicles and Prices. */
+.admin-pricing-table-header th { background: #DCE8ED !important; }
+.admin-pricing-table-scroll tbody tr:hover > td { background: #EAF1F4 !important; }
