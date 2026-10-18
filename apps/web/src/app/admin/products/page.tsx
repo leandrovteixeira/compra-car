@@ -10,6 +10,7 @@ import { AdminProductList } from '@/components/admin/admin-product-list';
 import { EmptyState } from '@/components/admin/empty-state';
 import { CatalogPageHeading } from '@/components/admin/catalog-page-heading';
 import { loadAdminProducts } from '@/server/admin-product-service';
+import { loadExistingCatalogBrands } from '@/server/admin-catalog-brands';
 
 interface AdminProductsPageProps {
   readonly searchParams: Promise<AdminProductSearchParams>;
@@ -20,7 +21,10 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
   const params = await searchParams;
   const parsed = parseAdminProductFilters(params);
   const creating = params.new === '1';
-  const result = await loadAdminProducts(parsed.filters, undefined, parsed.values.search, parsed.values.specifications);
+  const [result, brands] = await Promise.all([
+    loadAdminProducts(parsed.filters, undefined, parsed.values.search, parsed.values.specifications),
+    loadExistingCatalogBrands(),
+  ]);
 
   return (
     <section className="admin-catalog-workspace">
@@ -54,7 +58,7 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
             title={parsed.hasFilters ? 'Nenhum veículo encontrado.' : 'Nenhum veículo cadastrado'}
           />
         ) : (
-          <AdminProductList products={result.data} initialNew={creating} />
+          <AdminProductList products={result.data} brands={brands} initialNew={creating} />
         )}
       </div>
     </section>
