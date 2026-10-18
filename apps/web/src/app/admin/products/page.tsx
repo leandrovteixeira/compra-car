@@ -17,7 +17,9 @@ interface AdminProductsPageProps {
 
 export default async function AdminProductsPage({ searchParams }: AdminProductsPageProps) {
   await requireRole('admin');
-  const parsed = parseAdminProductFilters(await searchParams);
+  const params = await searchParams;
+  const parsed = parseAdminProductFilters(params);
+  const creating = params.new === '1';
   const result = await loadAdminProducts(parsed.filters, undefined, parsed.values.search, parsed.values.specifications);
 
   return (
@@ -32,7 +34,7 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
       <div className="admin-catalog-results mt-8 lg:mt-0">
         {!result.ok ? (
           <AdminProductError />
-        ) : result.data.length === 0 ? (
+        ) : result.data.length === 0 && !creating ? (
           <EmptyState
             action={
               parsed.hasFilters ? (
@@ -52,7 +54,7 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
             title={parsed.hasFilters ? 'Nenhum veículo encontrado.' : 'Nenhum veículo cadastrado'}
           />
         ) : (
-          <AdminProductList products={result.data} initialNew={(await searchParams).new === '1'} />
+          <AdminProductList products={result.data} initialNew={creating} />
         )}
       </div>
     </section>
