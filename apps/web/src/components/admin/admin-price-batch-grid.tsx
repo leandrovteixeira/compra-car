@@ -108,7 +108,7 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
   }
 
   return (
-    <form action={formAction} autoComplete="off" className="space-y-3">
+    <form id="manual-price-batch-form" action={formAction} autoComplete="off" className="space-y-3">
       {pending && <ComparisonLoadingOverlay />}
       <input name="rows" type="hidden" value={JSON.stringify(rows)} />
 
@@ -218,13 +218,12 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
 
                 <button
                   aria-label={`Remover linha ${index + 1}`}
-                  className={`${buttonClassName({ compact: true, variant: 'ghost' })} text-status-error disabled:cursor-not-allowed disabled:opacity-40 md:px-0`}
+                  className="grid size-10 place-items-center rounded-md hover:bg-[#EAF1F4] disabled:cursor-not-allowed disabled:opacity-40"
                   disabled={isLastEmpty}
                   onClick={() => removeRow(row.clientRowId)}
                   type="button"
                 >
-                  <span aria-hidden="true">×</span>
-                  <span className="ml-2 md:sr-only">Remover linha</span>
+                  <img src="/carboot/close.svg" alt="" aria-hidden="true" className="size-4 object-contain" />
                 </button>
               </div>
             );
@@ -236,13 +235,7 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
         <p className="text-sm text-text-muted">
           {filledCount}/100 linhas preenchidas. O salvamento é atômico e cria preços em rascunho.
         </p>
-        <button
-          className={buttonClassName({ variant: 'interactive' })}
-          disabled={pending || filledCount === 0}
-          type="submit"
-        >
-          {pending ? 'Salvando…' : 'Salvar preços'}
-        </button>
+
       </div>
     </form>
   );
