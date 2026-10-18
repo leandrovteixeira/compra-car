@@ -52,7 +52,7 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
             title={parsed.hasFilters ? 'Nenhum veículo encontrado.' : 'Nenhum veículo cadastrado'}
           />
         ) : (
-          <AdminProductList products={result.data} />
+          <AdminProductList products={result.data} initialNew={(await searchParams).new === '1'} />
         )}
       </div>
     </section>
