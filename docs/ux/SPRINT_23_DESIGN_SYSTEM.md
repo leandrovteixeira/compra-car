@@ -88,3 +88,12 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - Cards em grid de até quatro colunas desktop, preparado para oito cards em duas linhas. O limite efetivo permanece três até autorização por plano no servidor.
 - Objetivo de QA: desktop 1920x1080 sem scroll vertical; em telas menores é permitido scroll. Testar com sidebar aberta/fechada e com modelos cujos nomes são longos.
 - Figma: [UX — Design Systems](https://www.figma.com/design/gFQSLkSSh3LZ0fHTWr06DT/compra-car?node-id=167-2), quadro **Sprint 23 • Radar interactions and compact viewport**.
+
+## Sprint 23.8.1 — Radar refinement v2 (2026-10-18)
+- Revert radar background to white `#FFFFFF`, matching the table.
+- SVG category labels raised from 7 to 10 viewBox units for legibility; visually compare with table 12px at QA.
+- Radar chart maximum display height raised to 62vh (cap 620px) and max width 760px; desktop page container allows more viewport height.
+- Selected-card grid desktop dynamically fills width: exactly 2, 3, or 4 columns for 2–4 vehicles; 5–8 uses four columns and two rows. Narrower screens use 1–2 columns.
+- Eye and focus interactions retained.
+- Figma frame: `Sprint 23 • Radar refinement v2` on UX — Design Systems.
+- Acceptance: no vertical scroll at target desktop viewport and no truncation of labels or legend. Browser QA pending.
