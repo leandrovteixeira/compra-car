@@ -120,3 +120,10 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - Compare table uses 13px desktop label/numeric typography and compact line height; verify density against other pages without reducing readability.
 - Figma: UX — Design Systems / `Sprint 23 • Comparison query loading and inner scroll` frame 181:2.
 - QA pending: compare two/three models at 1920x1080, inspect scroll containment and overlay on slow query; browser-specific behavior is not yet approved.
+
+## Sprint 23.11 — Full-row winners and updated white-background logo (2026-10-18)
+- Comparar Especificações: orange `check_bold.svg` belongs **only to the best result(s) across every vehicle in the row**, never to each vehicle that happens to beat the reference independently.
+- Non-numeric equipment: all present values win/tie; absence is not marked. Numeric fields use the engine's reference-relative comparison outcome to establish whether higher or lower is favorable, then compare all valid numeric values in the row. Equal best values all receive a check.
+- Missing/ambiguous/inconsistent numerical results do **not** receive a guessed winner check. Preserve the displayed values and their types. Business semantics and ranking directions must be revisited if the comparison engine exposes dedicated winner metadata.
+- The new `icon_logo_official_whiteBG 1` SVG from Figma Elementos is saved as `/carboot/icon_logo_official_whiteBG.svg`; both route loading fallback and dimmed comparison-query overlay use it instead of the older generic icon. Sidebar keeps its own dark-background logo unchanged.
+- Verify two- and three-vehicle numeric winner/tie outcomes and check placement in QA before declaring completed.
