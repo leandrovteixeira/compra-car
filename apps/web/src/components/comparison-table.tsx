@@ -117,7 +117,7 @@ export function ComparisonTable({ vehicles, categories, mode }: ComparisonTableP
                     />
                   </tr>
                   {category.rows.map((row) => {
-                    const winners = comparisonRowWinners(row.values);
+                    const winners = comparisonRowWinners(row.values, row.label);
                     return <tr className="group" key={row.code}>
                       <th
                         className="sticky left-0 z-20 w-[8.25rem] min-w-[8.25rem] max-w-[8.25rem] border-b border-r border-border bg-surface px-2.5 py-2 align-middle shadow-[6px_0_12px_-12px_rgba(26,29,33,0.45)] transition-colors group-hover:bg-selection min-[769px]:w-64 min-[769px]:min-w-64 min-[769px]:max-w-64 min-[769px]:px-4 lg:w-72 lg:min-w-72 lg:max-w-72"
