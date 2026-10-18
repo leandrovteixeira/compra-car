@@ -91,10 +91,18 @@ export function AdminPriceList({ page, onEdit, onCorrect, publishAction, onPubli
   function openEditor(price: ProductPublicPriceListPageDto['items'][number]) {
     setEditingId(price.id);
     setFeedback('');
-    setDraft({ amount:amountToPtBrInput(price.money.amount),startsOn:price.startsOn,endsOn:price.endsOn ?? '' });
+    const editable = isProductPublicPriceEditable(price.status);
+    const today = operationalDateInSaoPaulo();
+    const nextDay = new Date(Date.parse(price.startsOn + 'T00:00:00Z') + 86400000).toISOString().slice(0,10);
+    const correctionStart = editable ? price.startsOn : (today > price.startsOn ? today : nextDay);
+    setDraft({ amount:amountToPtBrInput(price.money.amount),startsOn:correctionStart,endsOn:price.endsOn && price.endsOn >= correctionStart ? price.endsOn : '' });
   }
   function save(price: ProductPublicPriceListPageDto['items'][number]) {
     if(pending) return;
+    const parsedAmount = Number(draft.amount.trim().replace(/\./g,'').replace(',','.'));
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) { setFeedback('Informe um preço válido maior que zero.'); return; }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(draft.startsOn)) { setFeedback('Informe a data inicial da vigência.'); return; }
+    if (draft.endsOn && draft.endsOn < draft.startsOn) { setFeedback('A vigência final não pode anteceder a inicial.'); return; }
     const data = new FormData();
     data.set('id', isProductPublicPriceEditable(price.status) ? price.id : '');
     data.set('lockVersion', isProductPublicPriceEditable(price.status) ? String(price.lockVersion) : '');
@@ -110,9 +118,16 @@ export function AdminPriceList({ page, onEdit, onCorrect, publishAction, onPubli
           : await createProductPublicPriceAction(state,data);
         if(result.status === 'success') {
           setEditingId(null);
-          setFeedback(isProductPublicPriceEditable(price.status) ? 'Preço atualizado.' : 'Rascunho de correção criado; o preço publicado foi preservado.');
-          router.refresh();
-        } else setFeedback(('message' in result ? result.message : '') || 'Revise os campos de preço e vigência.');
+          const editable = isProductPublicPriceEditable(price.status);
+          setFeedback(editable ? 'Preço atualizado.' : 'Rascunho de correção criado. Revise-o antes de publicar.');
+          if (!editable) router.replace('/admin/prices?status=draft', {scroll:false});
+          else router.refresh();
+        } else {
+          const errors = 'fieldErrors' in result && result.fieldErrors
+            ? Object.values(result.fieldErrors).flat().filter(Boolean).join(' ')
+            : '';
+          setFeedback(errors || ('message' in result ? result.message : '') || 'Revise os campos de preço e vigência.');
+        }
       } catch {setFeedback('Não foi possível salvar. Nenhuma alteração foi confirmada.');}
     });
   }
