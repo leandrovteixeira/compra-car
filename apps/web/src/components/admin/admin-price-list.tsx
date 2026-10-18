@@ -54,11 +54,11 @@ function SortHeader({
   children,
 }: {
   readonly page: ProductPublicPriceListPageDto;
-  readonly field: ProductPublicPriceListPageDto['sort'];
+  readonly field: ProductPublicPriceListPageDto['sort'] | 'endsOn';
   readonly children: React.ReactNode;
 }) {
   const currentParams = useSearchParams();
-  const active = page.sort === field;
+  const active = (currentParams.get('sort') ?? page.sort) === field;
   const direction = active && page.direction === 'asc' ? 'desc' : 'asc';
   return (
     <th
@@ -145,7 +145,7 @@ export function AdminPriceList({ page, onEdit, onCorrect, publishAction, onPubli
               <SortHeader page={page} field="startsOn">
                 Vigência De
               </SortHeader>
-              <th scope="col" className="bg-[#DCE8ED] text-center font-semibold">Vigência Até</th>
+              <SortHeader page={page} field="endsOn">Vigência Até</SortHeader>
               <SortHeader page={page} field="status">
                 Status
               </SortHeader>
