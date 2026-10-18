@@ -257,3 +257,12 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - `products`, `ver-ficha-tecnica`, `comparar-modelos`, `comparar-especificacoes` têm fallbacks de rota que reutilizam o loading global. Formulários e filtros que fazem server actions continuam usando o overlay compartilhado durante suas consultas.
 - Loadings de rota são mostrados somente durante espera efetiva de navegação; cache ou resposta imediata podem não tornar a animação visível. Não usar atraso artificial.
 - Próxima etapa: refinamento detalhado de **Cadastrar Políticas**, sem modificar a semântica financeira.
+
+## Sprint 23.17 — Cadastrar Políticas / Primeira revisão UX (2026-10-18)
+- Página mantém `CatalogPageHeading` e botão Voltar no padrão white/graphite.
+- Workspace: seletor Modelo/Versão, Competência e Preço válido em barra compacta sem moldura escura; inputs com alvo 40px e divisor `#D6DEE3`.
+- Tabela de políticas e grade de entrada: header `#DCE8ED`, bordas `#D6DEE3`, fundo branco e texto mais compacto. Status usam CSS pills de altura 24px e cores claras, sem SVGs rejeitados.
+- Botões Editar/Arquivar/ações em grafite ou secundário neutro, evitando destaque vermelho indevido em ação administrativa habitual. Mensagens de confirmação e erro no estilo claro do Design System.
+- Operações de edição/arquivamento do workspace usam `ComparisonLoadingOverlay` com logo oficial e texto `Carregando` enquanto pendentes.
+- Fluxos de cálculo, período especial, duplicação de base, ofertas e persistência mantidos; **não** houve alteração de regras comerciais, SQL ou dados na rodada.
+- Próximo checkpoint de QA: revisar captura de tela da página com veículo selecionado, período mensal/especial, políticas existentes, criação e combinação de ofertas. Modais legados ainda requerem uma segunda revisão visual.
