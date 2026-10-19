@@ -73,7 +73,7 @@ export function UserMenu({
         aria-label={sidebar ? "Conta" : "Menu"}
         className={sidebar ? "flex h-11 cursor-pointer list-none items-center gap-3 rounded-md px-4 text-sm text-white/85 hover:bg-white/10" : "ui-button ui-button--ghost ui-button--compact cursor-pointer list-none"}
       >
-        {sidebar ? <img alt="" src="/carboot/account.svg" className="size-[22px] shrink-0"/> : <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 16 16">
+        {sidebar ? <img alt="" src="/carboot/account2.svg" className="size-[22px] shrink-0"/> : <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 16 16">
           <path d="M2.5 4h11M2.5 8h11M2.5 12h11" stroke="currentColor" strokeLinecap="round" strokeWidth="1.5" />
         </svg>}
         <span>{sidebar ? "Conta" : "Menu"}</span>
