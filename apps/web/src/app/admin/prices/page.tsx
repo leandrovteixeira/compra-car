@@ -42,7 +42,7 @@ export default async function AdminPricesPage({ searchParams }: AdminPricesPageP
       style={{ gridTemplateRows: 'auto auto minmax(0, 1fr)' }}
     >
       <div className="admin-pricing-page-header">
-        <CatalogPageHeading title="Lista de Preços" description="Consulte, revise e publique preços públicos dos veículos." />
+        <CatalogPageHeading title="Gerenciar Preços" description="Consulte, revise e publique preços públicos dos veículos." />
       </div>
       <div className="admin-pricing-toolbar">
         <AdminPriceFilters values={filters} />
