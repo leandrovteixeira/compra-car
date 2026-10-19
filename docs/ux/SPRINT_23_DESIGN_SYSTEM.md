@@ -288,3 +288,8 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - Native CSS scroll, kept keyboard-/wheel-/touch-accessible: thin scrollbar, Chromium/WebKit width **6px**, track `#1A1D21`, thumb `#526670`, hover `#9ABCC8`, radius `999px`. Chromium/WebKit scrollbar arrow buttons hidden. Firefox uses `scrollbar-width: thin`, `scrollbar-color: #526670 #1A1D21`.
 - `color-scheme: dark` prevents a light native gutter; scrollbar behavior and button support can differ by platform. Main content and footer remain outside the sidebar's independently scrollable nav.
 - QA: check expanded account icon, scrolling with sidebar hover expanded at 1920x1080, collapsed sidebar, keyboard tab navigation and Firefox fallback.
+
+## Sprint 23.17.4 — Autocomplete nativo e datas restantes (2026-10-19)
+- Combobox de MMVY: `autoComplete="off"`, `autoCorrect="off"`, `autoCapitalize="off"`, `spellCheck={false}` e nome de campo específico para reduzir sugestões do navegador que encobrem o dropdown da aplicação. Histórico já armazenado no navegador pode continuar aparecendo conforme as configurações individuais do Chrome; não é apagado pelo site.
+- Todas as vigências renderizadas no workspace comercial, inclusive listas históricas, passam pelo formatador `formatDateBR` e exibem `dd/mm/aaaa`; internamente as datas ISO permanecem inalteradas para cálculo e persistência.
+- Próximo trabalho antes de produção: matriz de perfis e autorização efetiva (Visitor, Corporate, administrativo, acesso por permissões), testes de isolamento e plano de promoção de migrations/código — nunca copiar dados de QA.
