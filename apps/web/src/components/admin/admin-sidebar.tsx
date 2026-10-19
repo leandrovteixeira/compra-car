@@ -48,7 +48,7 @@ export function AdminSidebar({ displayName, logoutAction }: { readonly displayNa
         </div>
       </div>
       <div className="mx-3 h-px bg-white/20"/>
-      <nav aria-label="Navegação Carboot" className="min-h-0 flex-1 overflow-y-auto px-2 py-3">
+      <nav aria-label="Navegação Carboot" className="cc-sidebar-scroll min-h-0 flex-1 overflow-y-auto px-2 py-3">
         <ul className="space-y-1">
           {groups.map((item) => {
             const children = item.children ?? [];
