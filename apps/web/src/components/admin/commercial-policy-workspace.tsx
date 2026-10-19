@@ -36,6 +36,10 @@ const POLICY_STATUS_LABELS = {
 } as const;
 const badge = 'inline-flex h-6 items-center justify-center rounded-full border px-2.5 text-xs font-medium';
 
+function formatDateBR(date: string): string {
+  const match = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(date);
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : date;
+}
 function previousDay(date: string): string {
   const value = new Date(`${date}T00:00:00Z`);
   value.setUTCDate(value.getUTCDate() - 1);
@@ -299,20 +303,20 @@ export function CommercialPolicyWorkspace(props: {
               </option>
             ))}
           </select>
-          <label className="mt-1.5 flex min-h-6 items-center gap-2 text-xs text-text-secondary">
-            <input
-              type="checkbox"
-              checked={period.kind === 'special'}
-              onChange={(event) => changeSpecialMode(event.target.checked)}
-              className="h-4 w-4 accent-selection-strong"
-            />
-            Período especial
-          </label>
-          <p className="mt-0.5 text-xs text-text-muted">
-            {period.kind === 'special'
-              ? `${props.competenceLabel} · Especial ${period.start.slice(8, 10)}–${period.end.slice(8, 10)}/${period.end.slice(5, 7)}`
-              : `${period.start} — ${period.end}`}
-          </p>
+          <div className="mt-1.5 flex min-h-6 flex-wrap items-center gap-x-3 gap-y-1 text-xs text-text-secondary">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={period.kind === 'special'}
+                onChange={(event) => changeSpecialMode(event.target.checked)}
+                className="h-4 w-4 accent-[#9ABCC8]"
+              />
+              Período especial
+            </label>
+            <span className="whitespace-nowrap text-[#61747B]">
+              {formatDateBR(period.start)} – {formatDateBR(period.end)}
+            </span>
+          </div>
         </div>
         <aside className="text-sm lg:border-l lg:border-[#D6DEE3] lg:pl-4">
           <span className={labelClassName}>Preço válido</span>
@@ -391,7 +395,7 @@ export function CommercialPolicyWorkspace(props: {
             {periodPolicies.length ? (
               <div className="overflow-x-auto rounded-lg border border-[#D6DEE3]">
                 <table className="w-full min-w-[48rem] text-left text-sm">
-                  <thead className="admin-table-header bg-[#DCE8ED] text-xs uppercase text-[#61747B]">
+                  <thead className="admin-table-header !static !top-auto bg-[#DCE8ED] text-xs uppercase text-[#61747B]">
                     <tr>
                       <th className="p-3">Tipo</th>
                       <th className="p-3">Vigência</th>
@@ -431,7 +435,7 @@ export function CommercialPolicyWorkspace(props: {
                               </span>
                             </td>
                             <td className="p-3">
-                              {policy.startsOn} — {policy.endsOn ?? 'aberta'}
+                              {formatDateBR(policy.startsOn)} — {policy.endsOn ? formatDateBR(policy.endsOn) : 'aberta'}
                             </td>
                             <td className="p-3">
                               R${' '}
