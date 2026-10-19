@@ -293,3 +293,10 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - Combobox de MMVY: `autoComplete="off"`, `autoCorrect="off"`, `autoCapitalize="off"`, `spellCheck={false}` e nome de campo específico para reduzir sugestões do navegador que encobrem o dropdown da aplicação. Histórico já armazenado no navegador pode continuar aparecendo conforme as configurações individuais do Chrome; não é apagado pelo site.
 - Todas as vigências renderizadas no workspace comercial, inclusive listas históricas, passam pelo formatador `formatDateBR` e exibem `dd/mm/aaaa`; internamente as datas ISO permanecem inalteradas para cálculo e persistência.
 - Próximo trabalho antes de produção: matriz de perfis e autorização efetiva (Visitor, Corporate, administrativo, acesso por permissões), testes de isolamento e plano de promoção de migrations/código — nunca copiar dados de QA.
+
+## Sprint 23.18 — Consultas read-only: Lista de Preços / Políticas Vigentes (2026-10-19)
+- Renomear título e item `/admin/prices` para **Gerenciar Preços**, mantendo edição e histórico.
+- Nova **Lista de Preços** em `/admin/prices/list`: título/subtítulo padrão, busca MMVY ampla, filtro Status Vigente/Previsto/Expirado/Todos; sem ações, marca, fonte, lote ou paginação. Tabela MMVY, Preço Público, Vigência De, Vigência Até, Status, Atualizado Em. Scroll interno e ordenação com SVGs oficiais.
+- Nova **Políticas Vigentes** em `/admin/prices/policies/current`: read-only, busca MMVY, competência, filtro Tipo; colunas MMVY, Competência, Política, Valor, Status e indicador de ofertas. Mostrar apenas políticas publicadas aplicáveis à competência selecionada; usar ícone oficial `icon_layers 1` em `/carboot/layers.svg` em laranja `#EF7732`, quantidade e expansão inline para ofertas associadas. Sem edição e sem paginação.
+- Os estados de política e relacionamento de ofertas são independentes; participar de uma oferta não torna política em rascunho vigente. A expansão mostra identificador, período, estado e benefício da oferta.
+- Estas são primeiras versões para refinamento em QA; **não** alterar regras comerciais nem escrever dados em produção.
