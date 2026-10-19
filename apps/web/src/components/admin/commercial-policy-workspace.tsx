@@ -563,7 +563,7 @@ export function CommercialPolicyWorkspace(props: {
                 <p key={`policy-${policy.id}`}>
                   Policy #{policy.id} ·{' '}
                   {MANUAL_POLICY_DISPLAY_LABELS[policy.policyType] ?? policy.policyType} ·{' '}
-                  {policy.startsOn} — {policy.endsOn}
+                  {formatDateBR(policy.startsOn)} — {policy.endsOn ? formatDateBR(policy.endsOn) : "aberta"}
                 </p>
               ))}
               {historicalOffers.map((offer) => (
