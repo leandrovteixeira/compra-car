@@ -300,3 +300,10 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - Nova **Políticas Vigentes** em `/admin/prices/policies/current`: read-only, busca MMVY, competência, filtro Tipo; colunas MMVY, Competência, Política, Valor, Status e indicador de ofertas. Mostrar apenas políticas publicadas aplicáveis à competência selecionada; usar ícone oficial `icon_layers 1` em `/carboot/layers.svg` em laranja `#EF7732`, quantidade e expansão inline para ofertas associadas. Sem edição e sem paginação.
 - Os estados de política e relacionamento de ofertas são independentes; participar de uma oferta não torna política em rascunho vigente. A expansão mostra identificador, período, estado e benefício da oferta.
 - Estas são primeiras versões para refinamento em QA; **não** alterar regras comerciais nem escrever dados em produção.
+
+## Sprint 23.18.1 — Lista de Preços e Políticas Vigentes: revisão de filtros e empty state (2026-10-19)
+- Ícone neutro de ordenação deve ser sempre o SVG oficial `icon_order2 1`, exportado como `/carboot/order2.svg` sem bolinha laranja. Aplicado à Lista de Preços e Gerenciar Preços; ordenar em uso mantém ícone direcional oficial `sort_back.svg`.
+- Alinhar a barra de filtros pelo rodapé dos controles (`items-end`); botão `close` usa área 40×40px sem margem superior adicional.
+- Títulos de tabelas de consulta usam **VEÍCULO**, não MMVY; identidade MMVY permanece o dado exibido.
+- Políticas Vigentes exibe somente políticas publicadas para a competência. QA auditado em 19/10/2026: 27 políticas em `draft` e zero publicadas; a tabela vazia é correta, mas agora tem explicação contextual. Nunca mostrar draft como vigente.
+- Busca textual de veículos atua sobre registros vigentes; com zero publicados não haverá resultados independentemente do termo. Validar interação com políticas publicadas antes de declarar comportamento funcional completo.
