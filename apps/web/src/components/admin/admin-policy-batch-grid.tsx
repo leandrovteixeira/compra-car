@@ -61,6 +61,13 @@ const gridWithProduct =
 const workspaceGrid =
   'grid gap-3 lg:grid-cols-[minmax(10rem,2fr)_4.25rem_4.75rem_4.5rem_minmax(8rem,1.2fr)_minmax(8rem,1.2fr)_5.5rem]';
 const input = fieldClassName;
+function percent(value: string, places: number): string {
+  if (!value.trim()) return '';
+  const numeric = Number(value.replace(/\\./g, '').replace(',', '.'));
+  return Number.isFinite(numeric)
+    ? numeric.toLocaleString('pt-BR', {minimumFractionDigits:places, maximumFractionDigits:places})
+    : value;
+}
 
 function brl(value: string): string {
   const [integer, fraction = '00'] = value.split('.');
@@ -392,6 +399,7 @@ export function AdminPolicyBatchGrid({
                   {row.policyType === 'subsidized_financing' ? (
                     <label>
                       <CellLabel>Taxa</CellLabel>
+                      <div className="relative">
                       <input
                         aria-label={`Taxa da linha ${index + 1}`}
                         autoComplete="off"
@@ -404,9 +412,13 @@ export function AdminPolicyBatchGrid({
                             ),
                           })
                         }
-                        placeholder="% a.m."
+                        placeholder="0,00"
                         value={row.customerInterestRateMonthly}
+                        onBlur={() => update(row.clientRowId, {customerInterestRateMonthly:percent(row.customerInterestRateMonthly,2)})}
+                        style={{paddingRight:24}}
                       />
+                      <span aria-hidden="true" className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-[#61747B]">%</span>
+                      </div>
                     </label>
                   ) : (
                     <EmptyCell />
@@ -415,6 +427,7 @@ export function AdminPolicyBatchGrid({
                   {row.policyType === 'subsidized_financing' ? (
                     <label>
                       <CellLabel>Entrada</CellLabel>
+                      <div className="relative">
                       <input
                         aria-label={`Entrada da linha ${index + 1}`}
                         autoComplete="off"
@@ -425,9 +438,13 @@ export function AdminPolicyBatchGrid({
                             downPaymentPercentage: formatPtBrPercentageInput(event.target.value),
                           })
                         }
-                        placeholder="%"
+                        placeholder="00"
                         value={row.downPaymentPercentage}
+                        onBlur={() => update(row.clientRowId, {downPaymentPercentage:percent(row.downPaymentPercentage,0)})}
+                        style={{paddingRight:24}}
                       />
+                      <span aria-hidden="true" className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-[#61747B]">%</span>
+                      </div>
                     </label>
                   ) : (
                     <EmptyCell />
@@ -496,7 +513,7 @@ export function AdminPolicyBatchGrid({
                       }
                       type="button"
                     >
-                      +
+                      <img src="/carboot/plus.svg" alt="" aria-hidden="true" className="size-4 object-contain" />
                     </button>
                     <button
                       className="inline-grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[#D6DEE3] text-lg font-semibold text-[#526670] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-300 disabled:opacity-40"
@@ -513,7 +530,7 @@ export function AdminPolicyBatchGrid({
                       aria-label={`Remover política ${index + 1}`}
                       title="Remover política"
                     >
-                      ⊖
+                      <img src="/carboot/close.svg" alt="" aria-hidden="true" className="size-4 object-contain" />
                     </button>
                   </div>
                 </div>
