@@ -90,6 +90,11 @@ export function AdminProductCombobox({
       </label>
       <div className={hideLabel ? 'relative' : 'relative mt-1'}><img src="/carboot/search.svg" alt="" aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-[18px] -translate-y-1/2 object-contain" />
         <input
+          autoComplete="off"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+          name="catalog-vehicle-search"
           aria-autocomplete="list"
           aria-controls={listboxId}
           aria-activedescendant={
