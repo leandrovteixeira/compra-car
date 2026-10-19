@@ -307,3 +307,12 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - Títulos de tabelas de consulta usam **VEÍCULO**, não MMVY; identidade MMVY permanece o dado exibido.
 - Políticas Vigentes exibe somente políticas publicadas para a competência. QA auditado em 19/10/2026: 27 políticas em `draft` e zero publicadas; a tabela vazia é correta, mas agora tem explicação contextual. Nunca mostrar draft como vigente.
 - Busca textual de veículos atua sobre registros vigentes; com zero publicados não haverá resultados independentemente do termo. Validar interação com políticas publicadas antes de declarar comportamento funcional completo.
+
+## Sprint 23.19 — Decisão aprovada: política comercial sem aprovação intermediária (2026-10-19)
+- Políticas e ofertas comerciais cadastradas manualmente por admin autorizado ficam efetivas na competência, sem controles de aprovação, rejeição, arquivamento ou drafts visíveis na UX.
+- Status **Vigente/Expirada são derivados em relação à competência consultada e ao período comercial**. Preservar histórico dos meses anteriores; uma política de setembro segue aplicável ao consultar setembro.
+- A vigência de ofertas é exatamente a da carta/competência: mês civil completo ou período especial intra-mês com início/fim definidos.
+- Correções de políticas publicadas preservam IDs, associações `commercial_offer_policies`, before/after na auditoria, versão otimista e consistência das ofertas relacionadas. Nunca desfazer memberships ao alterar valor.
+- Conversão dos dados QA exige verificar validadores de publicação de política e oferta, inclusive MSRP publicado, vínculos e problemas bloqueantes, antes de qualquer migração em massa. Base auditada: 27 políticas e 22 ofertas, todas `draft` no início da revisão. Não aplicar update direto burlando triggers.
+- UX Cadastrar Políticas deve exibir ações **Editar/Corrigir** de política vigente, e os detalhes das ofertas associadas; Políticas Vigentes deve apresentar resultados publicados pertinentes à competência.
+- Produção fica intocada; migração para publicação requer implementação e testes completos em QA.
