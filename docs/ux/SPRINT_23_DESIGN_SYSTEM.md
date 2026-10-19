@@ -272,3 +272,12 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - Barra de colunas da grade de novas políticas deve ficar sempre **acima** dos campos, como parte do fluxo normal (`position: static`, sem sticky/overlay), com altura mínima 36px, fundo `#DCE8ED` e border `#D6DEE3`.
 - Ações principais **Adicionar preço** e **Salvar políticas** usam `cc-btn--primary`, grafite `#1A1D21`, altura 40px. Botões secundários permanecem neutros.
 - Critério de QA: cabeçalho não se move ao selecionar veículo, títulos Tipo/Prazo/Taxa/Entrada/Valor/Rebate/Ações visíveis acima dos inputs, sem sobreposição, em 1920×1080.
+
+## Sprint 23.17.2 — Políticas, campos percentuais, datas e sidebar (2026-10-19)
+- Taxa: apresentar porcentagem com 2 casas decimais em pt-BR (0,00%), Entrada: porcentagem sem decimais (00%). Sufixo % é visual, não entra no payload canônico; formatar ao perder foco sem interferir na digitação.
+- Período de competência: checkbox “Período especial” e intervalo na **mesma linha**. Datas exibidas como dd/mm/aaaa; valores de entrada continuam ISO para compatibilidade com o motor.
+- Tabela de políticas existentes: cabeçalho deve permanecer acima das linhas após salvar. Remover sticky heredado do `admin-table-header` do cabeçalho de políticas.
+- Grade de políticas: botões de adicionar descrição e remover usam SVG oficiais `plus.svg` e `close.svg`, sem símbolos improvisados.
+- Sidebar: adotar família SVG de Elementos com sufixo `2` (sem dot laranja) para Home, Veículos, Preços, Inteligência, Educação, News, Chat, Agentes, Configurações, Conta.
+- Ordem final dos cinco itens: **Educação → News → Chat → Agentes → Configurações**.
+- Verificar no QA salvamento e re-renderização, incluindo diferenças entre dados anteriores e valores formatados. Nenhuma alteração de regra comercial ou banco nesta rodada.
