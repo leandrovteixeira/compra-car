@@ -7,8 +7,8 @@ import { adminNavigationItems } from './admin-navigation';
 import { UserMenu } from '../user-menu';
 
 const names: Record<string,string> = {
-  Home: 'home', 'Veículos':'car', Preços:'docs', 'Inteligência':'intelligence',
-  'Educação':'atom', Agentes:'bot', 'Configurações':'config', Chat:'chat', News:'news', Conta:'account'
+  Home: 'home2', 'Veículos':'car2', Preços:'docs2', 'Inteligência':'intelligence2',
+  'Educação':'atom2', Agentes:'bot2', 'Configurações':'config2', Chat:'chat2', News:'news2', Conta:'account2'
 };
 
 function NavIcon({ name }: { readonly name: string }) {
