@@ -14,9 +14,11 @@ export const adminNavigationItems: readonly AdminNavigationItem[] = [
     { href: '/admin/comparar-especificacoes', label: 'Comparar Especificações', status: 'active' },
   ] },
   { label: 'Preços', status: 'active', children: [
-    { href: '/admin/prices', label: 'Lista de Preços', status: 'active' },
+    { href: '/admin/prices', label: 'Gerenciar Preços', status: 'active' },
+    { href: '/admin/prices/list', label: 'Lista de Preços', status: 'active' },
     { href: '/admin/prices/input', label: 'Cadastrar Preços', status: 'active' },
     { href: '/admin/prices/policies/input', label: 'Cadastrar Políticas', status: 'active' },
+    { href: '/admin/prices/policies/current', label: 'Políticas Vigentes', status: 'active' },
   ] },
   { label: 'Inteligência', status: 'active', children: [
     { label: 'Análise de TPVA', status: 'planned' },
