@@ -281,3 +281,10 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - Sidebar: adotar família SVG de Elementos com sufixo `2` (sem dot laranja) para Home, Veículos, Preços, Inteligência, Educação, News, Chat, Agentes, Configurações, Conta.
 - Ordem final dos cinco itens: **Educação → News → Chat → Agentes → Configurações**.
 - Verificar no QA salvamento e re-renderização, incluindo diferenças entre dados anteriores e valores formatados. Nenhuma alteração de regra comercial ou banco nesta rodada.
+
+## Sprint 23.17.3 — Sidebar account v2 and custom dark scrollbar (2026-10-19)
+- Expanded user account menu `UserMenu(sidebar)` now uses `/carboot/account2.svg`, matching the collapsed sidebar and the Elementos `icon_account2 1` asset.
+- Only the sidebar `<nav>` uses the `cc-sidebar-scroll` class. Do not apply it to pricing/specification/catalog table scrolling.
+- Native CSS scroll, kept keyboard-/wheel-/touch-accessible: thin scrollbar, Chromium/WebKit width **6px**, track `#1A1D21`, thumb `#526670`, hover `#9ABCC8`, radius `999px`. Chromium/WebKit scrollbar arrow buttons hidden. Firefox uses `scrollbar-width: thin`, `scrollbar-color: #526670 #1A1D21`.
+- `color-scheme: dark` prevents a light native gutter; scrollbar behavior and button support can differ by platform. Main content and footer remain outside the sidebar's independently scrollable nav.
+- QA: check expanded account icon, scrolling with sidebar hover expanded at 1920x1080, collapsed sidebar, keyboard tab navigation and Firefox fallback.
