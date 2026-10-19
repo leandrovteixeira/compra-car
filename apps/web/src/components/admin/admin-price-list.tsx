@@ -75,7 +75,7 @@ function SortHeader({
         })}
       >
         {children}
-        <img src={active ? '/carboot/sort_back.svg' : '/carboot/order.svg'} alt="" aria-hidden="true" className={`size-3.5 object-contain ${active && page.direction === 'desc' ? '-rotate-90' : active ? 'rotate-90' : ''}`} />
+        <img src={active ? '/carboot/sort_back.svg' : '/carboot/order2.svg'} alt="" aria-hidden="true" className={`size-3.5 object-contain ${active && page.direction === 'desc' ? '-rotate-90' : active ? 'rotate-90' : ''}`} />
       </Link>
     </th>
   );
