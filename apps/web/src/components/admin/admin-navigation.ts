@@ -22,6 +22,8 @@ export const adminNavigationItems: readonly AdminNavigationItem[] = [
     { label: 'Análise de TPVA', status: 'planned' },
   ] },
   { label: 'Educação', status: 'planned' },
+  { href: '/admin/news', label: 'News', status: 'active' },
+  { href: '/admin/chat', label: 'Chat', status: 'active' },
   { label: 'Agentes', status: 'active', children: [
     { href: '/admin/agents', label: 'Agentes', status: 'active' },
   ] },
@@ -29,7 +31,5 @@ export const adminNavigationItems: readonly AdminNavigationItem[] = [
     { href: '/admin/users', label: 'Usuários', status: 'active' },
     { href: '/admin/imports', label: 'Importações', status: 'active' },
   ] },
-  { href: '/admin/news', label: 'News', status: 'active' },
-  { href: '/admin/chat', label: 'Chat', status: 'active' },
   { label: 'Conta', status: 'planned' },
 ];
