@@ -10,8 +10,10 @@ import { PageHeader } from '@/components/admin/page-header';
 import { loadAdminInviteRequests } from '@/server/invite-requests';
 import { AdminInviteRequestList } from '@/components/admin/admin-invite-request-list';
 import { APP_NAME } from '@/config/app-identity';
+import { requireFeature23C } from '@/auth/account-tier-server';
 
 export default async function AdminUsersPage() {
+  await requireFeature23C('settings');
   let users;
 
   try {
