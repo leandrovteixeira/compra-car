@@ -2,6 +2,11 @@
 
 ## 2026-10-20 — Sprint 23C.1 (foundation in feature branch)
 
+- Public vehicle shell, catalog actions and comparison viewing now avoid the old seller login gate; PDF generation remains authenticated at the route boundary.
+- Added contextual authentication drawer to visitor navigation and PDF actions, preserving the comparison URL. Existing login Server Action is reused; public signup remains disabled pending email verification delivery.
+- Vehicle selection receives a tier-specific 3/8 limit while the comparison service independently enforces the same limit.
+- Changes are branch-only, without build/CI or QA deployment validation; do not merge until end-to-end tests pass.
+
 - Connected server-verified tier resolution to the admin shell and restricted Gestão de Usuários under Master-only Configurações; added a separate page-level feature guard.
 - Exposed Share Application via the authenticated topbar and visitor login page, sharing only the site root.
 - Full public browsing, action-level enforcement, and drawer remain pending. Validation/deployment blocked pending runnable checkout/CI.
