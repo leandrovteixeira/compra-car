@@ -644,3 +644,25 @@ select.ui-field,
 .cc-sidebar-scroll::-webkit-scrollbar-thumb:hover { background: #9ABCC8; }
 .cc-sidebar-scroll::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
 .cc-sidebar-scroll::-webkit-scrollbar-corner { background: #1A1D21; }
+
+/* Editable offer checkbox: native input semantics with official Figma bold check. */
+.cc-offer-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-grid;
+  place-content: center;
+  vertical-align: middle;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  border: 1px solid #A8B3B9;
+  border-radius: 3px;
+  background-color: #FFFFFF;
+  cursor: pointer;
+}
+.cc-offer-checkbox:checked {
+  background: #DCE8ED url('/carboot/check_bold_graphite.svg') center / 13px 13px no-repeat;
+  border-color: #9ABCC8;
+}
+.cc-offer-checkbox:focus-visible { outline: 2px solid #9ABCC8; outline-offset: 2px; }
+.cc-offer-checkbox:disabled { opacity: .55; cursor: not-allowed; }
