@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react';
+import { Suspense } from 'react';
+import { AuthDrawer } from '@/components/auth-drawer';
 
 import { getActiveProfile } from '@/auth/authorization';
 import { AppAuthenticatedNavigation } from '@/components/authenticated-navigation';
@@ -27,6 +29,7 @@ export default async function SellerLayout({ children }: SellerLayoutProps) {
       ) : (
         <PublicNavigation />
       )}
+      <Suspense fallback={null}><AuthDrawer /></Suspense>
       <div className="lg:grid lg:grid-cols-[13.5rem_minmax(0,1fr)]">
         <aside className="hidden border-r border-border bg-surface lg:sticky lg:top-[var(--app-topbar-height)] lg:block lg:h-[calc(100dvh-var(--app-topbar-height))] lg:p-3">
           <p className="mb-2 px-2.5 text-[0.6875rem] font-semibold uppercase tracking-wide text-text-muted">
