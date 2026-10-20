@@ -61,6 +61,13 @@ const gridWithProduct =
 const workspaceGrid =
   'grid gap-3 lg:grid-cols-[minmax(10rem,2fr)_4.25rem_4.75rem_4.5rem_minmax(8rem,1.2fr)_minmax(8rem,1.2fr)_5.5rem]';
 const input = fieldClassName;
+function percent(value: string, places: number): string {
+  if (!value.trim()) return '';
+  const numeric = Number(value.replace(/\\./g, '').replace(',', '.'));
+  return Number.isFinite(numeric)
+    ? numeric.toLocaleString('pt-BR', {minimumFractionDigits:places, maximumFractionDigits:places})
+    : value;
+}
 
 function brl(value: string): string {
   const [integer, fraction = '00'] = value.split('.');
@@ -284,7 +291,7 @@ export function AdminPolicyBatchGrid({
       {state.status !== 'idle' ? (
         <div
           aria-live="polite"
-          className={`rounded-xl border p-4 text-sm ${state.status === 'success' ? 'border-emerald-800 text-emerald-200' : 'border-rose-800 text-rose-200'}`}
+          className={`rounded-xl border p-4 text-sm ${state.status === 'success' ? 'border-[#AFE3C3] bg-[#F1FAF5] text-[#16854A]' : 'border-[#F0C2BE] bg-[#FFF3F2] text-[#A93732]'}`}
           role={state.status === 'success' ? 'status' : 'alert'}
         >
           {state.message}
@@ -299,7 +306,7 @@ export function AdminPolicyBatchGrid({
 
       <div className="ui-table-frame overflow-x-auto lg:overflow-x-visible">
         <div
-          className={`${grid} admin-table-header hidden border-b border-border bg-surface-muted px-3 py-2 text-[0.6875rem] font-semibold uppercase tracking-wide text-text-muted lg:grid`}
+          className={`${grid} !static !top-auto hidden min-h-9 items-center border-b border-[#D6DEE3] bg-[#DCE8ED] px-3 py-2 text-[0.6875rem] font-semibold uppercase tracking-wide text-[#61747B] lg:grid`}
         >
           {productId === undefined ? <span>Veículo</span> : null}
           <span>Tipo</span>
@@ -392,6 +399,7 @@ export function AdminPolicyBatchGrid({
                   {row.policyType === 'subsidized_financing' ? (
                     <label>
                       <CellLabel>Taxa</CellLabel>
+                      <div className="relative">
                       <input
                         aria-label={`Taxa da linha ${index + 1}`}
                         autoComplete="off"
@@ -404,9 +412,13 @@ export function AdminPolicyBatchGrid({
                             ),
                           })
                         }
-                        placeholder="% a.m."
+                        placeholder="0,00"
                         value={row.customerInterestRateMonthly}
+                        onBlur={() => update(row.clientRowId, {customerInterestRateMonthly:percent(row.customerInterestRateMonthly,2)})}
+                        style={{paddingRight:24}}
                       />
+                      <span aria-hidden="true" className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-[#61747B]">%</span>
+                      </div>
                     </label>
                   ) : (
                     <EmptyCell />
@@ -415,6 +427,7 @@ export function AdminPolicyBatchGrid({
                   {row.policyType === 'subsidized_financing' ? (
                     <label>
                       <CellLabel>Entrada</CellLabel>
+                      <div className="relative">
                       <input
                         aria-label={`Entrada da linha ${index + 1}`}
                         autoComplete="off"
@@ -425,9 +438,13 @@ export function AdminPolicyBatchGrid({
                             downPaymentPercentage: formatPtBrPercentageInput(event.target.value),
                           })
                         }
-                        placeholder="%"
+                        placeholder="00"
                         value={row.downPaymentPercentage}
+                        onBlur={() => update(row.clientRowId, {downPaymentPercentage:percent(row.downPaymentPercentage,0)})}
+                        style={{paddingRight:24}}
                       />
+                      <span aria-hidden="true" className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-[#61747B]">%</span>
+                      </div>
                     </label>
                   ) : (
                     <EmptyCell />
@@ -487,7 +504,7 @@ export function AdminPolicyBatchGrid({
                   <div className="flex min-h-11 items-center justify-center gap-2">
                     <button
                       aria-label={`Editar descrição da política ${index + 1}`}
-                      className={`inline-grid h-9 w-9 shrink-0 place-items-center rounded-full border text-lg font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300 ${row.description.trim() ? 'border-sky-500 bg-sky-950 text-sky-200' : 'border-slate-700 text-slate-300'}`}
+                      className={`inline-grid h-9 w-9 shrink-0 place-items-center rounded-full border text-lg font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300 ${row.description.trim() ? 'border-[#9ABCC8] bg-[#EAF1F4] text-[#357B97]' : 'border-slate-700 text-slate-300'}`}
                       onClick={() => setDescriptionRowId(row.clientRowId)}
                       title={
                         row.description.trim()
@@ -496,10 +513,10 @@ export function AdminPolicyBatchGrid({
                       }
                       type="button"
                     >
-                      +
+                      <img src="/carboot/plus.svg" alt="" aria-hidden="true" className="size-4 object-contain" />
                     </button>
                     <button
-                      className="inline-grid h-9 w-9 shrink-0 place-items-center rounded-full border border-rose-800 text-lg font-semibold text-rose-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-300 disabled:opacity-40"
+                      className="inline-grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[#D6DEE3] text-lg font-semibold text-[#526670] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-300 disabled:opacity-40"
                       disabled={index === rows.length - 1 && isEmpty(row)}
                       onClick={() =>
                         setRows((current) => {
@@ -513,7 +530,7 @@ export function AdminPolicyBatchGrid({
                       aria-label={`Remover política ${index + 1}`}
                       title="Remover política"
                     >
-                      ⊖
+                      <img src="/carboot/close.svg" alt="" aria-hidden="true" className="size-4 object-contain" />
                     </button>
                   </div>
                 </div>
@@ -549,7 +566,7 @@ export function AdminPolicyBatchGrid({
           ) : null}
         </div>
         <button
-          className={buttonClassName({ variant: 'interactive' })}
+          className="cc-btn cc-btn--m cc-btn--primary !h-10"
           disabled={
             pending ||
             filled === 0 ||

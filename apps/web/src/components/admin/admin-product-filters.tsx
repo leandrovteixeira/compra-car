@@ -3,6 +3,8 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState, useTransition } from 'react';
 
+
+
 import type { AdminProductFilterValues } from '@/application/admin/admin-product-filters';
 
 interface AdminProductFiltersProps {
@@ -10,7 +12,7 @@ interface AdminProductFiltersProps {
 }
 
 const controlClass =
-  'ui-field min-h-9 text-[0.8125rem] focus:border-selection-strong focus:ring-selection-strong/25';
+  'ui-field !h-10 !min-h-10 text-[0.8125rem] focus:border-selection-strong focus:ring-selection-strong/25';
 
 export function AdminProductFilters({ values }: AdminProductFiltersProps) {
   const pathname = usePathname();
@@ -44,14 +46,15 @@ export function AdminProductFilters({ values }: AdminProductFiltersProps) {
   return (
     <section
       aria-label="Filtros do catálogo"
-      className="border-b border-border bg-canvas pb-3 pt-3"
+      className="bg-transparent py-3"
     >
-      <div className="grid items-end gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(20rem,1fr)_8rem_8rem_auto]">
-        <label className="sm:col-span-2 lg:col-span-1">
-          <span className="sr-only">Buscar marca, modelo ou versão</span>
+      <div className="grid items-end gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(15rem,1fr)_8rem_8rem_8rem_3rem_auto]">
+        <label className="relative sm:col-span-2 lg:col-span-1">
+          <img src="/carboot/search.svg" alt="" aria-hidden="true" className="pointer-events-none absolute left-3 bottom-[11px] size-[18px] object-contain"/>
+          <span aria-hidden="true" className="mb-1 block text-xs font-semibold invisible">Buscar</span><span className="sr-only">Buscar marca, modelo ou versão</span>
           <input
             autoComplete="off"
-            className={controlClass}
+            className={`${controlClass} !pl-10`}
             name="search"
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Buscar marca, modelo ou versão..."
@@ -85,16 +88,26 @@ export function AdminProductFilters({ values }: AdminProductFiltersProps) {
             <option value="false">Privados</option>
           </select>
         </label>
+        <label className="text-xs font-semibold text-text-secondary">
+          Especificações
+          <select className={`${controlClass} mt-1`} value={values.specifications}
+            onChange={event => navigate({ specifications: event.target.value })}>
+            <option value="">Todas</option>
+            <option value="not_started">Não iniciada</option>
+            <option value="filled">Preenchida</option>
+          </select>
+        </label>
         <button
-          className="ui-button ui-button--ghost ui-button--compact"
+          className="mx-auto flex size-10 items-center justify-center rounded-md hover:bg-[#EAF1F4] focus-visible:outline-2 focus-visible:outline-[#9ABCC8]" aria-label="Limpar filtros" title="Limpar filtros"
           onClick={() => {
             setSearch('');
             startTransition(() => router.replace(pathname, { scroll: false }));
           }}
           type="button"
         >
-          Limpar
+          <img src="/carboot/close.svg" alt="" aria-hidden="true" className="size-4 object-contain"/>
         </button>
+        <button type="button" onClick={() => navigate({ new: "1" })} className="cc-btn cc-btn--m cc-btn--primary !min-w-[112px]">Novo veículo</button>
       </div>
       <p aria-live="polite" className="mt-1 min-h-4 text-xs text-text-muted">
         {pending ? 'Atualizando resultados…' : ''}

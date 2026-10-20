@@ -20,12 +20,14 @@ export function UserMenu({
   roleLabel,
   navigationLinks = [],
   showInvite = false,
+  sidebar = false,
 }: {
   readonly displayName: string;
   readonly logoutAction: () => Promise<never>;
   readonly roleLabel: string;
   readonly navigationLinks?: readonly MenuLink[];
   readonly showInvite?: boolean;
+  readonly sidebar?: boolean;
 }) {
   const menu = useRef<HTMLDetailsElement>(null);
   const { availability, requestNativeInstall } = usePwaInstall({ desktopManual: true });
@@ -66,17 +68,17 @@ export function UserMenu({
   };
 
   return (
-    <details className="group relative shrink-0" ref={menu}>
+    <details className="group relative min-w-0 shrink-0" ref={menu}>
       <summary
-        aria-label="Menu"
-        className="ui-button ui-button--ghost ui-button--compact cursor-pointer list-none"
+        aria-label={sidebar ? "Conta" : "Menu"}
+        className={sidebar ? "flex h-11 cursor-pointer list-none items-center gap-3 rounded-md px-4 text-sm text-white/85 hover:bg-white/10" : "ui-button ui-button--ghost ui-button--compact cursor-pointer list-none"}
       >
-        <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 16 16">
+        {sidebar ? <img alt="" src="/carboot/account2.svg" className="size-[22px] shrink-0"/> : <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 16 16">
           <path d="M2.5 4h11M2.5 8h11M2.5 12h11" stroke="currentColor" strokeLinecap="round" strokeWidth="1.5" />
-        </svg>
-        <span>Menu</span>
+        </svg>}
+        <span>{sidebar ? "Conta" : "Menu"}</span>
       </summary>
-      <section aria-label="Menu" className="absolute right-0 z-50 mt-2 w-64 rounded-lg border border-border bg-surface p-2 shadow-lg">
+      <section aria-label="Menu" className={sidebar ? "absolute bottom-12 left-0 z-50 w-64 rounded-lg border border-border bg-surface p-2 text-[#1A1D21] shadow-xl" : "absolute right-0 z-50 mt-2 w-64 rounded-lg border border-border bg-surface p-2 shadow-lg"}>
         <div className="border-b border-border px-2 pb-2">
           <p className="truncate text-sm font-semibold">{displayName}</p>
           <p className="mt-0.5 text-xs text-text-muted">{roleLabel}</p>

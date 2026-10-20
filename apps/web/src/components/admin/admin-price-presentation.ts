@@ -47,7 +47,7 @@ export function adminPriceVisualStatusLabel(
   operationalDate: string,
 ): string {
   if (status !== 'published') return adminPriceStatusLabel(status);
-  if (startsOn > operationalDate) return 'Publicado';
+  if (startsOn > operationalDate) return 'Previsto';
   if (isAdminPriceExpired(status, endsOn, operationalDate)) return 'Expirado';
   return 'Vigente';
 }

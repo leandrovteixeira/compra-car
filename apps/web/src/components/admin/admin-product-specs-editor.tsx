@@ -6,6 +6,7 @@ import type {
   AdministrativeSpecSubmission,
 } from '@compra-car/contracts';
 import { useMemo, useState, useTransition } from 'react';
+import { AdminSpecDropdown } from './admin-spec-dropdown';
 
 import {
   countAdministrativeSpecs,
@@ -22,6 +23,27 @@ interface AdminProductSpecsEditorProps {
     | { readonly ok: true; readonly model: AdministrativeProductSpecsModel }
     | { readonly ok: false; readonly message: string }
   >;
+}
+
+function displayUnit(unit: string | null): string {
+  if (!unit) return '—';
+  const labels: Readonly<Record<string, string>> = {
+    inch: 'polegadas', inches: 'polegadas', in: 'polegadas',
+    years: 'anos', year: 'ano', unit: 'unidade', units: 'unidades',
+  };
+  return labels[unit.trim().toLowerCase()] ?? unit;
+}
+
+function formatNumericForDisplay(raw: string): string {
+  const value = raw.trim();
+  if (!value) return '';
+  // Accept pt-BR grouped input or a compact integer/decimal entered by the user.
+  if (/^-?\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?$/.test(value)) return value;
+  const normalized = /^-?\d+\.\d{1,2}$/.test(value) ? value.replace('.', ',') : value;
+  if (!/^-?\d+(?:,\d{1,2})?$/.test(normalized)) return raw;
+  const [integer, decimal] = normalized.split(',');
+  const grouped = integer.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return decimal === undefined ? grouped : grouped + ',' + decimal;
 }
 
 function replaceField(
@@ -73,13 +95,14 @@ export function AdminProductSpecsEditor({
   }
 
   return (
-    <section className="min-w-0">
-      <div className="admin-specs-toolbar border-b border-border bg-surface px-3 py-2">
+    <section className="w-full min-w-0 overflow-hidden bg-white">
+      <div className="sticky top-0 z-30 border-b border-[#D6DEE3] bg-[#F6F7F8] px-0 py-3">
         <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
-          <label className="min-w-0 flex-1 lg:max-w-md">
+          <label className="relative min-w-0 flex-[1_1_auto]">
+            <img src="/carboot/search.svg" alt="" aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-[18px] -translate-y-1/2 object-contain"/>
             <span className="sr-only">Buscar especificações</span>
             <input
-              className="ui-field min-h-9 text-[0.8125rem]"
+              className="ui-field !h-10 !min-h-10 !pl-10 text-[0.8125rem]"
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Buscar especificações..."
               type="search"
@@ -95,7 +118,8 @@ export function AdminProductSpecsEditor({
               : 'Nenhuma alteração pendente'}
           </p>
           <button
-            className="ui-button ui-button--ghost ui-button--compact"
+            aria-label="Descartar alterações" title="Descartar alterações"
+            className="flex size-10 shrink-0 items-center justify-center rounded-md hover:bg-[#EAF1F4] disabled:opacity-50"
             disabled={!changed || pending}
             onClick={() => {
               setModel(baseline);
@@ -103,15 +127,15 @@ export function AdminProductSpecsEditor({
             }}
             type="button"
           >
-            Descartar
+            <img src="/carboot/close.svg" alt="" aria-hidden="true" className="size-4 object-contain" />
           </button>
           <button
-            className="ui-button ui-button--primary ui-button--commit"
+            className="cc-btn cc-btn--m cc-btn--primary !min-w-[112px]"
             disabled={!changed || pending}
             onClick={save}
             type="button"
           >
-            {pending ? 'Salvando…' : 'Salvar alterações'}
+            {pending ? 'Salvando…' : 'Salvar'}
           </button>
         </div>
         {feedback ? (
@@ -124,138 +148,50 @@ export function AdminProductSpecsEditor({
         ) : null}
       </div>
 
-      <div className="mt-3 space-y-2">
+      <div data-spec-scroll-frame className="w-full min-w-0 max-h-[calc(100dvh-17rem)] overflow-y-scroll overflow-x-hidden [scrollbar-gutter:stable]">
+        <div className="sticky top-0 z-20 grid h-11 grid-cols-[minmax(0,56fr)_minmax(0,32fr)_minmax(5rem,12fr)] items-center gap-3 bg-[#DCE8ED] px-4 text-xs font-semibold uppercase text-[#1A1D21]"><span>Especificação</span><span className="text-center">Valor</span><span className="text-center">Unidade</span></div>
         {groups.map((group) => {
           const groupCounts = counts.byGroup[group.name]!;
-          let previousEquipment = '';
           return (
             <details
-              className="overflow-hidden border border-border bg-surface"
+              className="border-b border-[#D6DEE3] bg-white"
               key={group.name}
               open={query ? true : undefined}
             >
-              <summary className="flex min-h-8 cursor-pointer items-center justify-between gap-3 bg-surface-muted px-3 py-1 text-[0.8125rem] font-semibold text-text-primary">
+              <summary className="sticky top-11 z-10 flex h-9 cursor-pointer items-center justify-between gap-3 bg-[#EAF1F4] px-4 text-[0.8125rem] font-semibold text-text-primary">
                 {group.name}
-                <span className="text-xs font-normal text-text-muted">
+                <span className="cc-type-label !font-normal text-text-muted">
                   {groupCounts.filled} / {groupCounts.total}
                 </span>
               </summary>
               <div className="divide-y divide-border border-t border-border">
                 {group.fields.map((field) => {
-                  const showEquipment = field.equipmentGroup !== previousEquipment;
-                  previousEquipment = field.equipmentGroup;
-                  const empty =
-                    field.kind === 'binary'
-                      ? field.present === null
-                      : field.kind === 'numeric'
-                        ? field.value === ''
-                        : !field.selectedSpecId;
                   return (
                     <div
-                      className={`px-3 py-2 ${empty ? 'bg-amber-950/10' : ''}`}
+                      className={`px-3 py-1.5 ${group.fields.indexOf(field) % 2 ? 'bg-[#F8FAFB]' : 'bg-white'}`}
                       key={field.kind === 'scale' ? field.key : field.specId}
                     >
-                      {showEquipment ? (
-                        <h3 className="mb-1 text-[0.6875rem] font-semibold uppercase tracking-wide text-text-muted">
-                          {field.equipmentGroup}
-                        </h3>
-                      ) : null}
-                      <div className="admin-specs-field-grid md:min-h-7">
+                      <div className="grid grid-cols-[minmax(0,56fr)_minmax(0,32fr)_minmax(5rem,12fr)] items-center gap-2 md:min-h-7">
                         <div>
-                          <p className="text-[0.8125rem] font-medium leading-4 text-text-primary">
+                          <p className="cc-type-data !font-medium text-text-primary">
                             {field.label}
                           </p>
-                          {field.specSet !== field.label ? (
-                            <p className="text-[0.6875rem] leading-3 text-text-muted">
-                              {field.specSet}
-                            </p>
-                          ) : null}
-                          <p className="text-[0.625rem] leading-3 text-text-muted">
-                            {field.kind === 'scale'
-                              ? field.options.map((o) => o.code).join(' · ')
-                              : field.code}
-                          </p>
                         </div>
-                        {field.kind === 'numeric' ? (
-                          <div className="admin-specs-value-column admin-specs-numeric-control">
-                            <input
-                              aria-label={field.label}
-                              className="ui-field min-h-8 min-w-0 text-right text-xs tabular-nums"
-                              inputMode="decimal"
-                              onChange={(event) =>
-                                update(field, { ...field, value: event.target.value })
-                              }
-                              value={field.value}
-                            />
-                            {field.supportsTorqueUnit ? (
-                              <select
-                                aria-label={`Unidade de ${field.label}`}
-                                className="ui-field min-h-8 w-16 text-xs"
-                                onChange={(event) =>
-                                  update(field, { ...field, inputUnit: event.target.value })
-                                }
-                                value={field.inputUnit ?? 'Nm'}
-                              >
-                                <option value="Nm">Nm</option>
-                                <option value="kgfm">kgfm</option>
-                              </select>
-                            ) : (
-                              <span className="w-16 text-xs text-text-muted">{field.unit}</span>
-                            )}
-                          </div>
-                        ) : field.kind === 'binary' ? (
-                          <div
-                            aria-label={`Estado de ${field.label}`}
-                            className="admin-specs-value-column flex justify-start"
-                            role="radiogroup"
-                          >
-                            {(
-                              [
-                                { value: null, glyph: '-', label: 'Não informado' },
-                                { value: true, glyph: '✓', label: 'Possui' },
-                                { value: false, glyph: '□', label: 'Não possui' },
-                              ] as const
-                            ).map((option) => (
-                              <button
-                                aria-checked={field.present === option.value}
-                                aria-label={`${field.label}: ${option.label}`}
-                                className={`ui-button ui-button--compact min-w-8 border-border px-2 text-sm first:rounded-l-md last:rounded-r-md ${
-                                  field.present === option.value
-                                    ? 'bg-selection-strong font-bold text-text-primary'
-                                    : 'bg-surface text-text-secondary'
-                                }`}
-                                key={option.label}
-                                onClick={() => update(field, { ...field, present: option.value })}
-                                role="radio"
-                                title={option.label}
-                                type="button"
-                              >
-                                {option.glyph}
-                              </button>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="admin-specs-value-column">
-                            <select
-                              aria-label={field.label}
-                              className="ui-field min-h-8 w-full text-xs"
-                              onChange={(event) =>
-                                update(field, {
-                                  ...field,
-                                  selectedSpecId: event.target.value || null,
-                                })
-                              }
-                              value={field.selectedSpecId ?? ''}
-                            >
-                              <option value="">-</option>
-                              {field.options.map((option) => (
-                                <option key={option.specId} value={option.specId}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        )}
+                        <div className="contents">
+                          {field.kind === 'numeric' ? (
+                            <input aria-label={field.label} className="min-h-8 min-w-0 rounded-md border border-[#D6DEE3] bg-white px-2 text-right text-[0.8125rem] tabular-nums focus:border-[#9ABCC8] focus:outline-none" inputMode="decimal" value={field.value} onChange={(event) => update(field, { ...field, value: event.target.value })} onBlur={(event) => update(field, { ...field, value: formatNumericForDisplay(event.target.value) })} />
+                          ) : field.kind === 'binary' ? (
+                            <AdminSpecDropdown label={field.label}
+                              value={field.present === true ? 'available' : 'not_available'}
+                              options={[{ value: 'available', label: 'Disponível', icon: 'spec_available' }, { value: 'optional', label: 'Opcional (em breve)', icon: 'spec_optional', disabled: true }, { value: 'not_available', label: 'Indisponível', icon: 'spec_not_available' }]}
+                              onChange={(v) => update(field, { ...field, present: v === 'available' })}/>
+                          ) : (
+                            <AdminSpecDropdown label={field.label} value={field.selectedSpecId ?? ''}
+                              options={[{ value: '', label: 'Indisponível' }, ...field.options.map((option) => ({ value: option.specId, label: option.label }))]}
+                              onChange={(v) => update(field, { ...field, selectedSpecId: v || null })}/>
+                          )}
+                          <span className="text-center text-xs text-[#61747B]">{field.kind === 'numeric' ? displayUnit(field.unit) : '—'}</span>
+                        </div>
                       </div>
                     </div>
                   );

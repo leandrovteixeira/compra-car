@@ -30,6 +30,9 @@ type MutationAction = (
 
 const brl = (value: string) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value));
+function formatDateBR(value: string | null): string {
+  return value ? value.replace(/^(\\d{4})-(\\d{2})-(\\d{2})$/, '$3/$2/$1') : 'aberta';
+}
 const OFFER_STATUS_LABELS = {
   draft: 'Rascunho',
   published: 'Publicado',
@@ -258,7 +261,7 @@ export function CommercialOfferBuilder({
                           onChange={(event) =>
                             changeExisting(draft, policyType, event.target.checked)
                           }
-                          className="h-5 w-5 accent-sky-500 disabled:opacity-60"
+                          className="cc-offer-checkbox disabled:opacity-60"
                         />
                       </td>
                     );
@@ -275,7 +278,7 @@ export function CommercialOfferBuilder({
                       <div className="absolute right-0 z-20 mt-2 w-64 rounded-xl border border-slate-700 bg-slate-950 p-3 text-xs text-slate-300 shadow-xl">
                         <strong>Offer #{draft.id}</strong>
                         <p>
-                          Vigência: {draft.validFrom} — {draft.validTo ?? 'aberta'}
+                          Vigência: {formatDateBR(draft.validFrom)} — {formatDateBR(draft.validTo)}
                         </p>
                         <p>Status: {OFFER_STATUS_LABELS[draft.status]}</p>
                         <p>MSRP: {brl(draft.publicPriceAmount)}</p>
@@ -385,7 +388,7 @@ export function CommercialOfferBuilder({
                       >
                         <input
                           type="checkbox"
-                          className="h-5 w-5 accent-sky-500"
+                          className="cc-offer-checkbox"
                           aria-label={`Selecionar ${label} para ${products.find((p) => p.id === row.productId)?.displayName ?? 'veículo'}`}
                           checked={checked}
                           onChange={(event) =>
@@ -441,7 +444,7 @@ export function CommercialOfferBuilder({
       <div className="flex justify-end">
         <button
           disabled={pending || filledCount === 0 || hasConflict}
-          className="min-h-11 rounded-xl bg-sky-500 px-5 font-bold text-slate-950 disabled:opacity-50"
+          className="cc-btn cc-btn--m cc-btn--primary !h-10 disabled:opacity-50"
         >
           {pending ? 'Salvando…' : 'Salvar ofertas'}
         </button>

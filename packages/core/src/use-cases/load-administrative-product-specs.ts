@@ -50,6 +50,7 @@ export class LoadAdministrativeProductSpecs {
         equipmentGroup: spec.equipmentGroup,
         specSet: spec.specSet,
         searchText: searchText(spec),
+        displayOrder: spec.displayOrder ?? null,
       };
       if (spec.type === 'binary') {
         fields.push({
@@ -91,6 +92,7 @@ export class LoadAdministrativeProductSpecs {
         specSet: first.specSet,
         label: first.specSet,
         searchText: options.map(searchText).join(' '),
+        displayOrder: Math.min(...options.map((option) => option.displayOrder ?? Number.MAX_SAFE_INTEGER)),
         options: options.map((option) => ({
           specId: option.id,
           code: option.code,
@@ -103,9 +105,8 @@ export class LoadAdministrativeProductSpecs {
 
     const orderedFields = [...fields].sort(
       (left, right) =>
+        (left.displayOrder ?? Number.MAX_SAFE_INTEGER) - (right.displayOrder ?? Number.MAX_SAFE_INTEGER) ||
         left.groupName.localeCompare(right.groupName, 'pt-BR') ||
-        left.equipmentGroup.localeCompare(right.equipmentGroup, 'pt-BR') ||
-        left.specSet.localeCompare(right.specSet, 'pt-BR') ||
         left.searchText.localeCompare(right.searchText, 'pt-BR'),
     );
     const byGroup = new Map<string, AdministrativeSpecField[]>();

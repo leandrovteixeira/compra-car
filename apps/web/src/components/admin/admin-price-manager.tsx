@@ -28,6 +28,7 @@ interface AdminPriceManagerProps {
   readonly page: ProductPublicPriceListPageDto;
   readonly products: readonly ProductPublicPriceProductOptionDto[];
   readonly updateAction: PriceAction;
+  readonly createAction: PriceAction;
   readonly publishAction: (
     formData: FormData,
   ) => Promise<{ readonly ok: boolean; readonly message: string }>;
@@ -65,8 +66,10 @@ export function PriceDialog({
   onSuccess,
   publishAction,
   products,
+  correction = false,
 }: {
   readonly action: PriceAction;
+  readonly correction?: boolean;
   readonly initialValues: ProductPublicPriceFormValuesDto;
   readonly onClose: () => void;
   readonly onSuccess: (message: string) => void;
@@ -173,8 +176,9 @@ export function PriceDialog({
         <fieldset disabled={pending || publicationPending}>
           <p className="text-sm font-semibold uppercase tracking-wider text-sky-300">Pricing</p>
           <h2 className="mt-2 text-2xl font-bold" id="price-dialog-title">
-            {initialValues.id ? 'Editar preço público' : 'Adicionar preço público'}
+            {correction ? 'Corrigir preço publicado' : initialValues.id ? 'Editar preço público' : 'Adicionar preço público'}
           </h2>
+          {correction && <p className="mt-3 rounded-md border border-[#D6DEE3] bg-[#F6F7F8] p-3 text-sm text-[#1A1D21]">Este formulário cria um novo rascunho com os dados anteriores. O preço publicado permanece inalterado até a revisão e publicação da correção.</p>}
           {state.status === 'error' || state.status === 'conflict' ? (
             <div
               className="mt-5 rounded-xl border border-rose-800 bg-rose-950/40 p-4 text-sm text-rose-200"
@@ -318,20 +322,24 @@ export function AdminPriceManager({
   page,
   products,
   updateAction,
+  createAction,
   publishAction,
 }: AdminPriceManagerProps) {
   const router = useRouter();
   const openerRef = useRef<HTMLElement | null>(null);
   const [editing, setEditing] = useState<ProductPublicPriceListItemDto | null>(null);
+  const [correcting, setCorrecting] = useState<ProductPublicPriceListItemDto | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
 
   function close() {
     setEditing(null);
+    setCorrecting(null);
     requestAnimationFrame(() => openerRef.current?.focus());
   }
   function success(message: string) {
     setFeedback(message);
     setEditing(null);
+    setCorrecting(null);
     router.refresh();
     requestAnimationFrame(() => openerRef.current?.focus());
   }
@@ -353,6 +361,11 @@ export function AdminPriceManager({
       </div>
       {page.items.length ? (
         <AdminPriceList
+          onCorrect={(id, opener) => {
+            openerRef.current = opener;
+            setCorrecting(page.items.find(price => price.id === id) ?? null);
+            setEditing(null);
+          }}
           onEdit={(id, opener) => {
             openerRef.current = opener;
             setEditing(page.items.find((price) => price.id === id) ?? null);
@@ -370,6 +383,17 @@ export function AdminPriceManager({
           title="Nenhum preço público encontrado"
         />
       )}
+      {correcting ? (
+        <PriceDialog
+          correction
+          action={createAction}
+          initialValues={{...valuesForPrice(correcting), id: '', lockVersion: ''}}
+          key={`correct-${correcting.id}`}
+          onClose={close}
+          onSuccess={success}
+          products={products}
+        />
+      ) : null}
       {editing ? (
         <PriceDialog
           action={updateAction}
