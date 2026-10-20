@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { getVerifiedAuthUser } from '@compra-car/adapter-supabase';
+import { getAuthProfile, getVerifiedAuthUser } from '@compra-car/adapter-supabase';
 
 import {
   canExecuteFeature,
@@ -17,6 +17,8 @@ export async function getAccountTier(): Promise<AccountTier> {
   const client = await createReadOnlyServerClient();
   const user = await getVerifiedAuthUser(client);
   if (!user) return 'visitor';
+  const profile = await getAuthProfile(client, user.id);
+  if (!profile || profile.status !== 'active') return 'visitor';
 
   const { data, error } = await client
     .from('account_access_grants')
