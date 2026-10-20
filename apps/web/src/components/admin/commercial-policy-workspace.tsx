@@ -568,7 +568,7 @@ export function CommercialPolicyWorkspace(props: {
               ))}
               {historicalOffers.map((offer) => (
                 <p key={`offer-${offer.id}`}>
-                  Offer #{offer.id} · {offer.validFrom} — {offer.validTo} · {offer.status}
+                  Oferta #{offer.id} · {formatDateBR(offer.validFrom)} — {offer.validTo ? formatDateBR(offer.validTo) : 'aberta'} · {offer.status}
                 </p>
               ))}
               {!historicalPolicies.length && !historicalOffers.length ? (
