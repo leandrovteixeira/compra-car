@@ -2,6 +2,10 @@
 
 ## 2026-10-20 — Sprint 23C.1 (foundation in feature branch)
 
+- Connected server-verified tier resolution to the admin shell and restricted Gestão de Usuários under Master-only Configurações; added a separate page-level feature guard.
+- Exposed Share Application via the authenticated topbar and visitor login page, sharing only the site root.
+- Full public browsing, action-level enforcement, and drawer remain pending. Validation/deployment blocked pending runnable checkout/CI.
+
 - Added a pure role-to-feature entitlement matrix for visitor, Public, Corporate, Admin and Master, including 3/8 comparison limits and hidden/disabled future features.
 - Added unit tests covering public Export/Share gates and privilege boundaries.
 - Applied organization, membership and explicit account-grant tables with own-row RLS in Staging only (not Production); verified one Early Access organization and one QA Master grant.
