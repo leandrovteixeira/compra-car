@@ -2,6 +2,10 @@
 
 ## 2026-10-20 — Sprint 23C.1 (foundation in feature branch)
 
+- Connected tier-based, iconless Conta menu with profile, plan, password and Public upgrade links, with PWA installation before logout.
+- Added minimal protected pages for Meu perfil, Meu plano, Trocar senha and Upgrade. Editing, password mutation and commercial requests remain intentionally unavailable until secure workflows exist.
+- No build/tests/deploy executed; implementation requires validation before merge.
+
 - Public vehicle shell, catalog actions and comparison viewing now avoid the old seller login gate; PDF generation remains authenticated at the route boundary.
 - Added contextual authentication drawer to visitor navigation and PDF actions, preserving the comparison URL. Existing login Server Action is reused; public signup remains disabled pending email verification delivery.
 - Vehicle selection receives a tier-specific 3/8 limit while the comparison service independently enforces the same limit.
