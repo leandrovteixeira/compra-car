@@ -30,6 +30,9 @@ type MutationAction = (
 
 const brl = (value: string) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value));
+function formatDateBR(value: string | null): string {
+  return value ? value.replace(/^(\\d{4})-(\\d{2})-(\\d{2})$/, '$3/$2/$1') : 'aberta';
+}
 const OFFER_STATUS_LABELS = {
   draft: 'Rascunho',
   published: 'Publicado',
@@ -275,7 +278,7 @@ export function CommercialOfferBuilder({
                       <div className="absolute right-0 z-20 mt-2 w-64 rounded-xl border border-slate-700 bg-slate-950 p-3 text-xs text-slate-300 shadow-xl">
                         <strong>Offer #{draft.id}</strong>
                         <p>
-                          Vigência: {draft.validFrom} — {draft.validTo ?? 'aberta'}
+                          Vigência: {formatDateBR(draft.validFrom)} — {formatDateBR(draft.validTo)}
                         </p>
                         <p>Status: {OFFER_STATUS_LABELS[draft.status]}</p>
                         <p>MSRP: {brl(draft.publicPriceAmount)}</p>
