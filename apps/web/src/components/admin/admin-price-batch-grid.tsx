@@ -23,6 +23,7 @@ type BatchAction = (
 interface AdminPriceBatchGridProps {
   readonly action: BatchAction;
   readonly products: readonly ManualPriceBatchProductOptionDto[];
+  readonly brands: readonly string[];
 }
 
 function isOperationallyEmpty(row: ManualPriceBatchGridRowDto): boolean {
@@ -47,7 +48,8 @@ function FieldError({
   ) : null;
 }
 
-export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridProps) {
+export function AdminPriceBatchGrid({ action, products, brands }: AdminPriceBatchGridProps) {
+  const [brand,setBrand] = useState('');
   const initialState: ManualPriceBatchActionStateDto = {
     status: 'idle',
     rows: [EMPTY_MANUAL_PRICE_BATCH_ROW],
@@ -90,6 +92,19 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
     });
   }
 
+  function loadBrand() {
+    if (!brand) return;
+    const canonical = products.filter(p => p.isActive && p.isPublic &&
+      p.displayName.toLocaleLowerCase('pt-BR').startsWith(brand.toLocaleLowerCase('pt-BR') + ' '));
+    if (!canonical.length) return;
+    if (canonical.length > 100) { window.alert('Esta marca possui mais de 100 versões. Refine o lote antes de prosseguir.'); return; }
+    if (filledCount > 0 && !window.confirm('Substituir as linhas preenchidas pelas versões desta marca?')) return;
+    setRows([
+      ...canonical.map(p => ({ ...newEmptyRow(`row-${nextRowId.current++}`), productId: p.id })),
+      newEmptyRow(`row-${nextRowId.current++}`),
+    ]);
+  }
+
   function updateMoney(clientRowId: string, element: HTMLInputElement) {
     const raw = element.value;
     const formatted = formatPtBrMoneyInput(raw);
@@ -126,6 +141,18 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
             {state.status === 'success' && state.batchId ? ` Lote #${state.batchId}.` : ''}
           </p>
         )}
+      </div>
+      <div className="flex flex-wrap items-end gap-2 rounded-md border border-[#D6DEE3] bg-white p-3">
+        <label className="min-w-[200px] flex-1 text-xs font-semibold text-[#61747B]">
+          Preencher por marca
+          <select aria-label="Marca para preenchimento em lote" className="ui-field mt-1 !h-10 w-full" value={brand} onChange={event=>setBrand(event.target.value)}>
+            <option value="">Selecione uma marca</option>
+            {brands.map(name=><option key={name} value={name}>{name}</option>)}
+          </select>
+        </label>
+        <button type="button" disabled={!brand || pending} className="cc-btn cc-btn--m cc-btn--secondary !h-10" onClick={loadBrand}>
+          Carregar versões
+        </button>
       </div>
       <input name="rows" type="hidden" value={JSON.stringify(rows)} />
 
