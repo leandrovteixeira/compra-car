@@ -9,7 +9,7 @@ export function PublicNavigation() {
         <Link href="/" className="font-semibold text-text-primary">COMPRA CAR</Link>
         <div className="flex items-center gap-2">
           <ShareApplication />
-          <Link className="ui-button ui-button--interactive ui-button--compact" href="/login">
+          <Link className="ui-button ui-button--interactive ui-button--compact" href="?auth=login">
             Entrar / Criar conta
           </Link>
         </div>
