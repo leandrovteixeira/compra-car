@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Suspense } from 'react';
 import { AuthDrawer } from '@/components/auth-drawer';
 
+import { getAccountTier } from '@/auth/account-tier-server';
 import { getActiveProfile } from '@/auth/authorization';
 import { AppAuthenticatedNavigation } from '@/components/authenticated-navigation';
 import { PublicNavigation } from '@/components/public-navigation';
@@ -14,6 +15,7 @@ interface SellerLayoutProps {
 
 export default async function SellerLayout({ children }: SellerLayoutProps) {
   const profile = await getActiveProfile();
+  const tier = profile ? await getAccountTier() : 'visitor' as const;
   const links = profile
     ? getAuthenticatedNavigationModel(profile, 'seller').localLinks
     : [{ href: '/ver-modelo', label: 'Fichas Técnicas' }, { href: '/', label: 'Comparar Modelos' }];
@@ -25,6 +27,7 @@ export default async function SellerLayout({ children }: SellerLayoutProps) {
           area="seller"
           displayName={profile.fullName ?? 'Usuário'}
           profile={profile}
+          tier={tier}
         />
       ) : (
         <PublicNavigation />
