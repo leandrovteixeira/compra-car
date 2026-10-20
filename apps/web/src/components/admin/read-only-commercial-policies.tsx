@@ -51,7 +51,7 @@ export function ReadOnlyCommercialPolicies({products,policies,offers}:{products:
    </div>
    <div className="grid min-w-[960px] grid-cols-[repeat(12,minmax(0,1fr))_110px] bg-[#DCE8ED] px-2 py-2 text-center text-[10px] font-semibold text-[#526670]">{headings.map(h=><span key={h}>{h}</span>)}<span>Total</span></div>
    <div className="grid min-w-[960px] grid-cols-[repeat(12,minmax(0,1fr))_110px] items-center px-2 py-3 text-center text-xs">
-    {kinds.map(k=><span key={k}>{members.some(m=>m.policyType===k)?<img src="/carboot/check.svg" alt="Incluída" className="mx-auto size-4"/>:<span className="text-[#AAB5BA]">—</span>}</span>)}
+    {kinds.map(k=><span key={k}>{members.some(m=>m.policyType===k)?<img src="/carboot/check_bold_orange.svg" alt="Incluída" className="mx-auto size-4"/>:<span className="text-[#AAB5BA]">—</span>}</span>)}
     <strong>{amount(o.benefitAmount)}</strong>
    </div>
   </div>;
