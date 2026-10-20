@@ -2,6 +2,10 @@
 
 ## 2026-10-20 — Sprint 23C.1 (foundation in feature branch)
 
+- Added QA-only profile contact columns, column-scoped update grants, and Corporate upgrade requests with RLS and one-pending-request constraint.
+- Linked Meu Perfil and Upgrade to server actions; these do not grant access or send email. Browser and build validation remain pending.
+
+
 - Connected tier-based, iconless Conta menu with profile, plan, password and Public upgrade links, with PWA installation before logout.
 - Added minimal protected pages for Meu perfil, Meu plano, Trocar senha and Upgrade. Editing, password mutation and commercial requests remain intentionally unavailable until secure workflows exist.
 - No build/tests/deploy executed; implementation requires validation before merge.
