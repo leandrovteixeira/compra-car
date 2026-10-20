@@ -37,8 +37,9 @@ const POLICY_STATUS_LABELS = {
 const badge = 'inline-flex h-6 items-center justify-center rounded-full border px-2.5 text-xs font-medium';
 
 function formatDateBR(date: string): string {
-  const match = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(date);
-  return match ? `${match[3]}/${match[2]}/${match[1]}` : date;
+  const parts = date.slice(0, 10).split('-');
+  if (parts.length !== 3 || parts[0]?.length !== 4 || parts[1]?.length !== 2 || parts[2]?.length !== 2) return date;
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
 }
 function previousDay(date: string): string {
   const value = new Date(`${date}T00:00:00Z`);
