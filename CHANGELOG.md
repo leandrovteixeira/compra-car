@@ -4,8 +4,8 @@
 
 - Added a pure role-to-feature entitlement matrix for visitor, Public, Corporate, Admin and Master, including 3/8 comparison limits and hidden/disabled future features.
 - Added unit tests covering public Export/Share gates and privilege boundaries.
-- Drafted organization, membership and explicit account-grant tables with own-row RLS; **migration not applied**.
-- The new policy is not yet connected to the legacy app's routes or access controls. Production and Staging database contents remain unchanged.
+- Applied organization, membership and explicit account-grant tables with own-row RLS in Staging only (not Production); verified one Early Access organization and one QA Master grant.
+- The new policy is not yet connected to the legacy app's routes or access controls. Production is unchanged; Staging has one explicit Master access grant and one Early Access organization.
 
 # Changelog
 
