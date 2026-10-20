@@ -322,3 +322,7 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - Source: canonical brand names, active+public vehicle options only; builds preselected MMVY lines for the brand and leaves price/date blank. Maximum 100 valid vehicles; explicit confirmation before replacing entered rows; existing per-line combobox remains available.
 - Policy offer details: format commercial offer start/end as `dd/mm/aaaa` while keeping storage ISO.
 - QA publishability audit (read-only): 27 draft policies, 7 pass existing validator, 20 fail owing to missing compatible published MSRP. Avoid blind mass update; validate a published candidate and the policies page without breaking financial references.
+
+## Sprint 23.19.2 — Teste read-only Políticas Vigentes em QA (2026-10-19)
+- Auditoria por validador SQL sem alteração encontrou 7 políticas aptas a publicar e 20 bloqueadas por falta de MSRP compatível; não forçar publicação em massa.
+- Política QA **#131**, bônus trade-in do Jaecoo 7 Elite 2027, publicada via `publish_commercial_policy` com admin ativo, lock_version e correlation UUID. Status persistido `published`, vigência `2026-10-01..2026-10-31`, associação a 1 oferta mantida. Consulta read-only pode validar filtro textual `jaecoo`, competência outubro/2026 e indicador `layers`; nenhuma oferta foi publicada neste teste.
