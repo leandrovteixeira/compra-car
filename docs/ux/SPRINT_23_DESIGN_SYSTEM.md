@@ -337,3 +337,8 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - **Cadastrar Políticas:** checkboxes de combinação de ofertas mantêm input nativo funcional, controle de teclado e evento `onChange`, mas o estado marcado recebe ícone bold grafite via classe `cc-offer-checkbox`. Box 20×20px, borda 1px `#A8B3B9`, radius 3px, fundo marcado `#DCE8ED`, símbolo 13px, foco `#9ABCC8`.
 - **Políticas Vigentes:** a matriz de expansão read-only exibe o mesmo bold check na versão laranja, sem controle interativo; células vazias usam travessão.
 - QA precisa conferir estados checked/unchecked, disabled e tab/focus, além da presença do ícone laranja na expansão de `layers`.
+
+## Sprint 23.19.5 — Correção definitiva do formatador de vigência (2026-10-20)
+- Raiz do bug: `formatDateBR` em `commercial-policy-workspace.tsx` tinha `\\d` duplicado no regex do código-fonte; o teste não reconhecia `2026-10-01`, devolvendo o texto ISO intacto.
+- Substituído por parsing explícito do prefixo ISO `YYYY-MM-DD` via `slice(0,10).split('-')`, exibindo `DD/MM/YYYY` para políticas existentes, período especial e histórico de ofertas; cálculo e persistência continuam ISO.
+- Critério QA: política Jaecoo #131 em outubro deve mostrar `01/10/2026 — 31/10/2026` e não ISO.
