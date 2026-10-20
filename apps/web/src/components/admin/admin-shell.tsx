@@ -19,13 +19,15 @@ function getMobileAdminLinks(tier: AccountTier): readonly NavigationLink[] {
   return adminNavigationItems
     .filter((item) => tier === 'master' || item.label !== 'Configurações')
     .flatMap((item) => {
-  if (item.children) {
-    return item.children
-      .filter((child) => child.status === 'active' && child.href)
-      .map((child) => ({ href: child.href!, label: child.label }));
-  }
-  return item.status === 'active' && item.href ? [{ href: item.href, label: item.label }] : [];
-});
+      if (item.children) {
+        return item.children
+          .filter((child) => child.status === 'active' && child.href)
+          .map((child) => ({ href: child.href!, label: child.label }));
+      }
+      return item.status === 'active' && item.href
+        ? [{ href: item.href, label: item.label }]
+        : [];
+    });
 }
 
 export function AdminShell({ children, displayName, profile, tier }: AdminShellProps) {
