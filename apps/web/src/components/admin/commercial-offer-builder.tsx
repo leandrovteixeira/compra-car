@@ -261,7 +261,7 @@ export function CommercialOfferBuilder({
                           onChange={(event) =>
                             changeExisting(draft, policyType, event.target.checked)
                           }
-                          className="h-5 w-5 accent-sky-500 disabled:opacity-60"
+                          className="cc-offer-checkbox disabled:opacity-60"
                         />
                       </td>
                     );
