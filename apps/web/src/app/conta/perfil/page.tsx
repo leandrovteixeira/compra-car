@@ -1,19 +1,22 @@
 import { requireActiveProfile } from '@/auth/authorization';
+import { createReadOnlyServerClient } from '@/auth/server-client';
+import { updateContactProfile } from '../actions';
 
 export default async function MyProfilePage() {
   const { user, profile } = await requireActiveProfile();
-  return (
-    <main className="mx-auto max-w-2xl px-5 py-8 text-text-primary">
-      <h1 className="text-2xl font-semibold">Meu perfil</h1>
-      <p className="mt-2 text-sm text-text-secondary">Seus dados cadastrais no Compra Car.</p>
-      <dl className="mt-7 space-y-5 rounded-xl border border-border bg-surface p-6">
-        <div><dt className="text-xs text-text-muted">Nome completo</dt><dd className="mt-1 font-medium">{profile.fullName || 'Não informado'}</dd></div>
-        <div><dt className="text-xs text-text-muted">Email</dt><dd className="mt-1 font-medium">{user.email || 'Não informado'}</dd></div>
-        <div><dt className="text-xs text-text-muted">Telefone / WhatsApp</dt><dd className="mt-1 text-text-secondary">Ainda não cadastrado</dd></div>
-        <div><dt className="text-xs text-text-muted">Empresa</dt><dd className="mt-1 text-text-secondary">Ainda não cadastrada</dd></div>
-        <div><dt className="text-xs text-text-muted">Cargo</dt><dd className="mt-1 text-text-secondary">Ainda não cadastrado</dd></div>
-      </dl>
-      <p className="mt-4 text-sm text-text-muted">A edição de telefone, empresa e cargo será ativada após a migração dos campos cadastrais.</p>
-    </main>
-  );
+  const db = await createReadOnlyServerClient();
+  const { data, error } = await db.from('profiles').select('phone,company,job_title').eq('id', user.id).single();
+  if (error) throw new Error('Não foi possível carregar o perfil.');
+  return <main className="mx-auto max-w-2xl px-5 py-8 text-text-primary">
+    <h1 className="text-2xl font-semibold">Meu perfil</h1>
+    <p className="mt-2 text-sm text-text-secondary">Dados pessoais e profissionais da conta.</p>
+    <form action={updateContactProfile} className="mt-7 space-y-5 rounded-xl border border-border bg-surface p-6">
+      <p className="text-sm">Nome completo: <strong>{profile.fullName || 'Não informado'}</strong></p>
+      <p className="text-sm">Email: <strong>{user.email}</strong></p>
+      <label className="block text-sm">Telefone / WhatsApp<input className="ui-field mt-2 w-full" name="phone" type="tel" maxLength={40} defaultValue={data.phone ?? ''} /></label>
+      <label className="block text-sm">Empresa<input className="ui-field mt-2 w-full" name="company" maxLength={160} defaultValue={data.company ?? ''} /></label>
+      <label className="block text-sm">Cargo / Função<input className="ui-field mt-2 w-full" name="jobTitle" maxLength={120} defaultValue={data.job_title ?? ''} /></label>
+      <button type="submit" className="rounded-lg bg-[#EF7732] px-6 py-3 text-white">Salvar alterações</button>
+    </form>
+  </main>;
 }
