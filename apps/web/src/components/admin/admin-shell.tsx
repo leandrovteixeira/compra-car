@@ -39,6 +39,7 @@ export function AdminShell({ children, displayName, profile, tier }: AdminShellP
         logoutAction={logout}
         navigationLinks={getMobileAdminLinks(tier)}
         profile={profile}
+        tier={tier}
       />
       <div className="lg:grid lg:grid-cols-[13.5rem_minmax(0,1fr)]">
         <aside className="hidden border-r border-border bg-surface lg:sticky lg:top-[var(--app-topbar-height)] lg:block lg:h-[calc(100dvh-var(--app-topbar-height))] lg:p-3">
