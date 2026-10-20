@@ -388,7 +388,7 @@ export function CommercialOfferBuilder({
                       >
                         <input
                           type="checkbox"
-                          className="h-5 w-5 accent-sky-500"
+                          className="cc-offer-checkbox"
                           aria-label={`Selecionar ${label} para ${products.find((p) => p.id === row.productId)?.displayName ?? 'veículo'}`}
                           checked={checked}
                           onChange={(event) =>
