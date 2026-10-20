@@ -326,3 +326,8 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 ## Sprint 23.19.2 — Teste read-only Políticas Vigentes em QA (2026-10-19)
 - Auditoria por validador SQL sem alteração encontrou 7 políticas aptas a publicar e 20 bloqueadas por falta de MSRP compatível; não forçar publicação em massa.
 - Política QA **#131**, bônus trade-in do Jaecoo 7 Elite 2027, publicada via `publish_commercial_policy` com admin ativo, lock_version e correlation UUID. Status persistido `published`, vigência `2026-10-01..2026-10-31`, associação a 1 oferta mantida. Consulta read-only pode validar filtro textual `jaecoo`, competência outubro/2026 e indicador `layers`; nenhuma oferta foi publicada neste teste.
+
+## Sprint 23.19.3 — Detalhamento read-only de ofertas e headers sticky (2026-10-19)
+- Em Políticas Vigentes, o ícone `layers` expande uma matriz **somente leitura** baseada na criação de ofertas: Varejo, Desc. NF, Trade-In, Loyalty, Taxa, IPVA, Seguro, Wallbox, Emplac., Manut., Voucher e Outro. Mostra participação da política através de check/traço; total da oferta, seu identificador, vigência e status. Nenhum checkbox altera relações.
+- O histórico de Cadastrar Políticas também formata as datas das ofertas como dd/mm/aaaa. Datas internas continuam ISO.
+- Cadastrar Preços em lote: título e divisor preservados no topo; a grade recebe scroll vertical interno limitado à altura de viewport com seu cabeçalho sticky. Usuário conserva acesso ao botão Salvar na área inferior. Validar densidade com muitas linhas e comportamento mobile antes de aprovar.
