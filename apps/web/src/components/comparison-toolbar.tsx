@@ -75,7 +75,7 @@ export function ComparisonToolbar({ mode, authenticated = true }: ComparisonTool
         </p>
       </div>
       <div className="min-w-0 shrink-0">
-        <ComparisonPdfActions pdfUrl={pdfUrl} authenticated={authenticated} />
+        <ComparisonPdfActions pdfUrl={pdfUrl} authenticated={authenticated} returnTo={`${pathname}?${searchParams.toString()}`} />
       </div>
     </div>
   );
