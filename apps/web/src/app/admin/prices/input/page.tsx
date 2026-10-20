@@ -3,13 +3,14 @@ import { requireRole } from '@/auth/authorization';
 import { AdminPriceBatchGrid } from '@/components/admin/admin-price-batch-grid';
 import { CatalogPageHeading } from '@/components/admin/catalog-page-heading';
 import { loadManualPriceBatchProductOptions } from '@/server/manual-price-batch-service';
+import { loadExistingCatalogBrands } from '@/server/admin-catalog-brands';
 import { withDevTiming } from '@/server/dev-timing';
 
 import { createManualPriceBatchAction } from './actions';
 
 export default async function AdminPriceInputPage() {
   await requireRole('admin');
-  const products = await withDevTiming('pricing.page.input', loadManualPriceBatchProductOptions);
+  const [products, brands] = await Promise.all([withDevTiming('pricing.page.input', loadManualPriceBatchProductOptions),loadExistingCatalogBrands()]);
 
   return (
     <>
@@ -28,7 +29,7 @@ export default async function AdminPriceInputPage() {
             </p>
           </div>
         ) : (
-          <AdminPriceBatchGrid action={createManualPriceBatchAction} products={products.data} />
+          <AdminPriceBatchGrid action={createManualPriceBatchAction} products={products.data} brands={brands} />
         )}
       </section>
     </>
