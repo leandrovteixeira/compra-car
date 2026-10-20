@@ -11,6 +11,7 @@ import {
 interface ComparisonPdfActionsProps {
   readonly pdfUrl: string;
   readonly authenticated?: boolean;
+  readonly returnTo?: string;
 }
 
 const actionClassName =
@@ -51,7 +52,7 @@ function ShareIcon() {
   );
 }
 
-export function ComparisonPdfActions({ pdfUrl, authenticated = true }: ComparisonPdfActionsProps) {
+export function ComparisonPdfActions({ pdfUrl, authenticated = true, returnTo = '/comparar' }: ComparisonPdfActionsProps) {
   const [isSharing, setIsSharing] = useState(false);
 
   async function sharePdf() {
@@ -68,7 +69,7 @@ export function ComparisonPdfActions({ pdfUrl, authenticated = true }: Compariso
   }
 
   if (!authenticated) {
-    const destination = `/login?next=${encodeURIComponent(typeof window === 'undefined' ? '/comparar' : window.location.pathname + window.location.search)}`;
+    const destination = `/login?next=${encodeURIComponent(returnTo)}`;
     return (
       <div className="flex w-full min-w-0 gap-1.5 sm:w-auto">
         <Link href={destination} className={actionClassName}><DownloadIcon /><span>Baixar PDF</span></Link>
