@@ -316,3 +316,9 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - Conversão dos dados QA exige verificar validadores de publicação de política e oferta, inclusive MSRP publicado, vínculos e problemas bloqueantes, antes de qualquer migração em massa. Base auditada: 27 políticas e 22 ofertas, todas `draft` no início da revisão. Não aplicar update direto burlando triggers.
 - UX Cadastrar Políticas deve exibir ações **Editar/Corrigir** de política vigente, e os detalhes das ofertas associadas; Políticas Vigentes deve apresentar resultados publicados pertinentes à competência.
 - Produção fica intocada; migração para publicação requer implementação e testes completos em QA.
+
+## Sprint 23.19.1 — Bulk entry by brand and policy date display (2026-10-19)
+- Cadastrar Preços: **Preencher por marca** uses a standalone labeled brand dropdown and **Carregar versões** button above existing entry grid, rather than overloading the individual MMVY search.
+- Source: canonical brand names, active+public vehicle options only; builds preselected MMVY lines for the brand and leaves price/date blank. Maximum 100 valid vehicles; explicit confirmation before replacing entered rows; existing per-line combobox remains available.
+- Policy offer details: format commercial offer start/end as `dd/mm/aaaa` while keeping storage ISO.
+- QA publishability audit (read-only): 27 draft policies, 7 pass existing validator, 20 fail owing to missing compatible published MSRP. Avoid blind mass update; validate a published candidate and the policies page without breaking financial references.
