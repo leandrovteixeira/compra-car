@@ -69,7 +69,7 @@ export function ComparisonPdfActions({ pdfUrl, authenticated = true, returnTo = 
   }
 
   if (!authenticated) {
-    const destination = `/login?next=${encodeURIComponent(returnTo)}`;
+    const destination = returnTo + (returnTo.includes('?') ? '&' : '?') + 'auth=login';
     return (
       <div className="flex w-full min-w-0 gap-1.5 sm:w-auto">
         <Link href={destination} className={actionClassName}><DownloadIcon /><span>Baixar PDF</span></Link>
