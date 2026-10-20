@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-10-20 — Sprint 23C.1 (foundation in feature branch)
+
+- Added a pure role-to-feature entitlement matrix for visitor, Public, Corporate, Admin and Master, including 3/8 comparison limits and hidden/disabled future features.
+- Added unit tests covering public Export/Share gates and privilege boundaries.
+- Drafted organization, membership and explicit account-grant tables with own-row RLS; **migration not applied**.
+- The new policy is not yet connected to the legacy app's routes or access controls. Production and Staging database contents remain unchanged.
+
+# Changelog
+
 ## 2026-09-27 — Global Advantage + Numeric Presentation Metadata
 
 - Seller checks now identify the globally best known value across all compared vehicles rather than
