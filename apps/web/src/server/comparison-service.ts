@@ -8,6 +8,8 @@ import type { ComparisonPageViewModel } from '@/application/comparison/compariso
 
 import { CATALOG_CACHE_TAGS } from './catalog-cache';
 import { getCatalogCompositionRoot } from './composition-root';
+import { getAccountTier } from '@/auth/account-tier-server';
+import { comparisonLimit } from '@/auth/entitlements-23c';
 
 const COMPARISON_CACHE_TAG = 'comparison';
 const CACHE_REVALIDATE_SECONDS = 300;
@@ -45,6 +47,11 @@ export async function loadComparisonPage(
 ): Promise<ComparisonPageViewResult> {
   const parsed = parseComparisonRequest(rawVehicles);
   if (!parsed.ok) return parsed;
+
+  const tier = await getAccountTier();
+  if (parsed.vehicleIds.length > comparisonLimit(tier)) {
+    return { ok: false, error: { code: 'INVALID_VEHICLE_IDS', message: 'A quantidade de veículos excede o limite da sua conta.' } };
+  }
 
   try {
     return { ok: true, data: await getCachedComparison(parsed.vehicleIds) };
