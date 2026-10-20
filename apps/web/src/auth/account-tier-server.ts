@@ -36,6 +36,13 @@ export async function getAccountTier(): Promise<AccountTier> {
   if (grant.valid_until && Date.parse(grant.valid_until) <= Date.now()) return 'public';
   if (grant.access_tier === 'corporate') {
     if (!grant.organization_id) return 'public';
+    const { data: organization, error: organizationError } = await client
+      .from('account_organizations')
+      .select('status')
+      .eq('id', grant.organization_id)
+      .maybeSingle();
+    if (organizationError) throw new Error('Não foi possível verificar o status da organização.');
+    if (!organization || organization.status !== 'active') return 'public';
     const { data: membership, error: memberError } = await client
       .from('account_organization_memberships')
       .select('status, valid_until')
