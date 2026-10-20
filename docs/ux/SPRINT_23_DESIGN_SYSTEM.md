@@ -331,3 +331,9 @@ Todo conteúdo deve responder proporcionalmente à sidebar expandida/recolhida s
 - Em Políticas Vigentes, o ícone `layers` expande uma matriz **somente leitura** baseada na criação de ofertas: Varejo, Desc. NF, Trade-In, Loyalty, Taxa, IPVA, Seguro, Wallbox, Emplac., Manut., Voucher e Outro. Mostra participação da política através de check/traço; total da oferta, seu identificador, vigência e status. Nenhum checkbox altera relações.
 - O histórico de Cadastrar Políticas também formata as datas das ofertas como dd/mm/aaaa. Datas internas continuam ISO.
 - Cadastrar Preços em lote: título e divisor preservados no topo; a grade recebe scroll vertical interno limitado à altura de viewport com seu cabeçalho sticky. Usuário conserva acesso ao botão Salvar na área inferior. Validar densidade com muitas linhas e comportamento mobile antes de aprovar.
+
+## Sprint 23.19.4 — Check bold em ofertas (2026-10-20)
+- O SVG fonte `icon_check_bold 1` de Elementos é a referência única. Exportados `check_bold_graphite.svg` com traço `#1A1D21` e `check_bold_orange.svg` com `#EF7732`.
+- **Cadastrar Políticas:** checkboxes de combinação de ofertas mantêm input nativo funcional, controle de teclado e evento `onChange`, mas o estado marcado recebe ícone bold grafite via classe `cc-offer-checkbox`. Box 20×20px, borda 1px `#A8B3B9`, radius 3px, fundo marcado `#DCE8ED`, símbolo 13px, foco `#9ABCC8`.
+- **Políticas Vigentes:** a matriz de expansão read-only exibe o mesmo bold check na versão laranja, sem controle interativo; células vazias usam travessão.
+- QA precisa conferir estados checked/unchecked, disabled e tab/focus, além da presença do ícone laranja na expansão de `layers`.
