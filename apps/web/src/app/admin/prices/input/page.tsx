@@ -14,7 +14,7 @@ export default async function AdminPriceInputPage() {
 
   return (
     <>
-      <CatalogPageHeading title="Cadastrar Preços" description="Informe até 100 preços de uma vez; os preços manuais são publicados após a validação do lote." />
+      <div className="sticky top-0 z-30 bg-[#F6F7F8]"><CatalogPageHeading title="Cadastrar Preços" description="Informe até 100 preços de uma vez; os preços manuais são publicados após a validação do lote." /></div>
       <section className="mt-0" aria-label="Lote manual de preços públicos">
         {!products.ok ? (
           <div
