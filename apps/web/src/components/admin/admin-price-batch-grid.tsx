@@ -156,8 +156,8 @@ export function AdminPriceBatchGrid({ action, products, brands }: AdminPriceBatc
       </div>
       <input name="rows" type="hidden" value={JSON.stringify(rows)} />
 
-      <div className="ui-table-frame">
-        <div className="hidden min-h-8 grid-cols-[minmax(18rem,2fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_3rem] items-center gap-3 border-b border-border bg-[#DCE8ED] px-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-text-muted md:grid">
+      <div className="ui-table-frame max-h-[calc(100dvh-22rem)] overflow-y-auto overscroll-contain">
+        <div className="sticky top-0 z-20 hidden min-h-8 grid-cols-[minmax(18rem,2fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_3rem] items-center gap-3 border-b border-border bg-[#DCE8ED] px-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-text-muted md:grid">
           <span>Veículo</span>
           <span>Preço público</span>
           <span>Início</span>
