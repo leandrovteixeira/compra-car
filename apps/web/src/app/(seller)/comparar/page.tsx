@@ -79,7 +79,7 @@ export default async function ComparisonPage({ searchParams }: ComparisonPagePro
         </div>
 
         <div className="mt-5">
-          <ComparisonToolbar mode={mode} />
+          <ComparisonToolbar mode={mode} authenticated={authenticated} />
         </div>
         <div className="mt-4">
           <ComparisonTable categories={categories} mode={mode} vehicles={result.data.vehicles} />
