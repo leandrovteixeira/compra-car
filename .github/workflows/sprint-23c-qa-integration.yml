@@ -35,6 +35,9 @@ jobs:
       - name: Tests
         if: always()
         run: pnpm test
+      - name: Sprint 23C entitlement tests
+        if: always()
+        run: pnpm --filter @compra-car/web exec vitest run src/auth/entitlements-23c.test.ts
       - name: Build
         if: always()
         run: pnpm build
