@@ -2,6 +2,10 @@
 
 ## 2026-10-20 — Sprint 23C.1 (foundation in feature branch)
 
+- Reorganized Master Gestão de Usuários into Users, Requests, and Organizations URL-backed tabs; reused existing list and invite-request UI.
+- Corporate request moderation and organization management remain intentionally read-only placeholders pending privileged audited actions. No email or access grants are triggered by those tabs.
+
+
 - Added QA-only profile contact columns, column-scoped update grants, and Corporate upgrade requests with RLS and one-pending-request constraint.
 - Linked Meu Perfil and Upgrade to server actions; these do not grant access or send email. Browser and build validation remain pending.
 
