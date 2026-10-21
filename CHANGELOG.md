@@ -2,6 +2,11 @@
 
 ## 2026-10-20 — Sprint 23C.1 (foundation in feature branch)
 
+- Added protected Master-only server readers for Corporate upgrade requests and organizations; connected real read-only listings to admin tabs.
+- Atomic Corporate approval/rejection migration was blocked before creation; no privileged mutation was applied. UI intentionally keeps approval unavailable.
+- Tests, build and deployment remain outstanding.
+
+
 - Reorganized Master Gestão de Usuários into Users, Requests, and Organizations URL-backed tabs; reused existing list and invite-request UI.
 - Corporate request moderation and organization management remain intentionally read-only placeholders pending privileged audited actions. No email or access grants are triggered by those tabs.
 
