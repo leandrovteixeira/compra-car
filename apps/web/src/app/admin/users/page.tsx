@@ -12,6 +12,8 @@ import { EmptyState } from '@/components/admin/empty-state';
 import { PageHeader } from '@/components/admin/page-header';
 import { loadAdminInviteRequests } from '@/server/invite-requests';
 import { APP_NAME } from '@/config/app-identity';
+import { CorporateUpgradeList } from '@/components/admin/corporate-upgrade-list';
+import { loadCorporateUpgradeRequests, loadCorporateOrganizations } from '@/server/corporate-management';
 
 type Tab = 'users' | 'requests' | 'organizations';
 const tabs: readonly { key: Tab; label: string }[] = [
@@ -69,24 +71,23 @@ export default async function AdminUsersPage({ searchParams }: {
         ) : null}
         {tab === 'requests' ? (
           <section className="space-y-7">
-            <div className="rounded-xl border border-border bg-surface p-5">
-              <h2 className="text-lg font-semibold">Solicitações Corporate</h2>
-              <p className="mt-2 text-sm text-text-secondary">
-                A fila de Upgrade foi criada no Staging. A visualização de todos os pedidos
-                e as decisões administrativas precisam de um serviço Master auditável;
-                nenhuma solicitação será aprovada automaticamente.
-              </p>
-            </div>
+            <CorporateUpgradeList requests={await loadCorporateUpgradeRequests()} />
             <AdminInviteRequestList requests={await loadAdminInviteRequests()} />
           </section>
         ) : null}
         {tab === 'organizations' ? (
           <section className="rounded-xl border border-border bg-surface p-5">
             <h2 className="text-lg font-semibold">Organizações Corporate</h2>
-            <p className="mt-2 text-sm text-text-secondary">
-              A organização interna Compra Car — Early Access já existe no Staging.
-              Vinculação de profissionais, concessão de licenças e gestão de organizações
-              serão habilitadas após concluirmos os controles Master.
+            <div className="mt-4 grid gap-3">
+              {(await loadCorporateOrganizations()).map((organization) => (
+                <article key={organization.id} className="rounded-lg border border-border p-4">
+                  <h3 className="font-semibold">{organization.name}</h3>
+                  <p className="mt-1 text-xs text-text-secondary">{organization.kind} · {organization.status}</p>
+                </article>
+              ))}
+            </div>
+            <p className="mt-4 text-sm text-text-muted">
+              Vincular membros e conceder acesso exige aprovação Master auditável.
             </p>
           </section>
         ) : null}
