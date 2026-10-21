@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { adminNavigationItems } from './admin-navigation';
 import { UserMenu } from '../user-menu';
+import type { AccountTier } from '@/auth/entitlements-23c';
 
 const names: Record<string,string> = {
   Home: 'home2', 'Veículos':'car2', Preços:'docs2', 'Inteligência':'intelligence2',
@@ -21,13 +22,13 @@ function DropdownArrow({ open }: { readonly open: boolean }) {
     className={`size-4 object-contain transition-transform ${open ? 'rotate-180' : ''}`}/>;
 }
 
-export function AdminSidebar({ displayName, logoutAction }: { readonly displayName: string; readonly logoutAction: () => Promise<never> }) {
+export function AdminSidebar({ displayName, logoutAction, tier }: { readonly displayName: string; readonly logoutAction: () => Promise<never>; readonly tier: AccountTier }) {
   const pathname = usePathname();
   const [hovered, setHovered] = useState(false);
   const [pinned] = useState(false);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const expanded = hovered || pinned;
-  const groups = adminNavigationItems.filter((item) => item.label !== 'Conta');
+  const groups = adminNavigationItems.filter((item) => item.label !== 'Conta' && (tier === 'master' || (item.label !== 'Agentes' && item.label !== 'Configurações')));
 
   return (
     <aside aria-label="Menu administrativo"
@@ -98,7 +99,7 @@ export function AdminSidebar({ displayName, logoutAction }: { readonly displayNa
       <div className="p-2">
         {expanded ? (
           <UserMenu displayName={displayName} logoutAction={logoutAction}
-            roleLabel="Administrador" sidebar />
+            roleLabel={tier === "master" ? "Master" : "Administrador"} tier={tier} sidebar />
         ) : (
           <div className="relative group/account">
             <button type="button" aria-label="Conta" onClick={() => setHovered(true)}
