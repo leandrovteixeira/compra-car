@@ -1,3 +1,4 @@
+import type { AccountTier } from '@/auth/entitlements-23c';
 import type { AuthProfile } from '@compra-car/adapter-supabase';
 import type { ReactNode } from 'react';
 
@@ -11,9 +12,10 @@ interface AdminShellProps {
   readonly children: ReactNode;
   readonly displayName: string;
   readonly profile: AuthProfile;
+  readonly tier: AccountTier;
 }
 
-const mobileAdminLinks: readonly NavigationLink[] = adminNavigationItems.flatMap((item) => {
+const mobileAdminLinks = (tier: AccountTier): readonly NavigationLink[] => adminNavigationItems.filter((item) => tier === 'master' || (item.label !== 'Agentes' && item.label !== 'Configurações')).flatMap((item) => {
   if (item.children) {
     return item.children
       .filter((child) => child.status === 'active' && child.href)
@@ -22,18 +24,18 @@ const mobileAdminLinks: readonly NavigationLink[] = adminNavigationItems.flatMap
   return item.status === 'active' && item.href ? [{ href: item.href, label: item.label }] : [];
 });
 
-export function AdminShell({ children, displayName, profile }: AdminShellProps) {
+export function AdminShell({ children, displayName, profile, tier }: AdminShellProps) {
   return (
     <div className="min-h-dvh bg-canvas text-text-primary">
       <div className="lg:hidden"><ApplicationTopbar
         area="admin"
         displayName={displayName}
         logoutAction={logout}
-        navigationLinks={mobileAdminLinks}
+        navigationLinks={mobileAdminLinks(tier)}
         profile={profile}
       /></div>
       <div className="lg:flex lg:items-start">
-        <AdminSidebar displayName={displayName} logoutAction={logout} />
+        <AdminSidebar displayName={displayName} logoutAction={logout} tier={tier} />
         <main className="min-w-0 w-full flex-1 px-4 py-5 sm:px-6 lg:px-8 lg:py-6">
           {children}
         </main>
