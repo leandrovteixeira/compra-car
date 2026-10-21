@@ -39,6 +39,7 @@ function BackToSelection() {
 
 export default async function ComparisonPage({ searchParams }: ComparisonPageProps) {
   const params = await searchParams;
+  const authenticated = (await getAccountTier()) !== 'visitor';
   const result = await loadComparisonPage(params.vehicles);
 
   if (!result.ok) {
