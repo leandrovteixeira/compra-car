@@ -1,3 +1,4 @@
+import { requireFeature23C } from '@/auth/account-tier-server';
 import { loadAdminUsers } from '@/application/admin/load-admin-users';
 import { AdminUserAdapterError } from '@compra-car/adapter-supabase';
 
@@ -12,6 +13,7 @@ import { AdminInviteRequestList } from '@/components/admin/admin-invite-request-
 import { APP_NAME } from '@/config/app-identity';
 
 export default async function AdminUsersPage() {
+  await requireFeature23C('settings');
   let users;
 
   try {
