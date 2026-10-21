@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - sprint-23c-access-organizations
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
