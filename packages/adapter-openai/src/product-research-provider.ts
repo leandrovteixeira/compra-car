@@ -9,7 +9,6 @@ import {
   type AgentMarketScope,
   type OfficialProductCandidate,
   type ProductResearchProvider,
-  type OfficialBrandSource,
 } from '@compra-car/core/agents';
 import { productResearchSchema } from './product-research-schema';
 
