@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { getAccountTier } from '@/auth/account-tier-server';
 
 import { filterComparisonCategories } from '@/application/comparison/comparison-filter';
 import { parseComparisonMode } from '@/application/comparison/comparison-view-model';
