@@ -71,7 +71,7 @@ export default async function AdminUsersPage({ searchParams }: {
         ) : null}
         {tab === 'requests' ? (
           <section className="space-y-7">
-            <CorporateUpgradeList requests={await loadCorporateUpgradeRequests()} />
+            <CorporateUpgradeList requests={await loadCorporateUpgradeRequests()} organizations={await loadCorporateOrganizations()} />
             <AdminInviteRequestList requests={await loadAdminInviteRequests()} />
           </section>
         ) : null}
