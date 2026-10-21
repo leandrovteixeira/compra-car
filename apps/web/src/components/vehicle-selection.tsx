@@ -95,7 +95,7 @@ export function VehicleSelection({ limit = 3 }: { readonly limit?: number }) {
               <p className="text-xs text-text-muted">Marca, modelo ou versão</p>
             </div>
             <span className="text-xs tabular-nums text-text-muted">
-              {selection.selectedVehicles.length}/{MAX_SELECTED_VEHICLES}
+              {selection.selectedVehicles.length}/{limit}
             </span>
           </div>
 
@@ -148,7 +148,7 @@ export function VehicleSelection({ limit = 3 }: { readonly limit?: number }) {
                 </p>
               ) : limitReached ? (
                 <p className="px-3 py-3 text-sm text-text-muted">
-                  Limite de {MAX_SELECTED_VEHICLES} veículos atingido. Remova um para escolher
+                  Limite de {limit} veículos atingido. Remova um para escolher
                   outro.
                 </p>
               ) : results.length === 0 ? (
