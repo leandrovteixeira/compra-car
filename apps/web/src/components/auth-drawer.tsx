@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 import { login } from '@/app/login/actions';
 
@@ -9,6 +9,7 @@ type DrawerMode = 'login' | 'signup';
 
 export function AuthDrawer() {
   const pathname = usePathname();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [mode, setMode] = useState<DrawerMode>('login');
   const open = searchParams.get('auth') === 'login';
@@ -21,7 +22,7 @@ export function AuthDrawer() {
     const params = new URLSearchParams(searchParams.toString());
     params.delete('auth');
     const query = params.toString();
-    window.history.replaceState(null, '', pathname + (query ? '?' + query : ''));
+    router.replace(pathname + (query ? '?' + query : ''), { scroll: false });
   }
 
   useEffect(() => {
@@ -32,7 +33,7 @@ export function AuthDrawer() {
     document.addEventListener('keydown', escape);
     return () => document.removeEventListener('keydown', escape);
   // Closing always derives its destination from the current URL.
-  }, [open, pathname, searchParams]);
+  }, [open, pathname, searchParams, router]);
 
   if (!open) return null;
 
