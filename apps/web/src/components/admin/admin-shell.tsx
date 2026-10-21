@@ -1,4 +1,5 @@
 import type { AuthProfile } from '@compra-car/adapter-supabase';
+import type { AccountTier } from '@/auth/entitlements-23c';
 import type { ReactNode } from 'react';
 
 import { logout } from '../../app/actions/auth';
@@ -11,33 +12,41 @@ interface AdminShellProps {
   readonly children: ReactNode;
   readonly displayName: string;
   readonly profile: AuthProfile;
+  readonly tier: AccountTier;
 }
 
-const mobileAdminLinks: readonly NavigationLink[] = adminNavigationItems.flatMap((item) => {
-  if (item.children) {
-    return item.children
-      .filter((child) => child.status === 'active' && child.href)
-      .map((child) => ({ href: child.href!, label: child.label }));
-  }
-  return item.status === 'active' && item.href ? [{ href: item.href, label: item.label }] : [];
-});
+function getMobileAdminLinks(tier: AccountTier): readonly NavigationLink[] {
+  return adminNavigationItems
+    .filter((item) => tier === 'master' || item.label !== 'Configurações')
+    .flatMap((item) => {
+      if (item.children) {
+        return item.children
+          .filter((child) => child.status === 'active' && child.href)
+          .map((child) => ({ href: child.href!, label: child.label }));
+      }
+      return item.status === 'active' && item.href
+        ? [{ href: item.href, label: item.label }]
+        : [];
+    });
+}
 
-export function AdminShell({ children, displayName, profile }: AdminShellProps) {
+export function AdminShell({ children, displayName, profile, tier }: AdminShellProps) {
   return (
     <div className="min-h-dvh bg-canvas text-text-primary">
       <ApplicationTopbar
         area="admin"
         displayName={displayName}
         logoutAction={logout}
-        navigationLinks={mobileAdminLinks}
+        navigationLinks={getMobileAdminLinks(tier)}
         profile={profile}
+        tier={tier}
       />
       <div className="lg:grid lg:grid-cols-[13.5rem_minmax(0,1fr)]">
         <aside className="hidden border-r border-border bg-surface lg:sticky lg:top-[var(--app-topbar-height)] lg:block lg:h-[calc(100dvh-var(--app-topbar-height))] lg:p-3">
           <p className="mb-2 px-2.5 text-[0.6875rem] font-semibold uppercase tracking-wide text-text-muted">
             Administração
           </p>
-          <AdminNav />
+          <AdminNav tier={tier} />
         </aside>
         <main className="mx-auto min-w-0 w-full max-w-7xl px-4 py-6 sm:px-5 lg:px-6 lg:pb-8 lg:pt-0">
           {children}

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { getAccountTier } from '@/auth/account-tier-server';
 
 import { filterComparisonCategories } from '@/application/comparison/comparison-filter';
 import { parseComparisonMode } from '@/application/comparison/comparison-view-model';
@@ -38,6 +39,7 @@ function BackToSelection() {
 
 export default async function ComparisonPage({ searchParams }: ComparisonPageProps) {
   const params = await searchParams;
+  const accountTier = await getAccountTier();
   const result = await loadComparisonPage(params.vehicles);
 
   if (!result.ok) {
@@ -77,7 +79,7 @@ export default async function ComparisonPage({ searchParams }: ComparisonPagePro
         </div>
 
         <div className="mt-5">
-          <ComparisonToolbar mode={mode} />
+          <ComparisonToolbar mode={mode} authenticated={accountTier !== 'visitor'} />
         </div>
         <div className="mt-4">
           <ComparisonTable categories={categories} mode={mode} vehicles={result.data.vehicles} />

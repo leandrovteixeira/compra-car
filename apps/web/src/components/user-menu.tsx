@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { LogoutControl } from './logout-control';
+import { getAccountMenuItems } from './account-menu-policy';
+import type { AccountTier } from '@/auth/entitlements-23c';
 import { PwaInstallInstructions } from './pwa-install-instructions';
 import { canOfferPwaInstall, usePwaInstall } from './use-pwa-install';
 
@@ -20,12 +22,14 @@ export function UserMenu({
   roleLabel,
   navigationLinks = [],
   showInvite = false,
+  tier = 'public',
 }: {
   readonly displayName: string;
   readonly logoutAction: () => Promise<never>;
   readonly roleLabel: string;
   readonly navigationLinks?: readonly MenuLink[];
   readonly showInvite?: boolean;
+  readonly tier?: AccountTier;
 }) {
   const menu = useRef<HTMLDetailsElement>(null);
   const { availability, requestNativeInstall } = usePwaInstall({ desktopManual: true });
@@ -92,10 +96,16 @@ export function UserMenu({
           </nav>
         ) : null}
 
+        {getAccountMenuItems(tier).map((item) => (
+          <Link key={item.href} href={item.href} onClick={close} className={`${itemClass} ${item.highlight ? 'text-[#EF7732] hover:text-[#EF7732]' : ''}`}>
+            {item.label}
+          </Link>
+        ))}
+
         {canInstall ? (
           <>
             <button className={itemClass} disabled={requestingInstall} onClick={install} type="button">
-              {requestingInstall ? 'Abrindo instalação…' : 'Instalar aplicativo'}
+              <span className="text-[#EF7732]">{requestingInstall ? 'Abrindo instalação…' : 'Instalar aplicativo'}</span>
             </button>
             {showInstallInstructions ? (
               <div className="px-1 py-1" role="status">

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { getActiveProfile } from '@/auth/authorization';
 import { getSafeInternalDestination } from '@/auth/safe-redirect';
 import { AuthShell } from '@/components/auth-shell';
+import { ShareApplication } from '@/components/share-application';
 import { buttonClassName, fieldClassName, labelClassName } from '@compra-car/ui';
 
 import { login } from './actions';
@@ -65,6 +66,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           Entrar
         </button>
       </form>
+      <div className="mt-5 flex items-center justify-between gap-3 border-t border-border pt-3">
+        <span className="text-xs text-text-muted">Compartilhe o Compra Car</span>
+        <ShareApplication />
+      </div>
       <Link
         className="mt-5 inline-flex text-sm font-semibold text-interactive hover:text-interactive-hover"
         href="/forgot-password"

@@ -1,5 +1,40 @@
 # Changelog
 
+## 2026-10-20 — Sprint 23C.1 (foundation in feature branch)
+
+- Added protected Master-only server readers for Corporate upgrade requests and organizations; connected real read-only listings to admin tabs.
+- Atomic Corporate approval/rejection migration was blocked before creation; no privileged mutation was applied. UI intentionally keeps approval unavailable.
+- Tests, build and deployment remain outstanding.
+
+
+- Reorganized Master Gestão de Usuários into Users, Requests, and Organizations URL-backed tabs; reused existing list and invite-request UI.
+- Corporate request moderation and organization management remain intentionally read-only placeholders pending privileged audited actions. No email or access grants are triggered by those tabs.
+
+
+- Added QA-only profile contact columns, column-scoped update grants, and Corporate upgrade requests with RLS and one-pending-request constraint.
+- Linked Meu Perfil and Upgrade to server actions; these do not grant access or send email. Browser and build validation remain pending.
+
+
+- Connected tier-based, iconless Conta menu with profile, plan, password and Public upgrade links, with PWA installation before logout.
+- Added minimal protected pages for Meu perfil, Meu plano, Trocar senha and Upgrade. Editing, password mutation and commercial requests remain intentionally unavailable until secure workflows exist.
+- No build/tests/deploy executed; implementation requires validation before merge.
+
+- Public vehicle shell, catalog actions and comparison viewing now avoid the old seller login gate; PDF generation remains authenticated at the route boundary.
+- Added contextual authentication drawer to visitor navigation and PDF actions, preserving the comparison URL. Existing login Server Action is reused; public signup remains disabled pending email verification delivery.
+- Vehicle selection receives a tier-specific 3/8 limit while the comparison service independently enforces the same limit.
+- Changes are branch-only, without build/CI or QA deployment validation; do not merge until end-to-end tests pass.
+
+- Connected server-verified tier resolution to the admin shell and restricted Gestão de Usuários under Master-only Configurações; added a separate page-level feature guard.
+- Exposed Share Application via the authenticated topbar and visitor login page, sharing only the site root.
+- Full public browsing, action-level enforcement, and drawer remain pending. Validation/deployment blocked pending runnable checkout/CI.
+
+- Added a pure role-to-feature entitlement matrix for visitor, Public, Corporate, Admin and Master, including 3/8 comparison limits and hidden/disabled future features.
+- Added unit tests covering public Export/Share gates and privilege boundaries.
+- Applied organization, membership and explicit account-grant tables with own-row RLS in Staging only (not Production); verified one Early Access organization and one QA Master grant.
+- The new policy is not yet connected to the legacy app's routes or access controls. Production is unchanged; Staging has one explicit Master access grant and one Early Access organization.
+
+# Changelog
+
 ## 2026-09-27 — Global Advantage + Numeric Presentation Metadata
 
 - Seller checks now identify the globally best known value across all compared vehicles rather than

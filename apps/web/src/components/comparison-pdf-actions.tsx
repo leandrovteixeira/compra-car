@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 
 import {
   COMPARISON_PDF_FILENAME,
@@ -9,6 +10,8 @@ import {
 
 interface ComparisonPdfActionsProps {
   readonly pdfUrl: string;
+  readonly authenticated?: boolean;
+  readonly returnTo?: string;
 }
 
 const actionClassName =
@@ -49,7 +52,7 @@ function ShareIcon() {
   );
 }
 
-export function ComparisonPdfActions({ pdfUrl }: ComparisonPdfActionsProps) {
+export function ComparisonPdfActions({ pdfUrl, authenticated = true, returnTo = '/comparar' }: ComparisonPdfActionsProps) {
   const [isSharing, setIsSharing] = useState(false);
 
   async function sharePdf() {
@@ -63,6 +66,16 @@ export function ComparisonPdfActions({ pdfUrl }: ComparisonPdfActionsProps) {
     } finally {
       setIsSharing(false);
     }
+  }
+
+  if (!authenticated) {
+    const destination = returnTo + (returnTo.includes('?') ? '&' : '?') + 'auth=login';
+    return (
+      <div className="flex w-full min-w-0 gap-1.5 sm:w-auto">
+        <Link href={destination} className={actionClassName}><DownloadIcon /><span>Baixar PDF</span></Link>
+        <Link href={destination} className={actionClassName}><ShareIcon /><span>Compartilhar</span></Link>
+      </div>
+    );
   }
 
   return (

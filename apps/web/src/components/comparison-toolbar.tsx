@@ -8,6 +8,7 @@ import { ComparisonPdfActions } from '@/components/comparison-pdf-actions';
 
 interface ComparisonToolbarProps {
   readonly mode: ComparisonMode;
+  readonly authenticated?: boolean;
 }
 
 const modeOptions: readonly { value: ComparisonMode; label: string }[] = [
@@ -22,7 +23,7 @@ const modeDescriptions: Record<ComparisonMode, string> = {
   advantages: 'Somente vantagens objetivas determinadas pelo engine atual.',
 };
 
-export function ComparisonToolbar({ mode }: ComparisonToolbarProps) {
+export function ComparisonToolbar({ mode, authenticated = true }: ComparisonToolbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -74,7 +75,7 @@ export function ComparisonToolbar({ mode }: ComparisonToolbarProps) {
         </p>
       </div>
       <div className="min-w-0 shrink-0">
-        <ComparisonPdfActions pdfUrl={pdfUrl} />
+        <ComparisonPdfActions pdfUrl={pdfUrl} authenticated={authenticated} returnTo={`${pathname}?${searchParams.toString()}`} />
       </div>
     </div>
   );

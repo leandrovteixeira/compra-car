@@ -4,10 +4,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import { adminNavigationItems } from './admin-navigation';
+import type { AccountTier } from '@/auth/entitlements-23c';
 
-export function AdminNav() {
+export function AdminNav({ tier }: { readonly tier: AccountTier }) {
   const pathname = usePathname();
-  const activeHref = adminNavigationItems
+  const visibleItems = tier === 'master'
+    ? adminNavigationItems
+    : adminNavigationItems.filter((item) => item.label !== 'Configurações');
+  const activeHref = visibleItems
     .flatMap((item) => item.children ?? [item])
     .filter(
       (item) =>
@@ -20,7 +24,7 @@ export function AdminNav() {
   return (
     <nav aria-label="Navegação administrativa">
       <ul className="grid gap-1">
-        {adminNavigationItems.map((item) => (
+        {visibleItems.map((item) => (
           <li key={item.label}>
             {item.children ? (
               <>
