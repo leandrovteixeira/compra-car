@@ -114,7 +114,7 @@ export function AdminSidebar({ displayName, logoutAction, tier }: { readonly dis
       <div className="mx-3 h-px bg-white/20"/>
       <div className="p-2">
         {tier === "visitor" ? (
-          <Link href="/?auth=login" className="flex h-11 items-center rounded-md px-4 text-sm text-[#EF7732]">Entrar / Criar conta</Link>
+          <Link href="/?auth=login" title="Entrar / Criar conta" aria-label="Entrar / Criar conta" className="flex h-11 w-full items-center gap-3 rounded-md px-4 text-sm text-[#EF7732] hover:bg-white/10"><svg aria-hidden="true" className="size-[22px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="7" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg>{expanded && <span>Entrar / Criar conta</span>}</Link>
         ) : expanded ? (
           <UserMenu displayName={displayName} logoutAction={logoutAction}
             roleLabel={tier === "master" ? "Master" : "Administrador"} tier={tier} sidebar />
