@@ -12,6 +12,7 @@ export function AuthDrawer() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [mode, setMode] = useState<DrawerMode>('login');
+  const [showPassword, setShowPassword] = useState(false);
   const open = searchParams.get('auth') === 'login';
 
   const returnTo = pathname + (searchParams.toString()
@@ -84,7 +85,7 @@ export function AuthDrawer() {
             </label>
             <label className="flex flex-col gap-2 text-sm font-medium">
               Senha
-              <input className="ui-field min-h-11" name="password" type="password" autoComplete="current-password" required />
+              <span className="relative"><input className="ui-field min-h-11 w-full pr-12" name="password" type={showPassword ? "text" : "password"} autoComplete="current-password" required /><button type="button" aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"} aria-pressed={showPassword} onClick={() => setShowPassword(value => !value)} className="absolute inset-y-0 right-2 flex w-9 items-center justify-center text-[#1A1D21] hover:opacity-70">{showPassword ? <svg aria-hidden="true" className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8"/><path d="M8.1 5.3A10.5 10.5 0 0 1 12 4c5.3 0 9.3 5.2 10 8-.3 1.2-1.7 3.3-3.7 5M6 6C3.9 7.4 2.4 9.6 2 12c.7 2.8 4.7 8 10 8 1.3 0 2.6-.3 3.8-.8"/></svg> : <svg aria-hidden="true" className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3.6-8 10-8 10 8 10 8-3.6 8-10 8S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>}</button></span>
             </label>
             <a href="/forgot-password" className="self-end text-sm text-[#EF7732]">Esqueci minha senha</a>
             <button type="submit" className="mt-2 min-h-12 rounded-lg bg-[#EF7732] text-center font-semibold text-white">
