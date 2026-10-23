@@ -3,7 +3,7 @@ import { isPublicPath, requiresAuthentication } from './route-policy';
 
 describe('23C visitor route boundaries', () => {
   it('permits only intended public vehicle pages', () => {
-    for (const path of ['/', '/comparar', '/ver-modelo', '/login', '/forgot-password']) {
+    for (const path of ['/', '/comparar', '/ver-modelo', '/login', '/forgot-password', '/comparar-especificacoes']) {
       expect(isPublicPath(path)).toBe(true);
       expect(requiresAuthentication(path)).toBe(false);
     }
