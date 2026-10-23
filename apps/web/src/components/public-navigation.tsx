@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 import type { AccountTier } from '@/auth/entitlements-23c';
 import { logout } from '@/app/actions/auth';
-import { LogoutControl } from './logout-control';
+import { UserMenu } from './user-menu';
 import { ShareApplication } from './share-application';
 
 export function PublicNavigation({ tier }: { readonly tier: AccountTier }) {
@@ -20,10 +20,7 @@ export function PublicNavigation({ tier }: { readonly tier: AccountTier }) {
         </nav>
         <ShareApplication />
         {authenticated ? (
-          <div className="flex items-center gap-2">
-            <Link href="/conta/perfil" className="ui-button ui-button--ghost ui-button--compact">Minha conta</Link>
-            <LogoutControl action={logout} className="ui-button ui-button--ghost ui-button--compact" />
-          </div>
+          <UserMenu displayName="Minha conta" roleLabel={tier} tier={tier} logoutAction={logout} />
         ) : (
           <Link href="/?auth=login" className="ui-button ui-button--interactive ui-button--compact">Entrar / Criar conta</Link>
         )}
