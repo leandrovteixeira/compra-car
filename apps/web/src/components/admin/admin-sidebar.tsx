@@ -34,9 +34,9 @@ export function AdminSidebar({ displayName, logoutAction, tier }: { readonly dis
     { label: 'Veículos', status: 'active' as const, children: [
       { href: '/fichas-tecnicas', label: 'Fichas Técnicas', status: 'active' as const },
       { href: '/comparar-modelos', label: 'Comparar Modelos', status: 'active' as const },
+      { href: '/comparar-especificacoes', label: 'Comparar Especificações', status: 'active' as const },
       ...(privileged ? [
         { href: '/admin/products', label: 'Cadastro de Modelos', status: 'active' as const },
-        { href: '/admin/comparar-especificacoes', label: 'Comparar Especificações', status: 'active' as const },
       ] : []),
     ] },
     ...(tier === 'corporate' || privileged ? [{ label: 'Preços', status: 'active' as const, children: privileged
