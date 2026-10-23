@@ -21,7 +21,7 @@ function BackToSelection() {
   return (
     <Link
       className="ui-button ui-button--secondary ui-button--compact gap-1.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
-      href="/"
+      href="/escolher-veiculos"
     >
       <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 16 16">
         <path
