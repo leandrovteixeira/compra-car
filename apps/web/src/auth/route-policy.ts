@@ -1,4 +1,4 @@
-const PUBLIC_PATHS = new Set(['/forgot-password', '/login', '/', '/comparar', '/ver-modelo', '/escolher-veiculos']);
+const PUBLIC_PATHS = new Set(['/forgot-password', '/login', '/', '/comparar', '/ver-modelo', '/escolher-veiculos', '/fichas-tecnicas', '/fichas-tecnicas/modelo', '/comparar-modelos']);
 
 export function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.has(pathname) || pathname === '/auth' || pathname.startsWith('/auth/');
