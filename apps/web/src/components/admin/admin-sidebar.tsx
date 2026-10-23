@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { adminNavigationItems } from './admin-navigation';
+import { adminNavigationItems, type AdminNavigationItem } from './admin-navigation';
 import { UserMenu } from '../user-menu';
 import type { AccountTier } from '@/auth/entitlements-23c';
 
@@ -29,7 +29,7 @@ export function AdminSidebar({ displayName, logoutAction, tier }: { readonly dis
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const expanded = hovered || pinned;
   const privileged = tier === 'admin' || tier === 'master';
-  const groups = [
+  const groups: readonly AdminNavigationItem[] = [
     { href: '/', label: 'Home', status: 'active' as const },
     { label: 'Veículos', status: 'active' as const, children: [
       { href: '/ver-modelo', label: 'Fichas Técnicas', status: 'active' as const },
