@@ -28,7 +28,23 @@ export function AdminSidebar({ displayName, logoutAction, tier }: { readonly dis
   const [pinned] = useState(false);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const expanded = hovered || pinned;
-  const groups = adminNavigationItems.filter((item) => item.label !== 'Conta' && (tier === 'master' || (item.label !== 'Agentes' && item.label !== 'Configurações')));
+  const privileged = tier === 'admin' || tier === 'master';
+  const groups = [
+    { href: '/', label: 'Home', status: 'active' as const },
+    { label: 'Veículos', status: 'active' as const, children: [
+      { href: '/ver-modelo', label: 'Fichas Técnicas', status: 'active' as const },
+      { href: '/escolher-veiculos', label: 'Comparar Modelos', status: 'active' as const },
+      ...(privileged ? [
+        { href: '/admin/products', label: 'Cadastro de Modelos', status: 'active' as const },
+        { href: '/admin/comparar-especificacoes', label: 'Comparar Especificações', status: 'active' as const },
+      ] : []),
+    ] },
+    ...(tier === 'corporate' || privileged ? [{ label: 'Preços', status: 'active' as const, children: privileged
+      ? (adminNavigationItems.find(item => item.label === 'Preços')?.children ?? [])
+      : [{ href: '/admin/prices/list', label: 'Lista de Preços', status: 'active' as const }] }] : []),
+    ...(privileged ? adminNavigationItems.filter(item => !['Home','Veículos','Preços','Conta'].includes(item.label) &&
+      (tier === 'master' || !['Agentes','Configurações'].includes(item.label))) : []),
+  ];
 
   return (
     <aside aria-label="Menu administrativo"
@@ -97,7 +113,9 @@ export function AdminSidebar({ displayName, logoutAction, tier }: { readonly dis
       </nav>
       <div className="mx-3 h-px bg-white/20"/>
       <div className="p-2">
-        {expanded ? (
+        {tier === "visitor" ? (
+          <Link href="/?auth=login" className="flex h-11 items-center rounded-md px-4 text-sm text-[#EF7732]">Entrar / Criar conta</Link>
+        ) : expanded ? (
           <UserMenu displayName={displayName} logoutAction={logoutAction}
             roleLabel={tier === "master" ? "Master" : "Administrador"} tier={tier} sidebar />
         ) : (
@@ -108,7 +126,7 @@ export function AdminSidebar({ displayName, logoutAction, tier }: { readonly dis
             </button>
             <div className="absolute bottom-0 left-full hidden pl-2 group-focus-within/account:block group-hover/account:block">
               <UserMenu displayName={displayName} logoutAction={logoutAction}
-                roleLabel="Administrador" sidebar />
+                roleLabel={tier} tier={tier} sidebar />
             </div>
           </div>
         )}
