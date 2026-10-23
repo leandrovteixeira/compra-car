@@ -32,8 +32,8 @@ export function AdminSidebar({ displayName, logoutAction, tier }: { readonly dis
   const groups: readonly AdminNavigationItem[] = [
     { href: '/', label: 'Home', status: 'active' as const },
     { label: 'Veículos', status: 'active' as const, children: [
-      { href: '/ver-modelo', label: 'Fichas Técnicas', status: 'active' as const },
-      { href: '/escolher-veiculos', label: 'Comparar Modelos', status: 'active' as const },
+      { href: '/fichas-tecnicas', label: 'Fichas Técnicas', status: 'active' as const },
+      { href: '/comparar-modelos', label: 'Comparar Modelos', status: 'active' as const },
       ...(privileged ? [
         { href: '/admin/products', label: 'Cadastro de Modelos', status: 'active' as const },
         { href: '/admin/comparar-especificacoes', label: 'Comparar Especificações', status: 'active' as const },
