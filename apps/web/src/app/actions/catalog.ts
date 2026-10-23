@@ -13,7 +13,6 @@ import {
   getCachedModels,
   getCachedVehicles,
 } from '@/server/catalog-cache';
-import { requireRole } from '@/auth/authorization';
 
 const INVALID_INPUT_ERROR = Object.freeze({
   code: 'INVALID_INPUT',
@@ -38,7 +37,6 @@ function clean(value: string): string {
 }
 
 export async function getBrands(): Promise<CatalogActionResultDto<readonly CatalogOptionDto[]>> {
-  await requireRole('seller');
   try {
     return success(await getCachedBrands());
   } catch {
@@ -49,7 +47,6 @@ export async function getBrands(): Promise<CatalogActionResultDto<readonly Catal
 export async function getModels(
   brand: string,
 ): Promise<CatalogActionResultDto<readonly CatalogOptionDto[]>> {
-  await requireRole('seller');
   const normalizedBrand = clean(brand);
   if (!normalizedBrand) return failure(INVALID_INPUT_ERROR);
 
@@ -64,7 +61,6 @@ export async function getVehicles(
   brand: string,
   model: string,
 ): Promise<CatalogActionResultDto<readonly CatalogVehicleDto[]>> {
-  await requireRole('seller');
   const normalizedBrand = clean(brand);
   const normalizedModel = clean(model);
   if (!normalizedBrand || !normalizedModel) return failure(INVALID_INPUT_ERROR);
@@ -79,7 +75,6 @@ export async function getVehicles(
 export async function getCatalogVehicles(): Promise<
   CatalogActionResultDto<readonly CatalogVehicleDto[]>
 > {
-  await requireRole('seller');
 
   try {
     return success(await getCachedCatalogVehicles());

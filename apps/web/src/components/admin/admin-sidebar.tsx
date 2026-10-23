@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { adminNavigationItems } from './admin-navigation';
+import { adminNavigationItems, type AdminNavigationItem } from './admin-navigation';
 import { UserMenu } from '../user-menu';
+import type { AccountTier } from '@/auth/entitlements-23c';
 
 const names: Record<string,string> = {
   Home: 'home2', 'Veículos':'car2', Preços:'docs2', 'Inteligência':'intelligence2',
@@ -21,13 +22,29 @@ function DropdownArrow({ open }: { readonly open: boolean }) {
     className={`size-4 object-contain transition-transform ${open ? 'rotate-180' : ''}`}/>;
 }
 
-export function AdminSidebar({ displayName, logoutAction }: { readonly displayName: string; readonly logoutAction: () => Promise<never> }) {
+export function AdminSidebar({ displayName, logoutAction, tier }: { readonly displayName: string; readonly logoutAction: () => Promise<never>; readonly tier: AccountTier }) {
   const pathname = usePathname();
   const [hovered, setHovered] = useState(false);
   const [pinned] = useState(false);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const expanded = hovered || pinned;
-  const groups = adminNavigationItems.filter((item) => item.label !== 'Conta');
+  const privileged = tier === 'admin' || tier === 'master';
+  const groups: readonly AdminNavigationItem[] = [
+    { href: '/', label: 'Home', status: 'active' as const },
+    { label: 'Veículos', status: 'active' as const, children: [
+      { href: '/fichas-tecnicas', label: 'Fichas Técnicas', status: 'active' as const },
+      { href: '/comparar-modelos', label: 'Comparar Modelos', status: 'active' as const },
+      { href: '/comparar-especificacoes', label: 'Comparar Especificações', status: 'active' as const },
+      ...(privileged ? [
+        { href: '/admin/products', label: 'Cadastro de Modelos', status: 'active' as const },
+      ] : []),
+    ] },
+    ...(tier === 'corporate' || privileged ? [{ label: 'Preços', status: 'active' as const, children: privileged
+      ? (adminNavigationItems.find(item => item.label === 'Preços')?.children ?? [])
+      : [{ href: '/admin/prices/list', label: 'Lista de Preços', status: 'active' as const }] }] : []),
+    ...(privileged ? adminNavigationItems.filter(item => !['Home','Veículos','Preços','Conta'].includes(item.label) &&
+      (tier === 'master' || !['Agentes','Configurações'].includes(item.label))) : []),
+  ];
 
   return (
     <aside aria-label="Menu administrativo"
@@ -96,9 +113,11 @@ export function AdminSidebar({ displayName, logoutAction }: { readonly displayNa
       </nav>
       <div className="mx-3 h-px bg-white/20"/>
       <div className="p-2">
-        {expanded ? (
+        {tier === "visitor" ? (
+          <Link href="/?auth=login" title="Entrar / Criar conta" aria-label="Entrar / Criar conta" className="flex h-11 w-full items-center gap-3 rounded-md px-4 text-sm text-[#EF7732] hover:bg-white/10"><svg aria-hidden="true" className="size-[22px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="7" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg>{expanded && <span className="min-w-0 flex-1 overflow-hidden whitespace-nowrap">Entrar / Criar conta</span>}</Link>
+        ) : expanded ? (
           <UserMenu displayName={displayName} logoutAction={logoutAction}
-            roleLabel="Administrador" sidebar />
+            roleLabel={tier === "master" ? "Master" : "Administrador"} tier={tier} sidebar />
         ) : (
           <div className="relative group/account">
             <button type="button" aria-label="Conta" onClick={() => setHovered(true)}
@@ -107,7 +126,7 @@ export function AdminSidebar({ displayName, logoutAction }: { readonly displayNa
             </button>
             <div className="absolute bottom-0 left-full hidden pl-2 group-focus-within/account:block group-hover/account:block">
               <UserMenu displayName={displayName} logoutAction={logoutAction}
-                roleLabel="Administrador" sidebar />
+                roleLabel={tier} tier={tier} sidebar />
             </div>
           </div>
         )}

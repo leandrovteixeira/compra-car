@@ -8,7 +8,6 @@ import { getCatalogVehicles } from '@/app/actions/catalog';
 import { formatProductionModelYears } from '@/application/catalog/vehicle-presentation';
 import {
   EMPTY_VEHICLE_SELECTION,
-  MAX_SELECTED_VEHICLES,
   addSelectedVehicle,
   canAddSelectedVehicle,
   findAvailableVehicles,
@@ -25,7 +24,7 @@ function vehicleIdentity(vehicle: CatalogVehicleDto): string {
   )}`;
 }
 
-export function VehicleSelection() {
+export function VehicleSelection({ limit = 3 }: { readonly limit?: number }) {
   const router = useRouter();
   const searchRef = useRef<HTMLInputElement>(null);
   const [catalog, setCatalog] = useState(EMPTY_VEHICLES);
@@ -51,12 +50,12 @@ export function VehicleSelection() {
     () => findAvailableVehicles(catalog, query, selection.selectedVehicles),
     [catalog, query, selection.selectedVehicles],
   );
-  const limitReached = selection.selectedVehicles.length >= MAX_SELECTED_VEHICLES;
+  const limitReached = selection.selectedVehicles.length >= limit;
   const canCompare = selection.selectedVehicles.length >= 2;
 
   function selectVehicle(vehicle: CatalogVehicleDto) {
-    if (!canAddSelectedVehicle(selection, vehicle)) return;
-    setSelection((current) => addSelectedVehicle(current, vehicle));
+    if (!canAddSelectedVehicle(selection, vehicle, limit)) return;
+    setSelection((current) => addSelectedVehicle(current, vehicle, limit));
     setQuery('');
     setError(null);
     searchRef.current?.focus();
@@ -96,7 +95,7 @@ export function VehicleSelection() {
               <p className="text-xs text-text-muted">Marca, modelo ou versão</p>
             </div>
             <span className="text-xs tabular-nums text-text-muted">
-              {selection.selectedVehicles.length}/{MAX_SELECTED_VEHICLES}
+              {selection.selectedVehicles.length}/{limit}
             </span>
           </div>
 
@@ -149,7 +148,7 @@ export function VehicleSelection() {
                 </p>
               ) : limitReached ? (
                 <p className="px-3 py-3 text-sm text-text-muted">
-                  Limite de {MAX_SELECTED_VEHICLES} veículos atingido. Remova um para escolher
+                  Limite de {limit} veículos atingido. Remova um para escolher
                   outro.
                 </p>
               ) : results.length === 0 ? (
