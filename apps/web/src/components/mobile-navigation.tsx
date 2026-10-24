@@ -110,6 +110,23 @@ export function MobileNavigation({ children }: { readonly children: ReactNode })
           restoreScroll();
           setState('closed');
         }}
+        onKeyDown={(event) => {
+          if (event.key !== 'Tab') return;
+          const controls = [
+            ...event.currentTarget.querySelectorAll<HTMLElement>(
+              'a[href], button:not([disabled]), input:not([disabled]), summary, [tabindex]',
+            ),
+          ].filter((node) => node.tabIndex >= 0 && node.getClientRects().length > 0);
+          const first = controls[0];
+          const last = controls[controls.length - 1];
+          if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last?.focus();
+          } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first?.focus();
+          }
+        }}
         onClickCapture={(event) => {
           if (event.target instanceof Element && event.target.closest('a[href]')) close();
         }}
