@@ -666,3 +666,150 @@ select.ui-field,
 }
 .cc-offer-checkbox:focus-visible { outline: 2px solid #9ABCC8; outline-offset: 2px; }
 .cc-offer-checkbox:disabled { opacity: .55; cursor: not-allowed; }
+
+/* S23D: shared navigation, overlaid on mobile without shifting page content. */
+.cc-mobile-navigation {
+  --mobile-menu-width: min(264px, calc(100vw - 100px));
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: white;
+  overflow: hidden;
+}
+.cc-mobile-navigation::backdrop {
+  background: transparent;
+}
+.cc-mobile-menu-scrim {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: rgb(0 0 0 / 38%);
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+.cc-mobile-menu-panel {
+  position: absolute;
+  inset: 0 auto 0 0;
+  display: flex;
+  flex-direction: column;
+  width: var(--mobile-menu-width);
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: #1a1d21;
+  transform: translateX(-100%);
+  transition: transform 300ms cubic-bezier(0.22, 0.68, 0, 1);
+}
+.cc-mobile-menu-button {
+  position: fixed;
+  left: max(20px, env(safe-area-inset-left, 0px));
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #1a1d21;
+  box-shadow: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.cc-mobile-menu-button:focus-visible {
+  outline: 2px solid #9abcc8;
+  outline-offset: 4px;
+}
+.cc-mobile-menu-close {
+  position: absolute;
+  left: 20px;
+  transition: transform 300ms cubic-bezier(0.22, 0.68, 0, 1);
+}
+.cc-mobile-navigation[data-state='open'] .cc-mobile-menu-panel {
+  transform: translateX(0);
+}
+.cc-mobile-navigation[data-state='open'] .cc-mobile-menu-scrim {
+  opacity: 1;
+}
+.cc-mobile-navigation[data-state='open'] .cc-mobile-menu-close {
+  transform: translateX(calc(var(--mobile-menu-width) - 2px));
+}
+.cc-mobile-menu-panel .cc-sidebar-account {
+  max-height: 65dvh;
+  overflow-y: auto;
+}
+/* Account options stay within the drawer on short screens and open upward. */
+.cc-mobile-menu-panel .cc-sidebar-account details > section {
+  position: static;
+  margin: 0 0 4px;
+  box-shadow: none;
+}
+.cc-mobile-menu-panel .cc-sidebar-account details[open] {
+  display: flex;
+  flex-direction: column-reverse;
+}
+.cc-mobile-menu-panel .cc-sidebar-account a,
+.cc-mobile-menu-panel .cc-sidebar-account button {
+  min-height: 44px;
+}
+@media (max-width: 63.999rem) {
+  .cc-mobile-page {
+    padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px));
+  }
+}
+@media (min-width: 64rem) {
+  .cc-mobile-menu-trigger {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cc-mobile-menu-panel,
+  .cc-mobile-menu-scrim,
+  .cc-mobile-menu-close {
+    transition: none;
+  }
+}
+@media print {
+  .cc-mobile-menu-trigger,
+  .cc-mobile-navigation {
+    display: none !important;
+  }
+}
+
+/* Editable offer checkbox: native input semantics with official Figma bold check. */
+.cc-offer-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-grid;
+  place-content: center;
+  vertical-align: middle;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  border: 1px solid #a8b3b9;
+  border-radius: 3px;
+  background-color: #ffffff;
+  cursor: pointer;
+}
+.cc-offer-checkbox:checked {
+  background: #dce8ed url('/carboot/check_bold_graphite.svg') center / 13px 13px no-repeat;
+  border-color: #9abcc8;
+}
+.cc-offer-checkbox:focus-visible {
+  outline: 2px solid #9abcc8;
+  outline-offset: 2px;
+}
+.cc-offer-checkbox:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

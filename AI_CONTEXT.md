@@ -1,5 +1,9 @@
 # Contexto para agentes de IA
 
+## Sprint 23D — mobile navigation pilot (2026-10-24)
+
+Mobile navigation below 64rem now shares SidebarContent and getSidebarNavigation with desktop. MobileNavigation uses native dialog for modality/focus containment, a 264px panel (reduced on narrow viewports), the official mobile-menu.svg from Figma, a flat graphite 64px floating toggle, and 300ms transform/opacity transitions. Safe areas and prefers-reduced-motion are supported. The former mobile topbars are removed from public/admin layouts. Scope is navigation only; table/radar/page responsiveness remains for the next UX pass. QA deployment only, no credentials or production changes.
+
 ## Sprint 20K — deterministic monitoring / AI-on-change
 
 Sprint 20 closes with deterministic-first orchestration in QA/Staging. Routine polling MUST NOT call an LLM by default. The normal launcher enqueues SOURCE_MONITOR, which reads only already-approved Brand Connector source URLs, stores source snapshots and compares stable normalized fingerprints. FIRST_OBSERVATION is baseline only and never wakes AI.

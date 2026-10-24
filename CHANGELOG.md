@@ -1,5 +1,12 @@
 # Changelog
 
+## Sprint 23D — mobile navigation pilot (2026-10-24)
+
+- Reuse the desktop sidebar content and tier-specific links inside a mobile modal drawer, replacing the old public/admin topbars below 1024 px.
+- Add the approved Figma mobile menu SVG in a flat 64 px graphite button; slide the panel and button over 300 ms, with a fading backdrop and reduced-motion support.
+- Close on outside tap, Escape, navigation and desktop resize; trap focus with native dialog, lock background scrolling, preserve safe areas and reserve bottom page space.
+- Keep existing server authorization, desktop navigation, database state and credentials unchanged. Publication scope: Compra Car QA only.
+
 ## Sprint 20F.1 — discovery persistence and safe diagnostics (2026-10-02)
 
 - Current MMV discovery aggregates body/model proposals by normalized model, body and proposed model before Agent Platform mapping, merging distinct evidence and removing repeated observations with the existing evidence helper. POSSIBLE_BODY_SPLIT remains review-only.
