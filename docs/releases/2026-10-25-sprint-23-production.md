@@ -67,3 +67,20 @@ All nine allowlisted migrations applied successfully to Production. Post-migrati
 The security advisor flags the intentionally authenticated SECURITY DEFINER corporate-review RPC: its body verifies auth.uid(), an active profile, an unexpired Master grant and the pending request before any mutation. Its search_path is empty, public/anon execution is revoked, and the negative authorization check passed. See [Supabase advisory 0029](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable). Existing extension/OTP/password-protection warnings remain outside this release.
 
 QA preparation commit `99ae58f2216fb9f3243eea83e5d02c62b59d241d` passed both GitHub release-gate runs. Railway will be pinned to the reviewed release commit/branch; future QA pushes do not update production. Existing production secrets are preserved; nonsecret APP_ENV and Supabase endpoint settings are explicitly production-scoped. Build/start commands and /api/health are explicit.
+
+
+## Publication result
+
+- Runtime commit: `0ea47383d94be55f4273c48ff3687126eaa285a2`.
+- Railway deployment: `fabe508e-9f1d-42e2-8650-1ef3caafc871` — **SUCCESS**; runtime ready in 684ms and configured healthcheck passed.
+- GET /api/health returned HTTP 200 and `{"status":"ok"}`.
+- Public home and technical sheets loaded; production catalog displayed 60 model cards.
+- Specification comparison (BMW X1 1187 / BYD Atto 2 1169) loaded 200 table rows with full MMVY headers and zero orange checks on tied equipment.
+- Model radar (BYD Dolphin 608 / Mini GS 1104) rendered Radar de avaliação and Notas por dimensão without alerts. Models without a current price are ineligible for this radar by existing rules.
+- Unauthenticated /admin/prices returned HTTP 307 to /login; no management data was shown.
+- Final business-data counts and fingerprints exactly match the baseline for all five tables after publication.
+- The new Master grant is visible only to its existing authenticated owner; the pending seller account was not activated.
+- No production agent worker, job queue, scheduler, LLM key or automatic canonical-data application was enabled. Historical agent data remains untouched.
+- Authenticated end-to-end editing, Corporate access and signup/SMTP are not certified by the anonymous smoke tests. The latter two remain the pre-existing limitations noted above.
+
+Production stays pinned to the runtime commit even when audit documentation and development branches advance. The previous production build/source remains the rollback baseline. No production business data was modified as a smoke test.

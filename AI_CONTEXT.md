@@ -1,5 +1,9 @@
 # Contexto para agentes de IA
 
+## 2026-10-25 — Sprint 23 production promotion completed
+
+Production runtime is pinned to `0ea47383d94be55f4273c48ff3687126eaa285a2` on `release/sprint-23-production-2026-10-25`; Railway deployment `fabe508e-9f1d-42e2-8650-1ef3caafc871` reached SUCCESS. Production URL: https://compra-carweb-production.up.railway.app . Nine allowlisted schema migrations applied; existing owner explicitly registered as Master; no QA data copied, no agent worker/scheduler enabled and no secrets rotated. All five production business-data counts/fingerprints remained identical before/after. Public home, 60 model cards, MMVY/spec comparison, unique advantage checks, radar for currently priced models, protected admin redirect and /api/health were verified. Corporate price-list access and public signup/SMTP remain known scope limitations; authenticated owner browser verification is the first real session. Details and rollback baseline are recorded in docs/releases/2026-10-25-sprint-23-production.md.
+
 ## 2026-10-25 — Sprint 23 production release preparation
 
 Owner authorized promoting the QA application to production, without copying QA data. Release allowlist contains seven UX/access/pricing migrations and two QA-validated security hardening migrations. Existing verified owner receives an explicit Master grant; pending accounts remain unchanged. Agent workers, schedulers and QA-only migrations remain in QA. Production data fingerprints and rollback baseline are recorded in docs/releases/2026-10-25-sprint-23-production.md. Main and QA histories diverged; the release must record both parents and promote the accepted QA implementation rather than force-reset main.
