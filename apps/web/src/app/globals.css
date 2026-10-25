@@ -832,7 +832,6 @@ select.ui-field,
 /* Mobile navigation lives in a body portal, independent of page scroll/layout. */
 .cc-mobile-menu-trigger[hidden] { display: none; }
 .cc-mobile-menu-trigger { border: 1px solid #9ABCC8; }
-.cc-mobile-menu-dismiss { position: absolute; top: max(12px, env(safe-area-inset-top, 0px)); left: calc(var(--mobile-menu-width) + 8px); width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; background: #1A1D21; }
 body { -webkit-user-select: none; user-select: none; }
 input, textarea, [contenteditable='true'] { -webkit-user-select: text; user-select: text; }
 

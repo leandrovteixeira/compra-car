@@ -153,14 +153,6 @@ export function MobileNavigation({ children }: { readonly children: ReactNode })
         <aside className="cc-mobile-menu-panel" aria-label="Navegação mobile">
           {children}
         </aside>
-        <button
-          type="button"
-          className="cc-mobile-menu-dismiss"
-          aria-label="Fechar menu"
-          onClick={close}
-        >
-          <Image src="/carboot/close.svg" alt="" width={20} height={20} />
-        </button>
       </dialog>
     </>,
     document.body,

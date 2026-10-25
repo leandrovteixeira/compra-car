@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-25 — Comparison ties and cleaner mobile drawer
+
+QA: orange checks now require exactly one winner per row. Equal equipment presence and tied best numeric values (including a tie among a subset of the compared models) receive no orange checks. Unique advantages remain highlighted. Removed the mobile drawer X and its unused CSS; outside-tap, Escape, destination selection and route/breakpoint closure remain available. Seven winner regression tests added to the QA release gate.
+
 ## 2026-10-25 — Sprint 23D QA UX follow-up
 
 QA only: fixed viewport mobile navigation via body portal, hidden logo trigger when open, subtle brand border, account navigation layout, collapse-on-navigation and disabled News/Chat. Unified technical-sheet top spacing; added specification editor return action. Comparisons now scroll vertically with the document, pin only the model-name header at the top, and support mouse dragging plus native touch horizontally. Mobile price sort controls have equal padding and aligned official icons. Operational status filters replace obsolete workflow options; future and expired prices remain separate. Brand batch loading gives explicit feedback. Policy history mounts details only when expanded. Display text selection disabled, editable fields exempt; this is not copy protection.
