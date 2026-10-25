@@ -813,3 +813,18 @@ select.ui-field,
   opacity: 0.55;
   cursor: not-allowed;
 }
+
+/* S23D: use the page for vertical scrolling and the comparison for horizontal scrolling. */
+@media (max-width: 63.999rem) {
+  .comparison-scroll {
+    overscroll-behavior-x: contain;
+    overscroll-behavior-y: auto;
+    touch-action: pan-x pan-y;
+  }
+  .cc-comparison-toolbar { padding: 8px 0; }
+  .cc-comparison-mode-row, .cc-comparison-modes, .cc-comparison-export { width: 100%; }
+  .cc-comparison-modes [role='radiogroup'] { display: grid; width: 100%; }
+  .cc-comparison-export > div { display: grid; width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cc-comparison-export .cc-outline-icon-action { width: 100%; min-width: 0; justify-content: center; padding-inline: 8px; }
+  .cc-price-frame { border: 0; box-shadow: none; background: transparent; overflow: visible; }
+}

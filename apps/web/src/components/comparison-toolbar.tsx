@@ -38,14 +38,16 @@ export function ComparisonToolbar({ mode, authenticated = true }: ComparisonTool
     if (nextMode === 'complete') params.delete('mode');
     else params.set('mode', nextMode);
     const query = params.toString();
-    startTransition(() => router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false }));
+    startTransition(() =>
+      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false }),
+    );
   }
 
   return (
-    <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 border-y border-border bg-surface px-2 py-1.5 sm:px-3">
+    <div className="cc-comparison-toolbar flex min-w-0 flex-wrap items-center justify-between gap-2 border-y border-border bg-surface px-2 py-1.5 sm:px-3">
       {pending && <ComparisonLoadingOverlay />}
-      <div className="flex min-w-0 flex-wrap items-center gap-3">
-        <fieldset>
+      <div className="cc-comparison-mode-row flex min-w-0 flex-wrap items-center gap-3">
+        <fieldset className="cc-comparison-modes">
           <legend className="sr-only">Modo da comparação</legend>
           <div
             aria-label="Modo da comparação"
@@ -78,8 +80,12 @@ export function ComparisonToolbar({ mode, authenticated = true }: ComparisonTool
           {modeDescriptions[mode]}
         </p>
       </div>
-      <div className="min-w-0 shrink-0">
-        <ComparisonPdfActions pdfUrl={pdfUrl} authenticated={authenticated} returnTo={`${pathname}?${searchParams.toString()}`} />
+      <div className="cc-comparison-export min-w-0 shrink-0">
+        <ComparisonPdfActions
+          pdfUrl={pdfUrl}
+          authenticated={authenticated}
+          returnTo={`${pathname}?${searchParams.toString()}`}
+        />
       </div>
     </div>
   );

@@ -94,7 +94,13 @@ export function MobileNavigation({ children }: { readonly children: ReactNode })
         aria-controls={id}
         onClick={open}
       >
-        <Image src="/carboot/mobile-menu.svg" alt="" aria-hidden="true" width={32} height={19} />
+        <Image
+          src="/carboot/icon_logo_official.svg"
+          alt=""
+          aria-hidden="true"
+          width={44}
+          height={44}
+        />
       </button>
       <dialog
         ref={dialog}
@@ -148,7 +154,13 @@ export function MobileNavigation({ children }: { readonly children: ReactNode })
           aria-label="Fechar menu"
           onClick={close}
         >
-          <Image src="/carboot/mobile-menu.svg" alt="" aria-hidden="true" width={32} height={19} />
+          <Image
+            src="/carboot/icon_logo_official.svg"
+            alt=""
+            aria-hidden="true"
+            width={44}
+            height={44}
+          />
         </button>
       </dialog>
     </>

@@ -5,7 +5,7 @@ Approved reference: [Figma A2, collapsed and expanded](https://www.figma.com/des
 ## Behavior
 
 - Below 1024 px: the existing desktop navigation content opens as a modal overlay from the left. No permanent icon rail and no content displacement.
-- The official revised `mobile_icon_menu` is exported as `apps/web/public/carboot/mobile-menu.svg`. Its original 32 × 19 SVG dimensions are retained.
+- The floating toggle now uses the existing official four-squircle logo, `apps/web/public/carboot/icon_logo_official.svg`, rendered at 44 × 44 px, following the mobile review. The original menu asset is retained for history.
 - A flat graphite `#1A1D21` circle, 64 × 64 px, sits 20 px from the left and 24 px above the bottom safe area. No shadow or gradient. When expanded, the same button moves to the right of the drawer.
 - The panel is 264 px wide, constrained on smaller screens to leave room for the 64 px close button and margins. Backdrop: black at 38% opacity.
 - Panel/button use 300 ms easing; the backdrop fades in/out. Reduced-motion preference disables transitions.
@@ -29,4 +29,21 @@ Use fresh sessions for Visitor, Public, Corporate, Admin and Master. Check at 32
 
 ## Scope and known follow-ups
 
-This is the navigation pilot, not full mobile certification. Tables, model cards, radar, auth and account page layouts receive their own responsive pass afterward. Existing Corporate price-list route authorization is a prior Sprint 23C issue and is not changed by this navigation-only pilot. Never copy QA data to production; never rotate credentials as part of this sprint.
+This covers the navigation pilot and the first responsive review of specification comparisons and price lists, not full mobile certification. Model cards, radar, auth and account page layouts still need their own responsive pass. Existing Corporate price-list route authorization is a prior Sprint 23C issue and is not changed by this navigation-only pilot. Never copy QA data to production; never rotate credentials as part of this sprint.
+
+
+## Mobile review follow-up
+
+- Specification comparison has the same 20px gutters as the radar page, with full-width mode and export groups below 1024px.
+- Scroll vertically while the pointer/finger is inside the comparison body, then scroll horizontally; both directions must work independently. The document scrolls vertically on mobile and the comparison region scrolls horizontally.
+- Both price lists show MMVY disclosure rows on mobile. Tap a row to reveal public price, validity, status, last update and (management only) existing actions. No hidden horizontal price columns. Desktop keeps its table.
+- Sort any field through ascending, descending and default, including repeated fast taps. Numeric price order and natural vehicle order must match on mobile and desktop. Open-ended dates remain last. Management sorting must make zero new server requests; filtering and saving still use their existing server paths.
+- Open and cancel a mobile price correction without saving; check that all fields and action buttons fit the card. Test actual saving/publication separately with disposable QA records.
+- Price filters use full-width search and a separate status/clear row on mobile.
+
+### Follow-up validation
+
+- Local TypeScript and 16 focused permission/navigation/sort tests passed.
+- Chromium fixtures at 320/390/768 px verified full-width controls and page-scroll chaining over comparison rows, including a touch swipe at 390 px. Horizontal overflow remained available where the table exceeded the viewport. Desktop 1440 px retained its navigation.
+- Both price disclosures expanded correctly. Each three-state sort cycle restored its default order and issued zero RSC requests. Mobile correction fields opened and cancelled without persistence. No JavaScript errors were observed in this fixture run.
+- Full lint/format/test commands were also executed and continue to report repository-wide warnings/legacy failures. Local production build could not fetch Inter from Google Fonts; the GitHub release gate remains the production-build check before QA completion.

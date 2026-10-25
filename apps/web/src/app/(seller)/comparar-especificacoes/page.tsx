@@ -25,14 +25,27 @@ export default async function ComparisonPage({ searchParams }: ComparisonPagePro
   const tier = await getAccountTier();
   const maxVehicles = comparisonLimit(tier);
   const cards = await loadCurrentModelCards();
-  const options = cards.flatMap(card => card.versions.map(version => ({
-    id: version.id, label: `${card.brand} ${card.model} ${version.version} ${version.model_year}`,
-  })));
+  const options = cards.flatMap((card) =>
+    card.versions.map((version) => ({
+      id: version.id,
+      label: `${card.brand} ${card.model} ${version.version} ${version.model_year}`,
+    })),
+  );
   const initialIds = typeof params.vehicles === 'string' ? params.vehicles.split(',') : [];
-  if (!params.vehicles) return <main className="min-w-0 text-text-primary">
-    <CatalogPageHeading title="Comparar Especificações" description="Compare versões lado a lado." />
-    <ComparisonVehicleSelector options={options} basePath="/comparar-especificacoes" maxVehicles={maxVehicles} />
-  </main>;
+  if (!params.vehicles)
+    return (
+      <main className="min-w-0 px-5 py-5 text-text-primary">
+        <CatalogPageHeading
+          title="Comparar Especificações"
+          description="Compare versões lado a lado."
+        />
+        <ComparisonVehicleSelector
+          options={options}
+          basePath="/comparar-especificacoes"
+          maxVehicles={maxVehicles}
+        />
+      </main>
+    );
   const result = await loadComparisonPage(params.vehicles);
 
   if (!result.ok) {
@@ -54,10 +67,19 @@ export default async function ComparisonPage({ searchParams }: ComparisonPagePro
   const categories = filterComparisonCategories(result.data.categories, mode);
 
   return (
-    <main className="flex min-h-0 min-w-0 flex-col overflow-hidden bg-background text-text-primary lg:h-[calc(100dvh-4.5rem)]">
+    <main className="flex min-h-0 min-w-0 flex-col bg-background px-5 py-5 text-text-primary lg:overflow-hidden lg:h-[calc(100dvh-4.5rem)]">
       <div className="mx-auto flex min-h-0 w-full max-w-[100rem] flex-1 flex-col">
-        <CatalogPageHeading title="Comparar Especificações" description="Compare versões lado a lado." />
-        <ComparisonVehicleSelector options={options} initialIds={initialIds} maxVehicles={maxVehicles} basePath="/comparar-especificacoes" compact />
+        <CatalogPageHeading
+          title="Comparar Especificações"
+          description="Compare versões lado a lado."
+        />
+        <ComparisonVehicleSelector
+          options={options}
+          initialIds={initialIds}
+          maxVehicles={maxVehicles}
+          basePath="/comparar-especificacoes"
+          compact
+        />
         <div className="mt-1 shrink-0">
           <ComparisonToolbar mode={mode} authenticated={tier !== 'visitor'} />
         </div>

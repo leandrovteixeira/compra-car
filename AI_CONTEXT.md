@@ -1,5 +1,9 @@
 # Contexto para agentes de IA
 
+## Sprint 23D — comparison and price mobile follow-up (2026-10-24)
+
+Specification comparisons now have 20px page gutters; mode and export groups fill the mobile width. Mobile comparison scrolling must chain vertically to the page (overscroll-behavior-y:auto) while retaining horizontal scrolling. Both price lists use shared MMVY disclosure rows below 1024px; desktop tables stay available above that. Price sorting is client-side because loadAllAdminProductPublicPrices already returns the whole result set: ascending → descending → default, with management query parameters updated through native History, never router navigation on a sort click. Mobile management reuses existing save/correct/publish actions. Floating menu now uses icon_logo_official.svg, 44×44 inside the existing 64px graphite circle. QA only.
+
 ## Sprint 23D — mobile navigation pilot (2026-10-24)
 
 Mobile navigation below 64rem now shares SidebarContent and getSidebarNavigation with desktop. MobileNavigation uses native dialog for modality/focus containment, a 264px panel (reduced on narrow viewports), the official mobile-menu.svg from Figma, a flat graphite 64px floating toggle, and 300ms transform/opacity transitions. Safe areas and prefers-reduced-motion are supported. The former mobile topbars are removed from public/admin layouts. Scope is navigation only; table/radar/page responsiveness remains for the next UX pass. QA deployment only, no credentials or production changes.

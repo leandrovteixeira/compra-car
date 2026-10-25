@@ -1,5 +1,12 @@
 # Changelog
 
+## Sprint 23D — responsive comparisons and price details (2026-10-24)
+
+- Align specification comparison padding with the model comparison and stretch mode/export controls across the mobile content width. Restore vertical page scroll chaining while retaining horizontal table scrolling and desktop behavior.
+- Replace mobile price tables with MMVY disclosure rows showing price, validity, status, update date and the existing management actions; keep desktop tables. Stack price filters into usable mobile rows.
+- Share immediate, deterministic client sorting across both price lists with ascending → descending → default cycling, numeric prices, natural vehicle names and open-ended dates last. Management sort URLs use native History without refetching the already complete dataset.
+- Replace both floating menu glyphs with the existing official four-squircle brand asset inside the same flat graphite circle. No new dependencies, schema, data, permissions or credentials. QA only.
+
 ## Sprint 23D — mobile navigation pilot (2026-10-24)
 
 - Reuse the desktop sidebar content and tier-specific links inside a mobile modal drawer, replacing the old public/admin topbars below 1024 px.

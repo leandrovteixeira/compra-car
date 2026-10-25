@@ -176,9 +176,18 @@ export function PriceDialog({
         <fieldset disabled={pending || publicationPending}>
           <p className="text-sm font-semibold uppercase tracking-wider text-sky-300">Pricing</p>
           <h2 className="mt-2 text-2xl font-bold" id="price-dialog-title">
-            {correction ? 'Corrigir preço publicado' : initialValues.id ? 'Editar preço público' : 'Adicionar preço público'}
+            {correction
+              ? 'Corrigir preço publicado'
+              : initialValues.id
+                ? 'Editar preço público'
+                : 'Adicionar preço público'}
           </h2>
-          {correction && <p className="mt-3 rounded-md border border-[#D6DEE3] bg-[#F6F7F8] p-3 text-sm text-[#1A1D21]">Este formulário cria um novo rascunho com os dados anteriores. O preço publicado permanece inalterado até a revisão e publicação da correção.</p>}
+          {correction && (
+            <p className="mt-3 rounded-md border border-[#D6DEE3] bg-[#F6F7F8] p-3 text-sm text-[#1A1D21]">
+              Este formulário cria um novo rascunho com os dados anteriores. O preço publicado
+              permanece inalterado até a revisão e publicação da correção.
+            </p>
+          )}
           {state.status === 'error' || state.status === 'conflict' ? (
             <div
               className="mt-5 rounded-xl border border-rose-800 bg-rose-950/40 p-4 text-sm text-rose-200"
@@ -346,7 +355,9 @@ export function AdminPriceManager({
 
   return (
     <div className="admin-pricing-manager">
-      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div
+        className={`mb-3 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between ${feedback ? 'flex' : 'hidden lg:flex'}`}
+      >
         {feedback ? (
           <p
             className="rounded-xl border border-emerald-800 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-200"
@@ -363,7 +374,7 @@ export function AdminPriceManager({
         <AdminPriceList
           onCorrect={(id, opener) => {
             openerRef.current = opener;
-            setCorrecting(page.items.find(price => price.id === id) ?? null);
+            setCorrecting(page.items.find((price) => price.id === id) ?? null);
             setEditing(null);
           }}
           onEdit={(id, opener) => {
@@ -387,7 +398,7 @@ export function AdminPriceManager({
         <PriceDialog
           correction
           action={createAction}
-          initialValues={{...valuesForPrice(correcting), id: '', lockVersion: ''}}
+          initialValues={{ ...valuesForPrice(correcting), id: '', lockVersion: '' }}
           key={`correct-${correcting.id}`}
           onClose={close}
           onSuccess={success}
