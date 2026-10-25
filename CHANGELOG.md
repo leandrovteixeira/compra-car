@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-25 — Sprint 23 production release preparation
+
+Owner authorized promoting the QA application to production, without copying QA data. Release allowlist contains seven UX/access/pricing migrations and two QA-validated security hardening migrations. Existing verified owner receives an explicit Master grant; pending accounts remain unchanged. Agent workers, schedulers and QA-only migrations remain in QA. Production data fingerprints and rollback baseline are recorded in docs/releases/2026-10-25-sprint-23-production.md. Main and QA histories diverged; the release must record both parents and promote the accepted QA implementation rather than force-reset main.
+
 ## 2026-10-25 — MMVY comparison column headers
 
 QA: specification comparison column headers now show brand/model and version plus the full model year (e.g. BYD Atto 2 GL 1.5 PHEV DHT 2027). Removed production year, abbreviated PY/MY pairs and separator dots from their visible label and accessible tooltip. The version/year line wraps without truncating the model year. The shared header applies to desktop, mobile and the synchronized fixed header.
