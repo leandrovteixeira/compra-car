@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
+import { createPortal } from 'react-dom';
 
 const EXIT_DURATION = 300;
 
@@ -16,6 +17,8 @@ export function MobileNavigation({ children }: { readonly children: ReactNode })
   const [state, setState] = useState<'closed' | 'entering' | 'open' | 'closing'>('closed');
   const id = useId();
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const restoreScroll = useCallback(() => {
     if (previousOverflow.current !== null) {
@@ -32,7 +35,7 @@ export function MobileNavigation({ children }: { readonly children: ReactNode })
     dialog.current?.close();
     restoreScroll();
     setState('closed');
-    trigger.current?.focus({ preventScroll: true });
+    requestAnimationFrame(() => trigger.current?.focus({ preventScroll: true }));
   }, [restoreScroll]);
 
   const close = useCallback(() => {
@@ -82,12 +85,14 @@ export function MobileNavigation({ children }: { readonly children: ReactNode })
     };
   }, [finishClose, restoreScroll]);
 
-  return (
+  if (!mounted) return null;
+  return createPortal(
     <>
       <button
         ref={trigger}
         type="button"
         className="cc-mobile-menu-button cc-mobile-menu-trigger"
+        hidden={state !== 'closed'}
         aria-label="Abrir menu"
         aria-haspopup="dialog"
         aria-expanded={state !== 'closed'}
@@ -150,19 +155,14 @@ export function MobileNavigation({ children }: { readonly children: ReactNode })
         </aside>
         <button
           type="button"
-          className="cc-mobile-menu-button cc-mobile-menu-close"
+          className="cc-mobile-menu-dismiss"
           aria-label="Fechar menu"
           onClick={close}
         >
-          <Image
-            src="/carboot/icon_logo_official.svg"
-            alt=""
-            aria-hidden="true"
-            width={44}
-            height={44}
-          />
+          <Image src="/carboot/close.svg" alt="" width={20} height={20} />
         </button>
       </dialog>
-    </>
+    </>,
+    document.body,
   );
 }

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-25 — Sprint 23D QA UX follow-up
+
+QA only: fixed viewport mobile navigation via body portal, hidden logo trigger when open, subtle brand border, account navigation layout, collapse-on-navigation and disabled News/Chat. Unified technical-sheet top spacing; added specification editor return action. Comparisons now scroll vertically with the document, pin only the model-name header at the top, and support mouse dragging plus native touch horizontally. Mobile price sort controls have equal padding and aligned official icons. Operational status filters replace obsolete workflow options; future and expired prices remain separate. Brand batch loading gives explicit feedback. Policy history mounts details only when expanded. Display text selection disabled, editable fields exempt; this is not copy protection.
+
+Validation: browser fixtures at 320/393/768/1440px confirmed mouse drag, model header pinning, vertical touch, fixed menu position on long policies, hidden duplicate logo, disabled News/Chat, exact sort/disclosure alignment and empty-brand feedback. No live data mutations. Full check results recorded in docs/admin/SPRINT_23D_MOBILE_NAVIGATION.md.
+
 ## Sprint 23D — responsive comparisons and price details (2026-10-24)
 
 - Align specification comparison padding with the model comparison and stretch mode/export controls across the mobile content width. Restore vertical page scroll chaining while retaining horizontal table scrolling and desktop behavior.

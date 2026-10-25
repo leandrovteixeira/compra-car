@@ -828,3 +828,16 @@ select.ui-field,
   .cc-comparison-export .cc-outline-icon-action { width: 100%; min-width: 0; justify-content: center; padding-inline: 8px; }
   .cc-price-frame { border: 0; box-shadow: none; background: transparent; overflow: visible; }
 }
+
+/* Mobile navigation lives in a body portal, independent of page scroll/layout. */
+.cc-mobile-menu-trigger[hidden] { display: none; }
+.cc-mobile-menu-trigger { border: 1px solid #9ABCC8; }
+.cc-mobile-menu-dismiss { position: absolute; top: max(12px, env(safe-area-inset-top, 0px)); left: calc(var(--mobile-menu-width) + 8px); width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; background: #1A1D21; }
+body { -webkit-user-select: none; user-select: none; }
+input, textarea, [contenteditable='true'] { -webkit-user-select: text; user-select: text; }
+
+.comparison-scroll { cursor: grab; overscroll-behavior-y: auto; touch-action: pan-x pan-y; }
+.comparison-scroll.cc-dragging { cursor: grabbing; }
+.cc-comparison-floating-header { position: fixed; top: 0; z-index: 55; overflow: hidden; background: white; pointer-events: none; border-bottom: 1px solid #D4D8DD; }
+.cc-comparison-floating-header[hidden] { display: none; }
+@media print { .cc-comparison-floating-header { display: none; } }

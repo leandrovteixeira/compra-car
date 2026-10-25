@@ -55,6 +55,9 @@ export function AdminSidebar(props: SidebarProps) {
     <>
       <aside
         aria-label="Menu principal"
+        onClickCapture={(event) => {
+          if (event.target instanceof Element && event.target.closest('a[href]')) setHovered(false);
+        }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         onFocusCapture={() => setHovered(true)}
@@ -89,8 +92,8 @@ function SidebarContent({
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const groups = getSidebarNavigation(tier);
   useEffect(() => {
-    if (!expanded) setOpenGroup(null);
-  }, [expanded]);
+    setOpenGroup(null);
+  }, [expanded, pathname]);
   return (
     <>
       <div className="flex min-h-[88px] items-center gap-0 overflow-hidden px-[14px]">
@@ -113,6 +116,10 @@ function SidebarContent({
       <div className="mx-3 h-px bg-white/20" />
       <nav
         aria-label="Navegação Carboot"
+        onClickCapture={(event) => {
+          if (event.target instanceof Element && event.target.closest('a[href]'))
+            setOpenGroup(null);
+        }}
         className="cc-sidebar-scroll min-h-0 flex-1 overflow-y-auto px-2 py-3"
       >
         <ul className="space-y-1">
@@ -147,7 +154,7 @@ function SidebarContent({
                       </>
                     )}
                   </button>
-                ) : item.href ? (
+                ) : item.href && item.status === 'active' ? (
                   <Link
                     title={!expanded ? item.label : undefined}
                     href={item.href}
@@ -163,7 +170,7 @@ function SidebarContent({
                   <span
                     title={!expanded ? item.label : undefined}
                     aria-disabled="true"
-                    className={itemClass + ' cursor-default opacity-75'}
+                    className="flex h-11 w-full cursor-default items-center gap-3 rounded-md px-4 text-left text-sm text-white/45"
                   >
                     <span className="shrink-0">
                       <NavIcon name={item.label} />

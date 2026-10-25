@@ -4,7 +4,7 @@ import { loadCurrentModelCards } from '@/server/public-model-catalog';
 
 export default async function PublicTechnicalSheets() {
   const cards = await loadCurrentModelCards();
-  return <main className="min-w-0 px-5 py-6">
+  return <main className="min-w-0 px-5 py-5">
     <CatalogPageHeading title="Fichas Técnicas" description="Escolha a marca e o modelo para consultar as versões atuais." />
     <CurrentModelCards cards={cards} basePath="/fichas-tecnicas/modelo" />
   </main>;

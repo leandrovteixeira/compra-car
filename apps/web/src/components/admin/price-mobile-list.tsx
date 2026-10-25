@@ -27,7 +27,7 @@ export function PriceSortButton({
       type="button"
       onClick={() => onSort(field)}
       aria-label={`Ordenar por ${priceSortLabels[field]}: ${active ? (sort.direction === 'asc' ? 'crescente; próxima decrescente' : 'decrescente; próxima padrão') : 'padrão; próxima crescente'}`}
-      className="inline-flex min-h-11 min-w-11 lg:min-h-0 items-center justify-center gap-2 rounded text-left font-semibold focus-visible:outline-2 focus-visible:outline-focus"
+      className="inline-flex min-h-11 w-11 min-w-11 -mr-3.5 lg:mr-0 lg:w-auto lg:min-h-0 items-center justify-center gap-2 rounded text-left font-semibold focus-visible:outline-2 focus-visible:outline-focus"
     >
       {label}
       <Image
@@ -60,11 +60,11 @@ export function PriceMobileList({
   return (
     <div className="cc-mobile-prices lg:hidden">
       <p className="mb-2 text-xs text-text-muted">Toque no veículo para ver os detalhes.</p>
-      <div className="flex items-center gap-2 rounded-t-lg border border-border bg-[#DCE8ED] px-3 py-1">
+      <div className="flex items-center gap-2 rounded-t-lg border border-border bg-[#DCE8ED] p-3">
         <label className="min-w-0 flex-1">
           <span className="sr-only">Ordenar preços por</span>
           <select
-            className="ui-field w-full"
+            className="ui-field !h-11 w-full"
             value={field}
             onChange={(e) => {
               const next = e.target.value as PriceSortField;

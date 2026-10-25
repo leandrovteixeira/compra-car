@@ -61,7 +61,7 @@ export default async function ComparisonPage({ searchParams }: ComparisonPagePro
   const categories = filterComparisonCategories(result.data.categories, mode);
 
   return (
-    <main className="flex min-h-0 min-w-0 flex-col bg-background text-text-primary lg:overflow-hidden lg:h-[calc(100dvh-4.5rem)]">
+    <main className="flex min-h-0 min-w-0 flex-col bg-background text-text-primary">
       <div className="mx-auto flex min-h-0 w-full max-w-[100rem] flex-1 flex-col">
         <CatalogPageHeading
           title="Comparar Especificações"

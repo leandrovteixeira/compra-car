@@ -80,10 +80,7 @@ export function AdminPriceFilters({ values }: AdminPriceFiltersProps) {
           >
             <option value="current">Vigente</option>
             <option value="expired">Expirado</option>
-            <option value="published">Publicado (todos)</option>
-            <option value="draft">Rascunho</option>
-            <option value="needs_review">Requer revisão</option>
-            <option value="rejected">Rejeitado</option>
+            <option value="future">Previsto</option>
             <option value="archived">Arquivado</option>
             <option value="all">Todos</option>
           </select>
