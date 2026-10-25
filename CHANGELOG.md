@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-25 — MMVY comparison column headers
+
+QA: specification comparison column headers now show brand/model and version plus the full model year (e.g. BYD Atto 2 GL 1.5 PHEV DHT 2027). Removed production year, abbreviated PY/MY pairs and separator dots from their visible label and accessible tooltip. The version/year line wraps without truncating the model year. The shared header applies to desktop, mobile and the synchronized fixed header.
+
 ## 2026-10-25 — Comparison ties and cleaner mobile drawer
 
 QA: orange checks now require exactly one winner per row. Equal equipment presence and tied best numeric values (including a tie among a subset of the compared models) receive no orange checks. Unique advantages remain highlighted. Removed the mobile drawer X and its unused CSS; outside-tap, Escape, destination selection and route/breakpoint closure remain available. Seven winner regression tests added to the QA release gate.

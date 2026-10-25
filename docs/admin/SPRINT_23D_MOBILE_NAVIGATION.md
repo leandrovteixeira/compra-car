@@ -69,3 +69,10 @@ Follow-up validation: 26 focused tests passed; monorepo typecheck passed (9 pack
 Orange comparison checks indicate a unique row winner only. No checks for identical equipment presence, all-equal numeric values or multiple models tied at the best numeric value. The seven focused winner cases cover binary ties, partial ties, unique presence, no presence, numeric larger/smaller ties, unique numerical winners and unsupported/mixed values. Mobile drawer no longer displays an X; dismiss by tapping outside, Escape or selecting a destination. Existing focus trap, scroll restoration and animation are preserved.
 
 Validation for this refinement: 33 focused tests passed (7 new winner cases); monorepo typecheck passed after build-generated types settled; targeted lint passed without warnings. Full checks were attempted: unchanged 6 core failures / 1098 passes, full lint 51 warnings with zero errors, repository formatting 192 files; local build blocked fetching Inter from Google Fonts. QA CI validates the production build. No live database writes or production changes.
+
+
+## MMVY comparison headers (2026-10-25)
+
+Specification comparison column headings use brand + model, then version + full model year. Production year and abbreviated year pairs are omitted from both the displayed heading and its tooltip. The model year remains visible when a long version wraps. Desktop/mobile and the fixed header copy share the same source component.
+
+Validation: 33 focused tests and monorepo typecheck passed; targeted header lint passed without warnings. General checks were run and retain the existing baseline (6 core failures / 1098 passes, full lint 51 warnings / zero errors, repository formatting 192 files); local build blocked by Google Fonts Inter download. CI performs the production build before QA verification. No data or production changes.
