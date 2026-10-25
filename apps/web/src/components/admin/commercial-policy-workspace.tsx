@@ -14,6 +14,7 @@ import { Fragment, useCallback, useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { AdminProductCombobox } from './admin-product-combobox';
+import { ComparisonLoadingOverlay } from './comparison-loading-overlay';
 import { AdminPolicyBatchGrid } from './admin-policy-batch-grid';
 import { PriceDialog } from './admin-price-manager';
 import { CommercialOfferBuilder } from './commercial-offer-builder';
@@ -24,7 +25,7 @@ import {
 } from '@compra-car/core';
 import { monthlyCompetenceOptions } from '@/application/admin/monthly-pricing-context';
 import { buildInitialManualPolicyRows } from '@/application/admin/manual-policy-batch';
-import { buttonClassName, fieldClassName, labelClassName } from '@compra-car/ui';
+import { fieldClassName, labelClassName } from '@compra-car/ui';
 
 const POLICY_STATUS_LABELS = {
   draft: 'Rascunho',
@@ -33,8 +34,20 @@ const POLICY_STATUS_LABELS = {
   needs_review: 'Em revisão',
   rejected: 'Rejeitado',
 } as const;
-const badge = 'inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold';
+const badge =
+  'inline-flex h-6 items-center justify-center rounded-full border px-2.5 text-xs font-medium';
 
+function formatDateBR(date: string): string {
+  const parts = date.slice(0, 10).split('-');
+  if (
+    parts.length !== 3 ||
+    parts[0]?.length !== 4 ||
+    parts[1]?.length !== 2 ||
+    parts[2]?.length !== 2
+  )
+    return date;
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
 function previousDay(date: string): string {
   const value = new Date(`${date}T00:00:00Z`);
   value.setUTCDate(value.getUTCDate() - 1);
@@ -84,6 +97,7 @@ export function CommercialPolicyWorkspace(props: {
   const router = useRouter();
   const [productId, setProductId] = useState(props.initialProductId);
   const [dirty, setDirty] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [specialDialogOpen, setSpecialDialogOpen] = useState(false);
   const [priceDialogOpen, setPriceDialogOpen] = useState(false);
   const [specialStart, setSpecialStart] = useState(props.commercialPeriod.start);
@@ -270,10 +284,11 @@ export function CommercialPolicyWorkspace(props: {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
+      {pending && <ComparisonLoadingOverlay />}
       <section
         data-testid="monthly-operation-header"
-        className="grid items-start gap-3 border-y border-border bg-surface px-3 py-3 sm:px-4 lg:grid-cols-[minmax(18rem,11fr)_minmax(14rem,5fr)_minmax(13rem,4fr)] lg:gap-4"
+        className="grid items-start gap-3 border-b border-[#D6DEE3] bg-transparent pb-3 lg:grid-cols-[minmax(18rem,11fr)_minmax(14rem,5fr)_minmax(13rem,4fr)]"
       >
         <div className="min-w-0">
           <AdminProductCombobox
@@ -287,7 +302,7 @@ export function CommercialPolicyWorkspace(props: {
           <span className={labelClassName}>Competência</span>
           <select
             aria-label="Competência mensal"
-            className={`${fieldClassName} mt-1`}
+            className={`${fieldClassName} mt-1 !h-10 !min-h-10`}
             value={props.competence}
             onChange={(event) => changeCompetence(event.target.value)}
           >
@@ -297,22 +312,22 @@ export function CommercialPolicyWorkspace(props: {
               </option>
             ))}
           </select>
-          <label className="mt-1.5 flex min-h-6 items-center gap-2 text-xs text-text-secondary">
-            <input
-              type="checkbox"
-              checked={period.kind === 'special'}
-              onChange={(event) => changeSpecialMode(event.target.checked)}
-              className="h-4 w-4 accent-selection-strong"
-            />
-            Período especial
-          </label>
-          <p className="mt-0.5 text-xs text-text-muted">
-            {period.kind === 'special'
-              ? `${props.competenceLabel} · Especial ${period.start.slice(8, 10)}–${period.end.slice(8, 10)}/${period.end.slice(5, 7)}`
-              : `${period.start} — ${period.end}`}
-          </p>
+          <div className="mt-1.5 flex min-h-6 flex-wrap items-center gap-x-3 gap-y-1 text-xs text-text-secondary">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={period.kind === 'special'}
+                onChange={(event) => changeSpecialMode(event.target.checked)}
+                className="h-4 w-4 accent-[#9ABCC8]"
+              />
+              Período especial
+            </label>
+            <span className="whitespace-nowrap text-[#61747B]">
+              {formatDateBR(period.start)} – {formatDateBR(period.end)}
+            </span>
+          </div>
         </div>
-        <aside className="border-t border-border pt-3 text-sm lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0">
+        <aside className="text-sm lg:border-l lg:border-[#D6DEE3] lg:pl-4">
           <span className={labelClassName}>Preço válido</span>
           {publicPrices.length === 1 ? (
             <div className="mt-1 flex min-h-9 items-center">
@@ -327,7 +342,7 @@ export function CommercialPolicyWorkspace(props: {
             <div className="mt-1">
               {!publicPrices.length ? (
                 <button
-                  className={buttonClassName({ size: 'action', variant: 'interactive' })}
+                  className="cc-btn cc-btn--m cc-btn--primary !h-10"
                   onClick={() => setPriceDialogOpen(true)}
                   type="button"
                 >
@@ -371,7 +386,7 @@ export function CommercialPolicyWorkspace(props: {
       {feedback ? (
         <p
           role={feedback.ok ? 'status' : 'alert'}
-          className={`rounded-xl border p-3 text-sm ${feedback.ok ? 'border-emerald-800 text-emerald-200' : 'border-rose-800 text-rose-200'}`}
+          className={`rounded-md border px-3 py-2 text-sm ${feedback.ok ? 'border-[#AFE3C3] bg-[#F1FAF5] text-[#16854A]' : 'border-[#F0C2BE] bg-[#FFF3F2] text-[#A93732]'}`}
         >
           {feedback.message}
         </p>
@@ -384,12 +399,12 @@ export function CommercialPolicyWorkspace(props: {
         <>
           <section className="space-y-3">
             <div>
-              <h2 className="text-xl font-bold">Políticas</h2>
+              <h2 className="text-base font-semibold text-[#1A1D21]">Políticas</h2>
             </div>
             {periodPolicies.length ? (
-              <div className="overflow-x-auto rounded-2xl border border-slate-800 lg:overflow-visible">
+              <div className="overflow-x-auto rounded-lg border border-[#D6DEE3]">
                 <table className="w-full min-w-[48rem] text-left text-sm">
-                  <thead className="admin-table-header bg-slate-900 text-xs uppercase text-slate-400">
+                  <thead className="admin-table-header !static !top-auto bg-[#DCE8ED] text-xs uppercase text-[#61747B]">
                     <tr>
                       <th className="p-3">Tipo</th>
                       <th className="p-3">Vigência</th>
@@ -399,7 +414,7 @@ export function CommercialPolicyWorkspace(props: {
                       <th className="p-3">Ações</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800">
+                  <tbody className="divide-y divide-[#D6DEE3]">
                     {periodPolicies.map((policy) => {
                       const offerIds = props.drafts
                         .filter(
@@ -429,7 +444,8 @@ export function CommercialPolicyWorkspace(props: {
                               </span>
                             </td>
                             <td className="p-3">
-                              {policy.startsOn} — {policy.endsOn ?? 'aberta'}
+                              {formatDateBR(policy.startsOn)} —{' '}
+                              {policy.endsOn ? formatDateBR(policy.endsOn) : 'aberta'}
                             </td>
                             <td className="p-3">
                               R${' '}
@@ -439,14 +455,14 @@ export function CommercialPolicyWorkspace(props: {
                             </td>
                             <td className="p-3">
                               <span
-                                className={`${badge} ${policy.status === 'published' ? 'border-emerald-800 bg-emerald-950/50 text-emerald-300' : policy.status === 'needs_review' ? 'border-amber-800 bg-amber-950/50 text-amber-300' : 'border-slate-700 bg-slate-900 text-slate-300'}`}
+                                className={`${badge} ${policy.status === 'published' ? 'border-[#AFE3C3] bg-[#F1FAF5] text-[#16854A]' : policy.status === 'needs_review' ? 'border-[#EDD19A] bg-[#FFF8E8] text-[#9B6A19]' : 'border-[#D6DEE3] bg-[#F3F5F6] text-[#697786]'}`}
                               >
                                 {POLICY_STATUS_LABELS[policy.status]}
                               </span>
                             </td>
                             <td className="p-3">
                               <span
-                                className={`${badge} ${isUsed ? 'border-sky-800 bg-sky-950/50 text-sky-200' : 'border-slate-700 bg-slate-900 text-slate-300'}`}
+                                className={`${badge} ${isUsed ? 'border-[#9ABCC8] bg-[#EAF1F4] text-[#357B97]' : 'border-slate-700 bg-slate-900 text-slate-300'}`}
                               >
                                 {isUsed ? 'Em uso' : 'Livre'}
                               </span>
@@ -468,7 +484,7 @@ export function CommercialPolicyWorkspace(props: {
                                         : undefined
                                     }
                                     onClick={() => setEditingPolicy(policy)}
-                                    className="rounded border border-slate-700 px-2 py-1 disabled:opacity-40"
+                                    className="cc-btn cc-btn--p cc-btn--secondary disabled:opacity-40"
                                   >
                                     Editar
                                   </button>
@@ -486,7 +502,7 @@ export function CommercialPolicyWorkspace(props: {
                                       data.set('lockVersion', String(policy.lockVersion));
                                       mutate(props.archivePolicyAction, data);
                                     }}
-                                    className="rounded border border-rose-800 px-2 py-1 text-rose-200 disabled:opacity-40"
+                                    className="cc-btn cc-btn--p cc-btn--secondary disabled:opacity-40"
                                   >
                                     Arquivar
                                   </button>
@@ -524,8 +540,8 @@ export function CommercialPolicyWorkspace(props: {
               onSaved={saved}
             />
           </section>
-          <section className="space-y-3 border-t border-slate-800 pt-6">
-            <h2 className="text-xl font-bold">Ofertas</h2>
+          <section className="space-y-3 border-t border-[#D6DEE3] pt-4">
+            <h2 className="text-base font-semibold text-[#1A1D21]">Ofertas</h2>
             <CommercialOfferBuilder
               action={props.offerAction}
               products={props.products}
@@ -548,27 +564,35 @@ export function CommercialPolicyWorkspace(props: {
               }}
             />
           </section>
-          <details className="rounded-2xl border border-slate-800 p-4">
-            <summary className="cursor-pointer font-bold">
+          <details
+            open={historyOpen}
+            onToggle={(event) => setHistoryOpen(event.currentTarget.open)}
+            className="rounded-xl border border-border"
+          >
+            <summary className="cursor-pointer p-4 font-bold">
               Histórico ({historicalPolicies.length + historicalOffers.length})
             </summary>
-            <div className="mt-4 space-y-3 text-sm text-slate-300">
-              {historicalPolicies.map((policy) => (
-                <p key={`policy-${policy.id}`}>
-                  Policy #{policy.id} ·{' '}
-                  {MANUAL_POLICY_DISPLAY_LABELS[policy.policyType] ?? policy.policyType} ·{' '}
-                  {policy.startsOn} — {policy.endsOn}
-                </p>
-              ))}
-              {historicalOffers.map((offer) => (
-                <p key={`offer-${offer.id}`}>
-                  Offer #{offer.id} · {offer.validFrom} — {offer.validTo} · {offer.status}
-                </p>
-              ))}
-              {!historicalPolicies.length && !historicalOffers.length ? (
-                <p>Nenhum item anterior carregado.</p>
-              ) : null}
-            </div>
+            {historyOpen && (
+              <div className="space-y-3 px-4 pb-4 text-sm text-text-secondary">
+                {historicalPolicies.map((policy) => (
+                  <p key={`policy-${policy.id}`}>
+                    Policy #{policy.id} ·{' '}
+                    {MANUAL_POLICY_DISPLAY_LABELS[policy.policyType] ?? policy.policyType} ·{' '}
+                    {formatDateBR(policy.startsOn)} —{' '}
+                    {policy.endsOn ? formatDateBR(policy.endsOn) : 'aberta'}
+                  </p>
+                ))}
+                {historicalOffers.map((offer) => (
+                  <p key={`offer-${offer.id}`}>
+                    Oferta #{offer.id} · {formatDateBR(offer.validFrom)} —{' '}
+                    {offer.validTo ? formatDateBR(offer.validTo) : 'aberta'} · {offer.status}
+                  </p>
+                ))}
+                {!historicalPolicies.length && !historicalOffers.length ? (
+                  <p>Nenhum item anterior carregado.</p>
+                ) : null}
+              </div>
+            )}
           </details>
         </>
       )}

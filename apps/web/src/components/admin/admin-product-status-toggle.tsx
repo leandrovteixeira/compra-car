@@ -57,11 +57,7 @@ export function AdminProductStatusToggle({
     <>
       <button
         type="button"
-        className={`ui-badge cursor-pointer transition hover:brightness-125 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-wait disabled:opacity-60 ${
-          value
-            ? 'border-emerald-800 bg-emerald-950/50 text-emerald-300'
-            : 'border-border bg-surface-muted text-text-muted'
-        }`}
+        className={`inline-flex !h-6 min-h-6 items-center justify-center rounded-full border px-2 py-0 text-xs font-medium transition hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-wait disabled:opacity-60 ${value ? 'border-[#AFE3C3] bg-[#F1FAF5] text-[#16854A]' : 'border-[#D6DEE3] bg-[#F3F5F6] text-[#839198]'}`}
         onClick={toggle}
         disabled={pending || publicationBlocked}
         title={publicationBlocked ? publicationHelp : undefined}

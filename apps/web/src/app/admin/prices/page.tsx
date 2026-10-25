@@ -1,6 +1,9 @@
 import {
+  operationalDateInSaoPaulo,
+  adminPriceVisualStatusLabel,
+} from '@/components/admin/admin-price-presentation';
+import {
   parseAdminPriceFilters,
-  parseAdminPricePage,
   parseAdminPriceSort,
   type AdminPriceQuery,
 } from '@/application/admin/admin-price-query';
@@ -8,12 +11,15 @@ import { requireRole } from '@/auth/authorization';
 import { AdminPriceError } from '@/components/admin/admin-price-error';
 import { AdminPriceFilters } from '@/components/admin/admin-price-filters';
 import { AdminPriceManager } from '@/components/admin/admin-price-manager';
-import { PageHeader } from '@/components/admin/page-header';
-import { loadAdminProductPublicPrices } from '@/server/admin-product-public-price-service';
+import { CatalogPageHeading } from '@/components/admin/catalog-page-heading';
+import { loadAllAdminProductPublicPrices } from '@/server/admin-product-public-price-service';
 import { loadAdminProducts } from '@/server/admin-product-service';
 import { withDevTiming } from '@/server/dev-timing';
-import { publishProductPublicPriceAction, updateProductPublicPriceAction } from './actions';
-import Link from 'next/link';
+import {
+  createProductPublicPriceAction,
+  publishProductPublicPriceAction,
+  updateProductPublicPriceAction,
+} from './actions';
 
 interface AdminPricesPageProps {
   readonly searchParams: Promise<AdminPriceQuery>;
@@ -22,22 +28,40 @@ interface AdminPricesPageProps {
 export default async function AdminPricesPage({ searchParams }: AdminPricesPageProps) {
   await requireRole('admin');
   const params = await searchParams;
-  const page = parseAdminPricePage(params);
   const sorting = parseAdminPriceSort(params);
   const filters = parseAdminPriceFilters(params);
   const [result, productsResult] = await withDevTiming('pricing.page.list', () =>
     Promise.all([
       withDevTiming('pricing.listBasePrices', () =>
-        loadAdminProductPublicPrices({
-          page,
-          ...sorting,
-          search: filters.search || undefined,
-          status: filters.status === 'all' ? undefined : filters.status,
-        }),
+        loadAllAdminProductPublicPrices(
+          {
+            ...sorting,
+            sort: sorting.sort === 'endsOn' ? 'startsOn' : sorting.sort,
+            search: filters.search || undefined,
+            status:
+              filters.status === 'all'
+                ? undefined
+                : filters.status === 'future' || filters.status === 'expired'
+                  ? 'published'
+                  : filters.status,
+          },
+          sorting.sort === 'endsOn' ? 'endsOn' : undefined,
+        ),
       ),
       withDevTiming('pricing.listProductOptions', () => loadAdminProducts()),
     ]),
   );
+
+  let visibleItems = result.ok ? result.data.items : [];
+  if (result.ok && (filters.status === 'future' || filters.status === 'expired')) {
+    const today = operationalDateInSaoPaulo();
+    const label = filters.status === 'future' ? 'Previsto' : 'Expirado';
+    const items = result.data.items.filter(
+      (price) =>
+        adminPriceVisualStatusLabel(price.status, price.startsOn, price.endsOn, today) === label,
+    );
+    visibleItems = items;
+  }
 
   return (
     <section
@@ -45,27 +69,9 @@ export default async function AdminPricesPage({ searchParams }: AdminPricesPageP
       style={{ gridTemplateRows: 'auto auto minmax(0, 1fr)' }}
     >
       <div className="admin-pricing-page-header">
-        <PageHeader
-          compact
-          actions={
-            <div className="flex flex-wrap gap-3">
-              <Link
-                className="ui-button ui-button--primary ui-button--action"
-                href="/admin/prices/input"
-              >
-                Criar preços
-              </Link>
-              <Link
-                className="ui-button ui-button--secondary ui-button--action"
-                href="/admin/prices/policies/input"
-              >
-                Criar políticas
-              </Link>
-            </div>
-          }
-          description="Cadastre e edite rascunhos de preços públicos dos veículos."
-          eyebrow="Pricing"
-          title="Preços públicos"
+        <CatalogPageHeading
+          title="Gerenciar Preços"
+          description="Consulte, revise e publique preços públicos dos veículos."
         />
       </div>
       <div className="admin-pricing-toolbar">
@@ -76,12 +82,13 @@ export default async function AdminPricesPage({ searchParams }: AdminPricesPageP
           <AdminPriceError />
         ) : (
           <AdminPriceManager
-            page={result.data}
+            page={{ ...result.data, items: visibleItems, total: visibleItems.length }}
             products={productsResult.data.map((product) => ({
               id: product.id,
-              label: `${product.brand} ${product.model} ${product.version} — ${product.modelYear}`,
+              label: `${product.brand} ${product.model} ${product.version} ${product.modelYear}`,
             }))}
             updateAction={updateProductPublicPriceAction}
+            createAction={createProductPublicPriceAction}
             publishAction={publishProductPublicPriceAction}
           />
         )}

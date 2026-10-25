@@ -8,6 +8,7 @@ export interface AdminPriceQuery {
 
 export type AdminPriceStatusFilter =
   | 'current'
+  | 'future'
   | 'expired'
   | 'published'
   | 'draft'
@@ -32,7 +33,7 @@ export function parseAdminPricePage(query: AdminPriceQuery): number {
   return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : 1;
 }
 
-const SORTS = ['vehicle', 'amount', 'startsOn', 'status', 'publishedAt', 'updatedAt'] as const;
+const SORTS = ['vehicle', 'amount', 'startsOn', 'endsOn', 'status', 'publishedAt', 'updatedAt'] as const;
 export function parseAdminPriceSort(query: AdminPriceQuery) {
   const sortValue = first(query.sort);
   const sort = SORTS.find((candidate) => candidate === sortValue) ?? 'updatedAt';
@@ -43,10 +44,7 @@ export function parseAdminPriceSort(query: AdminPriceQuery) {
 const STATUSES: readonly AdminPriceStatusFilter[] = [
   'current',
   'expired',
-  'published',
-  'draft',
-  'needs_review',
-  'rejected',
+  'future',
   'archived',
   'all',
 ];

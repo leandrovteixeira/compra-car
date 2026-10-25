@@ -6,7 +6,7 @@ $ErrorActionPreference = 'Stop'
 try {
     Import-Module (Join-Path $PSScriptRoot 'Environment.Common.psm1') -Force
     $root = Get-CompraCarRepositoryRoot
-    $source = Join-Path $root 'apps/web/env/production.env'
+    $source = Get-CompraCarEnvironmentSourceFile -EnvironmentName production
     $destination = Join-Path $root 'apps/web/.env.local'
     $variables = Read-DotEnvFile -Path $source
     Assert-RequiredEnvironmentVariables -Variables $variables
@@ -20,6 +20,7 @@ try {
 
     Write-Host 'ATIVANDO PRODUCAO' -ForegroundColor Red
     Set-ActiveEnvironmentFile -SourcePath $source -DestinationPath $destination
+    Set-AgentEnvironmentFile -Path $destination
     Show-EnvironmentSummary -EnvironmentName production -Variables $variables -ActiveFile $destination
     exit 0
 } catch {

@@ -1,0 +1,76 @@
+{
+  "schemaVersion": "engineering-official-snapshot-evidence-v1",
+  "captureRunId": 37974122747,
+  "artifactId": 11637413032,
+  "capturedAt": "2026-10-09",
+  "independentlyReviewed": false,
+  "byteHashesVerified": true,
+  "validationMethod": "SHA256 of all four archived snapshot bytes matches capture.json",
+  "sourceInventorySha256": "79369714630810c335306ae0e6b79c3dca8f08b913f3ad3d35b5a69250d86f3d",
+  "snapshots": [
+    {
+      "brand": "Kia",
+      "url": "https://www.kia.com.br/",
+      "sha256": "d15e3894c797b9da74b63fe0801fb1c9060830217f5910141eab25c3b34a42b4",
+      "bytes": 177455,
+      "observedTextLabels": [
+        "Sorento",
+        "EV9",
+        "EV5",
+        "Stonic",
+        "Niro",
+        "Sportage",
+        "Carnival",
+        "Bongo",
+        "Tasman"
+      ]
+    },
+    {
+      "brand": "Kia",
+      "url": "https://www.kia.com.br/sorento/",
+      "sha256": "8d1421b444c2a22eb6e9c7a2344640c85acdbff59ec00277e01e7e019f3cafe7",
+      "bytes": 233804,
+      "observedTextLabels": [
+        "Sorento"
+      ]
+    },
+    {
+      "brand": "Volkswagen",
+      "url": "https://www.vw.com.br/pt/carros.html",
+      "sha256": "9ec318433580d770f5c4d3fbb6ac694fe9568492275a5fb3e594bdb1145dcc06",
+      "bytes": 851178,
+      "observedTextLabels": [
+        "Tera",
+        "Nivus",
+        "T-Cross",
+        "Polo",
+        "Amarok",
+        "Taos",
+        "Saveiro",
+        "Jetta"
+      ]
+    },
+    {
+      "brand": "Volkswagen",
+      "url": "https://www.vw.com.br/pt/configurador.html",
+      "sha256": "58ba383dbf7bb31d71f4afe0f96f6665e9cb30906abd9738406644dd7032ee65",
+      "bytes": 847378,
+      "observedTextLabels": [
+        "Tera",
+        "Nivus",
+        "T-Cross",
+        "Polo",
+        "Amarok",
+        "Taos",
+        "Saveiro",
+        "Jetta"
+      ]
+    }
+  ],
+  "limitations": [
+    "Text matches do not establish canonical identity or current trim availability",
+    "Source HTML may contain shared navigation and historical labels",
+    "Capture artifact expires after seven days; preserve reviewed evidence separately",
+    "No cold/warm provider usage or API cost measurement yet"
+  ]
+}

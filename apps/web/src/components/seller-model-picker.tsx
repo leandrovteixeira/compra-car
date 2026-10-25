@@ -8,13 +8,14 @@ interface Props {
   readonly options: readonly SellerModelOption[];
   readonly radius: SellerScoreRadius;
   readonly showLabel?: boolean;
+  readonly basePath?: string;
 }
 
 function normalize(value: string) {
   return value.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('pt-BR');
 }
 
-export function SellerModelPicker({ options, radius, showLabel = true }: Props) {
+export function SellerModelPicker({ options, radius, showLabel = true, basePath = '/ver-modelo' }: Props) {
   const root = useRef<HTMLDivElement>(null);
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
@@ -46,10 +47,11 @@ export function SellerModelPicker({ options, radius, showLabel = true }: Props) 
           Buscar modelo
         </label>
       ) : null}
+      <div className="relative"><img src="/carboot/search.svg" alt="" aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-[18px] -translate-y-1/2 object-contain" />
       <input
         id="seller-model-search"
         aria-label={showLabel ? undefined : 'Buscar modelo'}
-        className={`ui-field ${showLabel ? 'mt-1' : ''}`}
+        className={`ui-field !h-10 !min-h-10 !pl-10 ${showLabel ? 'mt-1' : ''}`}
         autoComplete="off"
         onChange={(event) => {
           setSearch(event.target.value);
@@ -61,14 +63,14 @@ export function SellerModelPicker({ options, radius, showLabel = true }: Props) 
         placeholder="Buscar marca, modelo ou versão..."
         type="search"
         value={search}
-      />
+      /></div>
       {open && query ? (
         <div className="absolute left-0 right-0 z-30 mt-1 max-h-72 overflow-auto rounded-lg border border-border bg-surface p-1 shadow-lg">
           {filtered.length ? (
             filtered.map((option) => (
               <Link
                 className="block rounded-md px-3 py-2 text-sm text-text-secondary hover:bg-surface-muted hover:text-text-primary"
-                href={`/ver-modelo?product=${option.id}&radius=${radius}`}
+                href={`${basePath}?product=${option.id}&radius=${radius}`}
                 key={option.id}
                 onClick={() => {
                   setOpen(false);

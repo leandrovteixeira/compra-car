@@ -37,32 +37,8 @@ export function mapLegacyProductToVehicle(row: LegacyProductRow): Vehicle {
   });
 }
 
-function preferredText(
-  localized: string | null | undefined,
-  fallback: string | null,
-  field: string,
-  rowId: unknown,
-): string {
-  return requiredText(localized?.trim() || fallback, field, rowId);
-}
-
-function optionalFiniteNumber(
-  value: string | number | null | undefined,
-  field: string,
-  rowId: unknown,
-): number | null {
-  if (value === null || value === undefined || String(value).trim() === '') return null;
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) {
-    throw new LegacyAdapterMappingError(
-      `Número inválido em ${field} para specs.id ${String(rowId)}.`,
-    );
-  }
-  return parsed;
-}
-
-function optionalSortOrder(value: string | number | null | undefined, rowId: unknown): number | null {
-  return optionalFiniteNumber(value, 'display_order', rowId);
+function localized(primary: string | null | undefined, fallback: string | null, field: string, id: unknown): string {
+  return primary?.trim() || requiredText(fallback, field, id);
 }
 
 export function mapLegacySpecToComparisonItem(row: LegacySpecRow): ComparisonItem {
@@ -85,40 +61,13 @@ export function mapLegacySpecToComparisonItem(row: LegacySpecRow): ComparisonIte
     id: requiredText(row.id, 'specs.id', row.id),
     code: requiredText(row.code, 'specs.code', row.id),
     type: row.type,
-    category: preferredText(row.group_name_pt, row.group_name, 'specs.group_name', row.id),
-    equipmentGroup: preferredText(
-      row.equipment_group_pt,
-      row.equipment_group,
-      'specs.equipment_group',
-      row.id,
-    ),
-    specSet: preferredText(row.spec_set_pt, row.spec_set, 'specs.spec_set', row.id),
-    label: preferredText(
-      row.display_pt,
-      row.detail_pt?.trim() || row.detail,
-      'specs.display_pt',
-      row.id,
-    ),
-    optionLabel:
-      row.type === 'scale'
-        ? preferredText(row.detail_pt, row.detail, 'specs.detail_pt', row.id)
-        : null,
+    category: localized(row.group_name_pt, row.group_name, 'specs.group_name', row.id),
+    equipmentGroup: localized(row.equipment_group_pt, row.equipment_group, 'specs.equipment_group', row.id),
+    specSet: localized(row.spec_set_pt, row.spec_set, 'specs.spec_set', row.id),
+    label: localized(row.display_pt, row.detail_pt?.trim() || row.detail, 'specs.detail', row.id),
     unit: row.type === 'numeric' && row.unit?.trim() ? row.unit.trim() : null,
-    displayUnit: row.type === 'numeric' ? row.display_unit_pt?.trim() || null : null,
-    displayMultiplier:
-      row.type === 'numeric'
-        ? (optionalFiniteNumber(row.display_multiplier, 'display_multiplier', row.id) ?? 1)
-        : 1,
-    displayDecimals:
-      row.type === 'numeric'
-        ? optionalFiniteNumber(row.display_decimals, 'display_decimals', row.id)
-        : null,
-    relativeValue:
-      row.type === 'scale'
-        ? optionalFiniteNumber(row.relative_value, 'relative_value', row.id)
-        : null,
     valueDirection,
-    sortOrder: optionalSortOrder(row.display_order, row.id),
+    sortOrder: row.display_order == null ? null : Number(row.display_order),
   });
 }
 

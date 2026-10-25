@@ -6,26 +6,32 @@ export interface AdminNavigationItem {
 }
 
 export const adminNavigationItems: readonly AdminNavigationItem[] = [
-  { href: '/admin', label: 'Visão geral', status: 'active' },
-  { href: '/admin/products', label: 'Veículos', status: 'active' },
-  { href: '/admin/prices', label: 'Preços públicos', status: 'active' },
-  { href: '/admin/prices/input', label: 'Criar preços', status: 'active' },
-  { href: '/admin/prices/policies/input', label: 'Criar políticas', status: 'active' },
-  { label: 'Equipamentos', status: 'planned' },
-  { label: 'Categorias', status: 'planned' },
-  { label: 'Marcas', status: 'planned' },
-  {
-    label: 'Importações',
-    status: 'active',
-    children: [
-      { href: '/admin/imports', label: 'Cartas comerciais', status: 'active' },
-      {
-        href: '/admin/imports/structured-policies',
-        label: 'Políticas estruturadas (Excel)',
-        status: 'active',
-      },
-    ],
-  },
-  { href: '/admin/users', label: 'Usuários', status: 'active' },
-  { label: 'Configurações', status: 'planned' },
+  { href: '/admin', label: 'Home', status: 'active' },
+  { label: 'Veículos', status: 'active', children: [
+    { href: '/admin/products', label: 'Cadastro de Modelos', status: 'active' },
+    { href: '/admin/ver-ficha-tecnica', label: 'Fichas Técnicas', status: 'active' },
+    { href: '/admin/comparar-modelos', label: 'Comparar Modelos', status: 'active' },
+    { href: '/admin/comparar-especificacoes', label: 'Comparar Especificações', status: 'active' },
+  ] },
+  { label: 'Preços', status: 'active', children: [
+    { href: '/admin/prices', label: 'Gerenciar Preços', status: 'active' },
+    { href: '/admin/prices/list', label: 'Lista de Preços', status: 'active' },
+    { href: '/admin/prices/input', label: 'Cadastrar Preços', status: 'active' },
+    { href: '/admin/prices/policies/input', label: 'Cadastrar Políticas', status: 'active' },
+    { href: '/admin/prices/policies/current', label: 'Políticas Vigentes', status: 'planned' },
+  ] },
+  { label: 'Inteligência', status: 'active', children: [
+    { label: 'Análise de TPVA', status: 'planned' },
+  ] },
+  { label: 'Educação', status: 'planned' },
+  { href: '/admin/news', label: 'News', status: 'planned' },
+  { href: '/admin/chat', label: 'Chat', status: 'planned' },
+  { label: 'Agentes', status: 'active', children: [
+    { href: '/admin/agents', label: 'Agentes', status: 'active' },
+  ] },
+  { label: 'Configurações', status: 'active', children: [
+    { href: '/admin/users', label: 'Gestão de Usuários', status: 'active' },
+    { href: '/admin/imports', label: 'Importações', status: 'active' },
+  ] },
+  { label: 'Conta', status: 'planned' },
 ];

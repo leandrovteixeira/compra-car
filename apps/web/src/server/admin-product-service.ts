@@ -1,4 +1,4 @@
-import { LegacySupabaseAdapter } from '@compra-car/adapter-supabase';
+import { LegacySupabaseAdapter, createLegacySupabaseClientFromEnv } from '@compra-car/adapter-supabase';
 import type {
   AdministrativeVehicle,
   AdministrativeVehicleFilters,
@@ -18,6 +18,7 @@ export interface AdminProductListItem {
   readonly modelYear: string;
   readonly productionYear: string;
   readonly version: string;
+  readonly specifications: 'not_started' | 'filled';
 }
 
 export type AdminProductListResult =
@@ -31,7 +32,7 @@ export interface AdminProductEditorReader {
   getAdministrativeVehicleById(id: string): Promise<AdministrativeVehicle | null>;
 }
 
-function toAdminProductListItem(vehicle: Vehicle): AdminProductListItem {
+function toAdminProductListItem(vehicle: Vehicle, started: ReadonlySet<string>): AdminProductListItem {
   return Object.freeze({
     id: String(vehicle.id),
     brand: vehicle.brand,
@@ -41,6 +42,7 @@ function toAdminProductListItem(vehicle: Vehicle): AdminProductListItem {
     productionYear: vehicle.productionYear,
     isActive: vehicle.isActive,
     isPublic: vehicle.isPublic,
+    specifications: started.has(String(vehicle.id)) ? 'filled' : 'not_started',
   });
 }
 
@@ -56,14 +58,20 @@ export async function loadAdminProducts(
   filters: AdministrativeVehicleFilters = {},
   reader: AdminProductReader = new LegacySupabaseAdapter(),
   search = '',
+  specificationFilter: '' | 'not_started' | 'filled' = '',
 ): Promise<AdminProductListResult> {
   try {
     const vehicles = await reader.listAdministrativeVehicles(filters);
+    const { data: startedRows, error: specsError } = await createLegacySupabaseClientFromEnv()
+      .from('vw_admin_product_spec_started').select('product_id');
+    if (specsError) throw specsError;
+    const started = new Set((startedRows ?? []).map(row => String(row.product_id)));
     return {
       ok: true,
       data: vehicles
-        .map(toAdminProductListItem)
+        .map(vehicle => toAdminProductListItem(vehicle, started))
         .filter((vehicle) =>
+          (!specificationFilter || vehicle.specifications === specificationFilter) &&
           matchesVehicleSearch([vehicle.brand, vehicle.model, vehicle.version].join(' '), search),
         )
         .sort(

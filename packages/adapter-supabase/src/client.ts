@@ -2,6 +2,8 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 import { LegacyAdapterConfigurationError, LegacyAdapterServerOnlyError } from './errors';
 
+export type LegacySupabaseClient = SupabaseClient;
+
 export interface LegacySupabaseClientConfig {
   readonly url: string;
   readonly serverKey: string;

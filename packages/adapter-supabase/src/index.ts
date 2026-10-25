@@ -14,3 +14,10 @@ export * from './commercial-offer-builder-supabase-adapter';
 export * from './import-engine-supabase-adapter';
 export * from './import-processing-supabase-adapter';
 export * from './segmented-artifact-supabase-adapter';
+
+export * from './agent-platform-supabase-adapter';
+
+export * from './canonical-mmv-supabase-adapter';
+
+export * from './canonical-model-year-supabase-adapter';
+

@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
+import { getAccountMenuItems } from './account-menu-policy';
+import type { AccountTier } from '@/auth/entitlements-23c';
 import { LogoutControl } from './logout-control';
 import { PwaInstallInstructions } from './pwa-install-instructions';
 import { canOfferPwaInstall, usePwaInstall } from './use-pwa-install';
@@ -20,12 +22,16 @@ export function UserMenu({
   roleLabel,
   navigationLinks = [],
   showInvite = false,
+  sidebar = false,
+  tier = 'admin',
 }: {
   readonly displayName: string;
   readonly logoutAction: () => Promise<never>;
   readonly roleLabel: string;
   readonly navigationLinks?: readonly MenuLink[];
   readonly showInvite?: boolean;
+  readonly sidebar?: boolean;
+  readonly tier?: AccountTier;
 }) {
   const menu = useRef<HTMLDetailsElement>(null);
   const { availability, requestNativeInstall } = usePwaInstall({ desktopManual: true });
@@ -66,18 +72,18 @@ export function UserMenu({
   };
 
   return (
-    <details className="group relative shrink-0" ref={menu}>
+    <details className={sidebar ? "group relative w-full min-w-0" : "group relative min-w-0 shrink-0"} ref={menu}>
       <summary
-        aria-label="Menu"
-        className="ui-button ui-button--ghost ui-button--compact cursor-pointer list-none"
+        aria-label={sidebar ? "Conta" : "Menu"}
+        className={sidebar ? "flex h-11 w-full cursor-pointer list-none items-center gap-3 rounded-md px-4 text-sm text-white/85 hover:bg-white/10" : "ui-button ui-button--ghost ui-button--compact cursor-pointer list-none"}
       >
-        <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 16 16">
+        {sidebar ? <img alt="" src="/carboot/account2.svg" className="size-[22px] shrink-0"/> : <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 16 16">
           <path d="M2.5 4h11M2.5 8h11M2.5 12h11" stroke="currentColor" strokeLinecap="round" strokeWidth="1.5" />
-        </svg>
-        <span>Menu</span>
+        </svg>}
+        <span>{sidebar ? "Conta" : "Menu"}</span>{sidebar ? <span aria-hidden="true" className="ml-auto text-[#9ABCC8]">⌃</span> : null}
       </summary>
-      <section aria-label="Menu" className="absolute right-0 z-50 mt-2 w-64 rounded-lg border border-border bg-surface p-2 shadow-lg">
-        <div className="border-b border-border px-2 pb-2">
+      <section aria-label="Menu" className={sidebar ? "absolute bottom-full left-0 z-50 mb-1 w-full rounded-md border border-white/15 bg-[#1A1D21] p-2 text-white shadow-xl" : "absolute right-0 z-50 mt-2 w-64 rounded-lg border border-border bg-surface p-2 shadow-lg"}>
+        <div className={sidebar ? "hidden" : "border-b border-border px-2 pb-2"}>
           <p className="truncate text-sm font-semibold">{displayName}</p>
           <p className="mt-0.5 text-xs text-text-muted">{roleLabel}</p>
         </div>
@@ -92,10 +98,13 @@ export function UserMenu({
           </nav>
         ) : null}
 
+        {getAccountMenuItems(tier).map((item) => (
+          <Link key={item.href} className={`${sidebar ? "flex min-h-10 items-center rounded-md px-3 text-sm text-white/85 hover:bg-white/10" : itemClass} ${item.highlight ? "text-[#EF7732]" : ""}`} href={item.href} onClick={close}>{item.label}</Link>
+        ))}
         {canInstall ? (
           <>
-            <button className={itemClass} disabled={requestingInstall} onClick={install} type="button">
-              {requestingInstall ? 'Abrindo instalação…' : 'Instalar aplicativo'}
+            <button className={sidebar ? "flex min-h-10 w-full items-center rounded-md px-3 text-sm hover:bg-white/10" : itemClass} disabled={requestingInstall} onClick={install} type="button">
+              <span className="text-[#EF7732]">{requestingInstall ? 'Abrindo instalação…' : 'Instalar aplicativo'}</span>
             </button>
             {showInstallInstructions ? (
               <div className="px-1 py-1" role="status">
@@ -111,7 +120,7 @@ export function UserMenu({
           </Link>
         ) : null}
 
-        <LogoutControl action={logoutAction} className={itemClass} />
+        <LogoutControl action={logoutAction} className={sidebar ? "flex min-h-10 w-full items-center rounded-md px-3 text-sm text-white/85 hover:bg-white/10" : itemClass} />
       </section>
     </details>
   );

@@ -28,6 +28,7 @@ try {
     if ($environmentName -eq 'UNKNOWN') {
         Write-Warning 'The active environment targets an unknown Supabase project. No files were changed.'
     }
+    Set-AgentEnvironmentFile -Path $activeFile
     Show-EnvironmentSummary -EnvironmentName $environmentName -Variables $variables -ActiveFile $activeFile
     exit 0
 } catch {

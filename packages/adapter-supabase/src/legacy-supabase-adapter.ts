@@ -44,7 +44,7 @@ import {
 
 const PRODUCT_COLUMNS = 'id,brand,model,version,model_year,production_year,is_active,is_public';
 const SPEC_COLUMNS =
-  'id,code,type,group_name,equipment_group,spec_set,detail,group_name_pt,equipment_group_pt,spec_set_pt,detail_pt,display_pt,display_order,display_unit_pt,display_multiplier,display_decimals,relative_value,unit,value_direction,is_active';
+  'id,code,type,group_name,equipment_group,spec_set,detail,group_name_pt,equipment_group_pt,spec_set_pt,detail_pt,display_pt,display_order,unit,value_direction,is_active';
 const PRODUCT_SPEC_COLUMNS = 'product_id,equipment_id,value,is_present,input_unit';
 const CATALOG_PAGE_SIZE = 500;
 
@@ -147,7 +147,10 @@ export class LegacySupabaseAdapter
     let lastId = -1;
     let expectedTotal: number | undefined;
     while (true) {
-      let query = this.client.from('products').select(PRODUCT_COLUMNS, { count: 'exact' });
+      let query = this.client
+        .from('products')
+        .select(PRODUCT_COLUMNS, { count: 'exact' })
+        .not('production_year', 'is', null);
       if (years)
         query = query
           .in('production_year', [...new Set(years.map((pair) => pair.productionYear))])
@@ -208,7 +211,10 @@ export class LegacySupabaseAdapter
   async listAdministrativeVehicles(
     filters: AdministrativeVehicleFilters = {},
   ): Promise<readonly Vehicle[]> {
-    let query = this.client.from('products').select(PRODUCT_COLUMNS);
+    let query = this.client
+      .from('products')
+      .select(PRODUCT_COLUMNS)
+      .not('production_year', 'is', null);
     if (filters.model) query = query.ilike('model', escapedIlikeContains(filters.model));
     if (filters.brand) query = query.ilike('brand', escapedIlikeContains(filters.brand));
     if (filters.version) query = query.ilike('version', escapedIlikeContains(filters.version));
@@ -366,6 +372,7 @@ export class LegacySupabaseAdapter
       .from('specs')
       .select(SPEC_COLUMNS)
       .eq('is_active', true)
+      .order('display_order')
       .order('id');
     if (error) throw queryError('catálogo administrativo de specs', error);
     return ((data ?? []) as unknown as LegacySpecRow[]).map((row) => {
@@ -383,11 +390,14 @@ export class LegacySupabaseAdapter
         id: String(row.id),
         code: row.code,
         type: row.type as AdministrativeSpecCatalogItem['type'],
-        groupName: row.group_name,
-        equipmentGroup: row.equipment_group,
-        specSet: row.spec_set,
-        detail: row.detail,
+        groupName: row.group_name_pt?.trim() || row.group_name,
+        equipmentGroup: row.equipment_group_pt?.trim() || row.equipment_group,
+        specSet: row.spec_set_pt?.trim() || row.spec_set,
+        detail: row.type === 'scale'
+          ? (row.detail_pt?.trim() || row.detail)
+          : (row.display_pt?.trim() || row.detail_pt?.trim() || row.detail),
         unit: row.unit?.trim() || null,
+        displayOrder: row.display_order == null ? null : Number(row.display_order),
       };
     });
   }

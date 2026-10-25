@@ -1,26 +1,8 @@
+import { redirect } from 'next/navigation';
 import { requireRole } from '@/auth/authorization';
-import { createAdminProductAction } from '@/app/admin/products/new/actions';
-import { AdminProductForm } from '@/components/admin/admin-product-form';
-import { PageHeader } from '@/components/admin/page-header';
 
+/** Preserve old deep links but use the canonical inline creation workflow. */
 export default async function NewAdminProductPage() {
   await requireRole('admin');
-
-  return (
-    <>
-      <PageHeader
-        compact
-        description="Cadastre os dados principais do veículo. Equipamentos, preços e imagens serão tratados em etapas futuras."
-        eyebrow="Catálogo"
-        title="Novo veículo"
-      />
-      <div className="mt-5">
-        <AdminProductForm
-          action={createAdminProductAction}
-          currentYear={new Date().getFullYear()}
-          mode="create"
-        />
-      </div>
-    </>
-  );
+  redirect('/admin/products?new=1');
 }

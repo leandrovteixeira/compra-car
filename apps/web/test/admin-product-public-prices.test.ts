@@ -96,13 +96,14 @@ describe('admin ProductPublicPrice read slice', () => {
     expect(amountToPtBrInput('249990.50')).toBe('249.990,50');
   });
 
-  it('presents only ended published prices as expired on the São Paulo operational date', () => {
+  it('presents published price lifecycle on the São Paulo operational date', () => {
     const today = '2026-08-01';
-    expect(adminPriceVisualStatusLabel('published', null, today)).toBe('Publicado');
-    expect(adminPriceVisualStatusLabel('published', '2026-07-31', today)).toBe('Expirado');
-    expect(adminPriceVisualStatusLabel('published', today, today)).toBe('Publicado');
-    expect(adminPriceVisualStatusLabel('draft', '2026-07-31', today)).toBe('Rascunho');
-    expect(adminPriceVisualStatusLabel('archived', '2026-07-31', today)).toBe('Arquivado');
+    expect(adminPriceVisualStatusLabel('published', '2026-08-02', null, today)).toBe('Publicado');
+    expect(adminPriceVisualStatusLabel('published', '2026-07-01', '2026-07-31', today)).toBe('Expirado');
+    expect(adminPriceVisualStatusLabel('published', '2026-08-01', null, today)).toBe('Vigente');
+    expect(adminPriceVisualStatusLabel('published', '2026-07-01', today, today)).toBe('Vigente');
+    expect(adminPriceVisualStatusLabel('draft', '2026-07-01', '2026-07-31', today)).toBe('Rascunho');
+    expect(adminPriceVisualStatusLabel('archived', '2026-07-01', '2026-07-31', today)).toBe('Arquivado');
     expect(operationalDateInSaoPaulo(new Date('2026-08-01T02:30:00.000Z'))).toBe('2026-07-31');
   });
 

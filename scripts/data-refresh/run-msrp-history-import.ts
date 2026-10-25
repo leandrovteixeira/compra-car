@@ -43,9 +43,12 @@ function parseEnv(source: string): Readonly<Record<string, string>> {
 }
 
 function readTarget(env: Readonly<Record<string, string>>) {
-  const url = env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  const key = env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim();
-  if (!url || !key) throw new Error('URL/publishable key read-only indisponíveis.');
+  const url = env.SUPABASE_URL?.trim() || env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const key = env.SUPABASE_SERVER_KEY?.trim();
+
+  if (!url || !key) {
+    throw new Error('URL/server key do Supabase Staging indisponíveis.');
+  }
   if (new URL(url).hostname !== `${STAGING_REF}.supabase.co`) {
     throw new Error(`Projeto inesperado; esperado ${STAGING_REF}.`);
   }

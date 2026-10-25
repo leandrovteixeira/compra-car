@@ -17,12 +17,7 @@ export interface ComparisonItem {
   readonly equipmentGroup: string;
   readonly specSet: string;
   readonly label: string;
-  readonly optionLabel?: string | null;
   readonly unit: string | null;
-  readonly displayUnit?: string | null;
-  readonly displayMultiplier?: number;
-  readonly displayDecimals?: number | null;
-  readonly relativeValue?: number | null;
   readonly valueDirection: ValueDirection | null;
   readonly sortOrder: number | null;
 }
@@ -35,12 +30,7 @@ export interface CreateComparisonItemInput {
   readonly equipmentGroup: string;
   readonly specSet: string;
   readonly label: string;
-  readonly optionLabel?: string | null;
   readonly unit: string | null;
-  readonly displayUnit?: string | null;
-  readonly displayMultiplier?: number;
-  readonly displayDecimals?: number | null;
-  readonly relativeValue?: number | null;
   readonly valueDirection?: string | null;
   readonly sortOrder?: number | null;
 }
@@ -63,30 +53,7 @@ export function createComparisonItem(input: CreateComparisonItemInput): Comparis
     throw new DomainValidationError('sortOrder deve ser um número finito ou null.');
   }
 
-  const optionLabel =
-    input.type === 'scale'
-      ? requiredText(input.optionLabel ?? input.label, 'optionLabel')
-      : null;
   const unit = input.unit === null ? null : requiredText(input.unit, 'unit');
-  const displayUnit =
-    input.displayUnit === undefined || input.displayUnit === null
-      ? null
-      : requiredText(input.displayUnit, 'displayUnit');
-  const displayMultiplier = input.displayMultiplier ?? 1;
-  if (!Number.isFinite(displayMultiplier) || displayMultiplier <= 0) {
-    throw new DomainValidationError('displayMultiplier deve ser um número finito positivo.');
-  }
-  const displayDecimals = input.displayDecimals ?? null;
-  if (
-    displayDecimals !== null &&
-    (!Number.isInteger(displayDecimals) || displayDecimals < 0 || displayDecimals > 6)
-  ) {
-    throw new DomainValidationError('displayDecimals deve ser um inteiro entre 0 e 6 ou null.');
-  }
-  const relativeValue = input.relativeValue ?? null;
-  if (relativeValue !== null && !Number.isFinite(relativeValue)) {
-    throw new DomainValidationError('relativeValue deve ser um número finito ou null.');
-  }
   if (input.type !== 'numeric' && unit !== null) {
     throw new DomainValidationError('Itens binary e scale não podem possuir unidade.');
   }
@@ -109,12 +76,7 @@ export function createComparisonItem(input: CreateComparisonItemInput): Comparis
     equipmentGroup: requiredText(input.equipmentGroup, 'equipmentGroup'),
     specSet: requiredText(input.specSet, 'specSet'),
     label: requiredText(input.label, 'label'),
-    optionLabel,
     unit,
-    displayUnit,
-    displayMultiplier,
-    displayDecimals,
-    relativeValue,
     valueDirection,
     sortOrder,
   });

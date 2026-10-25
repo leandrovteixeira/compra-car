@@ -19,6 +19,30 @@ function Get-CompraCarRepositoryRoot {
     return $root
 }
 
+
+function Get-CompraCarSecretsDirectory {
+    $override = [Environment]::GetEnvironmentVariable('COMPRA_CAR_SECRETS_DIR', 'Process')
+    if (-not [string]::IsNullOrWhiteSpace($override)) {
+        return [System.IO.Path]::GetFullPath($override)
+    }
+
+    $devRoot = Split-Path -Parent (Get-CompraCarRepositoryRoot)
+    return Join-Path $devRoot '.secrets/compra-car'
+}
+
+function Get-CompraCarEnvironmentSourceFile {
+    param([Parameter(Mandatory = $true)][ValidateSet('staging', 'production')][string]$EnvironmentName)
+    return Join-Path (Get-CompraCarSecretsDirectory) "$EnvironmentName.env"
+}
+
+function Set-AgentEnvironmentFile {
+    param([Parameter(Mandatory = $true)][string]$Path)
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        throw "Agent environment file not found: $Path"
+    }
+    [Environment]::SetEnvironmentVariable('COMPRA_CAR_AGENT_ENV_FILE', $Path, 'Process')
+}
+
 function Read-DotEnvFile {
     param([Parameter(Mandatory = $true)][string]$Path)
 
@@ -148,7 +172,12 @@ function Show-EnvironmentSummary {
     Write-Host "Supabase public URL: $($Variables['NEXT_PUBLIC_SUPABASE_URL'])"
     Write-Host "Project ref: $projectRef"
     Write-Host "Active file: $ActiveFile"
+    foreach ($name in @('OPENAI_API_KEY', 'OPENAI_AGENT_MODEL', 'OPENAI_IMPORT_MODEL')) {
+        $present = $Variables.ContainsKey($name) -and -not [string]::IsNullOrWhiteSpace([string]$Variables[$name])
+        Write-Host "$name configured: $present"
+    }
+    Write-Host "Agent env file: $([Environment]::GetEnvironmentVariable('COMPRA_CAR_AGENT_ENV_FILE', 'Process'))"
     Write-Host 'Restart the Next.js development server after changing environments.' -ForegroundColor Yellow
 }
 
-Export-ModuleMember -Function Get-CompraCarRepositoryRoot, Read-DotEnvFile, Assert-RequiredEnvironmentVariables, Get-SupabaseProjectRef, Assert-EnvironmentTarget, Set-ActiveEnvironmentFile, Show-EnvironmentSummary
+Export-ModuleMember -Function Get-CompraCarRepositoryRoot, Get-CompraCarSecretsDirectory, Get-CompraCarEnvironmentSourceFile, Set-AgentEnvironmentFile, Read-DotEnvFile, Assert-RequiredEnvironmentVariables, Get-SupabaseProjectRef, Assert-EnvironmentTarget, Set-ActiveEnvironmentFile, Show-EnvironmentSummary

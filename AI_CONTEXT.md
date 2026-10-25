@@ -1,31 +1,329 @@
 # Contexto para agentes de IA
 
-## Global Advantage + Numeric Presentation Metadata (2026-09-27)
+## 2026-10-25 — Sprint 23 production release preparation
 
-Seller comparison advantage is global per visible row: numeric ranks all known values by
-`value_direction`, binary ranks true over false, and grouped scale ranks the selected alternatives
-by `relative_value` (never by digits embedded in `detail_pt`). Equal best values share the marker;
-if the whole row is equal there is no marker. Any unknown value suppresses an objective winner for
-that row. Advantages mode remains reference-only.
+Owner authorized promoting the QA application to production, without copying QA data. Release allowlist contains seven UX/access/pricing migrations and two QA-validated security hardening migrations. Existing verified owner receives an explicit Master grant; pending accounts remain unchanged. Agent workers, schedulers and QA-only migrations remain in QA. Production data fingerprints and rollback baseline are recorded in docs/releases/2026-10-25-sprint-23-production.md. Main and QA histories diverged; the release must record both parents and promote the accepted QA implementation rather than force-reset main.
 
-Staging `specs` now also carries `display_unit_pt`, `display_multiplier` and
-`display_decimals`. Canonical numeric storage remains untouched except PW_0005, whose 290 values
-were already liters (1.0–2.4) while metadata incorrectly said cc; unit/input_unit were corrected to
-L. Torque specs remain stored in Nm and render in kgfm through display metadata. OW_0001 renders two
-decimals; inch/years localize to pol/anos.
+## 2026-10-25 — MMVY comparison column headers
 
-## Seller PT-BR Comparison Presentation (2026-09-27)
+QA: specification comparison column headers now show brand/model and version plus the full model year (e.g. BYD Atto 2 GL 1.5 PHEV DHT 2027). Removed production year, abbreviated PY/MY pairs and separator dots from their visible label and accessible tooltip. The version/year line wraps without truncating the model year. The shared header applies to desktop, mobile and the synchronized fixed header.
 
-Branch `seller-pt-comparison` refatora a apresentação do Comparar para consumir a camada localizada
-já existente em `public.specs`: group/equipment/spec_set PT-BR, `display_pt`, `detail_pt` e
-`display_order`. O adapter preserva fallback canônico EN durante rollout. Numeric e binary continuam
-uma linha por spec. Scale é consolidado na camada de presentation em uma única linha por conjunto,
-com label `display_pt` e valor da célula igual ao `detail_pt` selecionado; ausência sem associação é
-`—`, distinta do baseline explícito `-`. Rows e categorias passam a respeitar `display_order`.
-O engine de vantagem para scale permanece fora deste escopo; score por relative_value não é
-reimplementado no frontend. PDF reutiliza o mesmo view model.
+## 2026-10-25 — Comparison ties and cleaner mobile drawer
 
-# Contexto para agentes de IA
+QA: orange checks now require exactly one winner per row. Equal equipment presence and tied best numeric values (including a tie among a subset of the compared models) receive no orange checks. Unique advantages remain highlighted. Removed the mobile drawer X and its unused CSS; outside-tap, Escape, destination selection and route/breakpoint closure remain available. Seven winner regression tests added to the QA release gate.
+
+## 2026-10-25 — Sprint 23D QA UX follow-up
+
+QA only: fixed viewport mobile navigation via body portal, hidden logo trigger when open, subtle brand border, account navigation layout, collapse-on-navigation and disabled News/Chat. Unified technical-sheet top spacing; added specification editor return action. Comparisons now scroll vertically with the document, pin only the model-name header at the top, and support mouse dragging plus native touch horizontally. Mobile price sort controls have equal padding and aligned official icons. Operational status filters replace obsolete workflow options; future and expired prices remain separate. Brand batch loading gives explicit feedback. Policy history mounts details only when expanded. Display text selection disabled, editable fields exempt; this is not copy protection.
+
+Validation: browser fixtures at 320/393/768/1440px confirmed mouse drag, model header pinning, vertical touch, fixed menu position on long policies, hidden duplicate logo, disabled News/Chat, exact sort/disclosure alignment and empty-brand feedback. No live data mutations. Full check results recorded in docs/admin/SPRINT_23D_MOBILE_NAVIGATION.md.
+
+## Sprint 23D — comparison and price mobile follow-up (2026-10-24)
+
+Specification comparisons now have 20px page gutters; mode and export groups fill the mobile width. Mobile comparison scrolling must chain vertically to the page (overscroll-behavior-y:auto) while retaining horizontal scrolling. Both price lists use shared MMVY disclosure rows below 1024px; desktop tables stay available above that. Price sorting is client-side because loadAllAdminProductPublicPrices already returns the whole result set: ascending → descending → default, with management query parameters updated through native History, never router navigation on a sort click. Mobile management reuses existing save/correct/publish actions. Floating menu now uses icon_logo_official.svg, 44×44 inside the existing 64px graphite circle. QA only.
+
+## Sprint 23D — mobile navigation pilot (2026-10-24)
+
+Mobile navigation below 64rem now shares SidebarContent and getSidebarNavigation with desktop. MobileNavigation uses native dialog for modality/focus containment, a 264px panel (reduced on narrow viewports), the official mobile-menu.svg from Figma, a flat graphite 64px floating toggle, and 300ms transform/opacity transitions. Safe areas and prefers-reduced-motion are supported. The former mobile topbars are removed from public/admin layouts. Scope is navigation only; table/radar/page responsiveness remains for the next UX pass. QA deployment only, no credentials or production changes.
+
+## Sprint 20K — deterministic monitoring / AI-on-change
+
+Sprint 20 closes with deterministic-first orchestration in QA/Staging. Routine polling MUST NOT call an LLM by default. The normal launcher enqueues SOURCE_MONITOR, which reads only already-approved Brand Connector source URLs, stores source snapshots and compares stable normalized fingerprints. FIRST_OBSERVATION is baseline only and never wakes AI.
+
+Source changes use a two-observation confirmation rule. A first divergence creates a PENDING change; only the same candidate state observed again after at least five minutes becomes CONFIRMED. Return to the stable baseline dismisses the candidate. A different state replaces the pending candidate. Snapshots without a successful status and valid content hash are not comparable baselines; recovery from an invalid observation is re-baselined rather than treated as semantic change. CDN ETag/Last-Modified changes alone never wake AI.
+
+Only CONFIRMED non-baseline source changes may enqueue downstream BRAND_CONNECTOR/MMV_DISCOVERY jobs. Manual/debug forced AI runs may exist later as technical operations, but they are not the default UI path or future scheduler path.
+
+Staging tables: agent_source_snapshots, agent_source_change_events, agent_ai_usage_events and agent_cost_policies. QA budget policy foundation exists; exact per-model token-cost accounting remains follow-up before production scheduling. Production remains untouched.
+
+Brand identity is now first-class: brand_identities + brand_aliases, evidence-backed alias discovery in Brand Connector, identity drift review, and operational alias resolution. Volkswagen/VW in QA points to one canonical Volkswagen identity; legacy target history is preserved.
+
+Roadmap after Sprint 20:
+- Sprint 21 — Model Year Agent
+- Sprint 22 — Price Agent
+- Sprint 23 — UX / Public Read Access: remove mandatory account/password friction for basic read-only consultation; keep administrative/mutating actions authenticated and authorized.
+- Sprint 24 — Spec Agent
+- Sprint 25 — Operations / Automation
+
+MY, Price and Spec agents MUST reuse SOURCE_MONITOR/change events and must not introduce unconditional daily LLM polling.
+
+
+## Sprint 20F.1 — local fixes for first validation run
+
+Body proposals are aggregated in CurrentMmvDiscoveryAgent before platform mapping using normalized currentModel/bodyStyle/proposedModel and existing evidence deduplication (URL/title/excerpt/evidenceType). Published labels remain verbatim and POSSIBLE_BODY_SPLIT stays review-only. No import cycle or dependency introduced.
+
+Brand Connector prompt requires official-ownership evidence in the same response for every candidate domain (same host or DNS subdomain); validation remains strict. OpenAI connector transport failures expose safe typed codes, preserved by CLI allowlisting; no SDK error, cause, headers or response text retained. SDK retries remain disabled.
+
+Governance is unchanged: Toyota/Jeep discovery persists operational findings only; Volkswagen/Audi connector discovery requires human review and explicit activation. No automatic ACCEPT/activation/apply. No live 20F rerun or Production write authorized. Details: [20F validation](docs/agents/MMV_MULTI_BRAND_VALIDATION_20F.md).
+
+## Sprint 20E.1 — canonical MMV registry / Option A
+
+Approved architecture: `catalog_mmvs` is the year-independent canonical identity bank; `products` remains year-aware MMVY. Staging migration `20261001184015_sprint_20e_canonical_mmv_registry` has been applied only to Compra Car Staging. It is additive: new registry + nullable `products.mmv_id`; no legacy backfill or Product mutation.
+
+`apply_catalog_mmvs` is SECURITY INVOKER, service-role-only, review/stale-safe and transactional. NEW_MODEL may stage multiple resolved identities atomically. Core/adapter expose `listCanonicalMmvs` for Sprint 21 and explicit accepted-proposal apply. Admin shows a separate Apply MMV action; review ACCEPT alone still does nothing.
+
+Post-migration Staging state: catalog_mmvs=0 rows and products with mmv_id=0. Production remains without catalog_mmvs/mmv_id.
+
+Important promotion blocker: Production migration history includes `20260929170822_promotion_backup_before_qa_baseline_20260929` and `20260929171848_sync_qa_direct_schema_and_security_20260929`, which are absent from the current Git branch and Staging history. Reconcile migration history/schema before any Production push. Never copy Staging MMV data to Production.
+
+Details: [MMV_REVIEW_APPLY_20E.md](docs/agents/MMV_REVIEW_APPLY_20E.md).
+
+## Sprint 20E — Review / Apply boundary
+
+Discovery, review and apply are now distinct. ACCEPT never mutates canonical data. Direct apply eligibility is restricted to NEW_MODEL, NEW_COMMERCIAL_VARIANT and SAME_LABEL_DISTINCT_POWERTRAIN, with COMPLETED run + latest ACCEPT + proposal + current fingerprint required. Other reason classes remain review-only.
+
+Applicable findings carry `STAGE_MMV_IDENTITY` proposals. Core explicitly blocks writing `products` from Sprint 20 because products require PY/MY, owned by Sprint 21.
+
+One architecture decision is now required before the write side: create a dedicated year-independent canonical MMV registry, or keep accepted MMVs only as Agent Platform proposals until Sprint 21. Recommendation is a dedicated MMV registry so the Product Year Agent has the canonical MMV bank it depends on.
+
+Details: [MMV_REVIEW_APPLY_20E.md](docs/agents/MMV_REVIEW_APPLY_20E.md).
+
+## Sprint 20D — Evidence & Confidence
+
+MMV evidence now distinguishes source semantics: MANUFACTURER (primary commercial), FIPE (primary market reference) and SECONDARY (lead-only). Corroboration levels are NO_EVIDENCE, SECONDARY_ONLY, SINGLE_PRIMARY, MULTI_SOURCE_SAME_KIND and CROSS_PRIMARY.
+
+Evidence readiness is LOW/MEDIUM/HIGH and is deliberately not a probability or an automation permission. Extraction confidence remains separate. CONFLICTING_SOURCES/INSUFFICIENT_EVIDENCE force LOW; high-risk rename/body/successor/discontinuation/ambiguity classes cannot reach HIGH in 20D.
+
+All assessments remain `maturity=VALIDATION` and `automationEligible=false`. Agent Platform stores the assessment in existing finding payload JSONB and Admin displays readiness/corroboration with explicit human-validation wording. Evidence fingerprints are now provenance-aware v2. MMV reconciliation schema is `20D.1`.
+
+Details: [MMV_EVIDENCE_CONFIDENCE_20D.md](docs/agents/MMV_EVIDENCE_CONFIDENCE_20D.md).
+
+## Sprint 20C.2 — validation hardening
+
+Numbered gearbox descriptors such as `AT6` and `MT6` normalize to their transmission families. Transmission-only naming drift is therefore non-identifying and reconciles rather than creating a new MMV.
+
+MMV platform matched observations explicitly use `reasonCode: null`, fixing type safety. Captured Jeep regression now expects schema `20C.2`.
+
+Admin REJECT no longer redirects to /admin; all three review decisions remain append-only and return the same review-only action result. No canonical catalog mutation is introduced.
+
+## Sprint 20C.1 — reason codes in Agent Platform
+
+Candidate validation was corrected so only `bodyStyle` is optional for historical fixture compatibility; existing MMV candidate fields remain strict.
+
+Reconciliation schema is now `20C.2`. `NEW_VERSION` findings carry deterministic `reasonCode`; body/model splits are mapped to review-required `AMBIGUOUS_MMV` findings with evidence and structured `REVIEW_MODEL_BODY_SPLIT` proposal. Admin displays the reason code. Human ACCEPT remains review-only and does not create/rename/deactivate catalog records.
+
+No database migration is required because existing finding `payload`/`proposal` JSONB is reused.
+
+## Sprint 20C — body intelligence & reason classification
+
+Product research structured output is now `official_product_candidates_v3` with explicit nullable `bodyStyle`. The provider must preserve `model` unchanged; core emits review-only `POSSIBLE_BODY_SPLIT` proposals when explicit body evidence suggests a distinct marketed model (for example A3 + Sedan -> A3 Sedan).
+
+`CurrentMmvDiscoverySnapshot` is now `20C.1` and carries body-model proposals. Deterministic version-change reasons now distinguish same-label/different-powertrain, explicit new commercial powertrain variant, transmission-style descriptor-only naming, and possible rename. All remain validation/review only; no canonical apply or schema migration yet.
+
+Details: [MMV_IDENTITY_20C.md](docs/agents/MMV_IDENTITY_20C.md).
+
+## Sprint 20B.1 — snapshot compatibility
+
+`CurrentMmvDiscoverySnapshot` now carries both `observations` (validated source observations before deduplication) and `candidates` (deduplicated current candidates). Legacy matching uses `candidates`; model-level finding aggregation uses `observations`. This preserves historical max-confidence/evidence behavior while keeping current discovery independent of the legacy catalog.
+
+The connector-source regression fixture now uses the exact official host present in its evidence. No database/schema change.
+
+## Sprint 20C — MMV identity foundation
+
+Current discovery now has a deterministic internal commercial-variant identity key separate from the visible manufacturer version label. Same visible label can remain unchanged while explicit commercial powertrain/propulsion/displacement differentiates distinct identities. Engine label, transmission and drivetrain remain evidence only by default; they do not silently create MMVs.
+
+This is still a discovery/proposal identity and does not replace legacy `CatalogMmvIdentity`. Body-style resolution and descriptor/new-variant reason classification remain next. Details: [MMV_IDENTITY_20C.md](docs/agents/MMV_IDENTITY_20C.md).
+
+## Sprint 20B — Current MMV Discovery Engine
+
+Current discovery is now a first-class layer independent of the legacy catalog. `CurrentMmvDiscoveryAgent` resolves the active Brand Connector, researches manufacturer sources, validates evidence, strips provider-only fields and deduplicates observations into `CurrentMmvDiscoverySnapshot/20B.1` without reading Products.
+
+`NewProductCheckAgent` remains the compatibility reconciler and now consumes that snapshot before projecting/matching legacy MMVs. Existing 19A.4 reconciliation outputs remain intentionally stable.
+
+Pure discovery CLI: `pnpm agent:mmv-discovery:dry-run -- --brand <brand> --provider <fixture|openai>`. It writes to `.local-reports/agents/mmv-current-discovery`, does not read the legacy catalog, cannot combine with `--persist-findings`, and performs no canonical mutation.
+
+FIPE remains a separate targeted lookup source boundary, not a manufacturer Brand Connector domain. Details: [MMV_DISCOVERY_20B.md](docs/agents/MMV_DISCOVERY_20B.md).
+
+## Sprint 20A — MMV Discovery Agent contract
+
+Sprint 20 now owns MMV Discovery before Product Year. Branch `sprint-20-mmv-discovery-agent` starts from Sprint 19C.
+
+Frozen business rules: meaningful commercial version-name changes are candidate new MMVs; packages/options do not create MMV; named special editions do; body derivatives can become distinct marketed models; same-name facelift/generation remains same model; fuzzy similarity never auto-merges. Same model + same visible version label may still be distinct when powertrain differs, so visible version label cannot be the sole canonical identity key.
+
+FIPE is a first-class independent BR discovery/corroboration source, not a manufacturer Brand Connector domain. FIPE-only discoveries may create reviewable MMV proposals. Missing-current-catalog observations do not delete/deactivate immediately; after roughly 7–10 consecutive runs, emit a reviewable discontinuation/deactivation alert while preserving history.
+
+20A audit: reuse Sprint 19A extraction/dedupe/matcher/reporting, Sprint 19B Run→Finding→Evidence→Review platform, and Sprint 19C Brand Connectors. Mandatory gaps are canonical same-label/different-powertrain identity, FIPE source boundary, explicit body observation/model resolution, cross-run absence state, and richer reason codes. Details: [MMV_DISCOVERY_AGENT_20.md](docs/agents/MMV_DISCOVERY_AGENT_20.md).
+
+No migration, provider call, Staging write or Production mutation in 20A.
+
+## Sprint 19C — fechamento real validado
+
+**COMPLETE / REAL CROSS-BRAND ONBOARDING VALIDATED**, conforme resultados fornecidos
+pelo operador. VW/BR foi descoberto, revisado e ativado como ACTIVE v1; observed label
+Volkswagen do Brasil, domínios `vw.com.br` e `vwnews.com.br`. MMV real concluiu em
+aproximadamente 4m12s, com 25 findings persistidos e 64/64 evidências nos domínios
+permitidos; catálogo canônico preservado. Runs e métricas completas no
+[relatório final](docs/agents/SPRINT_19C_VALIDATION.md).
+Runtime Node 24.15.0; warning de engine conhecido não bloqueou a validação funcional.
+Smoke Node 22 permanece pendente. FAILED-run persistence é follow-up de
+Agent Platform/Orchestration; UX de agentes provisória, com redesign posterior.
+Registros de implementação abaixo são históricos; fechamento sem novas chamadas remotas.
+
+## Sprint 19C.4 — MMV background e polling
+
+Provider MMV cria Responses com `background:true` e `store:false`; consulta a mesma
+resposta a cada 2s até estado terminal. `OPENAI_AGENT_MAX_WAIT_MS` limita o prazo total
+(padrão 600000, faixa 60000–1800000); operações HTTP têm teto de 60s, reduzido ao saldo.
+Retries explícitos somente no retrieve para timeout/conexão/429/5xx, sem recriar pesquisa.
+Estados cancelled/incomplete/failed têm códigos seguros. Pesquisa, matcher e connectors
+preservados. Armazenamento temporário de background segue a API, sem habilitar store:true.
+Validação e limites: [19C.4](docs/agents/SPRINT_19C4_BACKGROUND_RESEARCH.md).
+
+## Sprint 19C.3 — diagnósticos de transporte MMV
+
+Falhas do SDK OpenAI no provider MMV agora são classificadas por tipos oficiais/status,
+sem preservar o erro original. CLI expõe código controlado, status HTTP válido e duração
+monotônica em milissegundos; omite campos textuais da API. Requisição e segurança de
+connectors permanecem iguais. Runs que falham antes do mapeamento ainda não são
+persistidas: registrar FAILED pela plataforma é follow-up, sem mudança de semântica 19B.
+Detalhes e validação: [19C.3](docs/agents/SPRINT_19C3_TRANSPORT_DIAGNOSTICS.md).
+
+## Sprint 19C.2 — runtime dos agentes
+
+Brand Connector e MMV usam `scripts/agents/agent-environment.ts`: parser nativo Node,
+arquivo padrão `apps/web/.env.local`, override `COMPRA_CAR_AGENT_ENV_FILE` e prioridade
+dos valores já presentes no ambiente. Não altera `process.env` nem o arquivo/hard link;
+arquivo opcional ausente/inválido não derruba fixtures. Configuração real continua obrigatória.
+Pesquisa Brand Connector retorna `observedBrandLabel` informativo; identidade de run,
+subject e proposal vem de input.brand/input.market. Sem aliases hardcoded ou fuzzy.
+CLIs emitem apenas códigos de uma allowlist; erros desconhecidos não expõem detalhes.
+Migration aplicada permanece em `20260914172157`, SQL preservado. Nenhum acesso remoto
+ou chamada OpenAI foi realizado na implementação. Detalhes: [19C.2](docs/agents/SPRINT_19C2_RUNTIME_HARDENING.md).
+
+## Sprint 19C.1 — migration alinhada ao Staging
+
+O operador confirmou a aplicação da 19C no Compra Car Staging, registrada como
+`20260914172157_sprint_19c_brand_connectors`. O arquivo local e suas referências
+foram alinhados a essa versão, com SQL byte a byte preservado. Nenhuma migration
+adicional ou acesso remoto foi realizado nesta correção. Os registros da 19C
+abaixo descrevem a validação local anterior à aplicação informada pelo operador.
+
+## Sprint 19C — Brand Connector (2026-09-14, local)
+
+Registry operacional, sync explícito de marcas do catálogo, discovery/health-check,
+propostas revisáveis e ativação explícita versionada em `/admin/agents/brands`.
+Accept continua apenas review. Novo target manual não cria Product. Resolver MMV
+prefere ACTIVE persistido com fallback controlado Toyota/Jeep; matcher preservado.
+Migration local `20260914172157_sprint_19c_brand_connectors.sql`, com RLS,
+ativação transacional e bootstrap equivalente aos built-ins. Validada em PostgreSQL
+15 descartável com dados sintéticos; não aplicada remotamente. Zero OpenAI,
+writes remotos/canônicos/specs/preços, scheduler ou mudanças em Legacy.
+Health check é capability manual/programática; scheduling somente na Sprint 23.
+Detalhes e limites: [Brand Connector 19C](docs/agents/BRAND_CONNECTOR_AGENT_19C.md).
+Gates e comparação com baseline: [validação 19C](docs/agents/SPRINT_19C_VALIDATION.md).
+
+
+## Sprint 19B.1 — versão alinhada ao Staging
+
+O operador confirmou a aplicação bem-sucedida no Compra Car Staging, registrada
+como 20260913224216_sprint_19b_agent_platform. O arquivo local foi renomeado para
+essa versão, com SQL byte a byte preservado e referências atualizadas. Nenhuma
+migration nova ou operação remota foi executada nesta correção. Os registros
+da 19B abaixo descrevem o estado anterior à aplicação informada pelo operador.
+
+## Sprint 19B — Agent Platform (2026-09-13)
+
+Run/Finding/Evidence/Review genéricos, migration local com RLS sem acesso de
+browser, repository operacional e Admin em /admin/agents. Accept/Reject/Defer
+são decisões append-only; **não executam proposal nem alteram catálogo**.
+COMPLETED congela observações. Bundle usa UUID do report e fingerprints,
+rejeita conteúdo conflitante e finaliza somente após persistir o conjunto.
+MMV mantém reports locais por default; --persist-findings é opt-in e foi
+testado exclusivamente com mocks. Migration não aplicada; zero OpenAI ou
+escrita remota/canônica. Nenhum agente futuro ou scheduler implementado.
+
+HEAD inicial 0b81aa8, branch sprint-19b-agent-platform, worktree inicialmente
+limpo; sem commit/staging. PENDENTE: PostgreSQL/RLS real e smoke autenticado;
+Docker daemon indisponível. Um writer por run; concorrência distribuída e
+aggregations no banco são follow-ups. Issue T270 MHEV registrado sem correção.
+Implementação, schema, limites, testes e Git: [AGENT_PLATFORM_19B.md](docs/agents/AGENT_PLATFORM_19B.md).
+
+## Sprint 19A.4 — MMV Identity Reconciliation + Agent Platform Blueprint (2026-09-13)
+
+New Product Check Agent mantém nome histórico; sua missão atual é MMV Discovery.
+CatalogMmvIdentity projeta marca/modelo/versão normalizados, preservando todas as
+productRows. Matching e benchmark contam MMVs, não ocorrências PY/MY. Anos são
+observações; POSSIBLE_YEAR_CHANGE não é mais emitido. Product Year Agent será futuro.
+
+Cilindrada é comparada na precisão decimal comum, sem fuzzy. Engine/powertrain
+textuais são informativos; componentes estruturados fecham a identidade.
+Sem regras Jeep, mapas T270/Hurricane, alterações de provider ou fontes.
+
+Toyota fixture 8/8, Jeep pequena 4/4. Regressão com 18 candidatos Jeep capturados
+e catálogo reconstruído (16 rows/13 MMVs): 13 matches, 3 NEW_MODEL, zero falso novo.
+**PENDENTE:** catálogo completo da run original (51 rows); apenas seis rows estavam
+preservadas no report, outras dez são sintéticas dos casos de aceitação.
+Zero OpenAI calls, escrita canônica, migrations e renomeações; sem commit/staging.
+HEAD inicial 8140a10, worktree inicialmente limpo.
+
+Blueprint canônico dos cinco agentes, plataforma 19B e revisão humana:
+[AGENT_PLATFORM_ARCHITECTURE.md](docs/agents/AGENT_PLATFORM_ARCHITECTURE.md).
+[Benchmark](docs/agents/CROSS_BRAND_BENCHMARK.md) · [Validação](docs/agents/SPRINT_19A_VALIDATION.md).
+
+## Sprint 19A.3 — Cross-brand validation / Jeep BR (2026-09-13)
+
+Jeep/BR adicionada ao registry com jeep.com.br, subdomínios DNS por opt-in e
+search hints de versões/ficha/configurador/T270/Hurricane. Prompt usa o escopo
+do registry; provider existente recebe a política de hosts. Sem troca de modelo.
+
+Matcher, classificação, normalização, agregação, catalog reader e report writer
+da 19A.2 preservados. Não há Jeep-specific matcher nem mapa comercial → motor.
+Fixtures: Toyota 8/8 e Jeep 4/4 conhecidos reconciliados, zero falsos novos;
+uma ambiguidade proposital por marca. Benchmark com gabarito independente do
+matcher e taxas exclusivas de fixture, sem impor 100% a pesquisas reais.
+
+Toyota: smoke real validado anteriormente conforme informado pelo operador.
+Jeep: **PENDENTE** run real após revisão/autorização. Nesta Sprint: zero OpenAI
+calls, zero escrita canônica, zero renomeações; sem commit/staging.
+Base observada cf041ee (19A.2 já commitada).
+[Benchmark](docs/agents/CROSS_BRAND_BENCHMARK.md) e
+[validação](docs/agents/SPRINT_19A_VALIDATION.md).
+
+## Sprint 19A.2 — Deterministic Reconciliation + Finding Aggregation (2026-09-13)
+
+NEW_MODEL agregado por mercado/marca/modelo, com variantes, evidências, maior
+confidence relevante e warnings preservados. NEW_VERSION continua por variante.
+Matching intersecta trim, propulsão, cilindrada, família de transmissão e tração;
+relatórios mostram apenas correspondências sobreviventes. CVT/AT/MT/DHT e
+Hybrid Transaxle para HEV têm compatibilidade explícita, sem alterar rótulos.
+Alias/pacote informativos permitem NEW_VERSION; identidade incerta exige revisão.
+
+Fixture: 21 candidatos, oito LEGACY_NAMING, três NEW_MODEL agregados, dois
+NEW_VERSION com warnings e um AMBIGUOUS. Provider, prompt, modelo e domains
+preservados. Zero chamadas OpenAI nesta Sprint, escrita canônica e renomeação.
+19A/19A.1 já estão na base c1a27e6; 19A.2 fica sem commit e sem staging.
+A divergência PY 2026/2025 no relatório real anterior não deve ser ocultada pelo
+matching: anos explícitos continuam gerando POSSIBLE_YEAR_CHANGE.
+
+Decisões e limites: [manual](docs/agents/NEW_PRODUCT_CHECK_AGENT.md).
+Testes e gates: [validação](docs/agents/SPRINT_19A_VALIDATION.md).
+
+## Sprint 19A.1 ? Official Discovery Resolution + Legacy Naming (2026-09-13)
+
+Discovery ? Resolution ? matching determin?stico em um agente. Nomenclatura
+oficial preservada em officialVersionLabel, com trim/powertrain/motor/propuls?o/
+transmiss?o separados. Parser hist?rico conservador; modos EXACT_OFFICIAL e
+LEGACY_NAMING exigem correspond?ncia ?nica. Modelo novo pode ter vers?o null.
+Taxonomia evita tratar landing pages como modelos; registry inclui media Toyota.
+Fixture: oito matches hist?ricos, um NEW_MODEL, um NEW_VERSION e um AMBIGUOUS.
+Zero escrita can?nica e zero renomea??o. Pr?ximo smoke OpenAI 19A.1 **PENDENTE**
+de autoriza??o manual; o smoke anterior foi informado pelo operador.
+
+Decis?es, limites e futura normaliza??o: [manual](docs/agents/NEW_PRODUCT_CHECK_AGENT.md).
+Gates e testes: [valida??o](docs/agents/SPRINT_19A_VALIDATION.md).
+
+## Sprint 19A ? New Product Check Agent / READ-ONLY (2026-09-13)
+
+Agente local Toyota/BR: core com matching determin?stico e contratos de leitura,
+adapter-openai com Responses/web search/schema strict e CLI em scripts/agents.
+Registry oficial revalidado no core, fixture offline, deduplica??o/fingerprint,
+relat?rios JSON/Markdown locais ignorados e telemetria sem secrets. Reutiliza
+leitura administrativa paginada incluindo Private/Inactive. Sem escrita
+can?nica, migrations, UI ou scheduler. OPENAI_AGENT_MODEL obrigat?rio.
+
+Documenta??o e limita??es: [New Product Check Agent](docs/agents/NEW_PRODUCT_CHECK_AGENT.md).
+Gates e compara??o com main: [valida??o 19A](docs/agents/SPRINT_19A_VALIDATION.md).
+**PENDENTE:** smoke OpenAI e cat?logo real; execu??o validada com fixture.
 
 ## Sprint 17R.1 — Product State Invariant + Compare Row-Limit Fix (2026-09-11)
 
@@ -2167,3 +2465,15 @@ verifica versão, formatos, chaves e referências Product/Policy/Offer. Product 
 valuation, Apply, UI, persistência, Supabase e migrations permanecem **PENDENTES** e fora do boundary.
 `Legacy` e o banco não foram alterados. A decisão está documentada em
 `docs/import/SPRINT_15C1_COMMERCIAL_XLSX_INGESTION.md`.
+
+
+## Environment policy — online QA + Production (2026-10-05)
+
+- Compra Car has only two persistent environments: **QA/Staging online** and **Production online**.
+- QA/Staging uses Supabase project `shfsjyjxmgwnlexmdkcs` and is the mandatory target for development, agent runs, human review, validation and smoke tests.
+- Production must remain untouched during development. Do not change Production code, schema or data directly.
+- Promote only reviewed code/migrations from QA to Production. Never promote QA data.
+- Production data changes require an explicit production data operation/import approved by the user.
+- Local execution is optional for coding/debugging and is not a third persistent environment.
+- If the target environment cannot be proven, fail closed instead of assuming.
+- Canonical reference: `docs/architecture/decisions/ADR-020-ONLINE-QA-AND-PRODUCTION-ENVIRONMENTS.md`.

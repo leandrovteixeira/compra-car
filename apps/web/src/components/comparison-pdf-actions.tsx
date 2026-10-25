@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 
 import {
   COMPARISON_PDF_FILENAME,
@@ -9,10 +10,11 @@ import {
 
 interface ComparisonPdfActionsProps {
   readonly pdfUrl: string;
+  readonly authenticated?: boolean;
+  readonly returnTo?: string;
 }
 
-const actionClassName =
-  'ui-button ui-button--secondary ui-button--compact flex-1 gap-1.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus sm:flex-none';
+const actionClassName = 'cc-outline-icon-action';
 
 export function triggerComparisonPdfDownload(pdfUrl: string): void {
   const anchor = document.createElement('a');
@@ -24,32 +26,10 @@ export function triggerComparisonPdfDownload(pdfUrl: string): void {
   anchor.remove();
 }
 
-function DownloadIcon() {
-  return (
-    <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 20 20">
-      <path
-        d="M10 3v9m0 0 3.5-3.5M10 12 6.5 8.5M4 15.5h12"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.7"
-      />
-    </svg>
-  );
-}
+function DownloadIcon() { return <img src="/carboot/download.svg" alt="" aria-hidden="true" className="size-4 object-contain" />; }
+function ShareIcon() { return <img src="/carboot/share.svg" alt="" aria-hidden="true" className="size-4 object-contain" />; }
 
-function ShareIcon() {
-  return (
-    <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 20 20">
-      <circle cx="5" cy="10" r="2" stroke="currentColor" strokeWidth="1.6" />
-      <circle cx="14.5" cy="5" r="2" stroke="currentColor" strokeWidth="1.6" />
-      <circle cx="14.5" cy="15" r="2" stroke="currentColor" strokeWidth="1.6" />
-      <path d="m6.8 9.1 5.9-3.2m-5.9 5 5.9 3.2" stroke="currentColor" strokeWidth="1.6" />
-    </svg>
-  );
-}
-
-export function ComparisonPdfActions({ pdfUrl }: ComparisonPdfActionsProps) {
+export function ComparisonPdfActions({ pdfUrl, authenticated = true, returnTo = '/comparar' }: ComparisonPdfActionsProps) {
   const [isSharing, setIsSharing] = useState(false);
 
   async function sharePdf() {
@@ -65,8 +45,12 @@ export function ComparisonPdfActions({ pdfUrl }: ComparisonPdfActionsProps) {
     }
   }
 
+  if (!authenticated) {
+    const url = returnTo + (returnTo.includes('?') ? '&' : '?') + 'auth=login';
+    return <div className="flex gap-2"><Link href={url} className={actionClassName}><DownloadIcon /> Baixar PDF</Link><Link href={url} className={actionClassName}><ShareIcon /> Compartilhar</Link></div>;
+  }
   return (
-    <div className="flex w-full min-w-0 gap-1.5 sm:w-auto">
+    <div className="flex w-full min-w-0 flex-wrap gap-2 sm:w-auto">
       <a className={actionClassName} download={COMPARISON_PDF_FILENAME} href={pdfUrl}>
         <DownloadIcon />
         <span>Baixar PDF</span>

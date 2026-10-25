@@ -1,0 +1,160 @@
+'use client';
+
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
+import Image from 'next/image';
+import { createPortal } from 'react-dom';
+
+const EXIT_DURATION = 300;
+
+/** Native modal semantics keep background controls inert and trap keyboard focus. */
+export function MobileNavigation({ children }: { readonly children: ReactNode }) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const enterFrame = useRef<number | null>(null);
+  const previousOverflow = useRef<string | null>(null);
+  const [state, setState] = useState<'closed' | 'entering' | 'open' | 'closing'>('closed');
+  const id = useId();
+  const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const restoreScroll = useCallback(() => {
+    if (previousOverflow.current !== null) {
+      document.body.style.overflow = previousOverflow.current;
+      previousOverflow.current = null;
+    }
+  }, []);
+
+  const finishClose = useCallback(() => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = null;
+    if (enterFrame.current !== null) cancelAnimationFrame(enterFrame.current);
+    enterFrame.current = null;
+    dialog.current?.close();
+    restoreScroll();
+    setState('closed');
+    requestAnimationFrame(() => trigger.current?.focus({ preventScroll: true }));
+  }, [restoreScroll]);
+
+  const close = useCallback(() => {
+    if (!dialog.current?.open || closeTimer.current) return;
+    if (enterFrame.current !== null) cancelAnimationFrame(enterFrame.current);
+    enterFrame.current = null;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      finishClose();
+      return;
+    }
+    setState('closing');
+    closeTimer.current = setTimeout(finishClose, EXIT_DURATION);
+  }, [finishClose]);
+
+  const open = () => {
+    if (!dialog.current || dialog.current.open) return;
+    previousOverflow.current = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    setState('entering');
+    dialog.current.showModal();
+    // Give the translated starting position one paint before animating it in.
+    enterFrame.current = requestAnimationFrame(() => {
+      enterFrame.current = requestAnimationFrame(() => {
+        setState('open');
+        dialog.current?.querySelector<HTMLElement>('nav a, nav button')?.focus();
+        enterFrame.current = null;
+      });
+    });
+  };
+
+  useEffect(() => {
+    // Covers browser back/forward and programmatic navigation as well as links.
+    if (dialog.current?.open) finishClose();
+  }, [pathname, finishClose]);
+
+  useEffect(() => {
+    const desktop = window.matchMedia('(min-width: 64rem)');
+    const onResize = () => {
+      if (desktop.matches && dialog.current?.open) finishClose();
+    };
+    desktop.addEventListener('change', onResize);
+    return () => {
+      desktop.removeEventListener('change', onResize);
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+      if (enterFrame.current !== null) cancelAnimationFrame(enterFrame.current);
+      restoreScroll();
+    };
+  }, [finishClose, restoreScroll]);
+
+  if (!mounted) return null;
+  return createPortal(
+    <>
+      <button
+        ref={trigger}
+        type="button"
+        className="cc-mobile-menu-button cc-mobile-menu-trigger"
+        hidden={state !== 'closed'}
+        aria-label="Abrir menu"
+        aria-haspopup="dialog"
+        aria-expanded={state !== 'closed'}
+        aria-controls={id}
+        onClick={open}
+      >
+        <Image
+          src="/carboot/icon_logo_official.svg"
+          alt=""
+          aria-hidden="true"
+          width={44}
+          height={44}
+        />
+      </button>
+      <dialog
+        ref={dialog}
+        id={id}
+        className="cc-mobile-navigation"
+        data-state={state}
+        aria-label="Menu principal"
+        onCancel={(event) => {
+          event.preventDefault();
+          close();
+        }}
+        onClose={() => {
+          restoreScroll();
+          setState('closed');
+        }}
+        onKeyDown={(event) => {
+          if (event.key !== 'Tab') return;
+          const controls = [
+            ...event.currentTarget.querySelectorAll<HTMLElement>(
+              'a[href], button:not([disabled]), input:not([disabled]), summary, [tabindex]',
+            ),
+          ].filter((node) => node.tabIndex >= 0 && node.getClientRects().length > 0);
+          const first = controls[0];
+          const last = controls[controls.length - 1];
+          if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last?.focus();
+          } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first?.focus();
+          }
+        }}
+        onClickCapture={(event) => {
+          if (event.target instanceof Element && event.target.closest('a[href]')) close();
+        }}
+        onSubmitCapture={close}
+      >
+        <button
+          type="button"
+          className="cc-mobile-menu-scrim"
+          aria-label="Fechar menu ao tocar fora"
+          tabIndex={-1}
+          onClick={close}
+        />
+        <aside className="cc-mobile-menu-panel" aria-label="Navegação mobile">
+          {children}
+        </aside>
+      </dialog>
+    </>,
+    document.body,
+  );
+}

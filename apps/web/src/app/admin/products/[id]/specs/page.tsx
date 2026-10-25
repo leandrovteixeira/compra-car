@@ -2,9 +2,10 @@ import { notFound } from 'next/navigation';
 
 import { saveAdminProductSpecsAction } from './actions';
 
+import { CarbootBackLink } from '@/components/carboot-back-link';
 import { requireRole } from '@/auth/authorization';
 import { AdminProductSpecsEditor } from '@/components/admin/admin-product-specs-editor';
-import { PageHeader } from '@/components/admin/page-header';
+import { CatalogPageHeading } from '@/components/admin/catalog-page-heading';
 import { loadAdminProductSpecs } from '@/server/admin-product-specs';
 import { loadAdminProductForEditing } from '@/server/admin-product-service';
 
@@ -22,13 +23,9 @@ export default async function AdminProductSpecsPage({ params }: AdminProductSpec
 
   return (
     <>
-      <PageHeader
-        description={identity}
-        eyebrow="Catálogo"
-        sticky
-        title="Especificações e equipamentos"
-      />
-      <div>
+      <CatalogPageHeading title="Especificações" description="Gestão de especificações e equipamentos" />
+      <div className="py-3"><CarbootBackLink href="/admin/products" label="Voltar aos modelos" className="cc-outline-icon-action" /></div>
+      <div className="mt-0">
         <AdminProductSpecsEditor
           initialModel={model}
           saveAction={saveAdminProductSpecsAction.bind(null, id)}

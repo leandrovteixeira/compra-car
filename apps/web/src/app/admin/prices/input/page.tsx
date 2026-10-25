@@ -1,35 +1,21 @@
-import Link from 'next/link';
-import { buttonClassName } from '@compra-car/ui';
 
 import { requireRole } from '@/auth/authorization';
 import { AdminPriceBatchGrid } from '@/components/admin/admin-price-batch-grid';
-import { PageHeader } from '@/components/admin/page-header';
+import { CatalogPageHeading } from '@/components/admin/catalog-page-heading';
 import { loadManualPriceBatchProductOptions } from '@/server/manual-price-batch-service';
+import { loadExistingCatalogBrands } from '@/server/admin-catalog-brands';
 import { withDevTiming } from '@/server/dev-timing';
 
 import { createManualPriceBatchAction } from './actions';
 
 export default async function AdminPriceInputPage() {
   await requireRole('admin');
-  const products = await withDevTiming('pricing.page.input', loadManualPriceBatchProductOptions);
+  const [products, brands] = await Promise.all([withDevTiming('pricing.page.input', loadManualPriceBatchProductOptions),loadExistingCatalogBrands()]);
 
   return (
     <>
-      <PageHeader
-        sticky
-        actions={
-          <Link
-            className={buttonClassName({ size: 'action', variant: 'secondary' })}
-            href="/admin/prices"
-          >
-            Voltar para preços
-          </Link>
-        }
-        description="Informe até 100 preços de uma vez. O lote é persistente, atômico e cria somente rascunhos para revisão posterior."
-        eyebrow="Pricing"
-        title="Entrada de preços em lote"
-      />
-      <section className="mt-5" aria-label="Lote manual de preços públicos">
+      <div className="sticky top-0 z-30 bg-[#F6F7F8]"><CatalogPageHeading title="Cadastrar Preços" description="Informe até 100 preços de uma vez; os preços manuais são publicados após a validação do lote." /></div>
+      <section className="mt-0" aria-label="Lote manual de preços públicos">
         {!products.ok ? (
           <div
             className="rounded-lg border border-status-error/40 bg-rose-950/10 px-5 py-8 text-center"
@@ -43,7 +29,7 @@ export default async function AdminPriceInputPage() {
             </p>
           </div>
         ) : (
-          <AdminPriceBatchGrid action={createManualPriceBatchAction} products={products.data} />
+          <AdminPriceBatchGrid action={createManualPriceBatchAction} products={products.data} brands={brands} />
         )}
       </section>
     </>

@@ -71,6 +71,25 @@ describe('mapeadores do legado', () => {
     expect(item.sortOrder).toBeNull();
   });
 
+  it('prioriza apresentação em português e ordem do catálogo na comparação', () => {
+    const item = mapLegacySpecToComparisonItem({
+      ...numericSpec,
+      group_name_pt: 'Dimensões',
+      equipment_group_pt: 'Espaço',
+      spec_set_pt: 'Dimensões externas',
+      display_pt: 'Comprimento (mm)',
+      display_order: 10,
+    });
+
+    expect(item).toMatchObject({
+      category: 'Dimensões',
+      equipmentGroup: 'Espaço',
+      specSet: 'Dimensões externas',
+      label: 'Comprimento (mm)',
+      sortOrder: 10,
+    });
+  });
+
   it('rejeita tipos desconhecidos explicitamente', () => {
     expect(() => mapLegacySpecToComparisonItem({ ...binarySpec, type: 'text' })).toThrow(
       UnknownLegacySpecTypeError,

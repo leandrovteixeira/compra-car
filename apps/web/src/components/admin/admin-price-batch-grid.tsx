@@ -9,9 +9,11 @@ import type {
 import { formatPtBrMoneyInput, ptBrMoneyCaretPosition } from '@compra-car/core';
 import { useActionState, useEffect, useRef, useState } from 'react';
 
+import Link from 'next/link';
 import { EMPTY_MANUAL_PRICE_BATCH_ROW } from '@/application/admin/manual-price-batch';
 import { AdminProductCombobox } from '@/components/admin/admin-product-combobox';
-import { buttonClassName, fieldClassName } from '@compra-car/ui';
+import { ComparisonLoadingOverlay } from '@/components/admin/comparison-loading-overlay';
+import { fieldClassName } from '@compra-car/ui';
 
 type BatchAction = (
   state: ManualPriceBatchActionStateDto,
@@ -21,6 +23,7 @@ type BatchAction = (
 interface AdminPriceBatchGridProps {
   readonly action: BatchAction;
   readonly products: readonly ManualPriceBatchProductOptionDto[];
+  readonly brands: readonly string[];
 }
 
 function isOperationallyEmpty(row: ManualPriceBatchGridRowDto): boolean {
@@ -45,7 +48,9 @@ function FieldError({
   ) : null;
 }
 
-export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridProps) {
+export function AdminPriceBatchGrid({ action, products, brands }: AdminPriceBatchGridProps) {
+  const [brand, setBrand] = useState('');
+  const [brandFeedback, setBrandFeedback] = useState('');
   const initialState: ManualPriceBatchActionStateDto = {
     status: 'idle',
     rows: [EMPTY_MANUAL_PRICE_BATCH_ROW],
@@ -88,6 +93,36 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
     });
   }
 
+  function loadBrand() {
+    if (!brand) return;
+    const canonical = products.filter(
+      (p) =>
+        p.isActive &&
+        p.isPublic &&
+        p.displayName.toLocaleLowerCase('pt-BR').startsWith(brand.toLocaleLowerCase('pt-BR') + ' '),
+    );
+    if (!canonical.length) {
+      setBrandFeedback(
+        `Nenhuma versão ativa e pública de ${brand} disponível para cadastrar preços.`,
+      );
+      return;
+    }
+    if (canonical.length > 100) {
+      window.alert('Esta marca possui mais de 100 versões. Refine o lote antes de prosseguir.');
+      return;
+    }
+    if (
+      filledCount > 0 &&
+      !window.confirm('Substituir as linhas preenchidas pelas versões desta marca?')
+    )
+      return;
+    setBrandFeedback(`${canonical.length} versões de ${brand} carregadas.`);
+    setRows([
+      ...canonical.map((p) => ({ ...newEmptyRow(`row-${nextRowId.current++}`), productId: p.id })),
+      newEmptyRow(`row-${nextRowId.current++}`),
+    ]);
+  }
+
   function updateMoney(clientRowId: string, element: HTMLInputElement) {
     const raw = element.value;
     const formatted = formatPtBrMoneyInput(raw);
@@ -107,28 +142,62 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
   }
 
   return (
-    <form action={formAction} autoComplete="off" className="space-y-5">
+    <form id="manual-price-batch-form" action={formAction} autoComplete="off" className="space-y-3">
+      {pending && <ComparisonLoadingOverlay />}
+      <div className="flex min-h-10 flex-wrap items-center gap-3 py-3">
+        <Link href="/admin/prices" className="cc-outline-icon-action">
+          <img src="/carboot/back.svg" alt="" aria-hidden="true" className="size-4" />
+          Voltar aos preços
+        </Link>
+        {state.status !== 'idle' && (
+          <p
+            aria-live="polite"
+            role={state.status === 'success' ? 'status' : 'alert'}
+            className={`min-w-0 flex-1 text-sm ${state.status === 'success' ? 'text-[#16854A]' : 'text-[#B4493A]'}`}
+          >
+            {state.message}
+            {state.status === 'success' && state.batchId ? ` Lote #${state.batchId}.` : ''}
+          </p>
+        )}
+      </div>
+      <div className="flex flex-wrap items-end gap-2 rounded-md border border-[#D6DEE3] bg-white p-3">
+        <label className="min-w-[200px] flex-1 text-xs font-semibold text-[#61747B]">
+          Preencher por marca
+          <select
+            aria-label="Marca para preenchimento em lote"
+            className="ui-field mt-1 !h-10 w-full"
+            value={brand}
+            onChange={(event) => {
+              setBrand(event.target.value);
+              setBrandFeedback('');
+            }}
+          >
+            <option value="">Selecione uma marca</option>
+            {brands.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button
+          type="button"
+          disabled={!brand || pending}
+          className="cc-btn cc-btn--m cc-btn--secondary !h-10"
+          onClick={loadBrand}
+        >
+          Carregar versões
+        </button>
+      </div>
+      {brandFeedback && (
+        <p role="status" className="text-sm text-text-secondary">
+          {brandFeedback}
+        </p>
+      )}
       <input name="rows" type="hidden" value={JSON.stringify(rows)} />
 
-      {state.status !== 'idle' ? (
-        <div
-          aria-live="polite"
-          className={`rounded-xl border p-4 text-sm ${
-            state.status === 'success'
-              ? 'border-emerald-800 bg-emerald-950/30 text-emerald-200'
-              : 'border-rose-800 bg-rose-950/30 text-rose-200'
-          }`}
-          role={state.status === 'success' ? 'status' : 'alert'}
-        >
-          {state.message}
-          {state.status === 'success' ? (
-            <span className="ml-1 text-emerald-300/80">Lote #{state.batchId}.</span>
-          ) : null}
-        </div>
-      ) : null}
-
-      <div className="ui-table-frame">
-        <div className="hidden min-h-8 grid-cols-[minmax(18rem,2fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_3rem] items-center gap-3 border-b border-border bg-surface-muted px-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-text-muted md:grid">
+      <div className="ui-table-frame max-h-[calc(100dvh-22rem)] overflow-y-auto overscroll-contain">
+        <div className="sticky top-0 z-20 hidden min-h-8 grid-cols-[minmax(18rem,2fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_3rem] items-center gap-3 border-b border-border bg-[#DCE8ED] px-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-text-muted md:grid">
           <span>Veículo</span>
           <span>Preço público</span>
           <span>Início</span>
@@ -216,13 +285,17 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
 
                 <button
                   aria-label={`Remover linha ${index + 1}`}
-                  className={`${buttonClassName({ compact: true, variant: 'ghost' })} text-status-error disabled:cursor-not-allowed disabled:opacity-40 md:px-0`}
+                  className="grid size-10 place-items-center rounded-md hover:bg-[#EAF1F4] disabled:cursor-not-allowed disabled:opacity-40"
                   disabled={isLastEmpty}
                   onClick={() => removeRow(row.clientRowId)}
                   type="button"
                 >
-                  <span aria-hidden="true">×</span>
-                  <span className="ml-2 md:sr-only">Remover linha</span>
+                  <img
+                    src="/carboot/close.svg"
+                    alt=""
+                    aria-hidden="true"
+                    className="size-4 object-contain"
+                  />
                 </button>
               </div>
             );
@@ -232,12 +305,14 @@ export function AdminPriceBatchGrid({ action, products }: AdminPriceBatchGridPro
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-text-muted">
-          {filledCount}/100 linhas preenchidas. O salvamento é atômico e cria preços em rascunho.
+          {filledCount}/100 linhas preenchidas. O salvamento é atômico e publica os preços
+          informados.
         </p>
+
         <button
-          className={buttonClassName({ variant: 'interactive' })}
-          disabled={pending || filledCount === 0}
           type="submit"
+          disabled={pending || filledCount === 0}
+          className="cc-btn cc-btn--m cc-btn--primary !h-10"
         >
           {pending ? 'Salvando…' : 'Salvar preços'}
         </button>
