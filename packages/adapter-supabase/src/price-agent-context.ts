@@ -4,6 +4,9 @@ import {
   type PriceCatalogReader,
   type PriceModelYearSelectionReader,
   type PriceTarget,
+  type PriceIdentityMapping,
+  type PriceSourceSnapshot,
+  type PriceAiUsage,
 } from '@compra-car/core/agents';
 
 type ProductRow = {
@@ -154,8 +157,8 @@ export class PriceAgentSupabaseTelemetry {
     market: string,
     brand: string,
     targets: readonly PriceTarget[],
-    mappings: readonly import('@compra-car/core/agents').PriceIdentityMapping[],
-    snapshots: readonly import('@compra-car/core/agents').PriceSourceSnapshot[],
+    mappings: readonly PriceIdentityMapping[],
+    snapshots: readonly PriceSourceSnapshot[],
   ) {
     const byId = new Map(targets.map((target) => [target.productId, target]));
     for (const mapping of mappings) {
@@ -194,7 +197,7 @@ export class PriceAgentSupabaseTelemetry {
     runId: string;
     market: string;
     brand: string;
-    usage: readonly import('@compra-car/core/agents').PriceAiUsage[];
+    usage: readonly PriceAiUsage[];
   }) {
     if (!input.usage.length) return;
     const { error } = await this.client.from('agent_ai_usage_events').insert(

@@ -10,6 +10,7 @@ import { ComparisonPdfActions } from '@/components/comparison-pdf-actions';
 
 interface ComparisonToolbarProps {
   readonly mode: ComparisonMode;
+  readonly authenticated?: boolean;
 }
 
 const modeOptions: readonly { value: ComparisonMode; label: string }[] = [
@@ -24,7 +25,7 @@ const modeDescriptions: Record<ComparisonMode, string> = {
   advantages: 'Somente vantagens objetivas determinadas pelo engine atual.',
 };
 
-export function ComparisonToolbar({ mode }: ComparisonToolbarProps) {
+export function ComparisonToolbar({ mode, authenticated = true }: ComparisonToolbarProps) {
   const [pending, startTransition] = useTransition();
   const pathname = usePathname();
   const router = useRouter();
@@ -37,14 +38,16 @@ export function ComparisonToolbar({ mode }: ComparisonToolbarProps) {
     if (nextMode === 'complete') params.delete('mode');
     else params.set('mode', nextMode);
     const query = params.toString();
-    startTransition(() => router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false }));
+    startTransition(() =>
+      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false }),
+    );
   }
 
   return (
-    <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 border-y border-border bg-surface px-2 py-1.5 sm:px-3">
+    <div className="cc-comparison-toolbar flex min-w-0 flex-wrap items-center justify-between gap-2 border-y border-border bg-surface px-2 py-1.5 sm:px-3">
       {pending && <ComparisonLoadingOverlay />}
-      <div className="flex min-w-0 flex-wrap items-center gap-3">
-        <fieldset>
+      <div className="cc-comparison-mode-row flex min-w-0 flex-wrap items-center gap-3">
+        <fieldset className="cc-comparison-modes">
           <legend className="sr-only">Modo da comparação</legend>
           <div
             aria-label="Modo da comparação"
@@ -77,8 +80,12 @@ export function ComparisonToolbar({ mode }: ComparisonToolbarProps) {
           {modeDescriptions[mode]}
         </p>
       </div>
-      <div className="min-w-0 shrink-0">
-        <ComparisonPdfActions pdfUrl={pdfUrl} />
+      <div className="cc-comparison-export min-w-0 shrink-0">
+        <ComparisonPdfActions
+          pdfUrl={pdfUrl}
+          authenticated={authenticated}
+          returnTo={`${pathname}?${searchParams.toString()}`}
+        />
       </div>
     </div>
   );

@@ -1,5 +1,41 @@
 # Changelog
 
+## 2026-10-25 — Sprint 23 production promotion completed
+
+Production runtime is pinned to `0ea47383d94be55f4273c48ff3687126eaa285a2` on `release/sprint-23-production-2026-10-25`; Railway deployment `fabe508e-9f1d-42e2-8650-1ef3caafc871` reached SUCCESS. Production URL: https://compra-carweb-production.up.railway.app . Nine allowlisted schema migrations applied; existing owner explicitly registered as Master; no QA data copied, no agent worker/scheduler enabled and no secrets rotated. All five production business-data counts/fingerprints remained identical before/after. Public home, 60 model cards, MMVY/spec comparison, unique advantage checks, radar for currently priced models, protected admin redirect and /api/health were verified. Corporate price-list access and public signup/SMTP remain known scope limitations; authenticated owner browser verification is the first real session. Details and rollback baseline are recorded in docs/releases/2026-10-25-sprint-23-production.md.
+
+## 2026-10-25 — Sprint 23 production release preparation
+
+Owner authorized promoting the QA application to production, without copying QA data. Release allowlist contains seven UX/access/pricing migrations and two QA-validated security hardening migrations. Existing verified owner receives an explicit Master grant; pending accounts remain unchanged. Agent workers, schedulers and QA-only migrations remain in QA. Production data fingerprints and rollback baseline are recorded in docs/releases/2026-10-25-sprint-23-production.md. Main and QA histories diverged; the release must record both parents and promote the accepted QA implementation rather than force-reset main.
+
+## 2026-10-25 — MMVY comparison column headers
+
+QA: specification comparison column headers now show brand/model and version plus the full model year (e.g. BYD Atto 2 GL 1.5 PHEV DHT 2027). Removed production year, abbreviated PY/MY pairs and separator dots from their visible label and accessible tooltip. The version/year line wraps without truncating the model year. The shared header applies to desktop, mobile and the synchronized fixed header.
+
+## 2026-10-25 — Comparison ties and cleaner mobile drawer
+
+QA: orange checks now require exactly one winner per row. Equal equipment presence and tied best numeric values (including a tie among a subset of the compared models) receive no orange checks. Unique advantages remain highlighted. Removed the mobile drawer X and its unused CSS; outside-tap, Escape, destination selection and route/breakpoint closure remain available. Seven winner regression tests added to the QA release gate.
+
+## 2026-10-25 — Sprint 23D QA UX follow-up
+
+QA only: fixed viewport mobile navigation via body portal, hidden logo trigger when open, subtle brand border, account navigation layout, collapse-on-navigation and disabled News/Chat. Unified technical-sheet top spacing; added specification editor return action. Comparisons now scroll vertically with the document, pin only the model-name header at the top, and support mouse dragging plus native touch horizontally. Mobile price sort controls have equal padding and aligned official icons. Operational status filters replace obsolete workflow options; future and expired prices remain separate. Brand batch loading gives explicit feedback. Policy history mounts details only when expanded. Display text selection disabled, editable fields exempt; this is not copy protection.
+
+Validation: browser fixtures at 320/393/768/1440px confirmed mouse drag, model header pinning, vertical touch, fixed menu position on long policies, hidden duplicate logo, disabled News/Chat, exact sort/disclosure alignment and empty-brand feedback. No live data mutations. Full check results recorded in docs/admin/SPRINT_23D_MOBILE_NAVIGATION.md.
+
+## Sprint 23D — responsive comparisons and price details (2026-10-24)
+
+- Align specification comparison padding with the model comparison and stretch mode/export controls across the mobile content width. Restore vertical page scroll chaining while retaining horizontal table scrolling and desktop behavior.
+- Replace mobile price tables with MMVY disclosure rows showing price, validity, status, update date and the existing management actions; keep desktop tables. Stack price filters into usable mobile rows.
+- Share immediate, deterministic client sorting across both price lists with ascending → descending → default cycling, numeric prices, natural vehicle names and open-ended dates last. Management sort URLs use native History without refetching the already complete dataset.
+- Replace both floating menu glyphs with the existing official four-squircle brand asset inside the same flat graphite circle. No new dependencies, schema, data, permissions or credentials. QA only.
+
+## Sprint 23D — mobile navigation pilot (2026-10-24)
+
+- Reuse the desktop sidebar content and tier-specific links inside a mobile modal drawer, replacing the old public/admin topbars below 1024 px.
+- Add the approved Figma mobile menu SVG in a flat 64 px graphite button; slide the panel and button over 300 ms, with a fading backdrop and reduced-motion support.
+- Close on outside tap, Escape, navigation and desktop resize; trap focus with native dialog, lock background scrolling, preserve safe areas and reserve bottom page space.
+- Keep existing server authorization, desktop navigation, database state and credentials unchanged. Publication scope: Compra Car QA only.
+
 ## Sprint 20F.1 — discovery persistence and safe diagnostics (2026-10-02)
 
 - Current MMV discovery aggregates body/model proposals by normalized model, body and proposed model before Agent Platform mapping, merging distinct evidence and removing repeated observations with the existing evidence helper. POSSIBLE_BODY_SPLIT remains review-only.

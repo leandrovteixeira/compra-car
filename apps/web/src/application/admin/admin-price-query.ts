@@ -8,6 +8,7 @@ export interface AdminPriceQuery {
 
 export type AdminPriceStatusFilter =
   | 'current'
+  | 'future'
   | 'expired'
   | 'published'
   | 'draft'
@@ -43,10 +44,7 @@ export function parseAdminPriceSort(query: AdminPriceQuery) {
 const STATUSES: readonly AdminPriceStatusFilter[] = [
   'current',
   'expired',
-  'published',
-  'draft',
-  'needs_review',
-  'rejected',
+  'future',
   'archived',
   'all',
 ];
