@@ -841,3 +841,4 @@ input, textarea, [contenteditable='true'] { -webkit-user-select: text; user-sele
 .cc-comparison-floating-header { position: fixed; top: 0; z-index: 55; overflow: hidden; background: white; pointer-events: none; border-bottom: 1px solid #D4D8DD; }
 .cc-comparison-floating-header[hidden] { display: none; }
 @media print { .cc-comparison-floating-header { display: none; } }
+.cc-sidebar-scroll [aria-disabled='true'] img { filter: grayscale(1); opacity: .55; }
