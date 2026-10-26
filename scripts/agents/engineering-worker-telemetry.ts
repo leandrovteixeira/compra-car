@@ -11,9 +11,16 @@ export interface WorkerLearningEvent {
   failureCode?: string;
 }
 export interface WorkerLearningDb {
-  from(table:string):{upsert(value:Record<string,unknown>,opts:{onConflict:string}):PromiseLike<{error:{message:string}|null}>};
+  from(table:string):{upsert(value:Record<string,unknown>,opts:{onConflict:string;ignoreDuplicates?:boolean}):PromiseLike<{error:{message:string}|null}>};
 }
 export function sanitizeWorkerFailure(value:unknown):string{
+  // Preserve known reason codes without persisting raw provider messages.
+  if (typeof value === 'string') {
+    if (/^BRAND_CONNECTOR_FAILED:\s*CONNECTOR_RESEARCH_RATE_LIMIT(?:[:\s]|$)/u.test(value))
+      return 'CONNECTOR_RESEARCH_RATE_LIMIT';
+    if (/^NEW_PRODUCT_CHECK_FAILED:\s*OPENAI_RESEARCH_FAILED(?:[:\s]|$)/u.test(value))
+      return 'OPENAI_RESEARCH_FAILED';
+  }
   const code=typeof value==='string'?value.split(/[:\s]/u)[0]??'':'';
   const known=['AGENT_JOB_EXECUTION_FAILED','BRAND_CONNECTOR_FAILED','NEW_PRODUCT_CHECK_FAILED',
     'OPENAI_AGENT_CONFIG_REQUIRED','SUPABASE_AGENT_CONFIG_REQUIRED','SOURCE_MONITOR_TRIGGER_FAILED',
@@ -36,6 +43,6 @@ export async function journalWorkerJob(db:WorkerLearningDb,event:WorkerLearningE
       targetId:runId,brand:event.brand.slice(0,100),model:'unknown',
       sourceType:'agent-worker',reason,sourceStructure:'unknown',
     }]:[],
-  },{onConflict:'run_id,agent'});
+  },{onConflict:'run_id,agent',ignoreDuplicates:true});
   if(result.error)throw new Error('ENGINEERING_WORKER_LOG_FAILED');
 }
