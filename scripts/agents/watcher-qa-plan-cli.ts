@@ -1,6 +1,7 @@
 ﻿import { resolve } from 'node:path';
-import { planWatcherQaDeployment } from './watcher-qa-deployment';
-// Explicit process env only. No dotenv fallback and no remote execution mode.
+import { prepareWatcherQaApiDeployment } from './watcher-qa-deployment';
+import { loadWatcherQaEnvironment } from './watcher-qa-environment';
+// Approved QA secret file only. No generic dotenv fallback or remote execution mode.
 if (process.argv.length !== 2) {
   console.error('WATCHER_QA_PLAN_ARGUMENTS_REJECTED');
   process.exitCode = 1;
@@ -8,7 +9,10 @@ if (process.argv.length !== 2) {
   try {
     console.log(
       JSON.stringify(
-        await planWatcherQaDeployment(resolve(process.cwd(), '../..'), process.env),
+        await prepareWatcherQaApiDeployment(
+          resolve(process.cwd(), '../..'),
+          await loadWatcherQaEnvironment(),
+        ),
         null,
         2,
       ),

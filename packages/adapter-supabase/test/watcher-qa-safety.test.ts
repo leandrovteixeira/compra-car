@@ -10,11 +10,7 @@ const valid = () => ({
   WATCHER_ENVIRONMENT: 'qa',
   WATCHER_QA_PROJECT_REF: WATCHER_QA_REF,
   SUPABASE_URL: WATCHER_QA_URL,
-  WATCHER_QA_SERVER_KEY: 'offline-fixture',
-  WATCHER_QA_SQL_URL:
-    'postgresql://postgres:fixture@db.' +
-    WATCHER_QA_REF +
-    '.supabase.co:5432/postgres?sslmode=verify-full',
+  SUPABASE_SERVER_KEY: 'offline-fixture',
 });
 describe('Watcher mandatory QA boundary (offline)', () => {
   it('requires explicit QA identity without exposing SQL credentials', () => {
@@ -23,6 +19,14 @@ describe('Watcher mandatory QA boundary (offline)', () => {
       projectRef: WATCHER_QA_REF,
       url: WATCHER_QA_URL,
     });
+  });
+  it('passes standard REST credentials to the existing RPC client without SQL configuration', async () => {
+    const rpc = vi.fn(async () => ({ data: [], error: null }));
+    const factory = vi.fn(() => ({ rpc }));
+    const executor = createWatcherQaExecutor(valid, factory);
+    await executor.run((repository) => repository.listSources());
+    expect(factory).toHaveBeenCalledWith({ url: WATCHER_QA_URL, serverKey: 'offline-fixture' });
+    expect(rpc).toHaveBeenCalledTimes(1);
   });
   it.each([
     {},
@@ -41,9 +45,9 @@ describe('Watcher mandatory QA boundary (offline)', () => {
     { NEXT_PUBLIC_APP_ENV: 'staging' },
     { DATABASE_URL: 'postgres://production.invalid/postgres' },
     { SUPABASE_DB_URL: 'postgres://production.invalid/postgres' },
-    { SUPABASE_SERVER_KEY: 'different' },
+    { WATCHER_QA_SERVER_KEY: 'different' },
     { COMPRA_CAR_AGENT_ENV_FILE: 'production.env' },
-    { WATCHER_QA_SQL_URL: undefined },
+    { DIRECT_URL: 'invalid' },
     {
       WATCHER_QA_SQL_URL:
         'postgres://postgres:secret@db.ltbeykzccckdwpzyeywu.supabase.co/postgres?sslmode=verify-full',
@@ -64,7 +68,7 @@ describe('Watcher mandatory QA boundary (offline)', () => {
         WATCHER_QA_REF +
         '.supabase.co/postgres?sslmode=verify-full&sslmode=disable',
     },
-    { WATCHER_QA_SERVER_KEY: undefined },
+    { SUPABASE_SERVER_KEY: undefined },
   ])('rejects invalid/conflicting config before constructing a client: %j', (patch) => {
     const factory = vi.fn();
     const env = Object.keys(patch).length ? { ...valid(), ...patch } : {};
@@ -103,7 +107,7 @@ describe('Watcher mandatory QA boundary (offline)', () => {
       () => env,
       () => ({ rpc }),
     );
-    env.WATCHER_QA_SERVER_KEY = 'new-secret';
+    env.SUPABASE_SERVER_KEY = 'new-secret';
     await expect(executor.run((repo) => repo.listSources())).rejects.toThrow(
       'WATCHER_QA_TARGET_NOT_VERIFIED',
     );

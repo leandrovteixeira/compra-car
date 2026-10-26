@@ -1,5 +1,51 @@
 # Contexto para agentes de IA
 
+## 2026-10-26 - Watcher API operations (current architecture)
+
+Consolidation: the project owner reports that the integrated QA administrative
+connection confirmed PostgreSQL 17.6, no Watcher tables and neither approved migration
+registered. No remote query or migration is executed during the commit/push consolidation;
+this baseline does not replace the remaining deployment review and authorization gates.
+Consolidation validation rerun: 76 targeted tests and global typecheck/build pass; both
+migration files match approved raw hashes and HEAD. Global lint remains failing in Web;
+this global test run has eight Core failures and global format reports 782 files.
+No Core or lockfile changes are included. See the API deployment report for details.
+
+Use docs/architecture/decisions/ADR-022-WATCHER-SUPABASE-API-OPERATIONS.md and
+docs/agents/WATCHER_QA_API_DEPLOYMENT.md. They supersede the direct SQL requirements
+in the historical entries below. Runtime uses the standard SUPABASE_URL and
+SUPABASE_SERVER_KEY from the approved staging.env, existing supabase-js/RPC adapter,
+and QA identity/credential checks before every operation. No PostgreSQL URL/password
+is required; no SQL connector or new dependency was added.
+Management reads live exclusively in adapter-supabase and require a separate
+SUPABASE_ACCESS_TOKEN from the approved file. Only read-only query and history
+capabilities exist. The token is currently absent, so remote API preflight is pending.
+pnpm watcher:qa:plan prepares offline ordered API descriptors with exact pinned hashes.
+pnpm watcher:qa:preflight performs remote reads only. Application still requires a
+separately authorized writer and reconciliation of API-generated migration versions.
+No migrations, collection, OpenAI, deployment, Legacy changes or push in this increment.
+Validation: 56 targeted tests, global typecheck/build, scoped lint/format and diff checks
+pass. Global lint remains failing in Web, global tests stop at six Core failures and
+global format reports 783 files. API preflight blocks before HTTP for missing token.
+
+## 2026-10-26 - Watcher migration integrity unblocked
+
+An explicit supabase/migrations/*.sql text eol=lf rule now enforces LF regardless
+of core.autocrlf. Only the two approved Watcher migration working copies were
+normalized; their bytes now match the existing approved SHA-256 hashes exactly.
+The safe Staging loader and QA guards are unchanged. Offline QA plan and all
+46 targeted loader/deployment/guard tests pass; git diff --check passes.
+No remote connection, migration execution, collection, deployment, commit or push.
+
+## 2026-10-26 - Watcher QA password configuration
+
+The offline Watcher CLI now uses scripts/agents/watcher-qa-environment.ts to read only
+C:/Dev/.secrets/compra-car/staging.env and construct the direct QA SQL URI in memory
+from SUPABASE_POSTGRES_PASSWORD. The staging file must identify the authorized QA
+project; staging labels are normalized to qa only after identity verification.
+Inherited conflicts fail closed; REST keys from the file are not imported.
+The existing target guard and migration byte-hash checks remain mandatory.
+
 ## 2026-10-25 - Sprint 24A.3b-Fix QA safety and readiness
 
 Implemented mandatory QA-only target/configuration guards, guarded operational executor,

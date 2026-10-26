@@ -41,6 +41,11 @@ See [implementation and tests](../../agents/WATCHER_PERSISTENCE_24A_3A.md).
 
 ## 24A.3b-Fix - QA operational boundary
 
+The direct SQL/credential and connector requirements in this historical section are
+superseded by [ADR-022](ADR-022-WATCHER-SUPABASE-API-OPERATIONS.md). Runtime uses standard
+Staging REST credentials; administrative preflight uses the read-only Management API.
+SQL functions, transactional behavior and migration bytes remain unchanged.
+
 All future Watcher operational commands must enter through the mandatory QA executor from
 @compra-car/adapter-supabase/watcher-qa. Require explicit qa identity, exact allowlisted
 Supabase/ref/direct SQL endpoint, consistent aliases and dedicated credentials; no dotenv

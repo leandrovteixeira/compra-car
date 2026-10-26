@@ -1,6 +1,7 @@
 ﻿import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
+import { createWatcherQaManagementReader } from '@compra-car/adapter-supabase/watcher-qa-management';
 import {
   assertWatcherQaTarget,
   WATCHER_QA_REF,
@@ -11,6 +12,10 @@ import {
 const permitted = [
   'supabase/migrations/20261025220424_sprint_24a3a_watcher_storage.sql',
   'supabase/migrations/20261025220427_sprint_24a3a_watcher_transactions.sql',
+] as const;
+const approvedHashes = [
+  '0d43e3f5473b08e7b0cb4b2eca30567069c108ecc7946433354997dd80d31e23',
+  '41b2a300a53291b44bfd62dda293a6c31ec2e3b9475361c35e0cf2d3ee9a0f06',
 ] as const;
 /** Offline plan only. Has no database driver, SQL connection, feed transport or dotenv loader. */
 export async function planWatcherQaDeployment(
@@ -37,7 +42,7 @@ export async function planWatcherQaDeployment(
   const migrations: { path: string; sha256: string }[] = [];
   for (let i = 0; i < permitted.length; i++) {
     const entry = manifest.migrations[i];
-    if (!entry || entry.path !== permitted[i] || !/^[a-f0-9]{64}$/.test(entry.sha256)) fail();
+    if (!entry || entry.path !== permitted[i] || entry.sha256 !== approvedHashes[i]) fail();
     const hash = createHash('sha256')
       .update(await read(resolve(root, permitted[i])))
       .digest('hex');
@@ -48,32 +53,104 @@ export async function planWatcherQaDeployment(
   return { ...target, mode: 'OFFLINE_PLAN_ONLY', migrations };
 }
 
-/** Future read-only pre/postflight connection boundary. No connector is bundled or invoked
- * by the offline CLI. The approved connector must enforce read-only transactions and verify TLS.
- */
-export async function runWatcherQaReadOnlyProcedure<T>(
+/** Prepares approved administrative requests; never sends them. No application CLI exists. */
+export async function prepareWatcherQaApiDeployment(root: string, env: WatcherQaEnvironment) {
+  const plan = await planWatcherQaDeployment(root, env);
+  return {
+    ...plan,
+    mode: 'API_DEPLOYMENT_PREPARED_NOT_APPLIED' as const,
+    applicationRequiresSeparateAuthorization: true,
+    steps: plan.migrations.map((migration) => ({
+      ...migration,
+      sourceVersion: migration.path.split('/').at(-1)!.split('_')[0],
+      method: 'POST' as const,
+      endpoint: `https://api.supabase.com/v1/projects/${WATCHER_QA_REF}/database/migrations`,
+      name: migration.path
+        .split('/')
+        .at(-1)!
+        .replace(/\.sql$/u, ''),
+      querySource: migration.path,
+      authorization: 'SCOPED_MANAGEMENT_ACCESS_TOKEN_REQUIRED',
+    })),
+  };
+}
+
+/** API-only preflight. The adapter rechecks target and credentials before every request. */
+export async function runWatcherQaApiPreflight(
   root: string,
   environment: () => WatcherQaEnvironment,
-  kind: 'preflight' | 'postflight',
-  connectAndRead: (
-    config: { connectionString: string; readOnly: true; rejectUnauthorized: true },
-    sql: string,
-  ) => Promise<T>,
+  transport: typeof fetch = fetch,
 ) {
   const initial = { ...environment() };
   await planWatcherQaDeployment(root, initial);
-  if (!['preflight', 'postflight'].includes(kind)) throw new Error('WATCHER_QA_PROCEDURE_REJECTED');
-  const sql = await readFile(resolve(root, 'scripts/watcher/qa-' + kind + '.sql'), 'utf8');
+  const sql = await readFile(resolve(root, 'scripts/watcher/qa-preflight-api.sql'), 'utf8');
   const current = environment();
   assertWatcherQaTarget(current);
-  if (current.WATCHER_QA_SQL_URL !== initial.WATCHER_QA_SQL_URL)
+  if (
+    current.SUPABASE_SERVER_KEY !== initial.SUPABASE_SERVER_KEY ||
+    current.SUPABASE_ACCESS_TOKEN !== initial.SUPABASE_ACCESS_TOKEN
+  )
     throw new Error('WATCHER_QA_TARGET_NOT_VERIFIED');
-  try {
-    return await connectAndRead(
-      { connectionString: initial.WATCHER_QA_SQL_URL!, readOnly: true, rejectUnauthorized: true },
-      sql,
+  const reader = createWatcherQaManagementReader(environment, transport);
+  const raw = await reader.readOnlyQuery(sql);
+  const history = await reader.migrationHistory();
+  const invalid = (): never => {
+    throw new Error('WATCHER_QA_PREFLIGHT_RESPONSE_REJECTED');
+  };
+  if (
+    !Array.isArray(raw) ||
+    raw.length !== 1 ||
+    !raw[0] ||
+    typeof raw[0] !== 'object' ||
+    !Array.isArray(history)
+  )
+    return invalid();
+  const row = raw[0] as Record<string, unknown>;
+  const booleanKeys = ['read_only', 'required_roles_present', 'service_bypassrls', 'service_usage'];
+  const countKeys = [
+    'watcher_relation_count',
+    'watcher_function_count',
+    'watcher_policy_count',
+    'watcher_rls_disabled_count',
+    'watcher_browser_grant_count',
+    'enabled_event_trigger_count',
+    'default_acl_browser_grant_count',
+  ];
+  if (
+    row.database_name !== 'postgres' ||
+    row.database_role !== 'supabase_read_only_user' ||
+    typeof row.postgres_version_num !== 'number' ||
+    !Number.isInteger(row.postgres_version_num) ||
+    row.postgres_version_num < 140000 ||
+    booleanKeys.some((key) => typeof row[key] !== 'boolean') ||
+    countKeys.some(
+      (key) =>
+        typeof row[key] !== 'number' || !Number.isSafeInteger(row[key]) || (row[key] as number) < 0,
+    )
+  )
+    return invalid();
+  const conflicts = history.filter((entry: unknown) => {
+    if (!entry || typeof entry !== 'object') return invalid();
+    const item = entry as Record<string, unknown>;
+    if (typeof item.version !== 'string' || typeof item.name !== 'string') return invalid();
+    return (
+      ['20261025220424', '20261025220427'].includes(item.version) ||
+      /(?:sprint_24a3a_watcher_storage|sprint_24a3a_watcher_transactions)/u.test(item.name)
     );
-  } catch {
-    throw new Error('WATCHER_QA_READ_ONLY_PROCEDURE_FAILED');
-  }
+  });
+  const blockers = [
+    ...booleanKeys.filter((key) => row[key] !== true).map((key) => key.toUpperCase()),
+    ...countKeys.filter((key) => row[key] !== 0).map((key) => key.toUpperCase()),
+    ...(conflicts.length ? ['MIGRATION_HISTORY_CONFLICT'] : []),
+  ];
+  return {
+    projectRef: WATCHER_QA_REF,
+    transport: 'SUPABASE_MANAGEMENT_API' as const,
+    readOnly: row.read_only,
+    postgresVersion: row.postgres_version_num,
+    counters: Object.fromEntries(countKeys.map((key) => [key, row[key]])),
+    historyConflicts: conflicts.length,
+    recommendation: blockers.length ? ('NO_GO' as const) : ('GO_FOR_SEPARATE_REVIEW' as const),
+    blockers,
+  };
 }

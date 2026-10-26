@@ -1,5 +1,53 @@
 # Watcher QA Safety and Readiness - Sprint 24A.3b-Fix
 
+## Current API procedure supersedes direct SQL requirements below
+
+Use [Watcher QA API deployment](WATCHER_QA_API_DEPLOYMENT.md) and
+[ADR-022](../architecture/decisions/ADR-022-WATCHER-SUPABASE-API-OPERATIONS.md).
+Runtime now uses SUPABASE_URL/SUPABASE_SERVER_KEY. No WATCHER_QA_SQL_URL or database
+password is required. Management API read-only preflight needs a separate scoped
+SUPABASE_ACCESS_TOKEN. The remaining sections record historical work and must not
+be used to reintroduce a direct SQL connector, password loader or deployment approval.
+
+## 2026-10-26 LF normalization follow-up
+
+The CRLF integrity block recorded below is resolved. An explicit
+`supabase/migrations/*.sql text eol=lf` attribute enforces LF independently of
+`core.autocrlf=true`. Only the two approved Watcher migration files were converted
+from CRLF to LF; no other SQL bytes or approved hashes changed. Git reports both
+index and working copies as LF, with no SQL diff against the existing index.
+Both exact SHA-256 values match the unchanged manifest. The offline plan succeeds
+for the authorized QA project via the safe Staging loader; all 46 targeted
+configuration, deployment and QA guard tests pass. `git diff --check` passes.
+No remote connection, migration execution, collection, deployment, commit or push.
+
+## 2026-10-26 configuration update
+
+The offline CLI now calls `loadWatcherQaEnvironment` before the unchanged deployment
+planner. This dedicated loader reads only `C:/Dev/.secrets/compra-car/staging.env`;
+there is no generic dotenv fallback or configurable input path. It requires the
+authorized QA Supabase URL and staging/qa labels, then normalizes the labels to qa.
+`SUPABASE_POSTGRES_PASSWORD` is required, preserved without trimming, and URI-encoded
+in memory for the direct QA host, port 5432, user/database postgres and verify-full TLS.
+Neither raw password nor complete SQL URI is emitted or persisted. REST API keys in
+the file are not imported; process credential aliases still pass the existing guard.
+Conflicting process/file identities, SQL aliases, PG settings and TLS disablement
+fail closed. DIRECT_URL and generic database password aliases are rejected too.
+The historical explicit-process procedure below is superseded only for this CLI's
+configuration input; executor guards, remote approval requirements and migration
+hash verification are unchanged. No database connector is added.
+
+Local validation: six loader tests and 29 existing QA guard tests pass. The approved
+real configuration loads successfully without emitting credentials. The offline plan
+remains blocked by WATCHER_QA_MANIFEST_REJECTED: both allowed SQL files are CRLF in
+this Windows checkout; their raw hashes differ, while their LF-normalized hashes
+match the manifest. Four existing deployment tests fail at this same integrity gate.
+Neither migrations nor the manifest were modified, and byte verification was not relaxed.
+Global typecheck and scoped ESLint/Prettier checks pass. Global lint fails in Web;
+global tests stop in Core; global format:check reports 788 files. These broader
+failures are outside this loader change; no unrelated fixes were applied.
+Global build did not complete and was interrupted; build success is unverified.
+
 Implemented locally on sprint-24-watcher-local. No Supabase connection, remote migration,
 external feed collection, OpenAI call, deployment, commit or push. 24A.3b-2 is not started.
 

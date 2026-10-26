@@ -24,49 +24,21 @@ export function assertWatcherQaTarget(env: WatcherQaEnvironment) {
     if (env[key] !== undefined && env[key] !== WATCHER_QA_REF) reject();
   // No implicit dotenv/agent-file or generic credential fallback in operational commands.
   if (env.COMPRA_CAR_AGENT_ENV_FILE || env.NODE_TLS_REJECT_UNAUTHORIZED === '0') return reject();
+  for (const key of Object.keys(env))
+    if (/^PG/u.test(key) && env[key] !== undefined) return reject();
+  // API-only operation: SQL aliases must never select an alternate transport/target.
   for (const key of [
-    'PGHOST',
-    'PGHOSTADDR',
-    'PGPORT',
-    'PGDATABASE',
-    'PGUSER',
-    'PGPASSWORD',
-    'PGSERVICE',
-    'PGSERVICEFILE',
-    'PGOPTIONS',
-    'PGSSLMODE',
-  ])
-    if (env[key] !== undefined) return reject();
-  const sqlUrl = env.WATCHER_QA_SQL_URL;
-  if (!sqlUrl) return reject();
-  let sql: URL;
-  try {
-    sql = new URL(sqlUrl);
-  } catch {
-    return reject();
-  }
-  if (
-    !['postgres:', 'postgresql:'].includes(sql.protocol) ||
-    sql.hostname !== 'db.' + WATCHER_QA_REF + '.supabase.co' ||
-    (sql.port !== '' && sql.port !== '5432') ||
-    sql.pathname !== '/postgres' ||
-    sql.username !== 'postgres' ||
-    !sql.password ||
-    sql.hash ||
-    sql.searchParams.get('sslmode') !== 'verify-full' ||
-    [...sql.searchParams.keys()].some((k) => k !== 'sslmode') ||
-    sql.searchParams.getAll('sslmode').length !== 1
-  )
-    reject();
-  for (const key of [
+    'WATCHER_QA_SQL_URL',
+    'DIRECT_URL',
     'DATABASE_URL',
     'SUPABASE_DB_URL',
     'POSTGRES_URL',
     'SUPABASE_DB_CONNECTION_STRING',
   ])
-    if (env[key] !== undefined && env[key] !== env.WATCHER_QA_SQL_URL) reject();
-  for (const key of ['SUPABASE_SERVER_KEY', 'SUPABASE_SERVICE_ROLE_KEY'])
-    if (env[key] !== undefined && env[key] !== env.WATCHER_QA_SERVER_KEY) reject();
+    if (env[key] !== undefined) reject();
+  if (!env.SUPABASE_SERVER_KEY?.trim()) reject();
+  for (const key of ['WATCHER_QA_SERVER_KEY', 'SUPABASE_SERVICE_ROLE_KEY'])
+    if (env[key] !== undefined && env[key] !== env.SUPABASE_SERVER_KEY) reject();
   return Object.freeze({
     environment: 'qa' as const,
     projectRef: WATCHER_QA_REF,
@@ -86,7 +58,7 @@ export function createWatcherQaExecutor(
 ) {
   const initial = { ...environment() };
   assertWatcherQaTarget(initial);
-  const serverKey = initial.WATCHER_QA_SERVER_KEY;
+  const serverKey = initial.SUPABASE_SERVER_KEY;
   if (!serverKey?.trim()) return reject();
   let client: WatcherRpcClient;
   try {
@@ -97,11 +69,7 @@ export function createWatcherQaExecutor(
   const verify = () => {
     const current = environment();
     assertWatcherQaTarget(current);
-    if (
-      current.WATCHER_QA_SERVER_KEY !== initial.WATCHER_QA_SERVER_KEY ||
-      current.WATCHER_QA_SQL_URL !== initial.WATCHER_QA_SQL_URL
-    )
-      reject();
+    if (current.SUPABASE_SERVER_KEY !== initial.SUPABASE_SERVER_KEY) reject();
   };
   const allowed = new Set([
     'watcher_register_source',

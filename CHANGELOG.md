@@ -1,5 +1,41 @@
 # Changelog
 
+## 2026-10-26 - Watcher operations through Supabase APIs
+
+Consolidation records owner-supplied QA baseline evidence: PostgreSQL 17.6, no Watcher
+tables and neither approved migration registered. No migration application is included.
+Consolidation rerun: 76 targeted tests and global typecheck/build pass; approved migration
+hashes match HEAD. Broader gates remain failing in Web lint, eight Core tests and
+formatting in 782 files; no unrelated Core/formatting changes are included.
+
+Runtime now uses the standard Staging SUPABASE_URL/SUPABASE_SERVER_KEY with the
+existing HTTPS RPC adapter and mandatory QA guard. The approved-file loader no longer
+requires a PostgreSQL password or constructs WATCHER_QA_SQL_URL. SQL connection aliases
+remain rejected. Added a read-only Management API adapter and preflight CLI, with
+separate token authentication, fixed QA endpoints, redirects/timeouts and fail-closed
+catalog/history validation. The offline plan prepares ordered administrative migration
+descriptors with pinned hashes; no migration application capability or command is enabled.
+SQL functions, transactions, migration bytes and manifest are unchanged.
+56 targeted tests, global typecheck/build and scoped lint/format pass. Remote API
+preflight is blocked before HTTP because the Management token is absent; global
+Web lint, six Core tests and broad formatting debt remain outside this change.
+See ADR-022 and docs/agents/WATCHER_QA_API_DEPLOYMENT.md for deployment review and risks.
+
+## 2026-10-26 - Watcher migration LF normalization
+
+Added an explicit text/eol=lf rule for supabase/migrations/*.sql and normalized only
+the two approved Watcher SQL files from CRLF to LF. Both approved SHA-256 hashes
+match unchanged; SQL semantics, manifest and QA guards are preserved. Offline QA
+plan, 46 targeted safety/configuration tests and git diff --check pass.
+No database connection, migration execution, collection, deployment, commit or push.
+
+## 2026-10-26 - Watcher QA approved password loader
+
+The offline CLI reads only the approved staging secret file, verifies its QA identity,
+and constructs the direct TLS PostgreSQL URI in memory from SUPABASE_POSTGRES_PASSWORD.
+Special characters are encoded; conflicting process configuration is rejected.
+No connection, migration execution or credential persistence is introduced.
+
 ## 2026-10-25 - Sprint 24A.3b-Fix QA safety and readiness
 
 Implemented mandatory QA-only target/configuration guards, guarded operational executor,
