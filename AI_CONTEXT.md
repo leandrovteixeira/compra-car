@@ -1,5 +1,55 @@
 # Contexto para agentes de IA
 
+## 2026-10-26 - Sprint 24B.4A atomic intelligence persistence (local only)
+
+Owner approved the additive transactional architecture and disposable PostgreSQL
+tests, superseding the historical local schema-design blocker below. The nine
+pending 24B files remain preserved. New migration adds four intelligence tables,
+commit/review/query RPCs and validation helpers; reuses 24A leases, fencing,
+immutable revisions, candidate identities and receipt-first replay. Existing 24A
+SQLs, manifest, QA loader/guard and operational RPC allowlist remain unchanged.
+Core prepares bounded versioned commits; existing Supabase adapter adds injected
+RPC methods only. No intelligence runtime writer is enabled. Complete source
+journals/current pointers, scope source pinning and CAS protect evidence/reviews;
+automatic replay cannot overwrite human history or RSS checkpoints. No commercial
+table writes/grants were added. Actor identity relies on the trusted server.
+See docs/agents/WATCHER_ATOMIC_INTELLIGENCE_24B4A.md for final tests, SQL hash,
+contracts, bounded-journal limitations, rollback and proposed 24B.4B preflight.
+Final local validation: 436 Watcher tests PASS, 49 real PostgreSQL 17.6 scenario
+groups PASS, typecheck/build and scoped lint/format/diff PASS. Global lint retains
+51 Web warnings; format reports 777 files. Global tests retain six known functional
+failures plus five commercial 5-second timeouts; default serial rerun had three
+timeouts. Explicit 30-second serial timing diagnostic: 1300 PASS, exactly the six
+baseline failures, no timeouts. No tests/configuration were changed to raise budgets.
+Stop before remote operations: QA application/activation/analysis of the twenty
+articles requires separate authorization. No staging/production credentials loaded,
+remote access, RSS, AI, scheduler, handoff, Legacy change, commit/push or deploy.
+
+## 2026-10-26 - Sprint 24B local deterministic intelligence foundation
+
+New owner request authorizes local 24B implementation after published 24A base
+8f31a447ed4ad0716a5af3bc0d5d10a4aeb53fc2 on sprint-24-watcher-local. It supersedes
+the historical instruction not to start 24B, but does not authorize remote operations,
+new migrations, commit/push, AI or another RSS collection.
+Added pure Core intelligence, incremental revision journal/candidate projection,
+literal evidence quality, optimistic review and a disabled AI admission plan.
+Reuse BrandIdentityResolution, CanonicalMmv, Watcher revisions/validators, discovery/
+Model Year/Price categories, AgentReviewDecision and existing cost policy/usage shape.
+No provider/client/writer or catalog apply exists in this engine. 51 new tests pass;
+400 targeted Watcher tests pass, as do typecheck, build and Core/scoped lint.
+Global lint retains 51 Web warnings; format reports 779 existing files; global
+test had six known functional failures plus one old commercial-domain timeout.
+Final serialized Core rerun reproduced only the six baseline failures with 1284
+passes (1290 total); no new functional regression identified. Scoped formatting and
+git diff --check pass; SQL hashes and protected paths remain unchanged.
+See docs/agents/WATCHER_INTELLIGENCE_24B.md and WATCHER_QA_INTELLIGENCE_24B.md.
+Full 24B is NOT complete: the twenty real QA articles were not read/reprocessed.
+24A candidate identity/lifecycle and separate CAS RPCs cannot atomically persist
+event intelligence/evidence with analysis lease/fencing/receipt. No schema/guard
+was changed or bypassed. Gate: review persistence design before any migration/writer;
+separate QA read-only authorization and canonical context snapshots before real analysis.
+No production, Legacy, scheduler, handoff, remote operation, commit, push or deploy.
+
 ## 2026-10-26 - Sprint 24A final commit consolidation
 
 Final publication is explicitly authorized only for sprint-24-watcher-local.

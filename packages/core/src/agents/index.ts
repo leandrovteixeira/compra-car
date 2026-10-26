@@ -72,3 +72,7 @@ export * from './watcher-foundation';
 export * from './watcher-ingestion-contract';
 export * from './watcher-incremental';
 export * from './watcher-persistence';
+export * from './watcher-intelligence';
+export * from './watcher-candidate-discovery';
+export * from './watcher-intelligence-ai-gate';
+export * from './watcher-intelligence-persistence';

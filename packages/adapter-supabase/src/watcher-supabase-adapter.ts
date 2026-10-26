@@ -28,6 +28,17 @@
   type WatcherCandidateEvidenceInput,
   type WatcherStoredCandidateEvidence,
   type WatcherStoredHint,
+  validateWatcherIntelligenceCommit,
+  validateWatcherIntelligenceReview,
+  watcherIntelligenceFences,
+  watcherIntelligenceScope,
+  watcherIntelligenceCommitKey,
+  type WatcherIntelligenceRepository,
+  type WatcherIntelligenceCommit,
+  type WatcherIntelligenceReceipt,
+  type WatcherIntelligenceReviewCommand,
+  type WatcherIntelligenceReviewReceipt,
+  type WatcherIntelligenceQueryKind,
 } from '@compra-car/core/agents';
 import { assertLegacyServerRuntime } from './client';
 
@@ -40,7 +51,8 @@ export type WatcherPersistenceErrorCode =
   | 'NOT_FOUND'
   | 'INVALID_INPUT'
   | 'INVALID_REFERENCE'
-  | 'HINT_NOT_READY';
+  | 'HINT_NOT_READY'
+  | 'REVIEW_CONFLICT';
 export class WatcherPersistenceError extends Error {
   constructor(public readonly code: WatcherPersistenceErrorCode) {
     super('WATCHER_' + code);
@@ -145,7 +157,7 @@ function sourceId(value: string): string {
   return value;
 }
 /** Every mutation is one server transaction; Supabase access remains confined to this adapter. */
-export class WatcherSupabaseAdapter implements WatcherRepository {
+export class WatcherSupabaseAdapter implements WatcherRepository, WatcherIntelligenceRepository {
   constructor(private readonly client: WatcherRpcClient) {
     assertLegacyServerRuntime();
   }
@@ -166,6 +178,7 @@ export class WatcherSupabaseAdapter implements WatcherRepository {
           'SOURCE_BUSY',
           'HINT_NOT_READY',
           'NOT_FOUND',
+          'REVIEW_CONFLICT',
         ] as const;
         const code = known.find((c) => message === 'WATCHER_' + c);
         throw new WatcherPersistenceError(
@@ -190,6 +203,132 @@ export class WatcherSupabaseAdapter implements WatcherRepository {
       if (error instanceof WatcherPersistenceError) throw error;
       throw new WatcherPersistenceError('PERSISTENCE_FAILED');
     }
+  }
+  private intelligenceSources(
+    value: unknown,
+    leases: readonly WatcherLease[],
+    replayed: boolean,
+  ): WatcherIntelligenceReceipt['sourceVersions'] {
+    if (!Array.isArray(value) || value.length !== leases.length) throw new Error();
+    const expected = watcherIntelligenceFences(leases);
+    return value.map((v, i) => {
+      const r = row(v),
+        stateVersion = watcherVersion(r.stateVersion);
+      if (
+        r.sourceId !== expected[i].sourceId ||
+        (!replayed && stateVersion !== expected[i].stateVersion + 1)
+      )
+        throw new Error();
+      return { sourceId: text(r.sourceId), stateVersion };
+    });
+  }
+  persistIntelligence(input: WatcherIntelligenceCommit) {
+    const valid = validateWatcherIntelligenceCommit(input),
+      fences = watcherIntelligenceFences(valid.leases);
+    return this.call(
+      'watcher_commit_intelligence',
+      { p_commit_id: valid.commitId, p_fences: fences, p_payload: valid.payload },
+      (value): WatcherIntelligenceReceipt => {
+        const r = row(value);
+        if (
+          typeof r.replayed !== 'boolean' ||
+          r.scope !== valid.payload.scope ||
+          r.commitKey !== watcherIntelligenceCommitKey(valid) ||
+          !Array.isArray(r.unitKeys) ||
+          JSON.stringify(r.unitKeys) !== JSON.stringify(valid.payload.units.map((u) => u.key)) ||
+          !Array.isArray(r.candidateVersions) ||
+          r.candidateVersions.length !== valid.payload.candidates.length
+        )
+          throw new Error();
+        const commitId = watcherUuid(r.commitId);
+        if (!r.replayed && commitId !== valid.commitId) throw new Error();
+        const candidateVersions = r.candidateVersions.map((v, i) => {
+          const c = row(v),
+            expected = valid.payload.candidates[i];
+          if (
+            c.key !== expected.snapshot.key ||
+            (!r.replayed &&
+              (c.version !== expected.expectedVersion + 1 ||
+                c.reviewVersion !== expected.expectedReviewVersion))
+          )
+            throw new Error();
+          return {
+            key: text(c.key),
+            version: watcherVersion(c.version),
+            reviewVersion: watcherVersion(c.reviewVersion, true),
+          };
+        });
+        return {
+          commitId,
+          commitKey: text(r.commitKey),
+          scope: text(r.scope),
+          scopeVersion: watcherVersion(r.scopeVersion),
+          unitKeys: r.unitKeys.map(text),
+          candidateVersions,
+          sourceVersions: this.intelligenceSources(r.sourceVersions, valid.leases, r.replayed),
+          replayed: r.replayed,
+        };
+      },
+    );
+  }
+  reviewIntelligence(leases: readonly WatcherLease[], command: WatcherIntelligenceReviewCommand) {
+    const fences = watcherIntelligenceFences(leases),
+      review = validateWatcherIntelligenceReview(command);
+    return this.call(
+      'watcher_review_intelligence',
+      { p_fences: fences, p_review: review },
+      (value): WatcherIntelligenceReviewReceipt => {
+        const r = row(value);
+        if (
+          typeof r.replayed !== 'boolean' ||
+          r.reviewId !== review.reviewId ||
+          r.scope !== review.scope ||
+          r.scopeVersion !== review.scopeVersion ||
+          r.eventKey !== review.eventKey ||
+          r.candidateVersion !== review.expectedVersion ||
+          r.reviewVersion !== review.expectedReviewVersion + 1
+        )
+          throw new Error();
+        return {
+          reviewId: watcherUuid(r.reviewId),
+          scope: text(r.scope),
+          scopeVersion: watcherVersion(r.scopeVersion),
+          eventKey: text(r.eventKey),
+          candidateVersion: watcherVersion(r.candidateVersion),
+          reviewVersion: watcherVersion(r.reviewVersion),
+          sourceVersions: this.intelligenceSources(r.sourceVersions, leases, r.replayed),
+          replayed: r.replayed,
+        };
+      },
+    );
+  }
+  queryIntelligence(
+    kind: WatcherIntelligenceQueryKind,
+    scope: string,
+    filter: string | null = null,
+    limit = 25,
+    offset = 0,
+  ) {
+    watcherIntelligenceScope(scope);
+    if (
+      !['RECEIPTS', 'UNITS', 'CANDIDATES', 'REVIEWS'].includes(kind) ||
+      !Number.isInteger(limit) ||
+      limit < 1 ||
+      limit > 100 ||
+      !Number.isInteger(offset) ||
+      offset < 0 ||
+      offset > 100000 ||
+      (filter !== null && (typeof filter !== 'string' || filter.length > 200))
+    )
+      throw new WatcherPersistenceError('INVALID_INPUT');
+    return this.call(
+      'watcher_intelligence_query',
+      { p_kind: kind, p_scope: scope, p_filter: filter, p_limit: limit, p_offset: offset },
+      (value) => {
+        if (!Array.isArray(value) || value.length > limit) throw new Error();
+        return value.map(row);
+      },
+    );
   }
   private query<T>(
     kind: string,

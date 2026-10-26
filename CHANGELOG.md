@@ -1,5 +1,41 @@
 # Changelog
 
+## 2026-10-26 - Sprint 24B.4A atomic intelligence persistence
+
+Added a local additive SQL draft for immutable intelligence units, receipts,
+candidate snapshots and append-only human reviews. New commit/review/query RPCs
+reuse 24A leases/fencing and candidate identities with atomic rollback, semantic
+idempotency, revision/pointer guards and human-review CAS. Complete bounded source
+journals prevent partial projections; concurrent legacy identity changes abort.
+Core and the existing injected Supabase adapter expose the versioned protocol;
+the operational QA allowlist remains closed to the new RPCs. Extended the existing
+disposable PostgreSQL harness with real concurrency, rollback and crash tests.
+Original migrations/manifest, RSS checkpoints and commercial tables are preserved.
+Validation, SQL inventory/hash, limits, rollback and the authorization-gated QA
+preflight are recorded in docs/agents/WATCHER_ATOMIC_INTELLIGENCE_24B4A.md.
+Local validation: 436 Watcher tests and 49 PostgreSQL 17.6 scenario groups PASS;
+typecheck/build and scoped lint/format/diff PASS. Global debt remains: 51 Web lint
+warnings, 777 formatting files and six known functional failures. Commercial
+5-second timeouts disappear in the explicit 30-second serial diagnostic, which
+has 1300 passing tests and only those six failures; default global checks still fail.
+No remote migration, real-article analysis, production operation or activation.
+
+## 2026-10-26 - Sprint 24B local intelligence and candidate foundations
+
+Added pure, bounded Watcher interpretation of stored revisions using reviewed brand
+aliases and canonical MMV snapshots. Versioned literal evidence, conservative BR/claim
+rules, seven event categories, ABSTAIN, deterministic candidate correlation, revision
+history/replay, evidence quality and optimistic review remain separate from catalog apply.
+Added an incremental local journal and disabled AI admission plan reusing existing cost
+policy and usage types, without provider/HTTP/Supabase or paid execution capability.
+51 new tests pass (400 targeted Watcher tests in total); typecheck/build and Core lint
+pass. Known global Web lint/Core failures and formatting debt remain documented.
+Final serialized Core: 1284 passes, the six baseline failures and no timeouts.
+No remote reprocessing, migration, production/Legacy change, commit/push or deployment.
+24B.4 is gated on an approved transactional persistence design; the twenty real QA
+articles are not yet evaluated. Architecture, coverage and controlled read-only QA plan
+are in docs/agents/WATCHER_INTELLIGENCE_24B.md and WATCHER_QA_INTELLIGENCE_24B.md.
+
 ## 2026-10-26 - Sprint 24A final commit consolidation
 
 Consolidated the reviewed Watcher entrypoint, deterministic tests and QA postflight/

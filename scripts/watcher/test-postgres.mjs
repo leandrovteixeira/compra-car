@@ -7,9 +7,22 @@ import { WatcherSupabaseAdapter } from '../../packages/adapter-supabase/src/watc
 import { processWatcherIngestion } from '../../packages/core/src/agents/watcher-incremental.ts';
 import { createWatcherArticleObservation } from '../../packages/core/src/agents/watcher-ingestion-contract.ts';
 const root = fileURLToPath(new URL('../../', import.meta.url));
+const intelligence = process.argv.includes('--intelligence');
+const reportFile = new URL(
+  intelligence
+    ? '../../.local-reports/watcher-24b4a/postgres-results.json'
+    : '../../.local-reports/watcher-24a3a/postgres-results.json',
+  import.meta.url,
+);
+const testImage =
+  process.env.WATCHER_TEST_POSTGRES_IMAGE ??
+  (intelligence ? 'public.ecr.aws/supabase/postgres:17.6.1.147' : 'postgres:16.13-alpine');
+if (!['postgres:16.13-alpine', 'public.ecr.aws/supabase/postgres:17.6.1.147'].includes(testImage))
+  throw new Error('Unapproved disposable image');
 const name = 'compra-car-watcher-test-' + process.pid + '-' + randomUUID().slice(0, 8);
 let containerId = null;
 let pinnedEndpoint = null;
+let lastSqlDiagnostic = null;
 function command(args, input = '') {
   return new Promise((resolve, reject) => {
     const environment = { ...process.env };
@@ -70,11 +83,8 @@ async function test(label, fn) {
   suites.push(label);
   console.log('PASS ' + label);
 }
-await mkdir(new URL('../../.local-reports/watcher-24a3a/', import.meta.url), { recursive: true });
-await writeFile(
-  new URL('../../.local-reports/watcher-24a3a/postgres-results.json', import.meta.url),
-  JSON.stringify({ status: 'RUNNING', remoteWrites: 0 }),
-);
+await mkdir(new URL('./', reportFile), { recursive: true });
+await writeFile(reportFile, JSON.stringify({ status: 'RUNNING', remoteWrites: 0 }));
 try {
   const endpoint = await command(['context', 'inspect', '--format', '{{.Endpoints.docker.Host}}']);
   if (
@@ -86,18 +96,32 @@ try {
   containerId = await command([
     'run',
     '--rm',
+    '--pull=never',
     '--name',
     name,
     '--network',
     'none',
     '-e',
     'POSTGRES_HOST_AUTH_METHOD=trust',
+    '-e',
+    'POSTGRES_USER=postgres',
+    '-e',
+    'PGDATA=/var/lib/postgresql/data',
+    '-e',
+    'POSTGRES_INITDB_ARGS=--no-sync',
+    '--tmpfs',
+    '/docker-entrypoint-initdb.d',
     '-d',
-    'postgres:16.13-alpine',
+    testImage,
+    'postgres',
+    '-D',
+    '/var/lib/postgresql/data',
+    '-c',
+    'unix_socket_directories=/var/run/postgresql',
   ]);
   assert.match(containerId, /^[a-f0-9]{64}$/);
   let ready = false;
-  for (let i = 0; i < 40; i++) {
+  for (let i = 0; i < 120; i++) {
     try {
       await sql('select 1;');
       ready = true;
@@ -176,6 +200,9 @@ try {
     'watcher_stage_candidate',
     'watcher_attach_evidence',
     'watcher_prepare_hint',
+    ...(intelligence
+      ? ['watcher_commit_intelligence', 'watcher_review_intelligence', 'watcher_intelligence_query']
+      : []),
   ]);
   const literal = (v) =>
     v === null
@@ -213,6 +240,10 @@ try {
         };
       } catch (error) {
         const m = /ERROR:\s+([A-Z0-9]{5}):\s+([^\r\n]+)/.exec(error.message);
+        lastSqlDiagnostic = {
+          code: m?.[1] ?? 'UNKNOWN',
+          message: (m?.[2] ?? 'SQL_FAILED').slice(0, 200),
+        };
         return { data: null, error: { code: m?.[1], message: m?.[2] ?? 'SQL_FAILED' } };
       }
     },
@@ -699,16 +730,38 @@ try {
     assert.equal(result.error.message, 'WATCHER_INVALID_BATCH');
     assert.equal((await adapter.getSourceState('null-guard')).checkpoint.etag, null);
   });
-  await mkdir(new URL('../../.local-reports/watcher-24a3a/', import.meta.url), { recursive: true });
+  if (intelligence) {
+    const migration = (
+      await readdir(new URL('../../supabase/migrations/', import.meta.url))
+    ).filter((f) => f.endsWith('_sprint_24b4a_watcher_intelligence.sql'));
+    assert.equal(migration.length, 1);
+    await test('24B additive migration applies locally', async () =>
+      sql(
+        await readFile(
+          new URL('../../supabase/migrations/' + migration[0], import.meta.url),
+          'utf8',
+        ),
+      ));
+    const { testIntelligencePostgres } = await import('./test-intelligence-postgres.mjs');
+    await testIntelligencePostgres({ sql, adapter, client, test, quote, json });
+  }
   await writeFile(
-    new URL('../../.local-reports/watcher-24a3a/postgres-results.json', import.meta.url),
-    JSON.stringify({ status: 'PASS', postgres: '16.13', suites, remoteWrites: 0 }, null, 2),
+    reportFile,
+    JSON.stringify(
+      {
+        status: 'PASS',
+        postgres: await sql("select current_setting('server_version');"),
+        suites,
+        remoteWrites: 0,
+      },
+      null,
+      2,
+    ),
   );
 } catch (error) {
-  await writeFile(
-    new URL('../../.local-reports/watcher-24a3a/postgres-results.json', import.meta.url),
-    JSON.stringify({ status: 'FAIL', suites, remoteWrites: 0 }, null, 2),
-  );
+  if (intelligence && lastSqlDiagnostic)
+    console.error('LOCAL_POSTGRES_DIAGNOSTIC ' + JSON.stringify(lastSqlDiagnostic));
+  await writeFile(reportFile, JSON.stringify({ status: 'FAIL', suites, remoteWrites: 0 }, null, 2));
   throw error;
 } finally {
   if (containerId) {
