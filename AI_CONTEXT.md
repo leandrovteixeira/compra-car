@@ -2,6 +2,8 @@
 
 ## 2026-10-26 — Isolated specification/mobile hotfix
 
+Publicado em QA e produção no commit `6ab8a8658f1db85014aef21f868cee4525b65633`; deploys SUCCESS `f6b591ad-e2e1-44fe-9105-c1980ea9e233` (QA) e `463b4f87-cdda-4856-bb79-ca2f8eeb5090` (produção). Unidades, nomes, drawer, ficha e sticky conferidos com dados reais; healthcheck saudável. Sem alterações de banco/variáveis/worker/branches Sprint 24. Antes da próxima entrega da Sprint 24, incorporar os dois commits `cec3c4d` e `6ab8a86` (ou merge da branch do hotfix).
+
 Branch `fix/specs-mobile-production-20261026` is based on the released Sprint 23 application, without Sprint 24 changes. Comparison scale rows identify each option, tire/vehicle widths are distinguished, and comparison/PDF/technical sheets share pt-BR unit formatting (pol, anos, kgfm with one decimal, cc). Canonical database values remain unchanged. Login drawer closes through the History API while retaining comparison parameters. Technical sheets use 20px public/mobile gutters, compact horizontally scrollable columns and document scrolling, pinning only version headers at the top. Public back navigation corrected; front/rear fog-lamp scales are grouped separately in technical sheets. Dedicated hotfix CI does not run on Sprint 24 branches. Inventory of all 27 repeated names, checks and deployment evidence: `docs/releases/2026-10-26-specs-mobile-hotfix.md`.
 
 ## 2026-10-25 — Sprint 23 production promotion completed
