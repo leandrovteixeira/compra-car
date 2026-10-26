@@ -16,6 +16,8 @@ export type FeedDiagnostic = Readonly<{
   itemIndex: number | null;
 }>;
 export type WatcherFeedParseResult = Readonly<{
+  format: 'RSS' | 'ATOM';
+  received: number;
   items: readonly WatcherFeedItem[];
   diagnostics: readonly FeedDiagnostic[];
   rejected: number;
@@ -344,5 +346,12 @@ export function parseWatcherFeed(
     if (error instanceof WatcherFeedParseError) throw error;
     throw new WatcherFeedParseError('INVALID_XML');
   }
-  return { items, diagnostics, rejected, truncated };
+  return {
+    format: format as 'RSS' | 'ATOM',
+    received: seen,
+    items,
+    diagnostics,
+    rejected,
+    truncated,
+  };
 }

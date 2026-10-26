@@ -17,6 +17,7 @@ import {
   WatcherFeedParseError,
   type WatcherFeedParseOptions,
   type FeedDiagnostic,
+  type WatcherFeedParseResult,
 } from './watcher-feed-parser';
 import { WatcherFeedTransportError, type WatcherFeedFetchResult } from './watcher-feed-transport';
 
@@ -67,6 +68,11 @@ export async function ingestWatcherFeed(input: {
   processWatcherIngestion({ ...input, source, batch: empty, proposedCheckpoint: proposed });
   const failures: WatcherIngestionFailure[] = [],
     diagnostics: FeedDiagnostic[] = [];
+  let parserSummary:
+    | (Pick<WatcherFeedParseResult, 'format' | 'received' | 'rejected' | 'truncated'> & {
+        valid: number;
+      })
+    | null = null;
   let observations: WatcherArticleObservation[] = [],
     checkpoint: WatcherSourceCheckpoint = proposed;
   let status: 'OK' | 'NOT_MODIFIED' | 'RETRY' | 'PARTIAL' | 'FAILED' = 'FAILED',
@@ -108,6 +114,13 @@ export async function ingestWatcherFeed(input: {
           input.parserOptions,
         );
         diagnostics.push(...parsed.diagnostics);
+        parserSummary = {
+          format: parsed.format,
+          received: parsed.received,
+          valid: parsed.items.length,
+          rejected: parsed.rejected,
+          truncated: parsed.truncated,
+        };
         observations = parsed.items.map((item) =>
           createWatcherArticleObservation(item, empty.observedAt),
         );
@@ -139,5 +152,5 @@ export async function ingestWatcherFeed(input: {
     proposedCheckpoint: checkpoint,
   });
   if (status === 'OK' && !result.checkpointAdvanced) status = 'PARTIAL';
-  return { status, retryAfterMs, diagnostics, batch, ...result };
+  return { status, retryAfterMs, diagnostics, parserSummary, batch, ...result };
 }

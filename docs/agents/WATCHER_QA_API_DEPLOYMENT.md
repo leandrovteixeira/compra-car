@@ -5,6 +5,12 @@ application or collection is authorized by the plan or this document.
 
 ## Configuration and commands
 
+Current status (24A.4): the owner reports that both migrations below are already
+applied as QA versions 20261026172631 and 20261026172646. Do not execute their
+application plan again. Read-only HTTPS validation and the proposed history/pilot
+procedures are in [WATCHER_QA_POSTFLIGHT_24A4.md](WATCHER_QA_POSTFLIGHT_24A4.md).
+The installation preflight is expected to block on existing objects after application.
+
 The loader reads only `C:/Dev/.secrets/compra-car/staging.env` and requires the exact
 QA `SUPABASE_URL`, Staging/QA labels and nonblank `SUPABASE_SERVER_KEY`. This server key
 is used by the existing supabase-js RPC adapter; `WATCHER_QA_SERVER_KEY` is no longer
@@ -48,10 +54,10 @@ browser default ACLs also produce NO_GO for separate review. Do not bypass these
    all NO_GO conditions, permission/visibility issues and history conflicts first.
 2. Obtain explicit authorization for only these two API calls, in this order:
 
-| Order | Source migration | Approved SHA-256 |
-| --- | --- | --- |
-| 1 | `20261025220424_sprint_24a3a_watcher_storage.sql` | `0d43e3f5473b08e7b0cb4b2eca30567069c108ecc7946433354997dd80d31e23` |
-| 2 | `20261025220427_sprint_24a3a_watcher_transactions.sql` | `41b2a300a53291b44bfd62dda293a6c31ec2e3b9475361c35e0cf2d3ee9a0f06` |
+| Order | Source migration                                       | Approved SHA-256                                                   |
+| ----- | ------------------------------------------------------ | ------------------------------------------------------------------ |
+| 1     | `20261025220424_sprint_24a3a_watcher_storage.sql`      | `0d43e3f5473b08e7b0cb4b2eca30567069c108ecc7946433354997dd80d31e23` |
+| 2     | `20261025220427_sprint_24a3a_watcher_transactions.sql` | `41b2a300a53291b44bfd62dda293a6c31ec2e3b9475361c35e0cf2d3ee9a0f06` |
 
 3. Use a separately authorized project-scoped administrative credential with
    `database_migrations_write`. Never reuse the REST key as the Management bearer.
