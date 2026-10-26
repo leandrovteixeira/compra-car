@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-26 — Isolated specification/mobile hotfix
+
+Branch `fix/specs-mobile-production-20261026` is based on the released Sprint 23 application, without Sprint 24 changes. Comparison scale rows identify each option, tire/vehicle widths are distinguished, and comparison/PDF/technical sheets share pt-BR unit formatting (pol, anos, kgfm with one decimal, cc). Canonical database values remain unchanged. Login drawer closes through the History API while retaining comparison parameters. Technical sheets use 20px public/mobile gutters, compact horizontally scrollable columns and document scrolling, pinning only version headers at the top. Public back navigation corrected; front/rear fog-lamp scales are grouped separately in technical sheets. Dedicated hotfix CI does not run on Sprint 24 branches. Inventory of all 27 repeated names, checks and deployment evidence: `docs/releases/2026-10-26-specs-mobile-hotfix.md`.
+
 ## 2026-10-25 — Sprint 23 production promotion completed
 
 Production runtime is pinned to `0ea47383d94be55f4273c48ff3687126eaa285a2` on `release/sprint-23-production-2026-10-25`; Railway deployment `fabe508e-9f1d-42e2-8650-1ef3caafc871` reached SUCCESS. Production URL: https://compra-carweb-production.up.railway.app . Nine allowlisted schema migrations applied; existing owner explicitly registered as Master; no QA data copied, no agent worker/scheduler enabled and no secrets rotated. All five production business-data counts/fingerprints remained identical before/after. Public home, 60 model cards, MMVY/spec comparison, unique advantage checks, radar for currently priced models, protected admin redirect and /api/health were verified. Corporate price-list access and public signup/SMTP remain known scope limitations; authenticated owner browser verification is the first real session. Details and rollback baseline are recorded in docs/releases/2026-10-25-sprint-23-production.md.

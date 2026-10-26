@@ -37,8 +37,28 @@ export function mapLegacyProductToVehicle(row: LegacyProductRow): Vehicle {
   });
 }
 
-function localized(primary: string | null | undefined, fallback: string | null, field: string, id: unknown): string {
+function localized(
+  primary: string | null | undefined,
+  fallback: string | null,
+  field: string,
+  id: unknown,
+): string {
   return primary?.trim() || requiredText(fallback, field, id);
+}
+
+/** Scale options are separate comparison rows, so their labels must identify the option. */
+function comparisonSpecLabel(row: LegacySpecRow): string {
+  const label = localized(
+    row.display_pt,
+    row.detail_pt?.trim() || row.detail,
+    'specs.detail',
+    row.id,
+  );
+  if (row.code === 'EX_0003') return 'Largura dos pneus (mm)';
+  if (row.type !== 'scale') return label;
+  const detail = localized(row.detail_pt, row.detail, 'specs.detail', row.id);
+  if (detail === label) return label;
+  return `${label} — ${detail === '-' ? 'Não disponível' : detail}`;
 }
 
 export function mapLegacySpecToComparisonItem(row: LegacySpecRow): ComparisonItem {
@@ -62,9 +82,14 @@ export function mapLegacySpecToComparisonItem(row: LegacySpecRow): ComparisonIte
     code: requiredText(row.code, 'specs.code', row.id),
     type: row.type,
     category: localized(row.group_name_pt, row.group_name, 'specs.group_name', row.id),
-    equipmentGroup: localized(row.equipment_group_pt, row.equipment_group, 'specs.equipment_group', row.id),
+    equipmentGroup: localized(
+      row.equipment_group_pt,
+      row.equipment_group,
+      'specs.equipment_group',
+      row.id,
+    ),
     specSet: localized(row.spec_set_pt, row.spec_set, 'specs.spec_set', row.id),
-    label: localized(row.display_pt, row.detail_pt?.trim() || row.detail, 'specs.detail', row.id),
+    label: comparisonSpecLabel(row),
     unit: row.type === 'numeric' && row.unit?.trim() ? row.unit.trim() : null,
     valueDirection,
     sortOrder: row.display_order == null ? null : Number(row.display_order),

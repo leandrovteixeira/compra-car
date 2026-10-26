@@ -1,0 +1,27 @@
+name: Specification UX hotfix validation
+on:
+  push:
+    branches: [fix/specs-mobile-production-20261026]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - name: Comparison regressions
+        run: pnpm --filter @compra-car/web exec vitest run test/comparison.test.ts src/application/comparison/comparison-row-winners.test.ts src/auth/entitlements-23c.test.ts src/auth/route-policy-23c.test.ts
+      - name: Specification labels
+        run: pnpm --filter @compra-car/adapter-supabase exec vitest run test/mappers.test.ts
+      - run: pnpm build
