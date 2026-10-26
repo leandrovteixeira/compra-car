@@ -1,5 +1,48 @@
 # Contexto para agentes de IA
 
+## 2026-10-25 - Sprint 24A.3b-Fix QA safety and readiness
+
+Implemented mandatory QA-only target/configuration guards, guarded operational executor,
+exact HTTP request URL preservation, explicit migration function ACLs, SHA-256 allowlist,
+offline deployment plan and catalog-only read-only pre/postflight artifacts. No remote
+connector is bundled in the CLI. 306 targeted tests and 23 disposable PostgreSQL scenario
+groups pass; global baseline debt is preserved. See [QA safety report](docs/agents/WATCHER_QA_SAFETY_24A_3B_FIX.md).
+Zero remote Supabase connections/writes, feed collection, OpenAI, deploy, Legacy changes,
+commits or push. 24A.3b-2 remains unstarted pending approval and reviewed read-only preflight.
+
+## 2026-10-25 - Sprint 24A.3a Watcher persistence foundation
+
+Local-only PostgreSQL schema (seven operational tables plus revisions, batch receipts and
+observation journal), pure Core repository port and injected Supabase RPC adapter implemented.
+Atomic leased commits, fencing, replay receipts, revision history, source/candidate snapshots,
+RLS and minimal grants are covered by 262 targeted TypeScript tests and 21 disposable PostgreSQL
+scenario groups. No remote migration or operational integration was enabled. Full validation,
+baseline failures and residual risks: [Watcher 24A.3a](docs/agents/WATCHER_PERSISTENCE_24A_3A.md).
+Zero remote writes, feed collection, AI, UX, deploy, Legacy changes, commits or push.
+Sprint 24A.3b is not started; remote activation awaits review.
+
+## 2026-10-25 - Sprint 24A.2 RSS/Atom ingestion
+
+Local opt-in RSS/Atom parsing, pinned HTTPS transport and incremental in-memory processing
+implemented; no real feeds fetched. Fixed sax/ipaddr.js dependencies and injected offline
+network tests cover XML/DTD limits, SSRF, compression, timeout, conditional requests and replay.
+History/current state preserve revisions and origins; failures/truncation freeze checkpoints.
+226 targeted tests pass (119 Core + 107 scripts), including all 109 from 24A.1. Global baseline
+failures and six separately reproduced legacy script-test failures are documented in
+[Watcher 24A.2](docs/agents/WATCHER_INGESTION_24A_2.md).
+No remote writes, AI, migrations, deploy, UX, operational Brand Connector integration or commits.
+Sprint 24A.3 is not started.
+
+## 2026-10-25 - Sprint 24A.1 Watcher foundation hardening
+
+Local deterministic Watcher hardening and pure incremental ingestion contracts implemented.
+Editorial market is separate from Brazil applicability; GUID identity is source-scoped with
+canonical URL fallback. Versioned SHA-256 evidence, bounded runtime validators, strict dates,
+normalized URL errors and deterministic representatives are covered by 109 targeted tests.
+No other agent contracts, dependencies, database, migration, remote writes, deploy or UX changes.
+Sprint 24A.2 is not started. Global gate limitations and baseline reproduction are recorded in
+[Watcher 24A.1](docs/agents/WATCHER_FOUNDATION_24A_1.md).
+
 ## 2026-10-25 — Sprint 23 production promotion completed
 
 Production runtime is pinned to `0ea47383d94be55f4273c48ff3687126eaa285a2` on `release/sprint-23-production-2026-10-25`; Railway deployment `fabe508e-9f1d-42e2-8650-1ef3caafc871` reached SUCCESS. Production URL: https://compra-carweb-production.up.railway.app . Nine allowlisted schema migrations applied; existing owner explicitly registered as Master; no QA data copied, no agent worker/scheduler enabled and no secrets rotated. All five production business-data counts/fingerprints remained identical before/after. Public home, 60 model cards, MMVY/spec comparison, unique advantage checks, radar for currently priced models, protected admin redirect and /api/health were verified. Corporate price-list access and public signup/SMTP remain known scope limitations; authenticated owner browser verification is the first real session. Details and rollback baseline are recorded in docs/releases/2026-10-25-sprint-23-production.md.

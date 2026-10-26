@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "watcher-qa-migrations/1",
+  "environment": "qa",
+  "projectRef": "shfsjyjxmgwnlexmdkcs",
+  "supabaseUrl": "https://shfsjyjxmgwnlexmdkcs.supabase.co",
+  "migrations": [
+    {
+      "path": "supabase/migrations/20261025220424_sprint_24a3a_watcher_storage.sql",
+      "sha256": "0d43e3f5473b08e7b0cb4b2eca30567069c108ecc7946433354997dd80d31e23"
+    },
+    {
+      "path": "supabase/migrations/20261025220427_sprint_24a3a_watcher_transactions.sql",
+      "sha256": "41b2a300a53291b44bfd62dda293a6c31ec2e3b9475361c35e0cf2d3ee9a0f06"
+    }
+  ]
+}

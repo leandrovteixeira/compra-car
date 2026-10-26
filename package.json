@@ -25,7 +25,9 @@
     "agent:brand-connector:dry-run": "pnpm --filter @compra-car/agents exec tsx brand-connector-cli.ts",
     "agent:mmv-discovery:dry-run": "pnpm --filter @compra-car/agents dry-run --discovery-only",
     "agent:mmv-validation:20f": "pnpm --filter @compra-car/agents exec tsx mmv-multibrand-validation-cli.ts",
-    "agent:model-year:dry-run": "pnpm --filter @compra-car/agents exec tsx model-year-cli.ts"
+    "agent:model-year:dry-run": "pnpm --filter @compra-car/agents exec tsx model-year-cli.ts",
+    "watcher:test:postgres": "pnpm --filter @compra-car/agents exec tsx ../watcher/test-postgres.mjs",
+    "watcher:qa:plan": "pnpm --filter @compra-car/agents exec tsx watcher-qa-plan-cli.ts"
   },
   "devDependencies": {
     "eslint": "9.39.5",

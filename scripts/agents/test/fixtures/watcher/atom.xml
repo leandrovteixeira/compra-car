@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<a:feed xmlns:a="http://www.w3.org/2005/Atom" xml:base="https://auto.example.br/news/">
+  <a:title>Atom</a:title>
+  <a:entry><a:id>tag:fixture.example,2026:one</a:id><a:title>Global &#x26; cars</a:title>
+    <a:link rel="self" href="entry.xml"/><a:link rel="alternate" href="global"/>
+    <a:summary type="html">&lt;p&gt;Resumo &amp;amp; mercado&lt;/p&gt;</a:summary>
+    <a:published>2026-10-20T12:00:00Z</a:published><a:updated>2026-10-21T12:00:00Z</a:updated>
+    <a:content type="html">DO_NOT_STORE_FULL_CONTENT</a:content>
+  </a:entry>
+</a:feed>

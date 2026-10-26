@@ -69,3 +69,6 @@ export * from './engineering-cost-governance-audit';
 export * from './engineering-cost-policy';
 
 export * from './watcher-foundation';
+export * from './watcher-ingestion-contract';
+export * from './watcher-incremental';
+export * from './watcher-persistence';
