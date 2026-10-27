@@ -23,7 +23,7 @@ AGENT_WATCHER_AI_MAX_ARTICLES=20
 AGENT_WATCHER_AI_HARD_COST_CAP_USD=0.25
 ```
 
-The Watcher-specific private `C:/Dev/.secrets/open_ai.env` must contain `OPENAI_API_KEY`. This dedicated secret file is separate from Supabase QA `staging.env`. Never expose its value.
+The Watcher-specific private `C:/Dev/.secrets/open_ai.env` must contain `WATCHER-AGENT`. This dedicated secret file is separate from Supabase QA `staging.env`. Never expose its value.
 
 ## Validation (before spending API balance)
 
