@@ -30,6 +30,19 @@ export function proposeWatcherIdentityLeads(
     return [];
   }
   if (entity.status !== 'BRAND_ONLY' || !entity.brand) return [];
+  // Use literal brand mentions from reviewed aliases, not uppercase token guessing.
+  const brandAliases = [entity.brand, ...entity.mentionedBrands];
+  const anchors = [...new Set(brandAliases)].sort((a,b) => b.length - a.length);
+  const verb = '(?:chega|chegou|ganha|oferece|lança|lanca|anuncia|apresenta|custa|tem)';
+  for (const anchor of anchors) {
+    const escapedAnchor = anchor.replace(/[.*+?^${}()|[\]\\]/g, '\\  if (entity.status !== 'BRAND_ONLY' || !entity.brand) return [];');
+    const pattern = new RegExp('\\b' + escapedAnchor +
+      '\\s+([A-Z][A-Za-z0-9-]{1,22}(?:\\s+[A-Z0-9][A-Za-z0-9-]{0,22})?)\\s+' + verb + '\\b','u');
+    const match = pattern.exec(quote);
+    const model = match?.[1];
+    if (model && !blocked.has(watcherKey(model)))
+      return [lead('UNKNOWN_MODEL',model,'LITERAL_MODEL_SPAN_UNVERIFIED')];
+  }
   // Model name must be a literal product-like span immediately after a known
   // brand, before an event predicate. This produces leads, not canonical IDs.
   const escaped = entity.brand.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
