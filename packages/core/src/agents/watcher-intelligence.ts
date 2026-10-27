@@ -1,3 +1,4 @@
+import { WATCHER_EVENT_RULES, WATCHER_NON_MSRP, WATCHER_NON_PRODUCT, WATCHER_EVENT_DICTIONARY_VERSION } from './watcher-event-dictionary';
 import type { BrandIdentityResolution } from './brand-connector-types';
 import type { CanonicalMmv } from './mmv-apply-contract';
 import type { MmvDiscoverySourceKind, MmvDiscoveryReasonCode } from './mmv-discovery-contract';
@@ -178,34 +179,7 @@ export function validateWatcherIntelligenceContext(value: WatcherIntelligenceCon
   return { context, fingerprint: watcherDigest('watcher-intelligence-context/1', [context]) };
 }
 
-const rules: readonly { category: WatcherEventCategory; pattern: RegExp; value?: RegExp }[] = [
-  {
-    category: 'NEW_MODEL',
-    pattern:
-      /\b(?:novo modelo|novo carro|(?:lanca|lancou|apresenta|estreia)(?: o| a)? (?:novo|nova)|chega ao brasil|chegou ao brasil|desembarca no brasil)\b/u,
-  },
-  { category: 'NEW_COMMERCIAL_VARIANT', pattern: /\b(?:nova versao|novo acabamento)\b/u },
-  {
-    category: 'NEW_MODEL_YEAR',
-    pattern: /\b(?:ano modelo|linha) (?:19|20|21)\d{2}\b/u,
-    value: /(?:ano[- ]modelo|linha)\s+((?:19|20|21)\d{2})/iu,
-  },
-  {
-    category: 'POWERTRAIN',
-    pattern: /\b(?:novo motor|nova motorizacao|motoriza[cç][aã]o)\b/u,
-    value: /\bmotor\s+\d(?:[.,]\d)?(?:\s+(?:turbo|h[ií]brido|el[eé]trico|diesel|flex))?/iu,
-  },
-  { category: 'FACELIFT', pattern: /\b(?:facelift|reestilizacao|reestilizado|visual renovado)\b/u },
-  {
-    category: 'PRICE_CHANGE',
-    pattern: /\b(?:preco|custa|custara|a partir de|reajuste)\b/u,
-    value: /R\$\s*(?:\d{1,3}(?:\.\d{3})+|\d+)(?:,\d{2})?(?![\d.,])/u,
-  },
-  {
-    category: 'POSSIBLE_DISCONTINUATION',
-    pattern: /\b(?:sai de linha|saira de linha|descontinuado|descontinuacao|fim da producao)\b/u,
-  },
-];
+const rules = WATCHER_EVENT_RULES;
 
 function clauses(raw: string) {
   const result: { quote: string; start: number; end: number }[] = [];
@@ -446,6 +420,15 @@ export function analyzeWatcherRevision(
                 ? 'ATTRIBUTED'
                 : 'EDITORIAL_ASSERTION';
       for (const rule of categories) {
+        if (rule.category === 'PRICE_CHANGE' && WATCHER_NON_MSRP.test(normalized)) {
+          abstentions.add('PROMOTION_NOT_MSRP');
+          continue;
+        }
+        if (rule.category === 'NEW_MODEL' && WATCHER_NON_PRODUCT.test(normalized) &&
+            !/\b(?:novo modelo|novo carro|chega ao brasil|inicia vendas no brasil)\b/u.test(normalized)) {
+          abstentions.add('CORPORATE_NOT_PRODUCT_EVENT');
+          continue;
+        }
         // A specific event must not also create a generic NEW_MODEL signal.
         if (rule.category === 'NEW_MODEL' && categories.some((x) => x.category !== 'NEW_MODEL'))
           continue;
@@ -492,6 +475,7 @@ export function analyzeWatcherRevision(
         ]);
         const fingerprint = watcherDigest('watcher-signal/1', [
           WATCHER_INTELLIGENCE_VERSION,
+          WATCHER_EVENT_DICTIONARY_VERSION,
           contextFingerprint,
           documentFingerprint,
           revision.id,
