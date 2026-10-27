@@ -1,4 +1,4 @@
-import { readFile, writeFile, open, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, open, mkdir, readdir, access } from 'node:fs/promises';
 import { createHash, randomUUID } from 'node:crypto';
 import { resolve, basename, isAbsolute } from 'node:path';
 import { extractWatcherLaunchesWithOpenAi } from '@compra-car/adapter-openai';
@@ -12,7 +12,8 @@ function fail(code:string):never {throw new Error(code);}
 type Preview={mode:string;sourceId:string;eventDetection:{revisionId:string}[];
  analyses:{revision:{id:string;item:{title:string;excerpt:string|null}}}[]};
 async function main() {
- if(process.argv.length!==4||process.argv[2]!=='--run-once')
+ const recovery=process.argv[2]==='--resume-after-invalid-evidence';
+ if(process.argv.length!==4||(!recovery&&process.argv[2]!=='--run-once'))
    fail('WATCHER_LAUNCH_AI_OPT_IN_REQUIRED');
  const arg=process.argv[3]!;
  const path=resolve(arg);
@@ -39,7 +40,14 @@ async function main() {
   return {revisionId:ref.revisionId,text:[original.title,original.excerpt].filter(Boolean).join('\n')};
  });
  await mkdir(directory,{recursive:true});
- const markerPath=resolve(directory,'launch-ai-'+hash+'.started');
+ const prefix='launch-ai-'+hash;
+ const markerPath=resolve(directory,prefix+(recovery?'.invalid-evidence-retry.started':'.started'));
+ if(recovery){
+   await access(resolve(directory,prefix+'.started'));
+   const found=await readdir(directory);
+   if(found.includes(prefix+'.json')||found.some(name=>name.startsWith(prefix+'-')&&/^launch-ai-[a-f0-9]{16}-[0-9]{2}\\.json$/u.test(name)))
+     fail('WATCHER_LAUNCH_AI_RECOVERY_HAS_RESULTS');
+ }
  const runId=randomUUID();
  const marker=await open(markerPath,'wx');
  try{await marker.writeFile(JSON.stringify({runId,sourceHash:hash,model:config.model,articles:MAX_ARTICLES})+'\n');}
@@ -55,7 +63,7 @@ async function main() {
    const costUsd=(result.inputTokens*0.75+result.outputTokens*4.5)/1_000_000;
    spentUsd+=costUsd;
    const scored=result.launches.map(launch=>scoreWatcherLaunch(row.revisionId,launch));
-   const record={revisionId:row.revisionId,launches:result.launches,
+   const record={revisionId:row.revisionId,launches:result.launches,rejectedClaims:result.rejected,
      scored,inputTokens:result.inputTokens,outputTokens:result.outputTokens,costUsd};
    await writeFile(resolve(directory,'launch-ai-'+hash+'-'+String(calls).padStart(2,'0')+'.json'),
     JSON.stringify(record,null,2)+'\n',{flag:'wx',mode:0o600});
@@ -67,7 +75,7 @@ async function main() {
   sourceHash:hash,calls,spentUsd,results},null,2)+'\n',{flag:'wx',mode:0o600});
  const all=results.flatMap(row=>row.scored);
  console.log(JSON.stringify({status:'PASS',articles:MAX_ARTICLES,calls,
-   extractedLaunchMentions:all.length,eligible:all.filter(x=>x.decision==='MAP_ELIGIBLE').length,
+   rejectedClaims:results.reduce((n,row)=>n+row.rejectedClaims,0),extractedLaunchMentions:all.length,eligible:all.filter(x=>x.decision==='MAP_ELIGIBLE').length,
    rumors:all.filter(x=>x.decision==='RUMOR_EXCLUDED').length,costUsd:spentUsd,resultFile:output}));
 }
 main().catch(error=>{
