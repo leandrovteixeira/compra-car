@@ -2,6 +2,8 @@
 
 ## 2026-10-27 — Temporary neutral public identity
 
+Publicado em QA e produção no commit `3372d3a78b1e45ee5d1b0be4e9e5005feaabdc32`, com deployments SUCCESS `84d490c9-9088-4f9a-a38d-37d04488705a` e `38ab4b47-ef68-4d1e-a859-d74d3e279d66`. Homepage, sidebar, login, metadados, manifesto, remoção do wordmark público e healthcheck foram conferidos; sem mudanças em banco, autenticação, worker ou branches da Sprint 24. O hostname Railway ainda contém o nome antigo.
+
 Isolated web hotfix based on the production Sprint 23/specification release; Sprint 24 code and worker remain separate. Removes wordmarks and names from visible UI, assistive labels, PDF, sharing and app metadata; uses neutral “Portal automotivo” and a generic browser/install pictogram. The four-squircle symbol remains on the sidebar and its mobile trigger. Previously public wordmark SVGs are kept outside the public directory for future identity decisions. Existing Railway hostnames still contain the old name and require a separate domain decision. See `docs/releases/2026-10-27-neutral-identity-hotfix.md`.
 
 ## 2026-10-26 — Isolated specification/mobile hotfix
