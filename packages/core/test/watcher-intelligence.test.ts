@@ -670,3 +670,22 @@ describe('Watcher optional AI admission plan', () => {
     ).toBe('NOT_NEEDED');
   });
 });
+
+describe('Watcher incremental news rules — brand ambiguity and Brazil arrival', () => {
+  it('recognizes an arrival as a potential model event without claiming an unknown model', () => {
+    const ctx: WatcherIntelligenceContext = {
+      ...context,
+      brands: [...context.brands, { id: 'mg', canonicalName: 'MG', canonicalKey: 'mg', market: 'BR', aliases: [] }],
+    };
+    const result = analyzeWatcherRevision(doc('MG chega ao Brasil com novo SUV elétrico', 991), ctx);
+    expect(result.signals).toHaveLength(1);
+    expect(result.signals[0].category).toBe('NEW_MODEL');
+    expect(result.signals[0].identity.model).toBeNull();
+    expect(result.signals[0].decision).toBe('ABSTAIN');
+  });
+  it('retains ambiguity when two separate brands are genuinely mentioned', () => {
+    const result = analyzeWatcherRevision(doc('Fiat e Volkswagen apresentam novo SUV', 992), context);
+    expect(result.signals).toHaveLength(0);
+    expect(result.abstentions).toContain('AMBIGUOUS_BRAND');
+  });
+});
