@@ -7,3 +7,5 @@ export * from './mmv-ambiguity-adjudicator';
 
 export * from './price-reconciliation-provider';
 export * from './agent-cost-admission';
+
+export * from './watcher-news-extraction';
