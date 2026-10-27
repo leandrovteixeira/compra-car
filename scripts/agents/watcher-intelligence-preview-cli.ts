@@ -29,7 +29,7 @@ if (process.argv.length !== 3 || process.argv[2] !== '--read-only') {
     // Preserve prior pilot reports so repeated read-only previews can be compared.
     const file = resolve(folder, `intelligence-preview-${new Date().toISOString().replace(/[:.]/g, '-')}-${randomUUID()}.json`);
     await writeFile(file, JSON.stringify(result, null, 2) + '\n', { flag: 'wx', mode: 0o600 });
-    console.log(JSON.stringify({ status: 'PASS', mode: 'READ_ONLY', report: result.report, reportFile: file }));
+    console.log(JSON.stringify({ status: 'PASS', mode: 'READ_ONLY', report: result.report, eventReport: result.eventReport, reportFile: file }));
   } catch (error) {
     // Diagnostics contain only allowlisted codes; never print provider responses, env or secrets.
     const message = error instanceof Error ? error.message : '';
