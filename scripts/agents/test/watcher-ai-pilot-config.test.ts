@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { loadWatcherAiPilotConfig, WATCHER_MODELS_FILE, WATCHER_QA_SECRETS_FILE } from '../watcher-ai-pilot-config';
 
 const models = 'AGENT_WATCHER_AI_ENABLED=true\nAGENT_WATCHER_AI_MAX_ARTICLES=20\nAGENT_WATCHER_MODEL=gpt-5.4-mini\nAGENT_WATCHER_AI_HARD_COST_CAP_USD=0.25\n';
-const secrets = 'OPENAI_API_KEY=sk-test-only-fixture\n';
+const secrets = 'WATCHER-AGENT=sk-test-only-fixture\n';
 function readFileForTest(contents: string = models, secure: string = secrets) {
   return async (path: string) => {
     if (path === WATCHER_MODELS_FILE) return contents;
