@@ -1,12 +1,35 @@
-/** Cron entrypoint: safety-gated until WATCHER_INGESTION is handled by the QA worker. */
-const target='https://shfsjyjxmgwnlexmdkcs.supabase.co';
+import { createLegacySupabaseClient } from '@compra-car/adapter-supabase';
+
 const env=process.env;
-if(env.APP_ENV!=='qa'||env.SUPABASE_URL!==target)
-  throw new Error('WATCHER_SCHEDULER_QA_ONLY');
-if(env.WATCHER_SCHEDULER_ENQUEUE_ENABLED!=='true'){
- console.log(JSON.stringify({status:'PAUSED',reason:'WATCHER_WORKER_INTEGRATION_PENDING',
-   schedule:'0 11,23 * * *',timezone:'UTC',writes:0,aiCalls:0}));
-}else{
- // Fail closed. Never enqueue a job type that the current agent-worker cannot execute.
- throw new Error('WATCHER_SCHEDULER_WORKER_NOT_READY');
+const QA_URL='https://shfsjyjxmgwnlexmdkcs.supabase.co';
+export function watcherScheduleWindow(now:Date):string {
+ const hour=now.getUTCHours();
+ if(![11,23].includes(hour)||now.getUTCMinutes()>15)
+   throw new Error('WATCHER_SCHEDULER_OUTSIDE_WINDOW');
+ return now.toISOString().slice(0,13)+':00:00+00:00';
 }
+async function main() {
+ if(env.APP_ENV!=='qa'||env.SUPABASE_URL!==QA_URL)
+   throw new Error('WATCHER_SCHEDULER_QA_ONLY');
+ if(env.WATCHER_SCHEDULER_ENQUEUE_ENABLED!=='true'){
+  console.log(JSON.stringify({status:'PAUSED',writes:0,aiCalls:0}));
+  return;
+ }
+ if(!env.SUPABASE_SERVER_KEY?.trim())throw new Error('WATCHER_SCHEDULER_CREDENTIALS_MISSING');
+ const window=watcherScheduleWindow(new Date());
+ const client=createLegacySupabaseClient({url:QA_URL,serverKey:env.SUPABASE_SERVER_KEY});
+ const {data,error}=await client.rpc('watcher_enqueue_schedule_job',{
+   p_source_id:'motor1-br-pilot',p_window_utc:window,
+ });
+ if(error)throw new Error('WATCHER_SCHEDULER_ENQUEUE_FAILED');
+ const result=Array.isArray(data)?data[0]:data;
+ if(!result||typeof result.job_id!=='string'||typeof result.inserted!=='boolean')
+   throw new Error('WATCHER_SCHEDULER_RECEIPT_INVALID');
+ console.log(JSON.stringify({status:'PASS',jobId:result.job_id,inserted:result.inserted,
+   window,source:'motor1-br-pilot',aiCalls:0}));
+}
+main().catch(error=>{
+ const code=error instanceof Error && /^WATCHER_SCHEDULER_[A-Z_]+$/.test(error.message)
+   ?error.message:'WATCHER_SCHEDULER_BLOCKED';
+ console.error(code);process.exitCode=1;
+});
