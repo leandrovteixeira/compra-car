@@ -1,4 +1,4 @@
-import { mkdir, open, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, open, readFile, writeFile, access, readdir } from 'node:fs/promises';
 import { createHash, randomUUID } from 'node:crypto';
 import { resolve, isAbsolute } from 'node:path';
 import { extractWatcherNewsWithOpenAi } from '@compra-car/adapter-openai';
@@ -40,7 +40,8 @@ function loadInput(raw:unknown): Input[] {
 }
 let phase: 'ARGUMENTS' | 'CONFIG' | 'INPUT' | 'RECEIPT' | 'API' | 'SAVE' | 'FINISHED' = 'ARGUMENTS';
 async function main() {
-  if (process.argv.length!==4 || process.argv[2]!=='--run-once')
+  const recovery=process.argv[2]==='--retry-after-auth-401';
+  if (process.argv.length!==4 || (!recovery && process.argv[2]!=='--run-once'))
     fail('WATCHER_AI_MANUAL_OPT_IN_REQUIRED');
   const file=resolve(process.argv[3]!);
   if (!isAbsolute(process.argv[3]!) || !file.startsWith(directory+'\\') ||
@@ -56,8 +57,67 @@ async function main() {
     fail('WATCHER_AI_BUDGET_BLOCKED');
   await mkdir(directory,{recursive:true});
   const runId=randomUUID();
-  const receipt=resolve(directory,'ai-pilot-'+previewHash.slice(0,16)+'.started');
+  const prefix='ai-pilot-'+previewHash.slice(0,16);
+  const receipt=resolve(directory,prefix+(recovery?'.auth-401-retry.started':'.started'));
   phase='RECEIPT';
+  if (recovery) {
+    // Explicit second chance only for the previously diagnosed 401 before first output.
+    await access(resolve(directory,prefix+'.started'));
+    const existing=await readdir(directory);
+    if (existing.some(name => name===prefix+'.json' ||
+      new RegExp('^ai-'+previewHash.slice(0,16)+'-[0-9]{2}\\.json
+  const marker=await open(receipt,'wx'); // Do not automatically retry a possibly charged run.
+  try { await marker.writeFile(JSON.stringify({runId,sourceHash:previewHash,model:config.model,articles:items.length})+'\n'); }
+  finally { await marker.close(); }
+  let spentUsd=0, calls=0;
+  const rows=[];
+  for (const item of items) {
+    // Worst-case pre-flight reserve, in addition to measured spend.
+    const remaining=items.length-calls;
+    if (spentUsd+remaining*RESERVE_PER_ARTICLE_USD>config.hardCostCapUsd+1e-10)
+      fail('WATCHER_AI_BUDGET_BLOCKED');
+    phase='API';
+    const output=await extractWatcherNewsWithOpenAi({
+      apiKey:config.apiKey,
+      model:'gpt-5.4-mini',
+      text:item.text,
+    });
+    calls++;
+    phase='SAVE';
+    const cost=output.inputTokens*INPUT_USD_PER_MILLION/1_000_000+
+      output.outputTokens*OUTPUT_USD_PER_MILLION/1_000_000;
+    spentUsd+=cost;
+    // Save independently immediately so partial runs never lose successful API results.
+    await writeFile(resolve(directory,'ai-'+previewHash.slice(0,16)+'-'+String(calls).padStart(2,'0')+'.json'),
+      JSON.stringify({runId,revisionId:item.revisionId,events:output.events,inputTokens:output.inputTokens,
+        outputTokens:output.outputTokens,costUsd:cost},null,2)+'\n',
+      {flag:'wx',mode:0o600});
+    rows.push({revisionId:item.revisionId,events:output.events});
+    if (spentUsd>config.hardCostCapUsd) fail('WATCHER_AI_BUDGET_EXCEEDED');
+  }
+  const resultPath=resolve(directory,'ai-pilot-'+previewHash.slice(0,16)+'.json');
+  await writeFile(resultPath,JSON.stringify({schemaVersion:'watcher-ai-pilot/1',
+    runId,sourceHash:previewHash,model:config.model,articles:items.length,calls,
+    costUsd:spentUsd,rows},null,2)+'\n',{flag:'wx',mode:0o600});
+  phase='FINISHED';
+  console.log(JSON.stringify({status:'PASS',articles:items.length,calls,
+    costUsd:spentUsd,resultFile:resultPath}));
+}
+main().catch(error=>{
+  const allowed=/^WATCHER_AI_[A-Z_]+$/u;
+  const osError=error as NodeJS.ErrnoException;
+  const fileCode=osError?.code==='ENOENT' ? 'WATCHER_AI_REQUIRED_FILE_MISSING' :
+    osError?.code==='EEXIST' ? 'WATCHER_AI_ALREADY_STARTED' :
+    osError?.code==='EACCES' ? 'WATCHER_AI_FILE_ACCESS_DENIED' : null;
+  const code=fileCode ?? (error instanceof Error && allowed.test(error.message)
+    ? error.message : 'WATCHER_AI_PILOT_BLOCKED');
+  const status = typeof (error as { status?:unknown })?.status==='number' ? (error as {status:number}).status : null;
+  console.error(JSON.stringify({code,phase,httpStatus:status}));
+  process.exitCode=1;
+});
+,'u').test(name)))
+      fail('WATCHER_AI_RECOVERY_HAS_RESULTS');
+  }
   const marker=await open(receipt,'wx'); // Do not automatically retry a possibly charged run.
   try { await marker.writeFile(JSON.stringify({runId,sourceHash:previewHash,model:config.model,articles:items.length})+'\n'); }
   finally { await marker.close(); }
