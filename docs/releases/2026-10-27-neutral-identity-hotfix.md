@@ -1,0 +1,9 @@
+# Identidade temporariamente neutra — 27/10/2026
+
+Hotfix baseado em `d681bc57c3fe07673ffc335605e1928ca5b1c0d5` (mesma aplicação da produção `6ab8a86`). Nenhum código da Sprint 24 foi incluído. A branch 24A consultada no início estava em `8043256`; não foi modificada.
+
+Os nomes Compra Car, Carboot e Goboot saem dos textos visíveis, atributos acessíveis, compartilhamento, metadados, manifestação PWA e PDF. A descrição temporária é “Portal automotivo”. Mantidos os quatro squircles exclusivamente no controle do menu mobile e na sidebar, sem palavra ao lado. Ícones de aba e instalação usam pictograma genérico de automóvel; os arquivos originais de ícone são preservados e as três marcas por extenso em SVG saíram da pasta pública para `apps/web/identity-archive/`. Loaders usam apenas o indicador de progresso.
+
+Os domínios Railway atuais ainda contêm `compra-car`; remover isso do endereço público exige outro domínio. Nomes de pacotes, rotas de recursos internos, identificadores de banco e históricos Git não são apresentação ao usuário e permanecem intactos. Apps já instalados podem apresentar o nome ou o ícone antigos até que o dispositivo atualize os metadados; a atualização exata depende do navegador.
+
+Validação local: 47 testes focados aprovados (identidade, PDF, navegação, instalação e metadados); typecheck dos 9 pacotes aprovado. Lint geral apresenta 48 avisos antigos e nenhum erro; format check geral aponta 180 arquivos com formatação legada. Teste geral teve 6 falhas antigas no core e 2 timeouts em execução concorrente, com 1.096 aprovados. Build local bloqueado por DNS de `fonts.googleapis.com`; CI e deploy ainda em andamento. Nenhuma migration, alteração de dados, configuração de autenticação ou alteração de worker é necessária. A futura integração da Sprint 24 precisa incluir este hotfix e as correções anteriores de especificações, evitando sobrescrever a apresentação neutra.

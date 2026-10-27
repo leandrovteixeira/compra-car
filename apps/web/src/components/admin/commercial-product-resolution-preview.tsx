@@ -213,7 +213,7 @@ function OperatorResolutionTable({
                 'MVS/código',
                 'Confidence',
                 'Resolução',
-                'Product Compra-Car',
+                'Produto na plataforma',
               ].map((label) => (
                 <th key={label} scope="col" className="px-3 py-2 font-semibold whitespace-nowrap">
                   {label}

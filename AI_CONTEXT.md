@@ -1,5 +1,9 @@
 # Contexto para agentes de IA
 
+## 2026-10-27 — Temporary neutral public identity
+
+Isolated web hotfix based on the production Sprint 23/specification release; Sprint 24 code and worker remain separate. Removes wordmarks and names from visible UI, assistive labels, PDF, sharing and app metadata; uses neutral “Portal automotivo” and a generic browser/install pictogram. The four-squircle symbol remains on the sidebar and its mobile trigger. Previously public wordmark SVGs are kept outside the public directory for future identity decisions. Existing Railway hostnames still contain the old name and require a separate domain decision. See `docs/releases/2026-10-27-neutral-identity-hotfix.md`.
+
 ## 2026-10-26 — Isolated specification/mobile hotfix
 
 Publicado em QA e produção no commit `6ab8a8658f1db85014aef21f868cee4525b65633`; deploys SUCCESS `f6b591ad-e2e1-44fe-9105-c1980ea9e233` (QA) e `463b4f87-cdda-4856-bb79-ca2f8eeb5090` (produção). Unidades, nomes, drawer, ficha e sticky conferidos com dados reais; healthcheck saudável. Sem alterações de banco/variáveis/worker/branches Sprint 24. Antes da próxima entrega da Sprint 24, incorporar os dois commits `cec3c4d` e `6ab8a86` (ou merge da branch do hotfix).

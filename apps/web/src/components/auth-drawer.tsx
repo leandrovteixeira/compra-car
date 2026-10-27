@@ -66,7 +66,7 @@ export function AuthDrawer() {
           ×
         </button>
         <h2 id="auth-drawer-title" className="mt-14 text-2xl font-semibold">
-          Bem-vindo ao Compra Car
+          Bem-vindo
         </h2>
         <p className="mt-2 text-sm text-[#64707A]">
           Entre na sua conta para exportar e compartilhar comparações.

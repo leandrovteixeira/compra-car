@@ -92,10 +92,10 @@ describe('Sprint 14G mobile and installable web app foundation', () => {
       width: 1134,
     });
     for (const [path, size] of [
-      ['../public/icons/icon-192.png', 192],
-      ['../public/icons/icon-512.png', 512],
-      ['../public/icons/icon-maskable-512.png', 512],
-      ['../public/icons/apple-touch-icon.png', 180],
+      ['../public/icons/neutral-192.png', 192],
+      ['../public/icons/neutral-512.png', 512],
+      ['../public/icons/neutral-maskable-512.png', 512],
+      ['../public/icons/neutral-apple-touch.png', 180],
       ['../src/app/icon.png', 512],
     ] as const) {
       expect(pngProperties(path)).toEqual({
