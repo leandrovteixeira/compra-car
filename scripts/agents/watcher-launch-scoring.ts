@@ -19,7 +19,7 @@ export function scoreWatcherLaunch(
   // Literal source evidence is necessary but not sufficient for a model launch.
   // A brand-level arrival date must not become a model-level date.
   const dateOnlyForBrand=!!extraction.dateEvidence &&
-    /\\b(?:marca|fabricante|montadora)\\b/iu.test(extraction.dateEvidence) &&
+    /\b(?:marca|fabricante|montadora)\b/iu.test(extraction.dateEvidence) &&
     !extraction.dateEvidence.toLocaleLowerCase().includes(extraction.model?.toLocaleLowerCase()??'\u0000');
   const motorcycleModels=new Set(['f 450 gs','cg 160']);
   const outOfScope=motorcycleModels.has((extraction.model??'').toLowerCase().trim());
