@@ -30,7 +30,8 @@
     "watcher:test:intelligence": "pnpm --filter @compra-car/agents exec tsx ../watcher/test-postgres.mjs --intelligence",
     "watcher:qa:plan": "pnpm --filter @compra-car/agents exec tsx watcher-qa-plan-cli.ts",
     "watcher:qa:preflight": "pnpm --filter @compra-car/agents exec tsx watcher-qa-preflight-cli.ts",
-    "watcher:qa:pilot": "pnpm --filter @compra-car/agents exec tsx watcher-pilot-cli.ts"
+    "watcher:qa:pilot": "pnpm --filter @compra-car/agents exec tsx watcher-pilot-cli.ts",
+    "watcher:qa:intelligence:preview": "pnpm --filter @compra-car/agents exec tsx watcher-intelligence-preview-cli.ts --read-only"
   },
   "devDependencies": {
     "eslint": "9.39.5",
