@@ -2,7 +2,7 @@ import { writeFile, mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { createLegacySupabaseClient } from '@compra-car/adapter-supabase';
 import { createWatcherQaExecutor, WATCHER_QA_URL } from '@compra-car/adapter-supabase/watcher-qa';
-import { readWatcherCanonicalContext } from '@compra-car/adapter-supabase/watcher-intelligence-context';
+import { readWatcherCanonicalContext, type WatcherCanonicalReader } from '@compra-car/adapter-supabase/watcher-intelligence-context';
 import { loadWatcherQaEnvironment } from './watcher-qa-environment';
 import { previewWatcherMotor1WithCanonicalContext } from './watcher-intelligence-preview';
 
@@ -20,7 +20,7 @@ if (process.argv.length !== 3 || process.argv[2] !== '--read-only') {
       });
       return previewWatcherMotor1WithCanonicalContext({
         repository,
-        readCanonicalContext: () => readWatcherCanonicalContext(client),
+        readCanonicalContext: () => readWatcherCanonicalContext(client as unknown as WatcherCanonicalReader),
       });
     });
     const folder = resolve(process.cwd(), '../../.local-reports/watcher-24b');
