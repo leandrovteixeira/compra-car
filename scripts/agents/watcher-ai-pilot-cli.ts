@@ -90,8 +90,12 @@ async function main() {
 }
 main().catch(error=>{
   const allowed=/^WATCHER_AI_[A-Z_]+$/u;
-  const code=error instanceof Error && allowed.test(error.message)
-    ? error.message : 'WATCHER_AI_PILOT_BLOCKED';
+  const osError=error as NodeJS.ErrnoException;
+  const fileCode=osError?.code==='ENOENT' ? 'WATCHER_AI_REQUIRED_FILE_MISSING' :
+    osError?.code==='EEXIST' ? 'WATCHER_AI_ALREADY_STARTED' :
+    osError?.code==='EACCES' ? 'WATCHER_AI_FILE_ACCESS_DENIED' : null;
+  const code=fileCode ?? (error instanceof Error && allowed.test(error.message)
+    ? error.message : 'WATCHER_AI_PILOT_BLOCKED');
   console.error(code);
   process.exitCode=1;
 });
