@@ -1,4 +1,5 @@
 import { detectWatcherEvents } from '../../packages/core/src/agents/watcher-event-detection';
+import { resolveWatcherEventEntity } from '../../packages/core/src/agents/watcher-event-entity-resolution';
 import { isDeepStrictEqual } from 'node:util';
 import {
   discoverWatcherCandidates,
@@ -94,9 +95,19 @@ export async function previewWatcherMotor1Intelligence(input: {
     blocked('UNEXPECTED_AI_USAGE');
   const eventDetection = revisions.map((revision) => ({
     revisionId: revision.id,
-    events: detectWatcherEvents({title: revision.item.title, excerpt: revision.item.excerpt}),
+    events: detectWatcherEvents({title: revision.item.title, excerpt: revision.item.excerpt}).map(event => ({
+      ...event,
+      entity: resolveWatcherEventEntity(event, context),
+    })),
   }));
   const detectedEventCount = eventDetection.reduce((total, entry) => total + entry.events.length, 0);
+  const resolutionCounts = eventDetection.flatMap(entry => entry.events).reduce(
+    (counts, event) => {
+      counts[event.entity.status] = (counts[event.entity.status] ?? 0) + 1;
+      return counts;
+    },
+    {} as Record<string, number>,
+  );
   // Return independent event-first audit alongside unchanged legacy candidates.
   // No state is committed or reviewed.
   return {
@@ -105,7 +116,7 @@ export async function previewWatcherMotor1Intelligence(input: {
     mode: 'READ_ONLY',
     ...projection,
     eventDetection,
-    eventReport: { articlesWithEvents: eventDetection.filter((entry) => entry.events.length > 0).length, detectedEvents: detectedEventCount },
+    eventReport: { articlesWithEvents: eventDetection.filter((entry) => entry.events.length > 0).length, detectedEvents: detectedEventCount, resolutionCounts },
   } as const;
 }
 
