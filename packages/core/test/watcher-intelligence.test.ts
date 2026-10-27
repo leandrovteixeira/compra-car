@@ -684,7 +684,7 @@ describe('Watcher incremental news rules — brand ambiguity and Brazil arrival'
     expect(result.signals[0].decision).toBe('ABSTAIN');
   });
   it('retains ambiguity when two separate brands are genuinely mentioned', () => {
-    const result = analyzeWatcherRevision(doc('Fiat e Volkswagen apresentam novo SUV', 992), context);
+    const result = analyzeWatcherRevision(doc('Fiat e Volkswagen apresentam novo modelo SUV no Brasil', 992), context);
     expect(result.signals).toHaveLength(0);
     expect(result.abstentions).toContain('AMBIGUOUS_BRAND');
   });
