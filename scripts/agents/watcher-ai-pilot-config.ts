@@ -17,7 +17,7 @@ export async function loadWatcherAiPilotConfig(
   const secrets = parseEnv(await read(WATCHER_QA_SECRETS_FILE));
   if (models.AGENT_WATCHER_AI_ENABLED !== 'true' ||
       models.AGENT_WATCHER_AI_MAX_ARTICLES !== '20' ||
-      !/^gpt-[a-z0-9.-]+$/u.test(models.AGENT_WATCHER_MODEL ?? '') ||
+      models.AGENT_WATCHER_MODEL !== 'gpt-5.4-mini' ||
       !secrets.OPENAI_API_KEY?.trim()) throw new Error('WATCHER_AI_PILOT_CONFIG_BLOCKED');
   const cap = Number(models.AGENT_WATCHER_AI_HARD_COST_CAP_USD);
   if (!Number.isFinite(cap) || cap <= 0 || cap > 0.25)
