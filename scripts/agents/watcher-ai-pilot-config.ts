@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { parseEnv } from 'node:util';
 
 export const WATCHER_MODELS_FILE = 'C:/Dev/.secrets/compra-car/agent-models.env';
-export const WATCHER_QA_SECRETS_FILE = 'C:/Dev/.secrets/compra-car/staging.env';
+export const WATCHER_QA_SECRETS_FILE = 'C:/Dev/.secrets/open_ai.env';
 export type WatcherAiPilotConfig = Readonly<{
   model: string;
   maxArticles: number;
