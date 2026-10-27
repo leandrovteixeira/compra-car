@@ -32,8 +32,10 @@ export async function runWatcherIncremental(input:{
  const revisionIds=new Set(revisions.map(revision=>revision.id));
  if(currentItems.some(item=>!revisionIds.has(item.currentRevisionId)))
    throw new Error('WATCHER_INCREMENTAL_REVISION_MISMATCH');
- const history=revisions.map(revision=>({item:revision.item,observedAt:revision.firstObservedAt,
-   evidenceFingerprint:revision.evidenceFingerprint}));
+ const keyById=new Map(currentItems.map(i=>[i.id,i.itemKey]));
+ const history=revisions.map(revision=>({item:revision.item,itemKey:keyById.get(revision.feedItemId) ?? '',
+   observedAt:revision.firstObservedAt,evidenceFingerprint:revision.evidenceFingerprint}));
+ if(history.some(h=>!h.itemKey))throw new Error('WATCHER_INCREMENTAL_ITEM_KEY_MISSING');
  const lease=await repository.claimLease(source.source.id,'watcher-24c-incremental',120);
  if(!lease)throw new Error('WATCHER_INCREMENTAL_LEASE_BUSY');
  let persisted=false;
