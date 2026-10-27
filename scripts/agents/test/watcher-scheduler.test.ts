@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {watcherScheduleWindow} from '../watcher-scheduler-cli';
+import {watcherScheduleWindow} from '../watcher-scheduler-window';
 describe('Watcher scheduler UTC schedule admission',()=>{
  it('allows the 08h Sao Paulo window',()=>{
   expect(watcherScheduleWindow(new Date('2026-10-28T11:00:00Z')))
