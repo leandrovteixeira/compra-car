@@ -34,7 +34,8 @@
     "watcher:qa:intelligence:preview": "pnpm --filter @compra-car/agents exec tsx watcher-intelligence-preview-cli.ts --read-only",
     "watcher:qa:ai:pilot": "pnpm --filter @compra-car/agents exec tsx watcher-ai-pilot-cli.ts",
     "watcher:qa:ai:review": "pnpm --filter @compra-car/agents exec tsx watcher-ai-review-cli.ts",
-    "watcher:qa:ai:resolve": "pnpm --filter @compra-car/agents exec tsx watcher-ai-resolve-cli.ts"
+    "watcher:qa:ai:resolve": "pnpm --filter @compra-car/agents exec tsx watcher-ai-resolve-cli.ts",
+    "watcher:qa:launching:preview": "pnpm --filter @compra-car/agents exec tsx watcher-launching-preview-cli.ts"
   },
   "devDependencies": {
     "eslint": "9.39.5",
