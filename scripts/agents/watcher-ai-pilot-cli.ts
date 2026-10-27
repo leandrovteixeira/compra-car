@@ -15,17 +15,28 @@ const inputPricePerMillion = 0.05;
 const outputPricePerMillion = 0.25;
 const approvedModel = 'gpt-6-luna';
 
-type Item = {revisionId: string; events: {quote: string; field: string}[]};
+type Item = {revisionId: string; text: string};
+type Preview = {eventDetection: {revisionId:string}[];
+  analyses: {revision:{id:string;item:{title:string;excerpt:string|null}}}[]};
 function halt(reason: string): never { throw new Error(reason); }
 function failClosed(input: unknown): Item[] {
   if (!input || typeof input !== 'object' || !('eventDetection' in input) ||
-      !Array.isArray(input.eventDetection)) return halt('WATCHER_AI_INPUT_INVALID');
-  const list = input.eventDetection as Item[];
-  if (list.length !== 20 || new Set(list.map(x => x.revisionId)).size !== 20 ||
-      list.some(x => !x || typeof x.revisionId !== 'string' || !Array.isArray(x.events) ||
-        x.events.some(e => typeof e.quote !== 'string' || e.quote.length > 1200)))
+      !('analyses' in input)) return halt('WATCHER_AI_INPUT_INVALID');
+  const report = input as Preview;
+  if (!Array.isArray(report.eventDetection) || !Array.isArray(report.analyses) ||
+      report.eventDetection.length !== 20 || report.analyses.length !== 20)
     return halt('WATCHER_AI_INPUT_INVALID');
-  return list;
+  const byId = new Map(report.analyses.map(a => [a.revision.id, a]));
+  if (byId.size !== 20) return halt('WATCHER_AI_INPUT_INVALID');
+  return report.eventDetection.map(row => {
+    const revision = byId.get(row.revisionId);
+    const title = revision?.revision.item.title;
+    const excerpt = revision?.revision.item.excerpt;
+    if (!title || typeof title !== 'string' || title.length > 1000 ||
+        (excerpt != null && (typeof excerpt !== 'string' || excerpt.length > 1200)))
+      return halt('WATCHER_AI_INPUT_INVALID');
+    return {revisionId:row.revisionId,text:[title,excerpt].filter(Boolean).join('\\n').slice(0,2200)};
+  });
 }
 const schema = {
   type: 'object', additionalProperties: false,
@@ -61,11 +72,8 @@ try {
   for (const item of items) {
     if (spent + RESERVE_PER_ARTICLE_USD > config.hardCostCapUsd + 1e-9)
       halt('WATCHER_AI_BUDGET_EXHAUSTED');
-    // This pilot reads only excerpts from the locally saved deterministic preview.
-    // An article with no supported event still goes to AI for independent coverage.
+    // Read all 20 title/excerpt pairs, including articles with zero deterministic events.
     const text = item.events.map(e => e.quote).filter(Boolean).join('\n').slice(0,2400);
-    // Preview eventDetection may be empty for some articles. Do not make an empty API call.
-    if (!text) { results.push({revisionId:item.revisionId,skipped:'NO_TEXT_IN_EVENT_PREVIEW'}); continue; }
     const response = await client.responses.create({
       model:config.model, max_output_tokens:MAX_OUTPUT_TOKENS,
       instructions:'Classifique fatos automotivos a partir SOMENTE do texto fornecido. Não invente fatos, marcas, modelos ou versões. evidence deve ser uma substring literal do texto. Rumores devem ser uncertain=true. Oferta de desconto não é MSRP. Responda em JSON estrito.',
