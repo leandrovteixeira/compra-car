@@ -60,9 +60,27 @@ export function validateWatcherLaunchExtraction(
     return e as unknown as WatcherLaunchExtraction;
   });
 }
+/** Fail closed per claim: bad evidence becomes an abstention, never a launch. */
+export function filterWatcherLaunchExtraction(text:string,value:unknown):{
+  launches:readonly WatcherLaunchExtraction[];rejected:number;
+} {
+  if(!value||typeof value!=='object'||!('launches' in value)||
+    !Array.isArray(value.launches)||value.launches.length>5)
+    throw new Error('WATCHER_LAUNCH_AI_INVALID_OUTPUT');
+  const launches:WatcherLaunchExtraction[]=[];
+  let rejected=0;
+  for(const claim of value.launches){
+    try {
+      launches.push(...validateWatcherLaunchExtraction(text,{launches:[claim]}));
+    } catch {
+      rejected++;
+    }
+  }
+  return {launches,rejected};
+}
 export async function extractWatcherLaunchesWithOpenAi(input:{
   apiKey:string;model:'gpt-5.4-mini';text:string;
-}):Promise<{launches:readonly WatcherLaunchExtraction[];inputTokens:number;outputTokens:number}>{
+}):Promise<{launches:readonly WatcherLaunchExtraction[];rejected:number;inputTokens:number;outputTokens:number}>{
   const client=new OpenAI({apiKey:input.apiKey,maxRetries:0,timeout:20_000});
   const response=await client.responses.create({
     model:input.model,max_output_tokens:550,reasoning:{effort:'none'},store:false,
@@ -72,6 +90,6 @@ export async function extractWatcherLaunchesWithOpenAi(input:{
   });
   if(response.status!=='completed'||!response.output_text||!response.usage)
     throw new Error('WATCHER_LAUNCH_AI_INCOMPLETE');
-  return {launches:validateWatcherLaunchExtraction(input.text,JSON.parse(response.output_text)),
-    inputTokens:response.usage.input_tokens,outputTokens:response.usage.output_tokens};
+  const extracted=filterWatcherLaunchExtraction(input.text,JSON.parse(response.output_text));
+  return {...extracted,inputTokens:response.usage.input_tokens,outputTokens:response.usage.output_tokens};
 }
