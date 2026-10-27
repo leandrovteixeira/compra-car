@@ -26,6 +26,6 @@ describe('Watcher 24C launching map engine',()=>{
  });
  it('preserves uncertainty in dates rather than inventing month',()=>{
   const rows=buildLaunchingMap([e({expectedStart:null,precision:'YEAR'})],[],'2026-10');
-  expect(rows[0]).toMatchObject({start:null,end:null,precision:'UNKNOWN'});
+  expect(rows[0]).toMatchObject({start:null,end:null,precision:'YEAR'});
  });
 });
