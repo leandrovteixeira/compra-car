@@ -182,7 +182,7 @@ const rules: readonly { category: WatcherEventCategory; pattern: RegExp; value?:
   {
     category: 'NEW_MODEL',
     pattern:
-      /\b(?:novo modelo|novo carro|(?:lanca|lancou|apresenta|estreia)(?: o| a)? (?:novo|nova))\b/u,
+      /\b(?:novo modelo|novo carro|(?:lanca|lancou|apresenta|estreia)(?: o| a)? (?:novo|nova)|chega ao brasil|chegou ao brasil|desembarca no brasil)\b/u,
   },
   { category: 'NEW_COMMERCIAL_VARIANT', pattern: /\b(?:nova versao|novo acabamento)\b/u },
   {
@@ -290,8 +290,21 @@ export function analyzeWatcherRevision(
   for (const [field, raw] of Object.entries(fields) as [keyof typeof fields, string][]) {
     for (const span of clauses(raw)) {
       const normalized = watcherKey(span.quote);
-      const brands = context.brands.filter((b) =>
-        [b.canonicalName, ...b.aliases].some((a) => has(normalized, a)),
+      const mentions = context.brands.flatMap((brand) =>
+        [brand.canonicalName, ...brand.aliases]
+          .filter((alias) => has(normalized, alias))
+          .map((alias) => ({ brand, alias: watcherKey(alias) })),
+      );
+      // A short alias inside a longer recognized brand name is not an independent
+      // mention. Distinct non-overlapping brands remain ambiguous (review only).
+      const brands = context.brands.filter((brand) =>
+        mentions.some(({ brand: found, alias }) =>
+          found.id === brand.id &&
+          !mentions.some(({ brand: other, alias: longer }) =>
+            other.id !== brand.id && longer !== alias &&
+            (' ' + longer + ' ').includes(' ' + alias + ' '),
+          ),
+        ),
       );
       const categories = rules.filter((rule) => rule.pattern.test(normalized));
       const automotive =
