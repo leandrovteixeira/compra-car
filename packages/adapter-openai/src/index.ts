@@ -9,3 +9,5 @@ export * from './price-reconciliation-provider';
 export * from './agent-cost-admission';
 
 export * from './watcher-news-extraction';
+
+export * from './watcher-launch-extraction';
