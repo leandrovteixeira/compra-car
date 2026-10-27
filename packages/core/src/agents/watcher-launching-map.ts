@@ -49,7 +49,7 @@ export function buildLaunchingMap(
     const inHorizon=(!start||start<=limit)&&(!end||end>=referenceMonth);
     return {key,brand:entries[0]!.brand!,model:entries[0]!.model!,
       state:closed?'CLOSED' as const:state,visible:!closed&&state!=='UNVERIFIED'&&inHorizon,
-      start,end,precision:latest?.precision??'UNKNOWN',
+      start,end,precision:latest?.precision??(entries.some(e=>e.precision==='YEAR')?'YEAR':'UNKNOWN'),
       versions:[...new Set(entries.map(e=>e.version?.trim()).filter((v):v is string=>!!v))],
       revisions:[...new Set(entries.map(e=>e.revisionId))],
       confidence:confirmed?100:probable?65:25,closedByMmvId:closed?.id??null};
