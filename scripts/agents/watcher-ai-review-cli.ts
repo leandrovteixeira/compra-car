@@ -6,9 +6,10 @@ import type { WatcherAiExtractedEvent } from '@compra-car/adapter-openai';
 async function main() {
   const arg=process.argv[2];
   if (process.argv.length!==3 || !arg) throw new Error('WATCHER_REVIEW_FILE_REQUIRED');
-  const file=resolve(arg);
+  const reports=resolve(process.cwd(),'../../.local-reports/watcher-24b');
+  const file=resolve(reports,basename(arg));
   if (!/^ai-pilot-[a-f0-9]{16}\.json$/u.test(basename(file)) ||
-      !file.includes('.local-reports')) throw new Error('WATCHER_REVIEW_PATH_DENIED');
+      dirname(file)!==reports) throw new Error('WATCHER_REVIEW_PATH_DENIED');
   const data=JSON.parse(await readFile(file,'utf8')) as {
     schemaVersion:string;articles:number;rows:{revisionId:string;events:WatcherAiExtractedEvent[]}[];
   };
@@ -24,5 +25,9 @@ async function main() {
     reviewItems:items.length,counts,items},null,2)+'\n',{flag:'wx',mode:0o600});
   console.log(JSON.stringify({status:'PASS',reviewItems:items.length,counts,reportFile:output}));
 }
-main().catch(e=>{console.error(e instanceof Error && /^WATCHER_[A-Z_]+$/u.test(e.message)?
-  e.message:'WATCHER_REVIEW_BLOCKED');process.exitCode=1;});
+main().catch(e=>{
+  const code=e && typeof e==='object' && 'code' in e ? (e as {code?:unknown}).code : null;
+  const known=e instanceof Error && /^WATCHER_[A-Z_]+$/u.test(e.message)?e.message:null;
+  console.error(known ?? (code==='ENOENT'?'WATCHER_REVIEW_FILE_NOT_FOUND':code==='EEXIST'?'WATCHER_REVIEW_ALREADY_EXISTS':'WATCHER_REVIEW_BLOCKED'));
+  process.exitCode=1;
+});
