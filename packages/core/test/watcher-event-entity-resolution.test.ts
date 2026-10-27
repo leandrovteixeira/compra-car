@@ -35,3 +35,20 @@ describe('Watcher post-event entity resolution', () => {
     });
   });
 });
+
+describe('Watcher entity resolution audit metadata', () => {
+  it('lists both brands for a real multi-brand headline without auto-selecting', () => {
+    const resolution = resolveWatcherEventEntity(
+      event('Volkswagen e BYD anunciam novo carro no Brasil'), context);
+    expect(resolution.reason).toBe('MULTIPLE_BRANDS');
+    expect(resolution.mentionedBrands).toEqual(['BYD', 'Volkswagen']);
+    expect(resolution.candidateEligible).toBe(false);
+  });
+  it('explains brand-only detection without promoting an unknown model', () => {
+    const resolution = resolveWatcherEventEntity(
+      event('BYD Song Pro ganha nova versão no Brasil'), context);
+    expect(resolution.reason).toBe('BRAND_WITHOUT_MODEL');
+    expect(resolution.mentionedBrands).toEqual(['BYD']);
+    expect(resolution.model).toBeNull();
+  });
+});
