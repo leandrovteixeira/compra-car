@@ -1,3 +1,4 @@
+import { proposeWatcherIdentityLeads } from '../../packages/core/src/agents/watcher-identity-leads';
 import { detectWatcherEvents } from '../../packages/core/src/agents/watcher-event-detection';
 import { resolveWatcherEventEntity } from '../../packages/core/src/agents/watcher-event-entity-resolution';
 import { isDeepStrictEqual } from 'node:util';
@@ -100,6 +101,11 @@ export async function previewWatcherMotor1Intelligence(input: {
       entity: resolveWatcherEventEntity(event, context),
     })),
   }));
+  const identityLeads = eventDetection.flatMap(entry => entry.events.flatMap(event =>
+    proposeWatcherIdentityLeads(event, event.entity).map(lead => ({
+      ...lead, revisionId: entry.revisionId, eventKind: event.kind,
+    })),
+  ));
   const detectedEventCount = eventDetection.reduce((total, entry) => total + entry.events.length, 0);
   const eventAudit = eventDetection.flatMap(entry => entry.events.map(event => ({
     revisionId: entry.revisionId,
@@ -131,7 +137,8 @@ export async function previewWatcherMotor1Intelligence(input: {
     ...projection,
     eventDetection,
     eventAudit,
-    eventReport: { articlesWithEvents: eventDetection.filter((entry) => entry.events.length > 0).length, detectedEvents: detectedEventCount, resolutionCounts },
+    identityLeads,
+    eventReport: { articlesWithEvents: eventDetection.filter((entry) => entry.events.length > 0).length, detectedEvents: detectedEventCount, identityLeads: identityLeads.length, resolutionCounts },
   } as const;
 }
 
