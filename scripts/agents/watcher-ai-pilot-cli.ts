@@ -38,6 +38,7 @@ function loadInput(raw:unknown): Input[] {
     return {revisionId,text:[original.title,original.excerpt].filter(Boolean).join('\n')};
   });
 }
+let phase: 'ARGUMENTS' | 'CONFIG' | 'INPUT' | 'RECEIPT' | 'API' | 'SAVE' | 'FINISHED' = 'ARGUMENTS';
 async function main() {
   if (process.argv.length!==4 || process.argv[2]!=='--run-once')
     fail('WATCHER_AI_MANUAL_OPT_IN_REQUIRED');
@@ -45,7 +46,9 @@ async function main() {
   if (!isAbsolute(process.argv[3]!) || !file.startsWith(directory+'\\') ||
       !/^intelligence-preview-.*\.json$/u.test(file.split(/[\\/]/u).at(-1)??''))
     fail('WATCHER_AI_INPUT_PATH_DENIED');
+  phase='CONFIG';
   const config=await loadWatcherAiPilotConfig();
+  phase='INPUT';
   const inputBytes=await readFile(file);
   const previewHash=createHash('sha256').update(inputBytes).digest('hex');
   const items=loadInput(JSON.parse(inputBytes.toString('utf8')));
@@ -54,6 +57,7 @@ async function main() {
   await mkdir(directory,{recursive:true});
   const runId=randomUUID();
   const receipt=resolve(directory,'ai-pilot-'+previewHash.slice(0,16)+'.started');
+  phase='RECEIPT';
   const marker=await open(receipt,'wx'); // Do not automatically retry a possibly charged run.
   try { await marker.writeFile(JSON.stringify({runId,sourceHash:previewHash,model:config.model,articles:items.length})+'\n'); }
   finally { await marker.close(); }
@@ -64,12 +68,14 @@ async function main() {
     const remaining=items.length-calls;
     if (spentUsd+remaining*RESERVE_PER_ARTICLE_USD>config.hardCostCapUsd+1e-10)
       fail('WATCHER_AI_BUDGET_BLOCKED');
+    phase='API';
     const output=await extractWatcherNewsWithOpenAi({
       apiKey:config.apiKey,
       model:'gpt-5.4-mini',
       text:item.text,
     });
     calls++;
+    phase='SAVE';
     const cost=output.inputTokens*INPUT_USD_PER_MILLION/1_000_000+
       output.outputTokens*OUTPUT_USD_PER_MILLION/1_000_000;
     spentUsd+=cost;
@@ -85,6 +91,7 @@ async function main() {
   await writeFile(resultPath,JSON.stringify({schemaVersion:'watcher-ai-pilot/1',
     runId,sourceHash:previewHash,model:config.model,articles:items.length,calls,
     costUsd:spentUsd,rows},null,2)+'\n',{flag:'wx',mode:0o600});
+  phase='FINISHED';
   console.log(JSON.stringify({status:'PASS',articles:items.length,calls,
     costUsd:spentUsd,resultFile:resultPath}));
 }
@@ -96,6 +103,7 @@ main().catch(error=>{
     osError?.code==='EACCES' ? 'WATCHER_AI_FILE_ACCESS_DENIED' : null;
   const code=fileCode ?? (error instanceof Error && allowed.test(error.message)
     ? error.message : 'WATCHER_AI_PILOT_BLOCKED');
-  console.error(code);
+  const status = typeof (error as { status?:unknown })?.status==='number' ? (error as {status:number}).status : null;
+  console.error(JSON.stringify({code,phase,httpStatus:status}));
   process.exitCode=1;
 });
