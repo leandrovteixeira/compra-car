@@ -24,7 +24,9 @@ function loadInput(raw:unknown): Input[] {
       !Array.isArray(p.eventDetection) || !Array.isArray(p.analyses) ||
       p.eventDetection.length!==20 || p.analyses.length!==20)
     return fail('WATCHER_AI_INPUT_INVALID');
-  const docs=new Map(p.analyses.map(a=>[a.revision?.id,a]));
+  if (p.analyses.some(a=>!a || !a.revision || !a.revision.item))
+    return fail('WATCHER_AI_INPUT_INVALID');
+  const docs=new Map(p.analyses.map(a=>[a.revision.id,a]));
   const ids=p.eventDetection.map(e=>e.revisionId);
   if (docs.size!==20 || new Set(ids).size!==20 || ids.some(id=>!docs.has(id)))
     return fail('WATCHER_AI_INPUT_INVALID');
@@ -47,7 +49,7 @@ async function main() {
   const inputBytes=await readFile(file);
   const previewHash=createHash('sha256').update(inputBytes).digest('hex');
   const items=loadInput(JSON.parse(inputBytes.toString('utf8')));
-  if (items.length!==config.maxArticles || config.hardCostCapUsd < items.length*RESERVE_PER_ARTICLE_USD)
+  if (items.length!==config.maxArticles || config.hardCostCapUsd + 1e-10 < items.length*RESERVE_PER_ARTICLE_USD)
     fail('WATCHER_AI_BUDGET_BLOCKED');
   await mkdir(directory,{recursive:true});
   const runId=randomUUID();
