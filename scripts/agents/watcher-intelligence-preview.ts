@@ -101,6 +101,20 @@ export async function previewWatcherMotor1Intelligence(input: {
     })),
   }));
   const detectedEventCount = eventDetection.reduce((total, entry) => total + entry.events.length, 0);
+  const eventAudit = eventDetection.flatMap(entry => entry.events.map(event => ({
+    revisionId: entry.revisionId,
+    category: event.kind,
+    quote: event.quote,
+    field: event.field,
+    uncertain: event.uncertain,
+    foreignMarket: event.foreignMarket,
+    brand: event.entity.brand,
+    mentionedBrands: event.entity.mentionedBrands,
+    model: event.entity.model,
+    resolution: event.entity.status,
+    reason: event.entity.reason,
+    candidateEligible: false as const,
+  })));
   const resolutionCounts = eventDetection.flatMap(entry => entry.events).reduce(
     (counts, event) => {
       counts[event.entity.status] = (counts[event.entity.status] ?? 0) + 1;
@@ -116,6 +130,7 @@ export async function previewWatcherMotor1Intelligence(input: {
     mode: 'READ_ONLY',
     ...projection,
     eventDetection,
+    eventAudit,
     eventReport: { articlesWithEvents: eventDetection.filter((entry) => entry.events.length > 0).length, detectedEvents: detectedEventCount, resolutionCounts },
   } as const;
 }
