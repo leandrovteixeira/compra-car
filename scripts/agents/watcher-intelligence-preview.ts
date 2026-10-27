@@ -1,3 +1,4 @@
+import { detectWatcherEvents } from '../../packages/core/src/agents/watcher-event-detection';
 import { isDeepStrictEqual } from 'node:util';
 import {
   discoverWatcherCandidates,
@@ -91,12 +92,20 @@ export async function previewWatcherMotor1Intelligence(input: {
   });
   if (projection.report.aiCalls !== 0 || projection.report.aiCostUsd !== 0)
     blocked('UNEXPECTED_AI_USAGE');
-  // Return only the pure projection. No state is committed or reviewed.
+  const eventDetection = revisions.map((revision) => ({
+    revisionId: revision.id,
+    events: detectWatcherEvents({title: revision.item.title, excerpt: revision.item.excerpt}),
+  }));
+  const detectedEventCount = eventDetection.reduce((total, entry) => total + entry.events.length, 0);
+  // Return independent event-first audit alongside unchanged legacy candidates.
+  // No state is committed or reviewed.
   return {
     sourceId: SOURCE,
     batchId: BATCH,
     mode: 'READ_ONLY',
     ...projection,
+    eventDetection,
+    eventReport: { articlesWithEvents: eventDetection.filter((entry) => entry.events.length > 0).length, detectedEvents: detectedEventCount },
   } as const;
 }
 
