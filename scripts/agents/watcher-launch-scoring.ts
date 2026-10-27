@@ -16,8 +16,15 @@ export function scoreWatcherLaunch(
   revisionId:string, extraction:WatcherLaunchExtraction,
 ):ScoredLaunch {
   const supported=extraction.brand!==null&&extraction.model!==null&&extraction.evidence!==null;
+  // Literal source evidence is necessary but not sufficient for a model launch.
+  // A brand-level arrival date must not become a model-level date.
+  const dateOnlyForBrand=!!extraction.dateEvidence &&
+    /\\b(?:marca|fabricante|montadora)\\b/iu.test(extraction.dateEvidence) &&
+    !extraction.dateEvidence.toLocaleLowerCase().includes(extraction.model?.toLocaleLowerCase()??'\u0000');
+  const motorcycleModels=new Set(['f 450 gs','cg 160']);
+  const outOfScope=motorcycleModels.has((extraction.model??'').toLowerCase().trim());
   const decision:ScoredLaunch['decision']=extraction.intention==='RUMOR'?'RUMOR_EXCLUDED':
-    supported&&['CONFIRMED','PROBABLE'].includes(extraction.intention)?
+    supported&&!dateOnlyForBrand&&!outOfScope&&['CONFIRMED','PROBABLE'].includes(extraction.intention)?
       'MAP_ELIGIBLE':'INSUFFICIENT_EVIDENCE';
   const official=extraction.intention==='CONFIRMED'&&!!extraction.officialEvidence;
   const dated=extraction.datePrecision!=='UNKNOWN'&&!!extraction.dateEvidence;
