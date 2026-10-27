@@ -689,3 +689,20 @@ describe('Watcher incremental news rules — brand ambiguity and Brazil arrival'
     expect(result.abstentions).toContain('AMBIGUOUS_BRAND');
   });
 });
+
+describe('Watcher event dictionary v2 regressions', () => {
+  it('classifies explicit market arrival without inventing a model', () => {
+    const result = analyze('Volkswagen chega ao Brasil com novo SUV');
+    expect(result.signals.some((s) => s.category === 'NEW_MODEL')).toBe(true);
+    expect(result.signals.every((s) => s.decision === 'ABSTAIN')).toBe(true);
+  });
+  it('does not convert promotional discount into a public MSRP change', () => {
+    const result = analyze('Fiat Pulse oferece desconto de R$ 20.000 no Brasil');
+    expect(result.signals.some((s) => s.category === 'PRICE_CHANGE')).toBe(false);
+  });
+  it('recognizes explicit version and remains conservative without named version', () => {
+    const result = analyze('Fiat Pulse ganha versão no Brasil');
+    expect(result.signals.some((s) => s.category === 'NEW_COMMERCIAL_VARIANT')).toBe(true);
+    expect(result.signals.every((s) => s.decision === 'ABSTAIN')).toBe(true);
+  });
+});
