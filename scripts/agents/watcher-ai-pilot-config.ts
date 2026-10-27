@@ -18,10 +18,10 @@ export async function loadWatcherAiPilotConfig(
   if (models.AGENT_WATCHER_AI_ENABLED !== 'true' ||
       models.AGENT_WATCHER_AI_MAX_ARTICLES !== '20' ||
       models.AGENT_WATCHER_MODEL !== 'gpt-5.4-mini' ||
-      !secrets.OPENAI_API_KEY?.trim()) throw new Error('WATCHER_AI_PILOT_CONFIG_BLOCKED');
+      !secrets['WATCHER-AGENT']?.trim()) throw new Error('WATCHER_AI_PILOT_CONFIG_BLOCKED');
   const cap = Number(models.AGENT_WATCHER_AI_HARD_COST_CAP_USD);
   if (!Number.isFinite(cap) || cap <= 0 || cap > 0.25)
     throw new Error('WATCHER_AI_PILOT_BUDGET_BLOCKED');
   return {model: models.AGENT_WATCHER_MODEL!, maxArticles:20,
-    hardCostCapUsd:cap, apiKey:secrets.OPENAI_API_KEY};
+    hardCostCapUsd:cap, apiKey:secrets['WATCHER-AGENT']};
 }
