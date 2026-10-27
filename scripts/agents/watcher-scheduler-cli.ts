@@ -1,13 +1,8 @@
+import { watcherScheduleWindow } from './watcher-scheduler-window';
 import { createLegacySupabaseClient } from '@compra-car/adapter-supabase';
 
 const env=process.env;
 const QA_URL='https://shfsjyjxmgwnlexmdkcs.supabase.co';
-export function watcherScheduleWindow(now:Date):string {
- const hour=now.getUTCHours();
- if(![11,23].includes(hour)||now.getUTCMinutes()>15)
-   throw new Error('WATCHER_SCHEDULER_OUTSIDE_WINDOW');
- return now.toISOString().slice(0,13)+':00:00+00:00';
-}
 async function main() {
  if(env.APP_ENV!=='qa'||env.SUPABASE_URL!==QA_URL)
    throw new Error('WATCHER_SCHEDULER_QA_ONLY');
