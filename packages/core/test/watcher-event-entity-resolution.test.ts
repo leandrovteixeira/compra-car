@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { detectWatcherEvents } from '../src/agents/watcher-event-detection';
+import type { WatcherIntelligenceContext } from '../src/agents/watcher-intelligence';
 import { resolveWatcherEventEntity } from '../src/agents/watcher-event-entity-resolution';
 
 const brands = [
   { id: 'byd', canonicalName: 'BYD', canonicalKey: 'byd', market: 'BR', aliases: [] },
   { id: 'vw', canonicalName: 'Volkswagen', canonicalKey: 'volkswagen', market: 'BR', aliases: ['VW'] },
 ];
-const context = {
+const context: Pick<WatcherIntelligenceContext, 'brands' | 'mmvs'> = {
   brands,
   mmvs: [{ id: 'nivus-sense', brand: 'Volkswagen', model: 'Nivus', officialVersionLabel: 'Sense', market: 'BR' }],
 };
