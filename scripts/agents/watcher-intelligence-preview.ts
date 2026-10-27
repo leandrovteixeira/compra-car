@@ -99,3 +99,27 @@ export async function previewWatcherMotor1Intelligence(input: {
     ...projection,
   } as const;
 }
+
+/** Compose authoritative canonical snapshots and the QA-guarded read-only Watcher adapter. */
+export async function previewWatcherMotor1WithCanonicalContext(input: {
+  repository: Reader;
+  readCanonicalContext: () => Promise<Pick<WatcherIntelligenceContext, 'brands' | 'mmvs'>>;
+}) {
+  const canonical = await input.readCanonicalContext();
+  const sources = await input.repository.listSources(100, 0);
+  const source = sources.find((item) => item.source.id === SOURCE);
+  if (!source || sources.filter((item) => item.source.id === SOURCE).length !== 1 ||
+      sources.length === 100) blocked('SOURCE_INVENTORY_INCOMPLETE');
+  return previewWatcherMotor1Intelligence({
+    repository: input.repository,
+    context: {
+      ...canonical,
+      sources: [{
+        source: source.source,
+        kind: 'SECONDARY',
+        officialBrandId: null,
+        officialHosts: [],
+      }],
+    },
+  });
+}
