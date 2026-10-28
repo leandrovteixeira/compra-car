@@ -5,6 +5,7 @@ import {
   REVIEW_ACTIONS,
   validateReviewDecision,
   committedReviewStatus,
+  reviewRowActions,
   type ReviewQueueItem,
   type ReviewDecisionCommand,
   normalizeAliasLabel,
@@ -27,7 +28,7 @@ const caseItem = (kind: ReviewQueueItem['caseKind']): ReviewQueueItem => ({
   title: 'Kia Niro SX', shortDescription: 'Identidade ambígua',
   recommendation: 'Escolha criar ou canonicalizar',
   confidence: 0.8, evidenceCount: 1, primaryEvidenceUrl: null,
-  observedAt: now, status: 'WAITING', snapshotFingerprint: 'sha:1', caseVersion: 3,
+  evidencePreview: 'Fonte oficial Kia Brasil', observedAt: now, status: 'WAITING', snapshotFingerprint: 'sha:1', caseVersion: 3,
 });
 const decision = (action: ReviewDecisionCommand['action']): ReviewDecisionCommand => ({
   caseId: 'case-1', action, expectedCaseVersion: 3,
@@ -100,6 +101,14 @@ describe('Sprint 26 decision semantics', () => {
     expect(() => validateReviewDecision(item,
       { ...decision('POSTPONE'), canonicalInput: {} }))
       .toThrow('UNEXPECTED_CANONICAL_INPUT');
+  });
+  it('allows postponed cases to be decided later, but never reopens approved cases', () => {
+    const postponed = { ...caseItem('MMV_AMBIGUOUS'), status: 'POSTPONED' as const };
+    expect(reviewRowActions(postponed)).toContain('MERGE');
+    expect(validateReviewDecision(postponed, {
+      ...decision('MERGE'), canonicalTargetId: 'mmv-1',
+    }).effect).toBe('LINK_ALIAS');
+    expect(reviewRowActions({ ...postponed, status: 'REJECTED' })).toEqual([]);
   });
   it('only changes status after the caller records successful transaction', () => {
     expect(committedReviewStatus('APPROVE')).toBe('APPROVED');
