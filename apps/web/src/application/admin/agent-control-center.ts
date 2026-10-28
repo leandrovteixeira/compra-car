@@ -152,8 +152,7 @@ export async function loadAgentControlCenterSummary(): Promise<AgentControlCente
 
   return {
     pendingDecisions: families.reduce((sum, item) => sum + item.pending, 0),
-    operationalFailures:
-      families.filter((item) => item.status === 'ATTENTION').length + Math.max(0, watcherFailures - 1),
+    operationalFailures: families.filter((item) => item.status === 'ATTENTION').length,
     activeJobs: jobs.data?.length ?? 0,
     families,
   };
