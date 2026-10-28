@@ -186,3 +186,48 @@ export function committedReviewStatus(action: ReviewAction): ReviewStatus {
   if (action === 'POSTPONE') return 'POSTPONED';
   return 'APPROVED';
 }
+
+/**
+ * Persistence boundary. The implementation MUST commit catalog mutation,
+ * decision event, alias (when merged), and final status as ONE database transaction.
+ * No separate "ACCEPT then APPLY" operation is exposed.
+ */
+export type ReviewDecisionReceipt = Readonly<{
+  decisionId: string;
+  caseId: string;
+  action: ReviewAction;
+  status: ReviewStatus;
+  effect: DecisionEffect;
+  canonicalTargetId: string | null;
+  completedAt: string;
+  idempotencyKey: string;
+  replayed: boolean;
+}>;
+
+export type ReviewCaseDetail = Readonly<{
+  item: ReviewQueueItem;
+  evidence: readonly Readonly<{
+    sourceUrl: string;
+    sourceTitle: string | null;
+    excerpt: string | null;
+    capturedAt: string | null;
+  }>[];
+  /** Detail is paged/read-only and never required to render the queue row. */
+  proposal: unknown;
+  historicalDecisionIds: readonly string[];
+}>;
+
+export interface CanonicalDecisionRepository {
+  listQueue(options?: Readonly<{
+    offset?: number;
+    limit?: number;
+    sourceAgent?: string;
+    status?: ReviewStatus;
+  }>): Promise<Readonly<{ items: readonly ReviewQueueItem[]; total: number }>>;
+  getDetail(caseId: string): Promise<ReviewCaseDetail | null>;
+  /**
+   * Must reauthorize the actor on the server and validate type-specific canonicalInput.
+   * Any error rolls back status and canonical mutation together.
+   */
+  commitDecision(command: ReviewDecisionCommand): Promise<ReviewDecisionReceipt>;
+}
