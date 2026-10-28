@@ -22,7 +22,6 @@ export default async function CompareModelsPage({ searchParams }: Props) {
   const vehicles = scores.flatMap(result => result.selected ? [{
     id: result.selected.id,
     label: result.selected.label,
-    price: result.selected.price,
     overallScore: result.overallScore,
     categories: result.categories,
   }] : []);

@@ -269,3 +269,32 @@ describe('mapeadores do legado', () => {
     expect(withoutUnit[0]).toMatchObject({ value: null, unit: null });
   });
 });
+
+describe('nomes públicos das especificações', () => {
+  it('distingue opções de escala com o mesmo nome, sem agrupar seus códigos', () => {
+    const base = {
+      ...binarySpec,
+      type: 'scale',
+      display_pt: 'Transmissão',
+      detail: 'DHT',
+      detail_pt: 'Híbrida dedicada (DHT)',
+    };
+    const first = mapLegacySpecToComparisonItem(base);
+    const second = mapLegacySpecToComparisonItem({
+      ...base,
+      id: 12,
+      code: 'PW_0017',
+      detail: 'DCT',
+      detail_pt: 'Dupla embreagem (DCT)',
+    });
+    expect(first.label).toBe('Transmissão — Híbrida dedicada (DHT)');
+    expect(second.label).toBe('Transmissão — Dupla embreagem (DCT)');
+    expect(first.code).not.toBe(second.code);
+  });
+  it('distingue a largura dos pneus da largura do veículo', () => {
+    expect(
+      mapLegacySpecToComparisonItem({ ...numericSpec, code: 'EX_0003', display_pt: 'Largura (mm)' })
+        .label,
+    ).toBe('Largura dos pneus (mm)');
+  });
+});

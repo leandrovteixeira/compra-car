@@ -62,6 +62,7 @@ export function ComparisonScrollRegion({ children }: { readonly children: ReactN
       className="comparison-scroll min-w-0 overflow-x-auto"
       onPointerDown={(event) => {
         if (event.pointerType !== 'mouse' || event.button !== 0) return;
+        if ((event.target as Element).closest('button, a, input, select, textarea')) return;
         drag.current = { x: event.clientX, left: event.currentTarget.scrollLeft };
         event.currentTarget.setPointerCapture(event.pointerId);
         event.currentTarget.classList.add('cc-dragging');

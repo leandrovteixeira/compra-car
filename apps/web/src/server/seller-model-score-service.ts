@@ -26,6 +26,7 @@ const OWNERSHIP_CODES = [
   'PW_0028',
 ] as const;
 const FUEL_KWH_PER_LITER = 8.9;
+const SCORE_QUERY_PAGE_SIZE = 500;
 export type SellerScoreRadius = 3 | 5 | 10;
 export interface SellerModelOption {
   readonly id: number;
@@ -38,15 +39,11 @@ export interface SellerCategoryScore {
 }
 export interface SellerModelScoreResult {
   readonly options: readonly SellerModelOption[];
-  readonly selected: { readonly id: number; readonly label: string; readonly price: number } | null;
+  readonly selected: { readonly id: number; readonly label: string } | null;
   readonly radius: SellerScoreRadius;
   readonly peerCount: number;
   readonly overallScore: number | null;
   readonly categories: readonly SellerCategoryScore[];
-}
-interface CurrentPriceRow {
-  readonly product_id: number;
-  readonly amount: number | string;
 }
 interface ProductRow {
   readonly id: number;
@@ -124,26 +121,18 @@ export async function loadSellerModelScore(
   radius: SellerScoreRadius,
 ): Promise<SellerModelScoreResult> {
   const client = createLegacySupabaseClientFromEnv();
-  const [{ data: priceData, error: priceError }, { data: productData, error: productError }] =
-    await Promise.all([
-      client.from('vw_current_product_public_prices').select('product_id,amount'),
-      client
-        .from('products')
-        .select('id,brand,model,version,production_year,model_year')
-        .eq('is_public', true)
-        .order('brand')
-        .order('model')
-        .order('version'),
-    ]);
-  if (priceError) throw priceError;
+  // A technical comparison only requires a current, active, public catalog entry.
+  // Do not gate eligibility or the benchmark universe on a public price.
+  const { data: productData, error: productError } = await client
+    .from('products')
+    .select('id,brand,model,version,production_year,model_year')
+    .eq('is_active', true)
+    .eq('is_public', true)
+    .order('brand')
+    .order('model')
+    .order('version');
   if (productError) throw productError;
-  const prices = (priceData ?? []) as CurrentPriceRow[];
-  const priceByProduct = new Map(prices.map((r) => [Number(r.product_id), Number(r.amount)]));
-  // Publication is filtered by the query, then current prices, then latest generation.
-  const pricedProducts = ((productData ?? []) as ProductRow[]).filter((p) =>
-    priceByProduct.has(Number(p.id)),
-  );
-  const products = keepLatestSellerProducts(pricedProducts);
+  const products = keepLatestSellerProducts((productData ?? []) as ProductRow[]);
   const options = Object.freeze(products.map((p) => ({ id: p.id, label: labelFor(p) })));
   const selectedProduct =
     productId === null ? null : (products.find((p) => p.id === productId) ?? null);
@@ -156,31 +145,40 @@ export async function loadSellerModelScore(
       overallScore: null,
       categories: Object.freeze([]),
     };
-  const selectedPrice = priceByProduct.get(selectedProduct.id)!;
-  // Canonical benchmark: all eligible priced/public/current models, independent of MSRP.
+  // Canonical benchmark: all active/public/current models, independent of MSRP.
   const peerIds = products.map((p) => p.id);
   if (peerIds.length === 0)
     return {
       options,
-      selected: { id: selectedProduct.id, label: labelFor(selectedProduct), price: selectedPrice },
+      selected: { id: selectedProduct.id, label: labelFor(selectedProduct) },
       radius,
       peerCount: peerIds.length,
       overallScore: null,
       categories: emptyCategories(),
     };
   const allSpecialCodes = [...SPACE_CODES, ...OWNERSHIP_CODES];
-  const [{ data: valueData, error: valueError }, { data: specData, error: specError }] =
-    await Promise.all([
-      client
-        .from('vw_product_value_by_category')
-        .select('product_id,category,perceived_value')
-        .in('product_id', peerIds)
-        .in('category', [...MONETARY_CATEGORIES]),
-      client.from('specs').select('id,code').in('code', allSpecialCodes),
-    ]);
-  if (valueError) throw valueError;
+  const { data: specData, error: specError } = await client
+    .from('specs')
+    .select('id,code')
+    .in('code', allSpecialCodes);
   if (specError) throw specError;
-  const values = (valueData ?? []) as ValueRow[];
+  // PostgREST caps returned rows. With 160+ models, monetary rows exceed 1,000.
+  // Stable ordering is required for offset-based pagination.
+  const values: ValueRow[] = [];
+  for (let from = 0; ; from += SCORE_QUERY_PAGE_SIZE) {
+    const { data, error } = await client
+      .from('vw_product_value_by_category')
+      .select('product_id,category,perceived_value')
+      .in('product_id', peerIds)
+      .in('category', [...MONETARY_CATEGORIES])
+      .order('product_id')
+      .order('category')
+      .range(from, from + SCORE_QUERY_PAGE_SIZE - 1);
+    if (error) throw error;
+    const page = (data ?? []) as ValueRow[];
+    values.push(...page);
+    if (page.length < SCORE_QUERY_PAGE_SIZE) break;
+  }
   const monetaryScores: SellerCategoryScore[] = MONETARY_CATEGORIES.map((category) => {
     const peerValues = values
       .filter((r) => r.category === category)
@@ -199,15 +197,22 @@ export async function loadSellerModelScore(
   const specs = (specData ?? []) as SpecRow[];
   const specIds = specs.map((s) => s.id);
   const codeById = new Map(specs.map((s) => [s.id, s.code]));
-  let rows: ProductSpecRow[] = [];
+  const rows: ProductSpecRow[] = [];
   if (specIds.length) {
-    const { data, error } = await client
-      .from('product_specs')
-      .select('product_id,equipment_id,value,is_present')
-      .in('product_id', peerIds)
-      .in('equipment_id', specIds);
-    if (error) throw error;
-    rows = (data ?? []) as ProductSpecRow[];
+    for (let from = 0; ; from += SCORE_QUERY_PAGE_SIZE) {
+      const { data, error } = await client
+        .from('product_specs')
+        .select('product_id,equipment_id,value,is_present')
+        .in('product_id', peerIds)
+        .in('equipment_id', specIds)
+        .order('product_id')
+        .order('equipment_id')
+        .range(from, from + SCORE_QUERY_PAGE_SIZE - 1);
+      if (error) throw error;
+      const page = (data ?? []) as ProductSpecRow[];
+      rows.push(...page);
+      if (page.length < SCORE_QUERY_PAGE_SIZE) break;
+    }
   }
   const valuesByProduct = new Map<number, Map<string, number>>();
   for (const row of rows) {
@@ -300,7 +305,7 @@ export async function loadSellerModelScore(
   const overallScore = valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : null;
   return {
     options,
-    selected: { id: selectedProduct.id, label: labelFor(selectedProduct), price: selectedPrice },
+    selected: { id: selectedProduct.id, label: labelFor(selectedProduct) },
     radius,
     peerCount: peerIds.length,
     overallScore,

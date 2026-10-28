@@ -80,7 +80,7 @@ export function UserMenu({
         {sidebar ? <img alt="" src="/carboot/account2.svg" className="size-[22px] shrink-0"/> : <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 16 16">
           <path d="M2.5 4h11M2.5 8h11M2.5 12h11" stroke="currentColor" strokeLinecap="round" strokeWidth="1.5" />
         </svg>}
-        <span>{sidebar ? "Conta" : "Menu"}</span>{sidebar ? <span aria-hidden="true" className="ml-auto text-[#9ABCC8]">⌃</span> : null}
+        <span>{sidebar ? "Conta" : "Menu"}</span>{sidebar ? <img alt="" aria-hidden="true" src="/carboot/arrow.svg" className="ml-auto size-4 shrink-0 rotate-180 object-contain transition-transform group-open:rotate-0" /> : null}
       </summary>
       <section aria-label="Menu" className={sidebar ? "absolute bottom-full left-0 z-50 mb-1 w-full rounded-md border border-white/15 bg-[#1A1D21] p-2 text-white shadow-xl" : "absolute right-0 z-50 mt-2 w-64 rounded-lg border border-border bg-surface p-2 shadow-lg"}>
         <div className={sidebar ? "hidden" : "border-b border-border px-2 pb-2"}>
