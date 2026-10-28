@@ -6,7 +6,6 @@ import type { SellerCategoryScore } from '@/server/seller-model-score-service';
 export interface RadarVehicle {
   readonly id: number;
   readonly label: string;
-  readonly price: number;
   readonly overallScore: number | null;
   readonly categories: readonly SellerCategoryScore[];
 }
