@@ -176,3 +176,66 @@ Spec CREATE must not attach an extracted observed value to a vehicle in the same
 - Decide whether Postponed cases have a revisit deadline or simply reopen on material new evidence.
 - Confirm which roles may create new specs/change valuation versus just reconcile aliases.
 - Define limited auto-application of already confirmed aliases (exact scope and snapshot; never uncertain match).
+
+
+## 9. Sprint 26 implemented contract inventory — 2026-10-28
+
+These are **committed and versioned TypeScript boundary contracts**, not a deployed
+database feature:
+
+- `packages/core/src/agent-platform/review-contract.ts`: only four business states,
+  only four actions, per-finding allowed actions, compact queue-row shape (agent,
+  observed date, confidence, recommendation, evidence snippet, status) and
+  read-only drawer detail type; optimistic decision command and atomic persistence
+  repository interface. APPROVE and MERGE require a successful canonical effect
+  before APPROVED may be stored. POSTPONED can be decided later; APPROVED/REJECTED
+  require a new material snapshot/review process, not silent reopening.
+- `packages/core/src/agent-platform/canonical-alias-contract.ts`: exact context
+  scopes for brand/MMV/spec field/scale option, validated source/finding/decision
+  provenance and strict fail-closed matching; the same normalized label with
+  incompatible canonical targets produces an explicit collision.
+- `packages/core/src/agent-platform/spec-create-contract.ts`: an operator-authored
+  complete draft for numeric, binary and multi-row scale definitions (English,
+  Portuguese, code, classification, valuation, display, unit, direction, baseline,
+  option values). Return values are drafts for exact columns of `public.specs`,
+  NEVER direct inserts, writes or vehicle assignments.
+- `packages/core/test/agent-review-contract-26.test.ts`: contract tests covering
+  statuses/actions, blocked stale decisions, brand/MMV alias conflicts, complete
+  numeric/binary/scale authoring, scale baseline, and distinct alias levels.
+- `docs/agents/SPRINT_26_ALIAS_PERSISTENCE_SQL_DRAFT.sql`: proposed RLS-protected
+  storage for decision cases/receipts, MMV aliases, scale family IDs, spec-field and
+  scale-option aliases. The file is **not** in `supabase/migrations`. It has not
+  been run or applied.
+- `.github/workflows/sprint-26-contracts.yml`: secret-free CI target for
+  TypeScript, focused tests and lint. CI must report success before the draft is
+  considered verified.
+
+This phase intentionally does NOT:
+- show or wire any new buttons in the app;
+- approve an existing Agent Platform ACCEPT decision as a canonical mutation;
+- copy Watcher events into the Agent Platform findings table;
+- create a scale family from an inferred label or give it a synthetic baseline;
+- backfill current specs, canonical aliases, prices, MMVs or Watcher signals;
+- mutate QA or production data.
+
+**Important distinction for the operator:** `unit_perceived_value` and
+`relative_value` are two real distinct columns in the existing QA schema.
+They must remain separate fields in the Spec CREATE contract; whether the
+product shows them as "Valor de mercado", "Valor por unidade" or another
+business label is a UX/business decision, not a database assumption.
+
+## 10. Remaining gates BEFORE connecting the daily queue
+
+1. Review/approve the persistent aliases and immutable action-receipt schema.
+2. Implement catalog-specific atomic server operations (including brand
+   connector activation, MMV creation/merge and spec full creation) behind
+   `CanonicalDecisionRepository.commitDecision`; ensure rollback and replay.
+3. Generate an actual Supabase migration through the standard CLI, apply only
+   to the approved QA project, validate RLS and constraints. Do not backfill.
+4. Prove concurrency, duplicate-run suppression, idempotency, stale finding
+   rejection, scope conflict and failed canonical writes in tests.
+5. Wire compact queue projection/drawer read adapters; then validate Figma UX.
+6. Only later ingest actual daily QA candidates under reviewed limits and
+   collect operator decisions.
+
+No production deployments or data changes are authorized by this document.
