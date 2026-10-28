@@ -27,5 +27,11 @@ jobs:
         run: pnpm --filter @compra-car/core typecheck
       - name: Contract and legacy agent-platform tests
         run: pnpm --filter @compra-car/core exec vitest run test/agent-review-contract-26.test.ts test/agent-platform.test.ts
+      - name: Web TypeScript check
+        run: pnpm --filter @compra-car/web typecheck
+      - name: Web production build (offline agent mode)
+        run: pnpm --filter @compra-car/web build
+      - name: Lint inbox and detail files
+        run: pnpm --filter @compra-car/web exec eslint src/app/admin/agents/page.tsx src/app/admin/agents/review-detail/'[id]'/route.ts src/application/admin/agent-review-inbox.ts src/components/admin/agent-review-inbox.tsx
       - name: Lint contract files
         run: pnpm --filter @compra-car/core exec eslint src/agent-platform/review-contract.ts src/agent-platform/canonical-alias-contract.ts src/agent-platform/spec-create-contract.ts test/agent-review-contract-26.test.ts
