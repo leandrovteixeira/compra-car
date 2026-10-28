@@ -90,10 +90,11 @@ describe('Agent Platform domain and persistence', () => {
     ).rejects.toThrow('CONTENT_CONFLICT');
   });
 
-  it('declares exactly five specialist types, four run states and three decisions', () => {
+  it('declares the current specialists plus legacy MODEL_YEAR, four run states and three decisions', () => {
     expect(AGENT_TYPES).toEqual([
       'BRAND_CONNECTOR',
       'MMV_DISCOVERY',
+      'MODEL_YEAR',
       'PRODUCT_YEAR',
       'SPEC_INTELLIGENCE',
       'PRICE_INTELLIGENCE',
