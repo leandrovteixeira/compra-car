@@ -16,6 +16,8 @@ import {
 import { PageHeader } from '@/components/admin/page-header';
 import { AgentRunLauncher } from '@/components/admin/agent-run-launcher';
 import { AgentJobQueue } from '@/components/admin/agent-job-queue';
+import { loadAgentControlCenterSummary } from '@/application/admin/agent-control-center';
+import { AgentControlCenterOverview } from '@/components/admin/agent-control-center-overview';
 export default async function AgentsPage({
   searchParams,
 }: {
@@ -34,10 +36,11 @@ export default async function AgentsPage({
   const rawPage = typeof params.page === 'string' ? Number(params.page) : 1;
   const page = Number.isSafeInteger(rawPage) && rawPage > 0 ? rawPage : 1;
   const options = { offset: (page - 1) * 25, limit: 25, agentType };
-  const [result, brandTargets, jobs] = await Promise.all([
+  const [result, brandTargets, jobs, controlCenter] = await Promise.all([
     runs ? loadAgentRuns(options) : loadAgentQueue({ ...options, review }),
     process.env.APP_ENV === 'qa' ? loadBrandTargets() : Promise.resolve([]),
     runs && process.env.APP_ENV === 'qa' ? loadAgentJobs(20) : Promise.resolve([]),
+    loadAgentControlCenterSummary(),
   ]);
   const launcherBrands = [
     ...new Set(
@@ -61,7 +64,8 @@ export default async function AgentsPage({
         description="Execução, findings, evidências e decisões humanas no QA online."
       />
       <div className="mt-5 space-y-5">
-        <nav aria-label="Área de agentes" className="flex gap-2">
+        <AgentControlCenterOverview summary={controlCenter} />
+        <nav aria-label="Área de agentes" className="flex flex-wrap gap-2">
           <Link
             href="/admin/agents"
             aria-current={!runs ? 'page' : undefined}
