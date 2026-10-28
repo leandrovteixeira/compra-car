@@ -92,7 +92,11 @@ function SidebarContent({
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const groups = getSidebarNavigation(tier);
   useEffect(() => {
-    setOpenGroup(null);
+    setOpenGroup(
+      pathname === '/admin/agents' || pathname.startsWith('/admin/agents/')
+        ? 'Agentes'
+        : null,
+    );
   }, [expanded, pathname]);
   return (
     <>
