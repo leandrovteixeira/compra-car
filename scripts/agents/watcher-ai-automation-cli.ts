@@ -22,7 +22,8 @@ async function main(){
  const client=createLegacySupabaseClient({url:QA_URL,serverKey:env.SUPABASE_SERVER_KEY});
  let processed=0,errors=0,spentUsd=0;
  // Bounded worker tick: a source revision is claimed ONCE, never automatically replayed.
- for(let i=0;i<5;i++){
+ const maxPerTick=env.WATCHER_AI_MAX_PER_TICK==='1'?1:5;
+ for(let i=0;i<maxPerTick;i++){
    const claimed=await client.rpc('watcher_ai_claim_revision');
    if(claimed.error)throw new Error('WATCHER_AI_CLAIM_FAILED');
    const row=(Array.isArray(claimed.data)?claimed.data[0]:claimed.data) as Claimed|undefined;
