@@ -27,7 +27,8 @@ export const adminNavigationItems: readonly AdminNavigationItem[] = [
   { href: '/admin/news', label: 'News', status: 'planned' },
   { href: '/admin/chat', label: 'Chat', status: 'planned' },
   { label: 'Agentes', status: 'active', children: [
-    { href: '/admin/agents', label: 'Agentes', status: 'active' },
+    { href: '/admin/agents', label: 'Revisões', status: 'active' },
+    { href: '/admin/agents/flight-control', label: 'Flight Control', status: 'active' },
   ] },
   { label: 'Configurações', status: 'active', children: [
     { href: '/admin/users', label: 'Gestão de Usuários', status: 'active' },
