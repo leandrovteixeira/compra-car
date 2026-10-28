@@ -134,6 +134,9 @@ export function buildSpecCreateRows(input: SpecCreateInput): readonly SpecRowDra
     if (input.options.filter((option) => option.isBaseline === true).length !== 1 ||
         input.options.some((option) => typeof option.isBaseline !== 'boolean'))
       throw new SpecCreateContractError('SCALE_REQUIRES_ONE_BASELINE');
+    if (input.options.some((option) => option.isBaseline &&
+        (option.relativeValue !== 0 || option.unitPerceivedValue !== 0)))
+      throw new SpecCreateContractError('SCALE_BASELINE_MUST_BE_ZERO');
     rows = input.options.map((option) => ({
       ...shared, ...field(option), type: 'scale',
       unit: null, value_direction: null,
