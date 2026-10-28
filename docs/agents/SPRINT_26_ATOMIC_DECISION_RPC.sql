@@ -42,7 +42,7 @@ BEGIN
    IF prior.case_id<>p_case_id OR prior.action<>p_action
      OR prior.prior_case_revision<>p_expected_revision
      OR prior.snapshot_fingerprint<>p_expected_fingerprint
-     OR prior.actor_id<>p_actor
+     OR prior.actor_id<>p_actor OR prior.note IS DISTINCT FROM p_note
      OR prior.canonical_target_ref IS DISTINCT FROM
        (CASE WHEN p_action='MERGE' THEN p_canonical_target::text ELSE NULL END)
    THEN RAISE EXCEPTION 'S26_IDEMPOTENCY_CONFLICT'; END IF;
@@ -64,6 +64,16 @@ BEGIN
  SELECT * INTO r FROM public.agent_runs WHERE id=f.run_id;
  IF NOT FOUND OR r.status<>'COMPLETED'
  THEN RAISE EXCEPTION 'S26_RUN_NOT_COMPLETED'; END IF;
+
+ -- A later completed observation of the same subject supersedes this case.
+ IF EXISTS (
+   SELECT 1 FROM public.agent_findings newer
+   JOIN public.agent_runs nr ON nr.id=newer.run_id
+   WHERE newer.id<>f.id AND newer.created_at>f.created_at
+     AND newer.subject_key IS NOT DISTINCT FROM f.subject_key
+     AND newer.finding_type=f.finding_type
+     AND nr.agent_type=r.agent_type AND nr.status='COMPLETED'
+ ) THEN RAISE EXCEPTION 'S26_SUPERSEDED_FINDING'; END IF;
 
  IF p_action<>'MERGE' AND p_canonical_target IS NOT NULL
  THEN RAISE EXCEPTION 'S26_UNEXPECTED_TARGET'; END IF;
