@@ -27,6 +27,8 @@ jobs:
         run: pnpm --filter @compra-car/core typecheck
       - name: Contract and legacy agent-platform tests
         run: pnpm --filter @compra-car/core exec vitest run test/agent-review-contract-26.test.ts test/agent-platform.test.ts
+      - name: Agent chain offline fixtures (Brand / MMV / MY / Pricing)
+        run: pnpm --filter @compra-car/core exec vitest run test/brand-connector.test.ts test/current-mmv-discovery-agent.test.ts test/model-year-agent.test.ts test/price-agent.test.ts
       - name: Web TypeScript check
         run: pnpm --filter @compra-car/web typecheck
       - name: Web production build (offline agent mode)
