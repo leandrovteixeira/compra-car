@@ -17,7 +17,7 @@ async function main(){
  if(env.WATCHER_AI_AUTOMATION_ENABLED!=='true'){
    console.log(JSON.stringify({status:'PAUSED',aiCalls:0}));return;
  }
- if(!env.SUPABASE_SERVER_KEY?.trim()||!env.OPENAI_API_KEY?.trim())
+ if(!env.SUPABASE_SERVER_KEY?.trim()||!env.OPENAI_WATCHER_API_KEY?.trim())
   throw new Error('WATCHER_AI_WORKER_CREDENTIALS_MISSING');
  const client=createLegacySupabaseClient({url:QA_URL,serverKey:env.SUPABASE_SERVER_KEY});
  let processed=0,errors=0,spentUsd=0;
@@ -31,9 +31,9 @@ async function main(){
    try{
      const text=[row.article_title,row.article_excerpt].filter(Boolean).join('\n').slice(0,2200);
      if(!row.article_title||text.length>2200)throw new Error('WATCHER_AI_INVALID_INPUT');
-     const events=await extractWatcherNewsWithOpenAi({apiKey:env.OPENAI_API_KEY,
+     const events=await extractWatcherNewsWithOpenAi({apiKey:env.OPENAI_WATCHER_API_KEY,
        model:'gpt-5.4-mini',text});
-     const launch=await extractWatcherLaunchesWithOpenAi({apiKey:env.OPENAI_API_KEY,
+     const launch=await extractWatcherLaunchesWithOpenAi({apiKey:env.OPENAI_WATCHER_API_KEY,
        model:'gpt-5.4-mini',text});
      const scored=launch.launches.map(item=>scoreWatcherLaunch(row.revision_id,item));
      const inputTokens=events.inputTokens+launch.inputTokens;
