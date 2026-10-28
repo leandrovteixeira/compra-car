@@ -1,0 +1,31 @@
+name: Sprint 26 — Agent Contracts Validation
+on:
+  push:
+    branches: [sprint-26-agent-ux-control-center]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      OPENAI_API_KEY: ''
+      SUPABASE_SERVER_KEY: ''
+      APP_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Core TypeScript check
+        run: pnpm --filter @compra-car/core typecheck
+      - name: Contract and legacy agent-platform tests
+        run: pnpm --filter @compra-car/core exec vitest run test/agent-review-contract-26.test.ts test/agent-platform.test.ts
+      - name: Lint contract files
+        run: pnpm --filter @compra-car/core exec eslint src/agent-platform/review-contract.ts src/agent-platform/canonical-alias-contract.ts src/agent-platform/spec-create-contract.ts test/agent-review-contract-26.test.ts
