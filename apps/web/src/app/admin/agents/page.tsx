@@ -46,19 +46,14 @@ export default async function AgentsPage({
 
   return (
     <>
-      <PageHeader title="Agentes" description="Descobertas para decisão e controle operacional dos agentes." compact/>
+      <PageHeader
+        title={flight ? 'Flight Control' : 'Revisões'}
+        description={flight
+          ? 'Execuções, custos, agendamentos e saúde operacional dos agentes.'
+          : 'Descobertas para decisão dos operadores.'}
+        compact
+      />
       <div className="mt-4 space-y-4">
-        <nav aria-label="Áreas dos agentes" className="flex flex-wrap gap-2">
-          <Link href="/admin/agents" aria-current={!flight?'page':undefined}
-            className={`ui-button ui-button--action ${!flight?'ui-button--primary':'ui-button--secondary'}`}>
-            Fila de revisões
-          </Link>
-          <Link href="/admin/agents?tab=flight" aria-current={flight?'page':undefined}
-            className={`ui-button ui-button--action ${flight?'ui-button--primary':'ui-button--secondary'}`}>
-            Flight Control
-          </Link>
-        </nav>
-
         {!flight && inbox ? (
           <>
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -139,7 +134,7 @@ export default async function AgentsPage({
               {process.env.APP_ENV==='qa'?<AgentJobQueue items={jobs}/>:null}
               {runs?<AgentRunHistory items={runs.items}/>:null}
               <Link className="text-xs font-semibold text-[#A9541B] underline"
-                href="/admin/agents?tab=runs">Atualizar execuções</Link>
+                href="/admin/agents/flight-control">Atualizar execuções</Link>
             </section>
             <section className="space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
