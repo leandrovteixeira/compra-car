@@ -16,7 +16,7 @@ const products: Array<Record<string, unknown>> = [
   { id: 14, brand: 'Jaecoo', model: '7', version: 'Elite', production_year: 2026, model_year: 2027, is_active: true, is_public: false },
 ];
 
-function prepareDatabase() {
+function prepareDatabase(overrides: Record<string, Array<Record<string, unknown>>> = {}) {
   const rowsByTable: Record<string, Array<Record<string, unknown>>> = {
     products,
     vw_product_value_by_category: [
@@ -24,11 +24,14 @@ function prepareDatabase() {
       { product_id: 12, category: 'Conforto', perceived_value: 100 },
     ],
     specs: [],
+    ...overrides,
   };
 
   fromMock.mockImplementation((table: string) => {
     if (!(table in rowsByTable)) throw new Error('Unexpected database table: ' + table);
     const filters: Array<[string, unknown]> = [];
+    let from = 0;
+    let to = Number.POSITIVE_INFINITY;
     const query = {
       select: () => query,
       eq: (field: string, value: unknown) => {
@@ -37,8 +40,15 @@ function prepareDatabase() {
       },
       order: () => query,
       in: () => query,
+      range: (start: number, end: number) => {
+        from = start;
+        to = end;
+        return query;
+      },
       then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => {
-        const data = rowsByTable[table]!.filter(row => filters.every(([field, value]) => row[field] === value));
+        const data = rowsByTable[table]!
+          .filter(row => filters.every(([field, value]) => row[field] === value))
+          .slice(from, to + 1);
         return Promise.resolve({ data, error: null }).then(resolve, reject);
       },
     };
@@ -68,9 +78,37 @@ describe('Compare Models catalog eligibility', () => {
     expect(result.categories.find(category => category.key === 'Conforto')?.score).toBe(5);
     expect(fromMock.mock.calls.map(([table]) => table)).toEqual([
       'products',
-      'vw_product_value_by_category',
       'specs',
+      'vw_product_value_by_category',
     ]);
+  });
+
+  it('paginates scores so a peak value beyond row 500 is not omitted', async () => {
+    prepareDatabase({
+      vw_product_value_by_category: [
+        ...Array.from({ length: 500 }, () => ({ product_id: 11, category: 'Conforto', perceived_value: 50 })),
+        { product_id: 12, category: 'Conforto', perceived_value: 100 },
+      ],
+    });
+
+    const result = await loadSellerModelScore(11, 5);
+
+    expect(result.categories.find(category => category.key === 'Conforto')?.score).toBe(5);
+    expect(fromMock.mock.calls.filter(([table]) => table === 'vw_product_value_by_category')).toHaveLength(2);
+  });
+
+  it('paginates ownership/space specs rather than losing rows after the server cap', async () => {
+    prepareDatabase({
+      specs: [{ id: 1, code: 'DM_0001' }],
+      product_specs: Array.from({ length: 501 }, (_, i) => ({
+        product_id: 11, equipment_id: 1, value: i === 500 ? 100 : 50, is_present: true,
+      })),
+    });
+
+    const result = await loadSellerModelScore(11, 5);
+
+    expect(result.categories.find(category => category.key === 'Espaco + Carga')?.score).toBe(10);
+    expect(fromMock.mock.calls.filter(([table]) => table === 'product_specs')).toHaveLength(2);
   });
 
   it('never exposes inactive or private models in its public options', async () => {

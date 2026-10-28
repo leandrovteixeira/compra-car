@@ -26,6 +26,7 @@ const OWNERSHIP_CODES = [
   'PW_0028',
 ] as const;
 const FUEL_KWH_PER_LITER = 8.9;
+const SCORE_QUERY_PAGE_SIZE = 500;
 export type SellerScoreRadius = 3 | 5 | 10;
 export interface SellerModelOption {
   readonly id: number;
@@ -156,18 +157,28 @@ export async function loadSellerModelScore(
       categories: emptyCategories(),
     };
   const allSpecialCodes = [...SPACE_CODES, ...OWNERSHIP_CODES];
-  const [{ data: valueData, error: valueError }, { data: specData, error: specError }] =
-    await Promise.all([
-      client
-        .from('vw_product_value_by_category')
-        .select('product_id,category,perceived_value')
-        .in('product_id', peerIds)
-        .in('category', [...MONETARY_CATEGORIES]),
-      client.from('specs').select('id,code').in('code', allSpecialCodes),
-    ]);
-  if (valueError) throw valueError;
+  const { data: specData, error: specError } = await client
+    .from('specs')
+    .select('id,code')
+    .in('code', allSpecialCodes);
   if (specError) throw specError;
-  const values = (valueData ?? []) as ValueRow[];
+  // PostgREST caps returned rows. With 160+ models, monetary rows exceed 1,000.
+  // Stable ordering is required for offset-based pagination.
+  const values: ValueRow[] = [];
+  for (let from = 0; ; from += SCORE_QUERY_PAGE_SIZE) {
+    const { data, error } = await client
+      .from('vw_product_value_by_category')
+      .select('product_id,category,perceived_value')
+      .in('product_id', peerIds)
+      .in('category', [...MONETARY_CATEGORIES])
+      .order('product_id')
+      .order('category')
+      .range(from, from + SCORE_QUERY_PAGE_SIZE - 1);
+    if (error) throw error;
+    const page = (data ?? []) as ValueRow[];
+    values.push(...page);
+    if (page.length < SCORE_QUERY_PAGE_SIZE) break;
+  }
   const monetaryScores: SellerCategoryScore[] = MONETARY_CATEGORIES.map((category) => {
     const peerValues = values
       .filter((r) => r.category === category)
@@ -186,15 +197,22 @@ export async function loadSellerModelScore(
   const specs = (specData ?? []) as SpecRow[];
   const specIds = specs.map((s) => s.id);
   const codeById = new Map(specs.map((s) => [s.id, s.code]));
-  let rows: ProductSpecRow[] = [];
+  const rows: ProductSpecRow[] = [];
   if (specIds.length) {
-    const { data, error } = await client
-      .from('product_specs')
-      .select('product_id,equipment_id,value,is_present')
-      .in('product_id', peerIds)
-      .in('equipment_id', specIds);
-    if (error) throw error;
-    rows = (data ?? []) as ProductSpecRow[];
+    for (let from = 0; ; from += SCORE_QUERY_PAGE_SIZE) {
+      const { data, error } = await client
+        .from('product_specs')
+        .select('product_id,equipment_id,value,is_present')
+        .in('product_id', peerIds)
+        .in('equipment_id', specIds)
+        .order('product_id')
+        .order('equipment_id')
+        .range(from, from + SCORE_QUERY_PAGE_SIZE - 1);
+      if (error) throw error;
+      const page = (data ?? []) as ProductSpecRow[];
+      rows.push(...page);
+      if (page.length < SCORE_QUERY_PAGE_SIZE) break;
+    }
   }
   const valuesByProduct = new Map<number, Map<string, number>>();
   for (const row of rows) {
