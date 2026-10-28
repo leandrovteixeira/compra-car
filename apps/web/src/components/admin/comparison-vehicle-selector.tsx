@@ -44,7 +44,7 @@ export function ComparisonVehicleSelector({ options, initialIds = [], maxVehicle
   return <section className={'min-w-0'}>
     {pending && <ComparisonLoadingOverlay />}
     <div className="flex min-w-0 flex-wrap items-center gap-2 py-3">
-      <div ref={root} className="relative min-w-[15rem] flex-1"><img src="/carboot/search.svg" alt="" aria-hidden="true" className="pointer-events-none absolute left-3 top-5 z-10 size-[18px] -translate-y-1/2 object-contain" />
+      <div ref={root} className={`relative min-w-[15rem] flex-1 ${open && selected.length < maxVehicles ? 'z-[70]' : ''}`}><img src="/carboot/search.svg" alt="" aria-hidden="true" className="pointer-events-none absolute left-3 top-5 z-10 size-[18px] -translate-y-1/2 object-contain" />
         <input type="search" value={query} onChange={event => { setQuery(event.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
           onBlur={() => window.setTimeout(() => setOpen(false), 120)}
