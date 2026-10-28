@@ -99,6 +99,8 @@ export type ReviewQueueItem = Readonly<{
   confidence: number | null;
   evidenceCount: number;
   primaryEvidenceUrl: string | null;
+  /** Short literal source excerpt for the compact row; full evidence stays in detail. */
+  evidencePreview: string | null;
   observedAt: string;
   status: ReviewStatus;
   snapshotFingerprint: string;
@@ -151,7 +153,7 @@ export function validateReviewDecision(
 ): Readonly<{ action: ReviewAction; effect: DecisionEffect; target: string | null }> {
   assertReviewQueueItem(item);
   const policy = reviewPolicy(item.caseKind);
-  if (item.status !== 'WAITING' ||
+  if (!['WAITING', 'POSTPONED'].includes(item.status) ||
       !command || !REVIEW_ACTIONS.includes(command.action) ||
       !policy.actions.includes(command.action) ||
       item.caseId !== command.caseId ||
@@ -230,4 +232,14 @@ export interface CanonicalDecisionRepository {
    * Any error rolls back status and canonical mutation together.
    */
   commitDecision(command: ReviewDecisionCommand): Promise<ReviewDecisionReceipt>;
+}
+
+/** Render only decision actions valid in the current review state. */
+export function reviewRowActions(item: ReviewQueueItem): readonly ReviewAction[] {
+  assertReviewQueueItem(item);
+  const policy = reviewPolicy(item.caseKind);
+  return policy.showInReviewQueue &&
+      (item.status === 'WAITING' || item.status === 'POSTPONED')
+    ? policy.actions
+    : [];
 }
