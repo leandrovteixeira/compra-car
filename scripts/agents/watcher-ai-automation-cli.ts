@@ -48,8 +48,17 @@ async function main(){
      processed++;spentUsd+=costUsd;
    }catch(e){
      errors++;
-     const errorCode=e instanceof Error&&/^WATCHER_[A-Z_]+$/.test(e.message)?
-       e.message:'WATCHER_AI_UNCLASSIFIED_FAILURE';
+     const status=(e && typeof e==='object' && 'status' in e) ? Number((e as {status:unknown}).status) : null;
+     const sdkCode=(e && typeof e==='object' && 'code' in e) ? String((e as {code:unknown}).code) : '';
+     const errorCode=e instanceof Error&&/^WATCHER_[A-Z_]+$/.test(e.message)
+       ?e.message
+       :status===401?'WATCHER_AI_AUTH_REJECTED'
+       :status===403?'WATCHER_AI_ACCESS_DENIED'
+       :status===429?'WATCHER_AI_RATE_OR_BALANCE_LIMIT'
+       :status===400?'WATCHER_AI_PROVIDER_REQUEST_INVALID'
+       :sdkCode==='ETIMEDOUT'?'WATCHER_AI_PROVIDER_TIMEOUT'
+       :'WATCHER_AI_UNCLASSIFIED_FAILURE';
+     console.error(JSON.stringify({revisionId:row.revision_id,errorCode,httpStatus:status}));
      const fail=await client.rpc('watcher_ai_fail_revision',{
        p_revision_id:row.revision_id,p_error_code:errorCode});
      if(fail.error)throw new Error('WATCHER_AI_FAILURE_COMMIT_FAILED');
