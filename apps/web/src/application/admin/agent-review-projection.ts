@@ -67,8 +67,15 @@ const GENERIC_BODY_TYPES = new Set([
 ]);
 
 function identityVariants(f: LegacyDiscovery): readonly Record<string,unknown>[] {
-  return objects(obj(f.proposal)?.identities).filter(o=>
-    Boolean(value(o.officialVersionLabel)||value(o.trim)));
+  // A slash-delimited list or model name alone is not a commercial version.
+  // Keep the raw observation and evidence, but do not offer approval of a fake MMV.
+  const model=value(f.subject.model).toLocaleLowerCase('pt-BR').trim();
+  return objects(obj(f.proposal)?.identities).filter(o=>{
+    const label=value(o.officialVersionLabel)||value(o.trim);
+    return !!label &&
+      label.toLocaleLowerCase('pt-BR').trim()!==model &&
+      !/\s+\/\s+/u.test(label);
+  });
 }
 function variants(f: LegacyDiscovery): readonly string[] {
   return [...new Set(identityVariants(f).map(o=>value(o.officialVersionLabel)||value(o.trim)))];
