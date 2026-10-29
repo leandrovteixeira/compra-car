@@ -23,7 +23,7 @@ describe('Sprint 26 GWM capped pilot',()=>{
     expect(needsAgentBudget(job('MMV_DISCOVERY'),{})).toBe(true);
   });
   it('requires DB reservation prior to dispatch and conservatively holds reserve',async()=>{
-    const rpc=vi.fn(async(name:string,args:Record<string,unknown>)=>({
+    const rpc=vi.fn(async(name:string,_args:Record<string,unknown>)=>({
       data:name==='agent_spend_reserve'?'reserved-id':null,error:null,
     }));
     const c={rpc};
