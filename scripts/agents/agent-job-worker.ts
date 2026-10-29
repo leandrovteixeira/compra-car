@@ -6,6 +6,7 @@ import { runModelYearCli } from './run-model-year';
 import { runPriceCli } from './run-price';
 import { monitorBrandSources } from './source-monitor';
 import { journalWorkerJob } from './engineering-worker-telemetry';
+import { needsAgentBudget, reserveAgentPilotBudget, finishAgentPilotBudget, type AgentBudgetClient } from './agent-pilot-budget';
 
 type JobRow = {
   id: string;
@@ -83,6 +84,13 @@ async function execute(job: JobRow) {
     console.log('[agent-job]', job.id, line);
   };
 
+  // A non-reserved paid job never reaches any OpenAI CLI. The entire USD 2
+  // reservation is held until independent reconciliation of real provider usage.
+  const paid=needsAgentBudget(job,env);
+  const reservation=paid
+    ?await reserveAgentPilotBudget(client as unknown as AgentBudgetClient,job)
+    :null;
+  try {
   let code: number;
   if (job.job_type === 'MMV_DISCOVERY') {
     code = await runNewProductCheckCli(
@@ -187,6 +195,16 @@ async function execute(job: JobRow) {
       console.error('[agent-worker] could not enqueue PRODUCT_YEAR', job.id, error);
     }
   }
+  } finally {
+    if(reservation){
+      try{
+        await finishAgentPilotBudget(client as unknown as AgentBudgetClient,reservation);
+      }catch{
+        // Never release an uncertain paid reserve or lose the original job outcome.
+        console.error('[agent-worker] budget reservation requires reconciliation',job.id);
+      }
+    }
+  }
 }
 
 console.log('[agent-worker] started');
@@ -202,9 +220,15 @@ for (;;) {
     try {
       await execute(job);
     } catch (error) {
-      console.error('[agent-worker] execution failed', job.id, error);
+      const budgetError = error instanceof Error &&
+        ['COST_BUDGET_NOT_CONFIGURED','COST_BUDGET_EXHAUSTED',
+          'COST_INVALID_SCOPE','COST_INVALID_RESERVATION',
+          'COST_ADMISSION_FAILED'].includes(error.message)
+          ? error.message : null;
+      console.error('[agent-worker] execution failed', job.id,
+        budgetError ?? 'AGENT_JOB_EXECUTION_FAILED');
       try {
-        await fail(job.id, 'AGENT_JOB_EXECUTION_FAILED');
+        await fail(job.id, budgetError ?? 'AGENT_JOB_EXECUTION_FAILED');
         try {await journalWorkerJob(client,{runId:job.id,jobType:job.job_type,brand:job.brand,
           startedAtMs:Date.now(),status:'FAILED',failureCode:'AGENT_JOB_EXECUTION_FAILED'});}
         catch {console.error('[engineering] QA central failure logging unavailable',job.id);}
