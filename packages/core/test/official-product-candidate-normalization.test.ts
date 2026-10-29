@@ -29,4 +29,38 @@ describe('official product candidate normalization', () => {
       trim: '1.0 MPI',
     });
   });
+  it('preserves a nameless commercial base version without inventing a trim', () => {
+    expect(normalizeDiscoveredVariantLabels({
+      brand: 'GWM',
+      model: 'HAVAL H7',
+      officialVersionLabel: 'HAVAL H7',
+      trim: null,
+    })).toEqual({
+      brand: 'GWM',
+      model: 'HAVAL H7',
+      officialVersionLabel: null,
+      trim: null,
+    });
+  });
+
+  it('normalizes GWM Tank 300 while preserving the TerraForce distinction', () => {
+    expect(normalizeDiscoveredVariantLabels({
+      brand: 'GWM',
+      model: 'GWM TANK 300',
+      officialVersionLabel: 'GWM TANK 300',
+      trim: null,
+    })).toEqual({
+      brand: 'GWM',
+      model: 'TANK 300',
+      officialVersionLabel: null,
+      trim: null,
+    });
+    expect(normalizeDiscoveredVariantLabels({
+      brand: 'GWM',
+      model: 'GWM TANK 300',
+      officialVersionLabel: 'TERRAFORCE',
+      trim: 'TerraForce',
+    }).officialVersionLabel).toBe('TERRAFORCE');
+  });
+
 });
