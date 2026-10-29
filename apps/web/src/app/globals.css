@@ -631,6 +631,11 @@ select.ui-field,
   .cc-outline-icon-action { width: auto; min-width: 132px; flex: 1 1 auto; }
 }
 
+/* Keep agents table widths stable when filtering changes document height. */
+html:has([data-agent-workspace]) {
+  scrollbar-gutter: stable;
+}
+
 /* Sidebar-only dark scrollbar: no light native gutter or arrow buttons. */
 .cc-sidebar-scroll {
   scrollbar-width: thin;
