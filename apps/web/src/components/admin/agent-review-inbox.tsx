@@ -195,15 +195,15 @@ export function AgentReviewInbox({items,sort,direction}:{readonly items:readonly
         <table className="w-full table-fixed border-separate border-spacing-0 bg-white text-left text-[12px]">
           <thead className="text-[10px] font-semibold uppercase text-[#526670]">
             <tr>
-              {th('brand','Marca','11%')}
-              {th('model','Modelo','12%')}
-              <th scope="col" className="sticky top-0 z-20 border-b border-[#D6DEE3] bg-[#DCE8ED] px-2.5 py-3" style={{width:'20%'}}>DESCOBERTA</th>
-              {th('agent','Agente','10%')}
-              {th('date','Data','11%')}
-              {th('confidence','Confiança','9%')}
+              {th('brand','Marca','9%')}
+              {th('model','Modelo','10%')}
+              <th scope="col" className="sticky top-0 z-20 border-b border-[#D6DEE3] bg-[#DCE8ED] px-2.5 py-3" style={{width:'22%'}}>DESCOBERTA</th>
+              {th('agent','Agente','9%')}
+              {th('date','Data','9%')}
+              {th('confidence','Confiança','7.5%')}
               <th scope="col" className="sticky top-0 z-20 border-b border-[#D6DEE3] bg-[#DCE8ED] px-2.5 py-3" style={{width:'9%'}}>STATUS</th>
-              <th scope="col" className="sticky top-0 z-20 border-b border-[#D6DEE3] bg-[#DCE8ED] px-2.5 py-3" style={{width:'12%'}}>RECOMENDAÇÃO</th>
-              <th scope="col" className="sticky top-0 z-20 border-b border-[#D6DEE3] bg-[#DCE8ED] px-2.5 py-3" style={{width:'6%'}}>AÇÃO</th>
+              <th scope="col" className="sticky top-0 z-20 border-b border-[#D6DEE3] bg-[#DCE8ED] px-2.5 py-3" style={{width:'16.5%'}}>RECOMENDAÇÃO</th>
+              <th scope="col" className="sticky top-0 z-20 border-b border-[#D6DEE3] bg-[#DCE8ED] px-2.5 py-3" style={{width:'8%'}}>AÇÃO</th>
             </tr>
           </thead>
           <tbody>
@@ -222,9 +222,9 @@ export function AgentReviewInbox({items,sort,direction}:{readonly items:readonly
                       {row.priorRuns} observações consolidadas
                     </p>:null}
                   </td>
-                  <td className="px-2.5 py-3 text-[11px]">{row.agentLabel}</td>
-                  <td className="whitespace-nowrap px-2.5 py-3 text-[11px]">{date(row.observedAt)}</td>
-                  <td className="px-2.5 py-3 font-semibold tabular-nums">{percent(row.confidence)}</td>
+                  <td className="whitespace-nowrap px-2 py-3 text-[11px]" title={row.agentLabel}><p className="truncate">{row.agentLabel}</p></td>
+                  <td className="whitespace-nowrap px-2 py-3 text-[11px]" title={date(row.observedAt)}>{date(row.observedAt)?.split(',')[0]}</td>
+                  <td className="whitespace-nowrap px-2 py-3 font-semibold tabular-nums">{percent(row.confidence)}</td>
                   <td className="px-2.5 py-3"><Status status={row.status}/></td>
                   <td className="px-2.5 py-3">
                     <p className="line-clamp-2 text-[11px] font-medium">{row.recommendation}</p>
