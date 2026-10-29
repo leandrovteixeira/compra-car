@@ -85,6 +85,25 @@ describe('Sprint 26 human review inbox projection',()=>{
     expect(isResolvedMmvCase(c,[sx])).toBe(true);
     expect(isResolvedMmvCase(c,[{...sx,id:'different'}])).toBe(false);
   });
+  it('does not treat Tasman BASIC / GL / PGL-PRO or the model name as one version',()=>{
+    const grouped=finding({id:'tasman-group',run_id:'r1',title:'Kia Tasman',
+      subject:{brand:'Kia',model:'Tasman'},
+      proposal:{action:'STAGE_MMV_IDENTITIES',identities:[{
+        brand:'Kia',model:'Tasman',officialVersionLabel:'BASIC / GL / PGL-PRO',
+      }]}});
+    const modelOnly=finding({id:'tasman-model',run_id:'r2',title:'Kia Tasman',
+      subject:{brand:'Kia',model:'Tasman'},
+      proposal:{action:'STAGE_MMV_IDENTITIES',identities:[{
+        brand:'Kia',model:'Tasman',officialVersionLabel:'Tasman',
+      }]}});
+    const gl=finding({id:'tasman-gl',run_id:'r2',title:'Kia Tasman',
+      subject:{brand:'Kia',model:'Tasman'},
+      proposal:{action:'STAGE_MMV_IDENTITIES',identities:[{
+        brand:'Kia',model:'Tasman',officialVersionLabel:'GL',
+      }]}});
+    const cases=buildReviewProjection([grouped,modelOnly,gl],runs,new Map()).cases;
+    expect(cases.map(c=>c.version)).toEqual(['GL']);
+  });
   it('offers identity resolution for GTL FOSCO without automatically merging finish and price',()=>{
     const ev9=finding({id:'ev9',run_id:'r1',
       subject:{brand:'Kia',model:'EV9'},title:'Kia EV9',
