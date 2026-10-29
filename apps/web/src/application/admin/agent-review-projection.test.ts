@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildReviewProjection,
+  isResolvedMmvCase,
   type LegacyDiscovery, type LegacyRun,
 } from './agent-review-projection';
 
@@ -43,6 +44,36 @@ describe('Sprint 26 human review inbox projection',()=>{
     expect(cases[0]?.finding.id).toBe('rich');
     expect(cases[0]?.discovery).toContain('2 versões: Pro, Pro S');
     expect(cases[0]?.priorRuns).toBe(2);
+  });
+  it('removes Kia Niro batch only after both proposed variants are canonical',()=>{
+    const found=finding({id:'niro',run_id:'r1',subject:{brand:'Kia',model:'Niro'},
+      title:'Kia Niro',
+      proposal:{action:'STAGE_MMV_IDENTITIES',identities:[
+        {brand:'Kia',model:'Niro',officialVersionLabel:'EX',propulsion:'HEV',powertrainLabel:'HEV'},
+        {brand:'Kia',model:'Niro',officialVersionLabel:'SX PRESTIGE',propulsion:'HEV',powertrainLabel:'HEV'},
+      ]},
+    });
+    const c=buildReviewProjection([found],runs,new Map()).cases[0]!;
+    const ex={id:'mmv-ex',market:'BR',brand:'Kia',model:'Niro',
+      official_version_label:'EX',propulsion:'HEV',powertrain_label:'HEV',status:'ACTIVE'};
+    const sx={...ex,id:'mmv-sx',official_version_label:'SX PRESTIGE'};
+    expect(isResolvedMmvCase(c,[ex])).toBe(false); // partial batch must stay reviewable
+    expect(isResolvedMmvCase(c,[ex,sx])).toBe(true);
+    expect(isResolvedMmvCase(c,[ex,{...sx,propulsion:'BEV'}])).toBe(false);
+  });
+  it('does not recreate a previously matched ambiguous commercial version',()=>{
+    const found=finding({id:'niro-ambiguous',run_id:'r1',
+      finding_type:'AMBIGUOUS_MMV',proposal:null,
+      subject:{brand:'Kia',model:'Niro',officialVersionLabel:'SX PRESTIGE',
+        canonicalMmv:[{id:'mmv-sx'}]},
+      payload:{reasonCode:'AMBIGUOUS_IDENTITY'},
+    });
+    const c=buildReviewProjection([found],runs,new Map()).cases[0]!;
+    const sx={id:'mmv-sx',market:'BR',brand:'Kia',model:'Niro',
+      official_version_label:'SX PRESTIGE',propulsion:'HEV',
+      powertrain_label:'HEV',status:'ACTIVE'};
+    expect(isResolvedMmvCase(c,[sx])).toBe(true);
+    expect(isResolvedMmvCase(c,[{...sx,id:'different'}])).toBe(false);
   });
   it('does not silently merge different commercial versions',()=>{
     const a=finding({id:'a',run_id:'r1',finding_type:'NEW_VERSION',
