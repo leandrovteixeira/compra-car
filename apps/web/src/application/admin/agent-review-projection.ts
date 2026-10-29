@@ -238,3 +238,59 @@ export function reviewState(decision: string|null):ReviewStatus {
   if(decision==='DEFER')return 'POSTPONED';
   return 'WAITING'; // Legacy ACCEPT is NOT proof of canonical application.
 }
+
+/** Canonical state takes precedence over a legacy discovery snapshot.
+ * Suppresses only proposals whose EVERY commercial identity already exists.
+ * Partial batches remain visible pending per-variant review contract.
+ */
+export type CurrentCanonicalMmv = Readonly<{
+  id: string;
+  market: string;
+  brand: string;
+  model: string;
+  official_version_label: string;
+  powertrain_label: string | null;
+  propulsion: string | null;
+  status: string;
+}>;
+
+function sameCanonicalIdentity(
+  proposal: Record<string, unknown>,
+  item: CurrentCanonicalMmv,
+  market: string,
+): boolean {
+  const brand = value(proposal.brand), model = value(proposal.model);
+  const version = value(proposal.officialVersionLabel) || value(proposal.trim);
+  if (!brand || !model || !version || item.status !== 'ACTIVE' ||
+      market !== item.market ||
+      vehicleBrandComparisonKey(brand) !== vehicleBrandComparisonKey(item.brand) ||
+      key(model) !== key(item.model) ||
+      key(version) !== key(item.official_version_label)) return false;
+  const propulsion = value(proposal.propulsion);
+  const powertrain = value(proposal.powertrainLabel);
+  return (!propulsion || !item.propulsion || key(propulsion) === key(item.propulsion)) &&
+    (!powertrain || !item.powertrain_label ||
+      key(powertrain) === key(item.powertrain_label));
+}
+
+export function isResolvedMmvCase(
+  candidate: ProjectedCase,
+  canonical: readonly CurrentCanonicalMmv[],
+): boolean {
+  if (candidate.kind === 'MMV_NEW') {
+    const identities = objects(obj(candidate.finding.proposal)?.identities);
+    return identities.length > 0 && identities.every(identity =>
+      canonical.some(item => sameCanonicalIdentity(identity,item,candidate.run.market ?? 'BR')));
+  }
+  if (candidate.kind !== 'MMV_AMBIGUOUS' ||
+      value(candidate.finding.payload?.reasonCode) !== 'AMBIGUOUS_IDENTITY') return false;
+  const observed = candidate.finding.subject;
+  const known = objects(observed.canonicalMmv);
+  const brand=value(observed.brand), model=value(observed.model);
+  const version=value(observed.officialVersionLabel);
+  return !!brand && !!model && !!version && known.some(match =>
+    canonical.some(item =>
+      item.id===value(match.id) &&
+      sameCanonicalIdentity({brand,model,officialVersionLabel:version},
+        item,candidate.run.market??'BR')));
+}
