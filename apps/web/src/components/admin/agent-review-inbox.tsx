@@ -197,12 +197,12 @@ export function AgentReviewInbox({items,sort,direction}:{readonly items:readonly
             <tr>
               {th('brand','Marca','9%')}
               {th('model','Modelo','10%')}
-              <th scope="col" className="sticky top-0 z-20 border-b border-[#D6DEE3] bg-[#DCE8ED] px-2.5 py-3" style={{width:'22%'}}>DESCOBERTA</th>
+              <th scope="col" className="sticky top-0 z-20 border-b border-[#D6DEE3] bg-[#DCE8ED] px-2.5 py-3" style={{width:'26%'}}>DESCOBERTA</th>
               {th('agent','Agente','9%')}
               {th('date','Data','9%')}
               {th('confidence','Confiança','7.5%')}
               <th scope="col" className="sticky top-0 z-20 border-b border-[#D6DEE3] bg-[#DCE8ED] px-2.5 py-3" style={{width:'9%'}}>STATUS</th>
-              <th scope="col" className="sticky top-0 z-20 border-b border-[#D6DEE3] bg-[#DCE8ED] px-2.5 py-3" style={{width:'16.5%'}}>RECOMENDAÇÃO</th>
+              <th scope="col" className="sticky top-0 z-20 border-b border-[#D6DEE3] bg-[#DCE8ED] px-2.5 py-3" style={{width:'12.5%'}}>RECOMENDAÇÃO</th>
               <th scope="col" className="sticky top-0 z-20 border-b border-[#D6DEE3] bg-[#DCE8ED] px-2.5 py-3" style={{width:'8%'}}>AÇÃO</th>
             </tr>
           </thead>
@@ -216,9 +216,9 @@ export function AgentReviewInbox({items,sort,direction}:{readonly items:readonly
                   <td className="px-2.5 py-3 font-medium" title={row.model}>
                     <p className="truncate">{row.model||'—'}</p>
                   </td>
-                  <td className="px-2.5 py-3" title={row.title}>
-                    <p className="line-clamp-2 font-medium">{row.title}</p>
-                    {row.priorRuns>1?<p className="mt-1 text-[10px] text-[#61747B]">
+                  <td className="min-w-0 px-2.5 py-3" title={row.title}>
+                    <p className="truncate whitespace-nowrap font-medium" title={row.title}>{row.title}</p>
+                    {row.priorRuns>1?<p className="mt-1 truncate whitespace-nowrap text-[10px] text-[#61747B]">
                       {row.priorRuns} observações consolidadas
                     </p>:null}
                   </td>
