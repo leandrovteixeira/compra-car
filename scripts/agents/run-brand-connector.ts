@@ -14,6 +14,7 @@ import {
 import type { AgentPlatformRepository } from '@compra-car/core/agent-platform';
 import { OpenAIBrandConnectorResearchProvider } from '@compra-car/adapter-openai';
 import { redactSecrets } from './report-writer';
+import { requireAgentOpenAiApiKey, agentOpenAiSecrets } from './agent-openai-credentials';
 import { loadAgentEnvironment } from './agent-environment';
 import { safeAgentFailure } from './agent-diagnostics';
 import { recordAiUsage } from './ai-usage';
@@ -65,12 +66,10 @@ export async function runBrandConnectorCli(
   try {
     const options = parseBrandConnectorArguments(args);
     env = await loadAgentEnvironment(root, env);
-    if (
-      options.provider === 'openai' &&
-      !dependencies.research &&
-      (!env.OPENAI_API_KEY?.trim() || !env.OPENAI_AGENT_MODEL?.trim())
-    )
-      throw new Error('OPENAI_AGENT_CONFIG_REQUIRED');
+    if (options.provider === 'openai' && !dependencies.research) {
+      requireAgentOpenAiApiKey(env, 'BRAND_CONNECTOR');
+      if (!env.OPENAI_AGENT_MODEL?.trim()) throw new Error('OPENAI_AGENT_MODEL_REQUIRED');
+    }
     let repository = dependencies.repository,
       persistence = dependencies.persistence;
     if (
@@ -110,7 +109,7 @@ export async function runBrandConnectorCli(
       (options.provider === 'fixture'
         ? new FixtureBrandConnectorResearchProvider(options.fixtureState === 'drift')
         : new OpenAIBrandConnectorResearchProvider({
-            apiKey: env.OPENAI_API_KEY ?? '',
+            apiKey: requireAgentOpenAiApiKey(env, 'BRAND_CONNECTOR'),
             model: env.OPENAI_AGENT_MODEL ?? '',
             prompt: await readFile(
               resolve(root, 'docs/agents/prompts/brand-connector-agent-v1.md'),
@@ -154,7 +153,7 @@ export async function runBrandConnectorCli(
         env,
       );
     }
-    const secrets = [env.OPENAI_API_KEY ?? '', env.SUPABASE_SERVER_KEY ?? ''];
+    const secrets = [...agentOpenAiSecrets(env),env.SUPABASE_SERVER_KEY ?? ''];
     const clean = JSON.parse(redactSecrets(JSON.stringify(bundle), secrets)) as typeof bundle;
     const finding = clean.findings[0]!.finding;
     const directory = resolve(root, '.local-reports/agents/brand-connector');
