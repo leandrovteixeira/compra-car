@@ -24,18 +24,27 @@ describe('Sprint 26 GWM capped pilot',()=>{
   });
   it('requires DB reservation prior to dispatch and conservatively holds reserve',async()=>{
     const rpc=vi.fn(async(name:string)=>({
-      data:name==='agent_spend_reserve'?'reserved-id':null,error:null,
+      data:name==='agent_spend_reserve_remaining'
+        ?{id:'reserved-id',reservedUsd:1.99}:null,error:null,
     }));
     const c={rpc};
     const r=await reserveAgentPilotBudget(c,job('BRAND_CONNECTOR'));
-    expect(r).toMatchObject({id:'reserved-id',reservedUsd:2});
-    expect(rpc).toHaveBeenCalledWith('agent_spend_reserve',{
-      p_budget_key:'qa:BR:GWM:BRAND_CONNECTOR',p_model:'BRAND_CONNECTOR',p_amount_usd:2,
+    expect(r).toMatchObject({id:'reserved-id',reservedUsd:1.99});
+    expect(rpc).toHaveBeenCalledWith('agent_spend_reserve_remaining',{
+      p_budget_key:'qa:BR:GWM:BRAND_CONNECTOR',p_model:'BRAND_CONNECTOR',
+      p_max_amount_usd:2,
     });
     await finishAgentPilotBudget(c,r);
     expect(rpc).toHaveBeenCalledWith('agent_spend_complete',{
       p_id:'reserved-id',p_usage_known:false,
     });
+  });
+  it('rejects an invalid or too-small reservation response',async()=>{
+    for(const data of [null,{id:'test',reservedUsd:0},{id:'test',reservedUsd:2.5}]){
+      const c={rpc:vi.fn(async()=>({data,error:null}))};
+      await expect(reserveAgentPilotBudget(c,job('BRAND_CONNECTOR')))
+        .rejects.toThrow('COST_ADMISSION_FAILED');
+    }
   });
   it('fails closed on missing budget or exhausted capacity',async()=>{
     for(const code of ['COST_BUDGET_NOT_CONFIGURED','COST_BUDGET_EXHAUSTED']){
