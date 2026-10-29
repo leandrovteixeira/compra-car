@@ -47,12 +47,21 @@ export async function reserveAgentPilotBudget(
   client:AgentBudgetClient,job:AgentBudgetJob,
 ):Promise<{id:string;budgetKey:string;reservedUsd:number}>{
   const budgetKey=agentPilotBudgetKey(job);
-  const {data,error}=await client.rpc('agent_spend_reserve',{
-    p_budget_key:budgetKey,p_model:job.job_type,p_amount_usd:GWM_PILOT_RESERVATION_USD,
+  // Reconciled prior usage remains charged to the same US$ 2 pilot cap.
+  // Reserve the remaining amount atomically, up to a maximum of US$ 2.
+  const {data,error}=await client.rpc('agent_spend_reserve_remaining',{
+    p_budget_key:budgetKey,p_model:job.job_type,
+    p_max_amount_usd:GWM_PILOT_RESERVATION_USD,
   });
   if(error)throw new Error(cleanCode(error));
-  if(typeof data!=='string'||!data.trim())throw new Error('COST_ADMISSION_FAILED');
-  return {id:data,budgetKey,reservedUsd:GWM_PILOT_RESERVATION_USD};
+  const result = data && typeof data==='object' && !Array.isArray(data)
+    ? data as Record<string,unknown> : null;
+  const id=result?.id;
+  const reservedUsd=Number(result?.reservedUsd);
+  if(typeof id!=='string'||!id.trim()||!Number.isFinite(reservedUsd)||
+     reservedUsd<0.01||reservedUsd>GWM_PILOT_RESERVATION_USD)
+    throw new Error('COST_ADMISSION_FAILED');
+  return {id,budgetKey,reservedUsd};
 }
 export async function finishAgentPilotBudget(
   client:AgentBudgetClient,reservation:{id:string},
