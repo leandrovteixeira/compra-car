@@ -33,6 +33,10 @@ jobs:
         run: pnpm --filter @compra-car/web exec vitest run src/components/admin/sidebar-navigation.test.ts
       - name: Review normalization regression
         run: pnpm --filter @compra-car/web exec vitest run src/application/admin/agent-review-projection.test.ts
+      - name: Agent CLI TypeScript check
+        run: pnpm --filter @compra-car/agents typecheck
+      - name: Per-agent OpenAI key isolation and env tests
+        run: pnpm --filter @compra-car/agents exec vitest run test/agent-openai-credentials.test.ts test/agent-environment.test.ts
       - name: Web TypeScript check
         run: pnpm --filter @compra-car/web typecheck
       - name: Web production build (offline agent mode)
