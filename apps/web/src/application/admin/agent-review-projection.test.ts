@@ -31,7 +31,7 @@ const runs=new Map<string,LegacyRun>([
 ]);
 
 describe('Sprint 26 human review inbox projection',()=>{
-  it('consolidates model discovery by brand+model, prioritizing fuller version proposals',()=>{
+  it('splits each version into one case and prioritizes complete source snapshots',()=>{
     const old=finding({id:'old',run_id:'r1',created_at:'2026-10-08T10:00:00Z'});
     const rich=finding({id:'rich',run_id:'r2',
       proposal:{action:'STAGE_MMV_IDENTITIES',identities:[
@@ -40,10 +40,14 @@ describe('Sprint 26 human review inbox projection',()=>{
       ]},
     });
     const {cases}=buildReviewProjection([old,rich],runs,new Map());
-    expect(cases).toHaveLength(1);
-    expect(cases[0]?.finding.id).toBe('rich');
-    expect(cases[0]?.discovery).toContain('2 versões: Pro, Pro S');
-    expect(cases[0]?.priorRuns).toBe(2);
+    expect(cases).toHaveLength(2);
+    const pro=cases.find(c=>c.version==='Pro');
+    const pros=cases.find(c=>c.version==='Pro S');
+    expect(pro?.finding.id).toBe('rich');
+    expect(pro?.priorRuns).toBe(2);
+    expect(pros?.finding.id).toBe('rich');
+    expect(pros?.priorRuns).toBe(1);
+    expect(new Set(cases.map(c=>c.businessKey)).size).toBe(2);
   });
   it('removes Kia Niro batch only after both proposed variants are canonical',()=>{
     const found=finding({id:'niro',run_id:'r1',subject:{brand:'Kia',model:'Niro'},
@@ -53,13 +57,19 @@ describe('Sprint 26 human review inbox projection',()=>{
         {brand:'Kia',model:'Niro',officialVersionLabel:'SX PRESTIGE',propulsion:'HEV',powertrainLabel:'HEV'},
       ]},
     });
-    const c=buildReviewProjection([found],runs,new Map()).cases[0]!;
+    const cases=buildReviewProjection([found],runs,new Map()).cases;
+    expect(cases).toHaveLength(2);
+    const c=cases[0]!;
     const ex={id:'mmv-ex',market:'BR',brand:'Kia',model:'Niro',
       official_version_label:'EX',propulsion:'HEV',powertrain_label:'HEV',status:'ACTIVE'};
     const sx={...ex,id:'mmv-sx',official_version_label:'SX PRESTIGE'};
-    expect(isResolvedMmvCase(c,[ex])).toBe(false); // partial batch must stay reviewable
-    expect(isResolvedMmvCase(c,[ex,sx])).toBe(true);
-    expect(isResolvedMmvCase(c,[ex,{...sx,propulsion:'BEV'}])).toBe(false);
+    const exCase=cases.find(c=>c.version==='EX')!;
+    const sxCase=cases.find(c=>c.version==='SX PRESTIGE')!;
+    expect(isResolvedMmvCase(exCase,[ex])).toBe(true);
+    expect(isResolvedMmvCase(sxCase,[ex])).toBe(false);
+    expect(c.version).toBe('EX');
+    expect(isResolvedMmvCase(sxCase,[ex,sx])).toBe(true);
+    expect(isResolvedMmvCase(sxCase,[ex,{...sx,propulsion:'BEV'}])).toBe(false);
   });
   it('does not recreate a previously matched ambiguous commercial version',()=>{
     const found=finding({id:'niro-ambiguous',run_id:'r1',
@@ -74,6 +84,23 @@ describe('Sprint 26 human review inbox projection',()=>{
       powertrain_label:'HEV',status:'ACTIVE'};
     expect(isResolvedMmvCase(c,[sx])).toBe(true);
     expect(isResolvedMmvCase(c,[{...sx,id:'different'}])).toBe(false);
+  });
+  it('offers identity resolution for GTL FOSCO without automatically merging finish and price',()=>{
+    const ev9=finding({id:'ev9',run_id:'r1',
+      subject:{brand:'Kia',model:'EV9'},title:'Kia EV9',
+      proposal:{action:'STAGE_MMV_IDENTITIES',identities:[
+        {brand:'Kia',model:'EV9',officialVersionLabel:'GTL',propulsion:'BEV'},
+        {brand:'Kia',model:'EV9',officialVersionLabel:'GTL FOSCO',propulsion:'BEV'},
+      ]}});
+    const cases=buildReviewProjection([ev9],runs,new Map()).cases;
+    expect(cases).toHaveLength(2);
+    expect(cases.find(c=>c.version==='GTL')?.kind).toBe('MMV_NEW');
+    const fosco=cases.find(c=>c.version==='GTL FOSCO')!;
+    expect(fosco.kind).toBe('MMV_AMBIGUOUS');
+    expect(fosco.possibleAppearanceVariant).toBe(true);
+    expect(fosco.recommendation).toBe('Criar ou vincular à GTL');
+    expect(fosco.selectedIdentity?.officialVersionLabel).toBe('GTL FOSCO');
+    expect(fosco.businessKey).not.toBe(cases.find(c=>c.version==='GTL')?.businessKey);
   });
   it('does not silently merge different commercial versions',()=>{
     const a=finding({id:'a',run_id:'r1',finding_type:'NEW_VERSION',
@@ -109,8 +136,10 @@ describe('Sprint 26 human review inbox projection',()=>{
       proposal:{action:'REVIEW_MODEL_BODY_SPLIT',proposedModel:'Saveiro Picape cabine dupla'},
     });
     const projected=buildReviewProjection([model,body],runs,new Map());
-    expect(projected.cases).toHaveLength(1);
-    expect(projected.cases[0]?.discovery).toContain('4 versões');
+    expect(projected.cases).toHaveLength(4);
+    expect(projected.cases.map(c=>c.version).sort()).toEqual(
+      ['Robust CS','Robust CD','Trendline CS','Extreme CD'].sort());
+    expect(projected.cases.every(c=>c.discovery==='Nova versão')).toBe(true);
     expect(projected.diagnostics.genericBodySplit).toBe(1);
   });
   it('does not ask operator of Model Year to create MMV',()=>{
