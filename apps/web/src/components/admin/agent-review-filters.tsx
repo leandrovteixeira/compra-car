@@ -92,8 +92,11 @@ export function AgentReviewFilters(props:{
         <option value="confidence:desc">Maior confiança</option>
         <option value="confidence:asc">Menor confiança</option>
         <option value="brand:asc">Marca A–Z</option>
+        <option value="brand:desc">Marca Z–A</option>
         <option value="model:asc">Modelo A–Z</option>
+        <option value="model:desc">Modelo Z–A</option>
         <option value="agent:asc">Agente A–Z</option>
+        <option value="agent:desc">Agente Z–A</option>
       </select>
     </label>
     <Link href="/admin/agents" className="ui-button ui-button--secondary ui-button--action h-10">
