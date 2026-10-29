@@ -5,6 +5,8 @@ import { loadAgentRuns } from '@/application/admin/agent-platform';
 import { loadAgentJobs } from '@/application/admin/agent-runner';
 import { loadBrandTargets } from '@/application/admin/brand-connectors';
 import { loadAgentControlCenterSummary } from '@/application/admin/agent-control-center';
+import { loadAgentHandoffSummary } from '@/application/admin/agent-handoff-summary';
+import { AgentHandoffPanel } from '@/components/admin/agent-handoff-panel';
 import { loadReviewInbox, type ReviewSort, type ReviewDirection } from '@/application/admin/agent-review-inbox';
 import { AgentReviewFilters, type AgentFilter } from '@/components/admin/agent-review-filters';
 import { AgentRunHistory } from '@/components/admin/agent-platform-views';
@@ -38,12 +40,13 @@ export default async function AgentsPage({
   const requestedPage=typeof params.page==='string'?Number(params.page):1;
   const page=Number.isSafeInteger(requestedPage)&&requestedPage>0?requestedPage:1;
 
-  const [inbox, summary, brandTargets, jobs, runs] = await Promise.all([
+  const [inbox, summary, brandTargets, jobs, runs, handoffs] = await Promise.all([
     !flight ? loadReviewInbox({page,limit:25,status,agent,search,sort,direction}) : Promise.resolve(null),
     flight ? loadAgentControlCenterSummary() : Promise.resolve(null),
     flight && process.env.APP_ENV==='qa' ? loadBrandTargets() : Promise.resolve([]),
     flight && process.env.APP_ENV==='qa' ? loadAgentJobs(20) : Promise.resolve([]),
     flight ? loadAgentRuns({limit:20,offset:0,agentType:agent&&agent!=='YEAR'?agent:undefined}) : Promise.resolve(null),
+    flight ? loadAgentHandoffSummary() : Promise.resolve(null),
   ]);
   const launcherBrands=[...new Set(brandTargets
     .filter(({target})=>target.enabled).map(({target})=>canonicalVehicleBrand(target.brand)))]
@@ -102,6 +105,7 @@ export default async function AgentsPage({
         {flight && summary?(
           <div className="space-y-6">
             <AgentControlCenterOverview summary={summary}/>
+            {handoffs ? <AgentHandoffPanel summary={handoffs} /> : null}
             <section className="space-y-3">
               <h2 className="text-base font-semibold">Custos e limites</h2>
               <div className="ui-surface p-4 text-sm text-text-secondary">
