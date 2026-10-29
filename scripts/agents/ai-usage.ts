@@ -67,5 +67,5 @@ export async function recordAiUsage(
     estimated_cost_usd: estimate.cost,
     reason: estimate.priced ? input.reason : input.reason + ':UNPRICED',
   });
-  if (error) return;
+  if (error) throw new Error('AGENT_AI_USAGE_PERSIST_FAILED');
 }
