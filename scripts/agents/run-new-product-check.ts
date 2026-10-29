@@ -25,6 +25,7 @@ import {
   productResearchMaxWaitMs,
 } from '@compra-car/adapter-openai';
 import { LocalProductReportWriter, redactSecrets } from './report-writer';
+import { requireAgentOpenAiApiKey,agentOpenAiSecrets } from './agent-openai-credentials';
 import { LocalCurrentDiscoveryReportWriter } from './current-discovery-report-writer';
 import { loadAgentEnvironment } from './agent-environment';
 import { safeAgentFailure } from './agent-diagnostics';
@@ -95,8 +96,9 @@ export async function runNewProductCheckCli(
     const { scope, provider, persistFindings, discoveryOnly, marketReconcile, marketModel } =
       parseAgentArguments(args);
     env = await loadAgentEnvironment(repositoryRoot, env);
-    if (provider === 'openai' && (!env.OPENAI_API_KEY?.trim() || !env.OPENAI_AGENT_MODEL?.trim())) {
-      throw new Error('OPENAI_AGENT_CONFIG_REQUIRED');
+    if (provider === 'openai') {
+      requireAgentOpenAiApiKey(env,'MMV_DISCOVERY');
+      if (!env.OPENAI_AGENT_MODEL?.trim()) throw new Error('OPENAI_AGENT_MODEL_REQUIRED');
     }
     if (
       (provider === 'openai' || (persistFindings && !persistence)) &&
@@ -104,7 +106,7 @@ export async function runNewProductCheckCli(
     ) {
       throw new Error('SUPABASE_AGENT_CONFIG_REQUIRED');
     }
-    const secrets = [env.OPENAI_API_KEY ?? '', env.SUPABASE_SERVER_KEY ?? ''];
+    const secrets = [...agentOpenAiSecrets(env), env.SUPABASE_SERVER_KEY ?? ''];
     const reports = new LocalProductReportWriter(repositoryRoot, secrets);
     const connectorResolver =
       provider === 'fixture'
@@ -127,7 +129,7 @@ export async function runNewProductCheckCli(
       provider === 'fixture'
         ? new FixtureProductResearchProvider()
         : new OpenAIProductResearchProvider({
-            apiKey: env.OPENAI_API_KEY!,
+            apiKey: requireAgentOpenAiApiKey(env,'MMV_DISCOVERY'),
             model: env.OPENAI_AGENT_MODEL!,
             maxWaitMs: productResearchMaxWaitMs(env.OPENAI_AGENT_MAX_WAIT_MS),
             prompt: await readFile(
@@ -145,7 +147,7 @@ export async function runNewProductCheckCli(
     const ambiguityAdjudicator =
       provider === 'openai'
         ? new OpenAIMmvAmbiguityAdjudicator({
-            apiKey: env.OPENAI_API_KEY!,
+            apiKey: requireAgentOpenAiApiKey(env,'MMV_DISCOVERY'),
             model: env.OPENAI_ADJUDICATION_MODEL?.trim() || 'gpt-5.6',
             onUsage: (usage) => adjudicationUsage.push(usage),
           })
@@ -265,7 +267,7 @@ export async function runNewProductCheckCli(
       | undefined;
     if (marketReconcile) {
       const lookup = new OpenAIMmvMarketLookupProvider({
-        apiKey: env.OPENAI_API_KEY!,
+        apiKey: requireAgentOpenAiApiKey(env,'MMV_DISCOVERY'),
         model: env.OPENAI_AGENT_MODEL!,
         prompt: await readFile(
           resolve(repositoryRoot, 'docs/agents/prompts/mmv-market-reconciliation-v1.md'),
