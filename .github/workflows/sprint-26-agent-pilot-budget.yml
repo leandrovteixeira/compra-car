@@ -1,0 +1,38 @@
+name: Sprint 26 — GWM Pilot Cost Admission
+on:
+  push:
+    branches: [sprint-26-agent-ux-control-center]
+    paths:
+      - 'scripts/agents/agent-pilot-budget.ts'
+      - 'scripts/agents/agent-job-worker.ts'
+      - 'scripts/agents/test/agent-pilot-budget.test.ts'
+      - 'scripts/agents/agent-openai-credentials.ts'
+      - 'scripts/agents/test/agent-openai-credentials.test.ts'
+      - '.github/workflows/sprint-26-agent-pilot-budget.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  budget-admission:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      OPENAI_API_KEY: ''
+      SUPABASE_SERVER_KEY: ''
+      APP_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Agent TypeScript
+        run: pnpm --filter @compra-car/agents typecheck
+      - name: Budget admission, isolated credentials
+        run: pnpm --filter @compra-car/agents exec vitest run test/agent-pilot-budget.test.ts test/agent-openai-credentials.test.ts test/agent-environment.test.ts
+      - name: Lint changed agent files
+        run: pnpm --filter @compra-car/agents exec eslint agent-pilot-budget.ts agent-job-worker.ts test/agent-pilot-budget.test.ts
