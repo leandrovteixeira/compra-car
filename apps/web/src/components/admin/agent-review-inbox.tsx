@@ -227,7 +227,7 @@ export function AgentReviewInbox({items,sort,direction}:{readonly items:readonly
                   <td className="whitespace-nowrap px-2 py-3 font-semibold tabular-nums">{percent(row.confidence)}</td>
                   <td className="px-2.5 py-3"><Status status={row.status}/></td>
                   <td className="px-2.5 py-3">
-                    <p className="line-clamp-2 text-[11px] font-medium">{row.recommendation}</p>
+                    <p className="truncate whitespace-nowrap text-[11px] font-medium" title={row.recommendation}>{row.recommendation}</p>
                     {row.evidencePreview?<p className="mt-1 truncate text-[10px] text-[#61747B]"
                       title={row.evidencePreview}>{row.evidencePreview}</p>:null}
                   </td>
