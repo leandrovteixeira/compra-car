@@ -20,16 +20,25 @@ export function stripRedundantModelPrefix(model: string, label: string | null): 
 
 export function normalizeDiscoveredVariantLabels<T extends {
   readonly model: string;
+  readonly brand?: string;
   readonly officialVersionLabel: string | null;
   readonly trim: string | null;
 }>(candidate: T): T {
+  const brand = candidate.brand?.trim();
+  const model = brand && new RegExp('^' + escapeRegExp(brand) + '\\s+', 'iu').test(candidate.model)
+    ? candidate.model.replace(new RegExp('^' + escapeRegExp(brand) + '\\s+', 'iu'), '').trim()
+    : candidate.model;
+  const normalizeLabel = (label: string | null) => {
+    if (!label) return null;
+    const stripped = stripRedundantModelPrefix(model, label);
+    return stripped && key(stripped) !== key(model) && (!brand || key(stripped) !== key(brand + ' ' + model))
+      ? stripped : null;
+  };
   return {
     ...candidate,
-    officialVersionLabel: stripRedundantModelPrefix(
-      candidate.model,
-      candidate.officialVersionLabel,
-    ),
-    trim: stripRedundantModelPrefix(candidate.model, candidate.trim),
+    model,
+    officialVersionLabel: normalizeLabel(candidate.officialVersionLabel),
+    trim: normalizeLabel(candidate.trim),
   };
 }
 
