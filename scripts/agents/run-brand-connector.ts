@@ -1,4 +1,5 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -63,9 +64,14 @@ export async function runBrandConnectorCli(
     research?: BrandConnectorResearchProvider;
   } = {},
 ): Promise<number> {
+  const openAiUsage = { current: null as null | { model: string; inputTokens: number; outputTokens: number; totalTokens: number; webSearchCount: number } };
+  let usageScope: { brand: string; market: string } | null = null;
+  let usageRecorded = false;
+  const attemptId = randomUUID();
   try {
     const options = parseBrandConnectorArguments(args);
     env = await loadAgentEnvironment(root, env);
+    usageScope = { brand: options.brand, market: options.market };
     if (options.provider === 'openai' && !dependencies.research) {
       requireAgentOpenAiApiKey(env, 'BRAND_CONNECTOR');
       if (!env.OPENAI_AGENT_MODEL?.trim()) throw new Error('OPENAI_AGENT_MODEL_REQUIRED');
@@ -103,7 +109,6 @@ export async function runBrandConnectorCli(
       options.provider === 'openai' && repository
         ? await repository.resolveBrandIdentity(options.brand, options.market)
         : null;
-    const openAiUsage = { current: null as null | { model: string; inputTokens: number; outputTokens: number; totalTokens: number; webSearchCount: number } };
     const research =
       dependencies.research ??
       (options.provider === 'fixture'
@@ -152,6 +157,7 @@ export async function runBrandConnectorCli(
         },
         env,
       );
+      usageRecorded = true;
     }
     const secrets = [...agentOpenAiSecrets(env),env.SUPABASE_SERVER_KEY ?? ''];
     const clean = JSON.parse(redactSecrets(JSON.stringify(bundle), secrets)) as typeof bundle;
@@ -206,6 +212,32 @@ export async function runBrandConnectorCli(
     );
     return 0;
   } catch (error) {
+    // Record incomplete OpenAI attempts as orphan-safe usage receipts.
+    // No agent run exists yet and the provider may still have billed tokens.
+    if (usageScope && openAiUsage.current && !usageRecorded &&
+        env.SUPABASE_URL?.trim() && env.SUPABASE_SERVER_KEY?.trim()) {
+      try {
+        const { createLegacySupabaseClient } = await import('@compra-car/adapter-supabase');
+        await recordAiUsage(
+          createLegacySupabaseClient({url:env.SUPABASE_URL,serverKey:env.SUPABASE_SERVER_KEY}),
+          {
+            runId:null,
+            intendedRunId:attemptId,
+            agentType:'BRAND_CONNECTOR',
+            market:usageScope.market,
+            brand:usageScope.brand,
+            provider:'openai',
+            model:openAiUsage.current.model,
+            inputTokens:openAiUsage.current.inputTokens,
+            outputTokens:openAiUsage.current.outputTokens,
+            totalTokens:openAiUsage.current.totalTokens,
+            webSearchCount:openAiUsage.current.webSearchCount,
+            reason:'BRAND_CONNECTOR_FAILED_ATTEMPT',
+          },
+          env,
+        );
+      } catch { /* never replace the original failure with telemetry errors */ }
+    }
     log(safeAgentFailure('BRAND_CONNECTOR_FAILED', error));
     return 1;
   }
