@@ -31,11 +31,13 @@ jobs:
         run: pnpm --filter @compra-car/core exec vitest run test/brand-connector.test.ts test/current-mmv-discovery-agent.test.ts test/model-year-agent.test.ts test/price-agent.test.ts
       - name: Sidebar navigation regression
         run: pnpm --filter @compra-car/web exec vitest run src/components/admin/sidebar-navigation.test.ts
+      - name: Review normalization regression
+        run: pnpm --filter @compra-car/web exec vitest run src/application/admin/agent-review-projection.test.ts
       - name: Web TypeScript check
         run: pnpm --filter @compra-car/web typecheck
       - name: Web production build (offline agent mode)
         run: pnpm --filter @compra-car/web build
       - name: Lint inbox and detail files
-        run: pnpm --filter @compra-car/web exec eslint src/app/admin/agents/page.tsx src/app/admin/agents/review-detail/'[id]'/route.ts src/application/admin/agent-review-inbox.ts src/components/admin/agent-review-inbox.tsx src/app/admin/agents/flight-control/page.tsx src/components/admin/sidebar-navigation.ts src/components/admin/admin-navigation.ts src/components/admin/sidebar-navigation.test.ts
+        run: pnpm --filter @compra-car/web exec eslint src/app/admin/agents/page.tsx src/app/admin/agents/review-detail/'[id]'/route.ts src/application/admin/agent-review-inbox.ts src/application/admin/agent-review-projection.ts src/application/admin/agent-review-projection.test.ts src/components/admin/agent-review-filters.tsx src/components/admin/agent-review-inbox.tsx src/components/admin/admin-sidebar.tsx src/app/admin/agents/loading.tsx src/app/admin/agents/flight-control/page.tsx src/components/admin/sidebar-navigation.ts src/components/admin/admin-navigation.ts src/components/admin/sidebar-navigation.test.ts
       - name: Lint contract files
         run: pnpm --filter @compra-car/core exec eslint src/agent-platform/review-contract.ts src/agent-platform/canonical-alias-contract.ts src/agent-platform/spec-create-contract.ts test/agent-review-contract-26.test.ts
