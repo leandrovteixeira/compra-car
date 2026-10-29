@@ -133,7 +133,7 @@ describe('Shared native agent environment', () => {
         'OPENAI_BRAND_CONNECTOR_API_KEY=synthetic-brand-key',
         'OPENAI_MMV_DISCOVERY_API_KEY=synthetic-mmv-key',
         'OPENAI_AGENT_MODEL=mock-model',
-      ].join('\\n'));
+      ].join('\n'));
       const code =
         kind === 'brand'
           ? await runBrandConnectorCli(
