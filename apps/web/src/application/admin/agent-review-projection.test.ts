@@ -71,7 +71,7 @@ describe('Sprint 26 human review inbox projection',()=>{
     expect(p.diagnostics.yearToMmv).toBe(1);
     expect(p.diagnostics.yearToMmvIdentities).toBe(1);
   });
-  it('shows old and new Year agent findings as the same operational family',()=>{
+  it('excludes historical Year proposals that lack a canonical MMV, retaining current ones',()=>{
     const a=finding({id:'a',run_id:'r4',finding_type:'NEW_MODEL_YEAR',
       subject:{brand:'VW',model:'ID.4',officialVersionLabel:'Pro',modelYear:2026},
       proposal:null,payload:{}});
@@ -79,8 +79,10 @@ describe('Sprint 26 human review inbox projection',()=>{
       subject:{brand:'VW',model:'ID.4',officialVersionLabel:'Pro',modelYear:2027},
       proposal:{action:'STAGE_PRODUCT_YEAR'},payload:{reasonCode:'NEW_MODEL_YEAR'}});
     const p=buildReviewProjection([a,b],runs,new Map());
-    expect(p.cases).toHaveLength(2);
-    expect(p.cases.every(x=>x.kind==='MODEL_YEAR_NEW')).toBe(true);
+    expect(p.cases).toHaveLength(1);
+    expect(p.cases[0]?.run.agent_type).toBe('PRODUCT_YEAR');
+    expect(p.cases[0]?.kind).toBe('MODEL_YEAR_NEW');
+    expect(p.diagnostics.legacyYear).toBe(1);
   });
   it('simplifies brand connector messages without losing technical payload',()=>{
     const f=finding({id:'brand',run_id:'r5',finding_type:'CONNECTOR_DRIFT',
