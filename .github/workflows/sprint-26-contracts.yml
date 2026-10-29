@@ -37,6 +37,8 @@ jobs:
         run: pnpm --filter @compra-car/agents typecheck
       - name: Per-agent OpenAI key isolation and env tests
         run: pnpm --filter @compra-car/agents exec vitest run test/agent-openai-credentials.test.ts test/agent-environment.test.ts
+      - name: Agent pilot budget admission tests
+        run: pnpm --filter @compra-car/agents exec vitest run test/agent-pilot-budget.test.ts
       - name: Web TypeScript check
         run: pnpm --filter @compra-car/web typecheck
       - name: Web production build (offline agent mode)
