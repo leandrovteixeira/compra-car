@@ -21,6 +21,21 @@ import {
   type BrandConnectorResearchProvider,
 } from './brand-connector-types';
 
+/** Verified canonical GWM Brasil paths. Do not infer source URLs from page labels. */
+const verifiedGwmPaths: Readonly<Record<string, string>> = {
+  '/pt/mediacenter': '/pt/media-center',
+  '/pt/etiquetas': '/pt/saiba-mais/etiquetas-carros',
+  '/pt/condicoes-comerciais': '/pt/saiba-mais/condicoes-comerciais',
+};
+function canonicalKnownOfficialSource(url: string, brand: string, market: string): string {
+  if (brandKey(brand) !== brandKey('GWM') || market !== 'BR') return url;
+  const parsed = new URL(url);
+  if (parsed.hostname !== 'www.gwmmotors.com.br' && parsed.hostname !== 'gwmmotors.com.br') return url;
+  const replacement = verifiedGwmPaths[parsed.pathname];
+  if (replacement) parsed.pathname = replacement;
+  return parsed.href;
+}
+
 export class BrandConnectorAgent {
   constructor(private readonly research: BrandConnectorResearchProvider) {}
   async run(
@@ -103,7 +118,10 @@ export function mapBrandConnectorRun(
           brand,
           market,
           allowedDomains: result.candidateDomains,
-          sourceEntries: result.sourceEntries,
+          sourceEntries: result.sourceEntries.map((entry) => ({
+            ...entry,
+            url: canonicalKnownOfficialSource(entry.url, brand, market),
+          })),
           searchHints: result.searchHints,
           terminologyHints: result.terminologyHints,
         },
