@@ -303,10 +303,10 @@ export function isResolvedMmvCase(
   candidate: ProjectedCase,
   canonical: readonly CurrentCanonicalMmv[],
 ): boolean {
-  if (candidate.kind === 'MMV_NEW') {
-    const identity=candidate.selectedIdentity;
-    return identity!==null && canonical.some(item =>
-      sameCanonicalIdentity(identity,item,candidate.run.market ?? 'BR'));
+  if (candidate.selectedIdentity &&
+      ['MMV_NEW','MMV_AMBIGUOUS'].includes(candidate.kind)) {
+    return canonical.some(item =>
+      sameCanonicalIdentity(candidate.selectedIdentity!,item,candidate.run.market ?? 'BR'));
   }
   if (candidate.kind !== 'MMV_AMBIGUOUS' ||
       value(candidate.finding.payload?.reasonCode) !== 'AMBIGUOUS_IDENTITY') return false;
