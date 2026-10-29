@@ -103,7 +103,7 @@ export function VehicleSelection({ limit = 3 }: { readonly limit?: number }) {
             <input
               aria-controls="vehicle-search-results"
               autoComplete="off"
-              className="ui-field min-h-11 pr-12 text-base"
+              className="ui-field cc-search-manual-clear min-h-11 pr-12 text-base"
               disabled={loading || limitReached}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Buscar veículo..."
@@ -114,14 +114,14 @@ export function VehicleSelection({ limit = 3 }: { readonly limit?: number }) {
             {query ? (
               <button
                 aria-label="Limpar busca"
-                className="absolute right-0 top-0 grid min-h-11 min-w-11 place-items-center text-lg text-text-muted hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus"
+                className="absolute right-0 top-0 grid min-h-11 min-w-11 place-items-center focus-visible:outline-2 focus-visible:outline-focus"
                 onClick={() => {
                   setQuery('');
                   searchRef.current?.focus();
                 }}
                 type="button"
               >
-                ×
+                <img src="/carboot/close.svg" alt="" aria-hidden="true" className="size-[18px] object-contain" />
               </button>
             ) : null}
           </div>
