@@ -18,6 +18,7 @@ import { BrandConnectorSupabaseAdapter } from '@compra-car/adapter-supabase/bran
 import { PriceAgentSupabaseCatalogReader, PriceAgentSupabaseTelemetry } from '@compra-car/adapter-supabase/price-agent-context';
 import { loadAgentEnvironment } from './agent-environment';
 import { redactSecrets } from './report-writer';
+import { agentOpenAiApiKey,agentOpenAiSecrets,requireAgentOpenAiApiKey } from './agent-openai-credentials';
 import { recordEngineeringRunEvent } from './engineering-run-log';
 import { engineeringFailureReason } from './engineering-failure-reason';
 
@@ -137,9 +138,9 @@ async function supplementalMappingSnapshots(
 
 async function operationalResearch(env: Readonly<Record<string, string | undefined>>) {
   const requestCache = new Map<string, Promise<{ body: string; finalUrl: string } | null>>();
-  const reconciliation = env.PRICE_AGENT_LLM_ENABLED === '1' && env.OPENAI_API_KEY?.trim()
+  const reconciliation = env.PRICE_AGENT_LLM_ENABLED === '1' && agentOpenAiApiKey(env,'PRICE_INTELLIGENCE')
     ? new (await import('@compra-car/adapter-openai')).OpenAIPriceReconciliationProvider({
-        apiKey: env.OPENAI_API_KEY,
+        apiKey: requireAgentOpenAiApiKey(env,'PRICE_INTELLIGENCE'),
         models: ['gpt-5.6-luna', 'gpt-5.6-terra', 'gpt-5.6-sol'],
         maxToolCalls: 2,
         maxOutputTokens: 1800,
@@ -224,6 +225,7 @@ export async function runPriceCli(
     const { brand, persistFindings } = parse(args);
     attemptedBrand = brand;
     env = await loadAgentEnvironment(root, env);
+    if (env.PRICE_AGENT_LLM_ENABLED === '1') requireAgentOpenAiApiKey(env,'PRICE_INTELLIGENCE');
 
     let agent = dependencies.agent;
     let persistence = dependencies.persistence;
@@ -255,7 +257,7 @@ export async function runPriceCli(
     const result = await agent.run(
       brand,
       'BR',
-      env.PRICE_AGENT_LLM_ENABLED === '1' && env.OPENAI_API_KEY?.trim()
+      env.PRICE_AGENT_LLM_ENABLED === '1' && agentOpenAiApiKey(env,'PRICE_INTELLIGENCE')
         ? 'hybrid' : 'deterministic',
     );
 
@@ -279,7 +281,7 @@ export async function runPriceCli(
     const clean = JSON.parse(
       redactSecrets(JSON.stringify(result), [
         env.SUPABASE_SERVER_KEY ?? '',
-        env.OPENAI_API_KEY ?? '',
+        ...agentOpenAiSecrets(env),
       ]),
     ) as typeof result;
 
