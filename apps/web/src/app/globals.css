@@ -841,3 +841,20 @@ input, textarea, [contenteditable='true'] { -webkit-user-select: text; user-sele
 .cc-comparison-floating-header[hidden] { display: none; }
 @media print { .cc-comparison-floating-header { display: none; } }
 .cc-sidebar-scroll [aria-disabled='true'] img { filter: grayscale(1); opacity: .55; }
+
+
+/* Carboot / Elementos: use the official Close glyph for native search clear controls. */
+input[type='search']::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-inline-end: 4px;
+  background: url('/carboot/close.svg') center / contain no-repeat;
+  cursor: pointer;
+}
+
+/* This search uses its own accessible React clear button, so avoid a duplicate. */
+input[type='search'].cc-search-manual-clear::-webkit-search-cancel-button {
+  display: none;
+}
