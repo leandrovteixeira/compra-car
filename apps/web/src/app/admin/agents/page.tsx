@@ -65,7 +65,7 @@ export default async function AgentsPage({
           : 'Descobertas para decisão dos operadores.'}
         compact
       />
-      <div className="mt-4 space-y-4">
+      <div className="mt-4 space-y-4" data-agent-workspace>
         {!flight && inbox ? (
           <>
             <div className="flex flex-wrap items-center justify-between gap-2">
