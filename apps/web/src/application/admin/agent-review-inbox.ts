@@ -136,7 +136,7 @@ export async function loadReviewInbox(options:Readonly<{
       options.agent==='YEAR'
         ?['MODEL_YEAR','PRODUCT_YEAR'].includes(row.sourceAgent)
         :row.sourceAgent===options.agent))&&
-    (!term||[row.brand,row.model,row.title,row.shortDescription,
+    (!term||[row.brand+' '+row.model,row.brand,row.model,row.title,row.shortDescription,
       row.recommendation,row.agentLabel,row.reasonCode]
       .some(v=>v?.toLocaleLowerCase('pt-BR').includes(term)))
   );
