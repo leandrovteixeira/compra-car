@@ -35,6 +35,9 @@ export type ProjectedCase = {
   businessKey: string;
   brand: string;
   model: string;
+  version: string;
+  selectedIdentity: Record<string,unknown> | null;
+  possibleAppearanceVariant: boolean;
   discovery: string;
   recommendation: string;
   priorRuns: number;
@@ -63,11 +66,26 @@ const GENERIC_BODY_TYPES = new Set([
   'picape cabine simples','picape cabine dupla','cabine simples','cabine dupla',
 ]);
 
+function identityVariants(f: LegacyDiscovery): readonly Record<string,unknown>[] {
+  return objects(obj(f.proposal)?.identities).filter(o=>
+    Boolean(value(o.officialVersionLabel)||value(o.trim)));
+}
 function variants(f: LegacyDiscovery): readonly string[] {
-  const p = obj(f.proposal);
-  return [...new Set(objects(p?.identities)
-    .map((o) => value(o.officialVersionLabel)||value(o.trim))
-    .filter(Boolean))];
+  return [...new Set(identityVariants(f).map(o=>value(o.officialVersionLabel)||value(o.trim)))];
+}
+function variantLabel(identity: Record<string,unknown>): string {
+  return value(identity.officialVersionLabel) || value(identity.trim);
+}
+function appearanceParent(
+  identity: Record<string,unknown>,
+  siblings: readonly Record<string,unknown>[],
+): string | null {
+  const label=variantLabel(identity);
+  // An explicitly offered appearance suffix is a *review hint*, not an automatic merge.
+  const base=label.replace(/\s+(?:fosco|fosca|matte|matt)$/iu,'').trim();
+  if(base===label)return null;
+  const found=siblings.find(other=>key(variantLabel(other))===key(base));
+  return found ? variantLabel(found) : null;
 }
 function candidateVersion(f: LegacyDiscovery): string {
   const raw = obj(f.payload?.structuredCandidate);
@@ -123,105 +141,113 @@ export function buildReviewProjection(
     const reason=value(f.payload?.reasonCode);
     const v=candidateVersion(f);
     const baseKey=JSON.stringify([market,brandKey,modelKey]);
-    let kind: ReviewCaseKind|null=null;
-    let businessKey='';
-    let discovery='';
-    let recommendation='';
+    const proposedVariants=r.agent_type==='MMV_DISCOVERY' &&
+      ['NEW_MODEL','NEW_VERSION'].includes(f.finding_type)
+      ?identityVariants(f):[];
+    // One projected business case per commercial identity. Old source finding IDs
+    // remain intact: each row links to the same original evidence snapshot.
+    const individual=proposedVariants.length>0
+      ?proposedVariants : [null];
+    for(const identity of individual){
+      const label=identity?variantLabel(identity):v;
+      const paintParent=identity?appearanceParent(identity,proposedVariants):null;
+      let kind:ReviewCaseKind|null=null;
+      let businessKey='';
+      let discovery='';
+      let recommendation='';
 
-    if(r.agent_type==='BRAND_CONNECTOR'){
-      if(f.finding_type==='NEW_BRAND_CONNECTOR') {
-        kind='CONNECTOR_NEW';businessKey=JSON.stringify(['CONNECTOR',market,brandKey,'new']);
-        discovery='Novas fontes oficiais';recommendation='Validar inclusão das fontes';
-      }else if(f.finding_type==='CONNECTOR_DRIFT'&&f.proposal){
-        kind='CONNECTOR_UPDATE';businessKey=JSON.stringify(['CONNECTOR',market,brandKey,'update']);
-        discovery=/404|endere[cç]o|replacement path|substitut/i.test(f.summary??'')
-          ?'Mudança de endereço de fonte':'Atualização de fontes oficiais';
-        recommendation=/404|endere[cç]o|replacement path|substitut/i.test(f.summary??'')
-          ?'Validar substituição do link':'Validar atualização das fontes';
-      }
-    }else if(r.agent_type==='MMV_DISCOVERY'){
-      if(f.finding_type==='NEW_MODEL'&&variants(f).length){
-        kind='MMV_NEW';businessKey=JSON.stringify(['MMV_MODEL',baseKey]);
-        const versions=variants(f);
-        discovery=versions.length===1?'Novo modelo · '+versions[0]
-          :'Novo modelo · '+versions.length+' versões: '+versions.join(', ');
-        recommendation=versions.length===1?'Validar novo MMV':'Validar '+versions.length+' MMVs';
-      }else if(f.finding_type==='NEW_VERSION'&&f.proposal){
-        kind='MMV_NEW';businessKey=JSON.stringify(['MMV_VERSION',baseKey,key(v)]);
-        discovery='Nova versão · '+(v||'a confirmar');
-        recommendation='Validar nova versão';
-      }else if(f.finding_type==='AMBIGUOUS_MMV'){
-        if(reason==='POSSIBLE_BODY_SPLIT'){
-          const body=value(f.subject.bodyStyle);
-          const proposed=value(obj(f.proposal)?.proposedModel);
-          if(GENERIC_BODY_TYPES.has(key(body))&&key(proposed)===key(model+' '+body)){
-            diagnostics.genericBodySplit++;continue;
+      if(r.agent_type==='BRAND_CONNECTOR'){
+        if(f.finding_type==='NEW_BRAND_CONNECTOR'){
+          kind='CONNECTOR_NEW';businessKey=JSON.stringify(['CONNECTOR',market,brandKey,'new']);
+          discovery='Novas fontes oficiais';recommendation='Validar inclusão das fontes';
+        }else if(f.finding_type==='CONNECTOR_DRIFT'&&f.proposal){
+          kind='CONNECTOR_UPDATE';businessKey=JSON.stringify(['CONNECTOR',market,brandKey,'update']);
+          discovery=/404|endere[cç]o|replacement path|substitut/i.test(f.summary??'')
+            ?'Mudança de endereço de fonte':'Atualização de fontes oficiais';
+          recommendation=/404|endere[cç]o|replacement path|substitut/i.test(f.summary??'')
+            ?'Validar substituição do link':'Validar atualização das fontes';
+        }
+      }else if(r.agent_type==='MMV_DISCOVERY'){
+        if(identity&&['NEW_MODEL','NEW_VERSION'].includes(f.finding_type)){
+          kind=paintParent?'MMV_AMBIGUOUS':'MMV_NEW';
+          businessKey=JSON.stringify(['MMV',baseKey,key(label)]);
+          discovery=paintParent?'Possível variação de acabamento':'Nova versão';
+          recommendation=paintParent?'Criar ou vincular à '+paintParent:'Validar novo MMV';
+        }else if(f.finding_type==='AMBIGUOUS_MMV'){
+          if(reason==='POSSIBLE_BODY_SPLIT'){
+            const body=value(f.subject.bodyStyle);
+            const proposed=value(obj(f.proposal)?.proposedModel);
+            if(GENERIC_BODY_TYPES.has(key(body))&&key(proposed)===key(model+' '+body)){
+              diagnostics.genericBodySplit++;continue;
+            }
+            kind='MMV_AMBIGUOUS';businessKey=JSON.stringify(['BODY_SPLIT',baseKey,key(body)]);
+            discovery='Possível modelo independente';
+            recommendation='Confirmar identidade comercial';
+          }else{
+            const known=latestVersionsByModel.get(baseKey);
+            if(!v&&known?.size){
+              diagnostics.redundantAmbiguities++;continue;
+            }
+            if(v&&known?.has(key(v))){
+              diagnostics.redundantAmbiguities++;continue;
+            }
+            kind='MMV_AMBIGUOUS';businessKey=JSON.stringify(['AMBIGUOUS_MMV',baseKey,key(v)]);
+            discovery='Identidade comercial ambígua';
+            recommendation='Criar ou vincular MMV';
           }
-          kind='MMV_AMBIGUOUS';businessKey=JSON.stringify(['BODY_SPLIT',baseKey,key(body)]);
-          discovery='Possível modelo independente';
-          recommendation='Confirmar identidade comercial';
-        }else{
-          const known=latestVersionsByModel.get(baseKey);
-          if(!v&&known?.size){
-            diagnostics.redundantAmbiguities++;continue;
-          }
-          if(v&&known?.has(key(v))){
-            diagnostics.redundantAmbiguities++;continue;
-          }
-          kind='MMV_AMBIGUOUS';businessKey=JSON.stringify(['AMBIGUOUS_MMV',baseKey,key(v)]);
-          discovery='Versão sem correspondência'+(v?' · '+v:'');
-          recommendation='Criar ou vincular MMV';
+        }
+      }else if(r.agent_type==='MODEL_YEAR'||r.agent_type==='PRODUCT_YEAR'){
+        if(r.agent_type==='MODEL_YEAR'){
+          diagnostics.legacyYear++;continue;
+        }
+        if(f.finding_type==='POSSIBLE_NEW_MMV'||f.finding_type==='PRODUCT_YEAR_CONFLICT'){
+          diagnostics.yearToMmv++;
+          diagnostics.yearToMmvIdentities.add(JSON.stringify([baseKey,key(v)]));
+          continue;
+        }
+        if(f.finding_type==='NEW_PRODUCT_YEAR'||f.finding_type==='NEW_MODEL_YEAR'){
+          if(reason==='CONFIRMED_MODEL_YEAR')continue;
+          kind='MODEL_YEAR_NEW';
+          const my=f.subject.modelYear,py=f.subject.productionYear;
+          businessKey=JSON.stringify(['MODEL_YEAR',baseKey,key(v),my??'',py??'']);
+          discovery='Novo ano-modelo · '+(typeof my==='number'?my:'verificar');
+          recommendation='Validar ano-modelo';
+        }
+      }else if(r.agent_type==='PRICE_INTELLIGENCE'){
+        if(f.finding_type==='NEW_PRICE'||f.finding_type==='PRICE_CHANGE'){
+          kind=f.finding_type==='NEW_PRICE'?'PRICE_NEW':'PRICE_CHANGE';
+          businessKey=JSON.stringify(['PRICE',baseKey,key(v),f.subject_key]);
+          discovery=kind==='PRICE_NEW'?'Novo preço':'Alteração de preço';
+          recommendation='Validar preço público';
+        }
+      }else if(r.agent_type==='SPEC_INTELLIGENCE'){
+        if(f.finding_type==='UNMATCHED_SPEC'||f.finding_type==='SPEC_CHANGE'){
+          kind=f.finding_type==='UNMATCHED_SPEC'?'SPEC_AMBIGUOUS':'SPEC_NEW';
+          businessKey=JSON.stringify(['SPEC',baseKey,f.subject_key]);
+          discovery=kind==='SPEC_AMBIGUOUS'?'Spec sem correspondência':'Nova especificação';
+          recommendation='Criar ou reconciliar spec';
         }
       }
-    }else if(r.agent_type==='MODEL_YEAR'||r.agent_type==='PRODUCT_YEAR'){
-      // Historical MODEL_YEAR stores a text identity, not a canonical mmvId.
-      // It is not an actionable MY proposal under the current apply contract.
-      if(r.agent_type==='MODEL_YEAR'){
-        diagnostics.legacyYear++;
-        continue;
-      }
-      if(f.finding_type==='POSSIBLE_NEW_MMV'||f.finding_type==='PRODUCT_YEAR_CONFLICT'){
-        diagnostics.yearToMmv++;
-        diagnostics.yearToMmvIdentities.add(JSON.stringify([baseKey,key(v)]));
-        continue; // Internal dependency, not a Model Year operator decision.
-      }
-      if(f.finding_type==='NEW_PRODUCT_YEAR'||f.finding_type==='NEW_MODEL_YEAR'){
-        if(reason==='CONFIRMED_MODEL_YEAR')continue;
-        kind='MODEL_YEAR_NEW';
-        const my=f.subject.modelYear,py=f.subject.productionYear;
-        businessKey=JSON.stringify(['MODEL_YEAR',baseKey,key(v),my??'',py??'']);
-        discovery='Novo ano-modelo · '+(typeof my==='number'?my:'verificar');
-        recommendation='Validar ano-modelo';
-      }
-    }else if(r.agent_type==='PRICE_INTELLIGENCE'){
-      if(f.finding_type==='NEW_PRICE'||f.finding_type==='PRICE_CHANGE'){
-        kind=f.finding_type==='NEW_PRICE'?'PRICE_NEW':'PRICE_CHANGE';
-        businessKey=JSON.stringify(['PRICE',baseKey,key(v),f.subject_key]);
-        discovery=kind==='PRICE_NEW'?'Novo preço':'Alteração de preço';
-        recommendation='Validar preço público';
-      }
-    }else if(r.agent_type==='SPEC_INTELLIGENCE'){
-      if(f.finding_type==='UNMATCHED_SPEC'||f.finding_type==='SPEC_CHANGE'){
-        kind=f.finding_type==='UNMATCHED_SPEC'?'SPEC_AMBIGUOUS':'SPEC_NEW';
-        businessKey=JSON.stringify(['SPEC',baseKey,f.subject_key]);
-        discovery=kind==='SPEC_AMBIGUOUS'?'Spec sem correspondência':'Nova especificação';
-        recommendation='Criar ou reconciliar spec';
-      }
-    }
-    if(!kind)continue;
-    const review=reviews.get(f.id)?.decision??null;
-    const old=groups.get(businessKey);
-    if(!old){
-      groups.set(businessKey,{finding:f,run:r,kind,businessKey,brand,model,
-        discovery,recommendation,priorRuns:1,reviewedSameFingerprint:review});
-    }else{
-      old.priorRuns++;
-      if(better(f,old.finding)){
-        old.finding=f;old.run=r;old.brand=brand;old.model=model;
-        old.discovery=discovery;old.recommendation=recommendation;
-        old.reviewedSameFingerprint=review;
-      }else if(f.fingerprint===old.finding.fingerprint&&!old.reviewedSameFingerprint){
-        old.reviewedSameFingerprint=review;
+      if(!kind)continue;
+      const review=reviews.get(f.id)?.decision??null;
+      const old=groups.get(businessKey);
+      if(!old){
+        groups.set(businessKey,{finding:f,run:r,kind,businessKey,brand,model,
+          version:label,selectedIdentity:identity,possibleAppearanceVariant:!!paintParent,
+          discovery,recommendation,priorRuns:1,reviewedSameFingerprint:review});
+      }else{
+        old.priorRuns++;
+        // Do not convert a version's semantic identity when replacing evidence.
+        if(better(f,old.finding)){
+          old.finding=f;old.run=r;old.brand=brand;old.model=model;
+          old.version=label;old.selectedIdentity=identity;
+          old.possibleAppearanceVariant=!!paintParent;
+          old.discovery=discovery;old.recommendation=recommendation;
+          old.kind=kind;
+          old.reviewedSameFingerprint=review;
+        }else if(f.fingerprint===old.finding.fingerprint&&!old.reviewedSameFingerprint){
+          old.reviewedSameFingerprint=review;
+        }
       }
     }
   }
@@ -278,9 +304,9 @@ export function isResolvedMmvCase(
   canonical: readonly CurrentCanonicalMmv[],
 ): boolean {
   if (candidate.kind === 'MMV_NEW') {
-    const identities = objects(obj(candidate.finding.proposal)?.identities);
-    return identities.length > 0 && identities.every(identity =>
-      canonical.some(item => sameCanonicalIdentity(identity,item,candidate.run.market ?? 'BR')));
+    const identity=candidate.selectedIdentity;
+    return identity!==null && canonical.some(item =>
+      sameCanonicalIdentity(identity,item,candidate.run.market ?? 'BR'));
   }
   if (candidate.kind !== 'MMV_AMBIGUOUS' ||
       value(candidate.finding.payload?.reasonCode) !== 'AMBIGUOUS_IDENTITY') return false;
