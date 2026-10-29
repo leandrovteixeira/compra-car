@@ -17,7 +17,7 @@ export function AdminShell({ children, displayName, tier }: AdminShellProps) {
     <div className="min-h-dvh bg-canvas text-text-primary">
       <div className="lg:flex lg:items-start">
         <AdminSidebar displayName={displayName} logoutAction={logout} tier={tier} />
-        <main className="cc-mobile-page min-w-0 w-full flex-1 px-5 py-5 sm:px-6 lg:px-8 lg:py-6">
+        <main className="cc-mobile-page min-w-0 w-full flex-1 px-5 py-5 sm:px-6 lg:w-0 lg:px-8 lg:py-6">
           {children}
         </main>
       </div>
