@@ -3,6 +3,11 @@ on:
   push:
     branches: [sprint-26-agent-ux-control-center]
     paths:
+      - 'packages/adapter-openai/src/brand-connector-research-provider.ts'
+      - 'packages/adapter-openai/test/brand-connector-research-provider.test.ts'
+      - 'scripts/agents/run-brand-connector.ts'
+      - 'scripts/agents/ai-usage.ts'
+      - 'scripts/agents/agent-diagnostics.ts'
       - 'scripts/agents/agent-pilot-budget.ts'
       - 'scripts/agents/agent-job-worker.ts'
       - 'scripts/agents/enqueue-gwm-brand-qa.ts'
@@ -36,5 +41,9 @@ jobs:
         run: pnpm --filter @compra-car/agents typecheck
       - name: Budget admission, isolated credentials
         run: pnpm --filter @compra-car/agents exec vitest run test/agent-pilot-budget.test.ts test/agent-openai-credentials.test.ts test/agent-environment.test.ts test/enqueue-gwm-brand-qa.test.ts
+      - name: Brand Connector incomplete-response usage regression
+        run: pnpm --filter @compra-car/adapter-openai exec vitest run test/brand-connector-research-provider.test.ts
+      - name: Brand Connector CLI regressions
+        run: pnpm --filter @compra-car/agents exec vitest run test/brand-connector-cli.test.ts
       - name: Lint changed agent files
-        run: pnpm --filter @compra-car/agents exec eslint agent-pilot-budget.ts agent-job-worker.ts enqueue-gwm-brand-qa.ts test/agent-pilot-budget.test.ts test/enqueue-gwm-brand-qa.test.ts
+        run: pnpm --filter @compra-car/agents exec eslint agent-pilot-budget.ts agent-job-worker.ts enqueue-gwm-brand-qa.ts run-brand-connector.ts ai-usage.ts agent-diagnostics.ts test/agent-pilot-budget.test.ts test/enqueue-gwm-brand-qa.test.ts
