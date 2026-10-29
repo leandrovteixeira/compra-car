@@ -36,7 +36,8 @@ export function estimateAiCostUsd(
 export async function recordAiUsage(
   client: LegacySupabaseClient,
   input: {
-    readonly runId: string;
+    readonly runId: string | null;
+    readonly intendedRunId?: string | null;
     readonly agentType: string;
     readonly market: string;
     readonly brand: string;
@@ -53,6 +54,7 @@ export async function recordAiUsage(
   const estimate = estimateAiCostUsd({ ...input, model: input.model }, env);
   const { error } = await client.from('agent_ai_usage_events').insert({
     run_id: input.runId,
+    ...(input.intendedRunId ? { intended_run_id: input.intendedRunId } : {}),
     agent_type: input.agentType,
     market: input.market,
     brand: input.brand,
