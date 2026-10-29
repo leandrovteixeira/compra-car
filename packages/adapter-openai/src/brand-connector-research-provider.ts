@@ -130,7 +130,7 @@ export class OpenAIBrandConnectorResearchProvider implements BrandConnectorResea
       response = await this.transport({
         model: this.options.model,
         store: false,
-        max_output_tokens: 1800,
+        max_output_tokens: 4000,
         instructions: this.options.prompt,
         input: JSON.stringify(input),
         tools: [
@@ -153,10 +153,9 @@ export class OpenAIBrandConnectorResearchProvider implements BrandConnectorResea
     } finally {
       if (reservation) await this.options.costAdmission!.complete(reservation, usageKnown);
     }
-    if (response.status !== 'completed') throw new Error('CONNECTOR_RESEARCH_INCOMPLETE');
     const searches = response.output.filter((o) => o.type === 'web_search_call');
-    if (!searches.length || searches.some((s) => s.status !== 'completed'))
-      throw new Error('CONNECTOR_RESEARCH_NO_WEB_SEARCH');
+    // A response may have cost money even if OpenAI reports status=incomplete.
+    // Capture actual usage before evaluating status, without storing raw output.
     if (response.usage) {
       this.options.onUsage?.({
         model: response.model,
@@ -166,6 +165,13 @@ export class OpenAIBrandConnectorResearchProvider implements BrandConnectorResea
         webSearchCount: searches.length,
       });
     }
+    if (response.status !== 'completed') {
+      if (response.incomplete_details?.reason === 'max_output_tokens')
+        throw new Error('CONNECTOR_RESEARCH_OUTPUT_LIMIT');
+      throw new Error('CONNECTOR_RESEARCH_INCOMPLETE');
+    }
+    if (!searches.length || searches.some((s) => s.status !== 'completed'))
+      throw new Error('CONNECTOR_RESEARCH_NO_WEB_SEARCH');
     let data: unknown;
     try {
       data = JSON.parse(response.output_text);
