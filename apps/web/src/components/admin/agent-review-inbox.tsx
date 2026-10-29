@@ -209,7 +209,7 @@ export function AgentReviewInbox({items,sort,direction}:{readonly items:readonly
           <tbody>
             {items.map(row=>(
               <Fragment key={row.findingId}>
-                <tr className={`border-b border-[#EAF1F4] ${expanded===row.findingId?'bg-[#EDF4F6]':''}`}>
+                <tr className={`border-b border-[#EAF1F4] transition-colors hover:bg-[#EAF1F4] ${expanded===row.findingId?'bg-[#EDF4F6]':''}`}>
                   <td className="px-2.5 py-3 font-semibold" title={row.brand}>
                     <p className="truncate">{row.brand||'—'}</p>
                   </td>
