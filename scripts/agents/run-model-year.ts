@@ -218,8 +218,10 @@ export async function runModelYearCli(
   try {
     const { scope, provider, persistFindings, parentRunId } = parseModelYearArguments(args);
     env = await loadAgentEnvironment(repositoryRoot, env);
-    if (provider === 'openai' && !parentRunId && (!env.OPENAI_MODEL_YEAR_API_KEY?.trim() || !env.OPENAI_AGENT_MODEL?.trim()))
-      throw new Error('OPENAI_AGENT_CONFIG_REQUIRED');
+    if (provider === 'openai' && !parentRunId) {
+      requireAgentOpenAiApiKey(env, 'MODEL_YEAR');
+      if (!env.OPENAI_AGENT_MODEL?.trim()) throw new Error('OPENAI_AGENT_MODEL_REQUIRED');
+    }
     if (
       (provider === 'openai' || persistFindings) &&
       (!env.SUPABASE_URL?.trim() || !env.SUPABASE_SERVER_KEY?.trim())
