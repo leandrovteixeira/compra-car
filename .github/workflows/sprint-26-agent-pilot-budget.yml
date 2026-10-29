@@ -7,6 +7,7 @@ on:
       - 'packages/adapter-openai/test/brand-connector-research-provider.test.ts'
       - 'scripts/agents/run-brand-connector.ts'
       - 'scripts/agents/ai-usage.ts'
+      - 'scripts/agents/test/ai-usage-intended-run.test.ts'
       - 'scripts/agents/agent-diagnostics.ts'
       - 'scripts/agents/agent-pilot-budget.ts'
       - 'scripts/agents/agent-job-worker.ts'
@@ -41,6 +42,8 @@ jobs:
         run: pnpm --filter @compra-car/agents typecheck
       - name: Budget admission, isolated credentials
         run: pnpm --filter @compra-car/agents exec vitest run test/agent-pilot-budget.test.ts test/agent-openai-credentials.test.ts test/agent-environment.test.ts test/enqueue-gwm-brand-qa.test.ts
+      - name: Pre-persistence AI usage receipt regression
+        run: pnpm --filter @compra-car/agents exec vitest run test/ai-usage-intended-run.test.ts
       - name: Brand Connector incomplete-response usage regression
         run: pnpm --filter @compra-car/adapter-openai exec vitest run test/brand-connector-research-provider.test.ts
       - name: Lint changed agent files
