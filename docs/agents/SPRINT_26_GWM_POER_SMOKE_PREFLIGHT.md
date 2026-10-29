@@ -9,7 +9,7 @@ Public verification date: 2026-10-29. Baseline data in this file are independent
 - No active `brand_connectors` configuration for GWM.
 - 28 historical `products` rows for brand GWM; no `catalog_mmvs` rows for GWM.
 - Zero Poer products; zero historical GWM agent runs/jobs.
-- No `agent_spend_budgets` row for GWM or shared pilot scope.
+- **2026-10-29 update:** four QA GWM spending-admission budgets exist with US$2 each: BRAND_CONNECTOR, MMV_DISCOVERY, PRODUCT_YEAR, PRICE_INTELLIGENCE (US$8 total). The values are conservative full reservations, NOT actual API bills.
 - QA agent worker currently uses OpenAI providers for BRAND_CONNECTOR and MMV_DISCOVERY.
 - The Product Year agent reuses MMV discovery evidence only **after** the MMV worker run, but new canonical MMVs still depend on human review/apply. Handoff pool catches missing identities, not an automatic creation authority.
 
@@ -75,3 +75,10 @@ financing/promotional price or mix production/model year pairs.
   triggers deployed in QA, with a full BEGIN/ROLLBACK smoke test.
 - No GWM OpenAI calls, no GWM Agent Platform findings, no connector activation,
   no Poer MMV/MY or price writes.
+
+## Spending admission pilot — 2026-10-29
+- Four QA-only GWM budget rows, each capped at US$2, were added to public.agent_spend_budgets. No API jobs executed as part of creating them.
+- The agent-worker now calls the database agent_spend_reserve before every paid Brand/MMV/independent MY/hybrid Price job. Missing budget or exhausted reservation is fail-closed. Reusing an MMV run in MY, deterministic Price and SOURCE_MONITOR do not reserve money.
+- Full US$2 is retained until inspected; we do not credit an unknown/failed usage. The application cannot cancel or guarantee the cost of an already-dispatched API call. OpenAI project limits and per-call model/tool limits are a separate requirement.
+- Existing agent_cost_policies.qa global daily cap US$10 and per-run policy US$3 is not a substitute for these per-brand admission rows; enforce pilot reservations at worker dispatch.
+- Before approving the next paid stage, inspect agent_ai_usage_events by brand and source run, the OpenAI project invoice/usage dashboard, and current budget reservation status. Prior unused residual admission is not automatically replenished.
