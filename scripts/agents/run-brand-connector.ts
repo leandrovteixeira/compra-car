@@ -143,7 +143,10 @@ export async function runBrandConnectorCli(
           serverKey: env.SUPABASE_SERVER_KEY!,
         }),
         {
-          runId: bundle.run.id,
+          // A run is not persisted until later in this CLI. Use the
+          // pre-persistence intended_run_id to avoid the agent_runs FK.
+          runId: null,
+          intendedRunId: bundle.run.id,
           agentType: 'BRAND_CONNECTOR',
           market: options.market,
           brand: options.brand,
