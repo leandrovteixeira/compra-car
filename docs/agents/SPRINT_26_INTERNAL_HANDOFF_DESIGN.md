@@ -1,6 +1,6 @@
 # Sprint 26 — Agent-to-Agent Handoff & Human Review Queue (design, not enabled)
 
-Status: PROPOSAL. This document does not create a new worker, scheduler, runtime task or paid AI call.
+Status: QA FOUNDATION IMPLEMENTED 2026-10-29. Durable intake and exact-match completion are active; agent dispatcher/retry budget enforcement are NOT connected. No paid AI call or data backfill was initiated.
 
 ## Problem verified on QA, 2026-10-29
 - `PRODUCT_YEAR` reported 54 `POSSIBLE_NEW_MMV` observations spanning 15 distinct subjects: missing canonical MMV is a dependency of the MY agent, NOT a direct human MY approval.
@@ -46,3 +46,13 @@ Suggested lifecycle (INTERNAL, not human-review statuses):
 - Exclude generic-only body suffix candidates from operator review pending better agent evidence.
 - Do not show stale legacy ACCEPT as a successful canonical APPROVE.
 - Keep operational diagnostics (missing-MMV handoffs, parsing gaps, cost/budget failures) in Flight Control, not the human review inbox.
+
+## QA implementation record (2026-10-29)
+- Migration `20261029133259_sprint_26_agent_handoff_pool.sql` applied to QA and tracked in repository.
+- Service-only tables `agent_handoff_tasks` and `agent_handoff_observations` have RLS, no anon/authenticated SELECT, no user-facing mutations.
+- After `PRODUCT_YEAR` run status changes to COMPLETED, valid `POSSIBLE_NEW_MMV` observations create exactly one semantic `RESOLVE_MMV_IDENTITY` task per normalized BR/brand/model/version key; repeat observations are separate immutable references.
+- New canonical MMV with the matching exact version closes QUEUED/BLOCKED/EXHAUSTED tasks. No fuzzy merge.
+- `dispatch_enabled=false` by default. No job worker consumes this pool yet; cost gating and lease/retry mechanism need a separate release.
+- Flight Control has a read-only delegate section; the human review inbox remains the only area for operator business decisions.
+- An isolated synthetic `PRODUCT_YEAR` run and a matching canonical MMV were created inside a single transaction to verify intake+resolution; all test writes were rolled back.
+- GWM official Poer smoke plan: `SPRINT_26_GWM_POER_SMOKE_PREFLIGHT.md`. GWM currently has no active connector and no cap configured for the paid pilot; no GWM agents executed.
