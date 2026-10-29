@@ -71,10 +71,18 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
     return typeof val==='string'||typeof val==='number'?String(val):null;
   };
   const observed = [
-    get('brand'),get('model'),get('officialVersionLabel'),get('modelYear'),
+    get('brand')||row.brand,get('model')||row.model,row.version||get('officialVersionLabel'),get('modelYear'),
   ].filter(Boolean).join(' ');
   const proposal=detail.proposal&&Array.isArray(detail.proposal.identities)
     ?detail.proposal.identities as Record<string,unknown>[]:[];
+  const selected=row.selectedIdentity;
+  const technical=selected
+    ?[
+      ['Motorização',selected.powertrainLabel],
+      ['Propulsão',selected.propulsion],
+      ['Carroceria',selected.bodyStyle],
+    ].filter(([,v])=>v!==null&&v!==undefined&&String(v).trim())
+    :[];
   const versionLabels=proposal.map(v=>String(v.officialVersionLabel??'').trim()).filter(Boolean);
   const data = detail.evidenceAssessment as Record<string,unknown>|null;
   const readiness = data && typeof data==='object' && typeof data.readiness==='string'
@@ -85,8 +93,14 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
         <section className="rounded-md bg-white p-3">
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#526670]">Observado</h3>
           <p className="text-[13px] font-semibold">{observed || detail.title}</p>
-          {versionLabels.length?<p className="mt-1 text-xs font-medium text-[#526670]">
-            Versões propostas: {versionLabels.join(' · ')}
+          {row.version?<p className="mt-1 text-xs font-medium text-[#526670]">
+            Versão selecionada: {row.version}
+          </p>:null}
+          {technical.length?<p className="mt-1 text-xs text-[#526670]">
+            {technical.map(([k,v])=>k+': '+String(v)).join(' · ')}
+          </p>:null}
+          {!selected && versionLabels.length?<p className="mt-1 text-xs font-medium text-[#526670]">
+            Versões observadas: {versionLabels.join(' · ')}
           </p>:null}
           {detail.summary?<details className="mt-2 text-xs leading-5 text-[#526670]">
             <summary className="cursor-pointer line-clamp-2">{detail.summary}</summary>
@@ -97,6 +111,11 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
         <section className="rounded-md bg-white p-3">
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#526670]">Proposta e decisão</h3>
           <p className="text-[13px] font-semibold">{row.recommendation}</p>
+          {row.possibleAppearanceVariant?
+            <p className="mt-2 text-xs leading-5 text-[#526670]">
+              Possível variação de cor/acabamento: MERGE vincula a versão-base, sem apagar
+              informações comerciais ou preços próprios. A escolha exigirá confirmação do destino.
+            </p>:null}
           <p className="mt-1 text-xs text-[#526670]">Confiança {percent(row.confidence)}{readiness?` · Evidência: ${readiness}`:''}</p>
           <p className="mt-2 text-xs leading-5 text-[#526670]">
             {row.legacyAccepted
@@ -167,17 +186,25 @@ export function AgentReviewInbox({items,sort,direction}:{readonly items:readonly
   const [error,setError]=useState<string|null>(null);
   useEffect(()=>{
     if(!expanded){setDetail(null);setError(null);setLoading(false);return;}
+    const selected=items.find(row=>row.caseId===expanded);
+    if(!selected){setExpanded(null);return;}
     const controller=new AbortController();
     setLoading(true);setError(null);setDetail(null);
-    fetch('/admin/agents/review-detail/'+encodeURIComponent(expanded),{
+    fetch('/admin/agents/review-detail/'+encodeURIComponent(selected.findingId),{
       signal:controller.signal,cache:'no-store',
     }).then(async r=>{if(!r.ok)throw new Error('DETAIL_UNAVAILABLE');return r.json() as Promise<FindingDetail>;})
       .then(data=>{if(!controller.signal.aborted)setDetail(data);})
       .catch(()=>{if(!controller.signal.aborted)setError('Não foi possível carregar o detalhe. Tente novamente.');})
       .finally(()=>{if(!controller.signal.aborted)setLoading(false);});
     return ()=>controller.abort();
-  },[expanded]);
+  },[expanded,items]);
   const toggle=(id:string)=>setExpanded(prev=>prev===id?null:id);
+  const onKey=(event:React.KeyboardEvent,caseId:string)=>{
+    if(event.key==='Enter'||event.key===' '){
+      event.preventDefault();
+      toggle(caseId);
+    }
+  };
   const body=(row:ReviewInboxRow)=>(
     loading?<div className="p-4 text-sm text-[#526670]" role="status">Carregando detalhes…</div>:
     error?<p role="alert" className="p-4 text-sm text-[#A33737]">{error}</p>:
@@ -195,26 +222,34 @@ export function AgentReviewInbox({items,sort,direction}:{readonly items:readonly
         <table className="w-full table-fixed border-separate border-spacing-0 bg-white text-left text-[12px]">
           <thead className="text-[10px] font-semibold uppercase text-[#526670]">
             <tr>
-              {th('brand','Marca','9%')}
-              {th('model','Modelo','10%')}
+              {th('brand','Marca','8%')}
+              {th('model','Modelo','9%')}
+              <th scope="col" className="sticky top-0 z-20 border-b border-[#D6DEE3] bg-[#DCE8ED] px-2.5 py-3" style={{width:'12.5%'}}>VERSÃO</th>
               <th scope="col" className="sticky top-0 z-20 border-b border-[#D6DEE3] bg-[#DCE8ED] px-2.5 py-3" style={{width:'26%'}}>DESCOBERTA</th>
               {th('agent','Agente','9%')}
-              {th('date','Data','9%')}
-              {th('confidence','Confiança','7.5%')}
-              <th scope="col" className="sticky top-0 z-20 border-b border-[#D6DEE3] bg-[#DCE8ED] px-2.5 py-3" style={{width:'9%'}}>STATUS</th>
+              {th('date','Data','8%')}
+              {th('confidence','Confiança','7%')}
+              <th scope="col" className="sticky top-0 z-20 border-b border-[#D6DEE3] bg-[#DCE8ED] px-2.5 py-3" style={{width:'8%'}}>STATUS</th>
               <th scope="col" className="sticky top-0 z-20 border-b border-[#D6DEE3] bg-[#DCE8ED] px-2.5 py-3" style={{width:'12.5%'}}>RECOMENDAÇÃO</th>
-              <th scope="col" className="sticky top-0 z-20 border-b border-[#D6DEE3] bg-[#DCE8ED] px-2.5 py-3" style={{width:'8%'}}>AÇÃO</th>
             </tr>
           </thead>
           <tbody>
             {items.map(row=>(
-              <Fragment key={row.findingId}>
-                <tr className={`border-b border-[#EAF1F4] transition-colors hover:bg-[#EAF1F4] ${expanded===row.findingId?'bg-[#EDF4F6]':''}`}>
+              <Fragment key={row.caseId}>
+                <tr tabIndex={0}
+                  aria-label={`Abrir detalhes de ${row.brand} ${row.model} ${row.version}`}
+                  aria-expanded={expanded===row.caseId}
+                  onClick={()=>toggle(row.caseId)}
+                  onKeyDown={e=>onKey(e,row.caseId)}
+                  className={`cursor-pointer border-b border-[#EAF1F4] transition-colors hover:bg-[#EAF1F4] focus-visible:outline-2 focus-visible:outline-[#9ABCC8] ${expanded===row.caseId?'bg-[#EDF4F6]':''}`}>
                   <td className="px-2.5 py-3 font-semibold" title={row.brand}>
                     <p className="truncate">{row.brand||'—'}</p>
                   </td>
                   <td className="px-2.5 py-3 font-medium" title={row.model}>
                     <p className="truncate">{row.model||'—'}</p>
+                  </td>
+                  <td className="px-2.5 py-3" title={row.version}>
+                    <p className="truncate font-medium">{row.version||'—'}</p>
                   </td>
                   <td className="min-w-0 px-2.5 py-3" title={row.title}>
                     <p className="truncate whitespace-nowrap font-medium" title={row.title}>{row.title}</p>
@@ -231,15 +266,8 @@ export function AgentReviewInbox({items,sort,direction}:{readonly items:readonly
                     {row.evidencePreview?<p className="mt-1 truncate text-[10px] text-[#61747B]"
                       title={row.evidencePreview}>{row.evidencePreview}</p>:null}
                   </td>
-                  <td className="px-2.5 py-3">
-                    <button type="button" aria-expanded={expanded===row.findingId}
-                      onClick={()=>toggle(row.findingId)}
-                      className="rounded-md border border-[#D6DEE3] bg-white px-2.5 py-2 text-xs font-semibold hover:bg-[#EAF1F4] focus-visible:outline-2 focus-visible:outline-[#9ABCC8]">
-                      {expanded===row.findingId?'Fechar':'Revisar'}
-                    </button>
-                  </td>
                 </tr>
-                {expanded===row.findingId?<tr><td colSpan={9} className="p-0">{body(row)}</td></tr>:null}
+                {expanded===row.caseId?<tr><td colSpan={9} className="p-0">{body(row)}</td></tr>:null}
               </Fragment>
             ))}
           </tbody>
@@ -251,10 +279,16 @@ export function AgentReviewInbox({items,sort,direction}:{readonly items:readonly
         </div>
         <div className="divide-y divide-[#EAF1F4] border-x border-b border-[#D6DEE3] bg-white">
           {items.map(row=>(
-            <article key={row.findingId} className="px-3 py-3">
+            <article key={row.caseId} tabIndex={0} role="button"
+              aria-expanded={expanded===row.caseId}
+              aria-label={`Abrir detalhes de ${row.brand} ${row.model} ${row.version}`}
+              onClick={e=>{if(!(e.target as HTMLElement).closest('a,summary,details'))toggle(row.caseId);}}
+              onKeyDown={e=>onKey(e,row.caseId)}
+              className="cursor-pointer px-3 py-3 hover:bg-[#EAF1F4] focus-visible:outline-2 focus-visible:outline-[#9ABCC8]">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
                   <h3 className="text-[13px] font-semibold">{[row.brand,row.model].filter(Boolean).join(' ')}</h3>
+                  {row.version?<p className="mt-1 text-xs font-medium">Versão: {row.version}</p>:null}
                   <p className="mt-1 text-xs">{row.title}</p>
                   <p className="mt-1 text-[11px] text-[#526670]">{row.agentLabel} · {date(row.observedAt)} · {percent(row.confidence)}</p>
                 </div>
@@ -262,12 +296,8 @@ export function AgentReviewInbox({items,sort,direction}:{readonly items:readonly
               </div>
               <p className="mt-2 text-xs font-medium">{row.recommendation}</p>
               {row.evidencePreview?<p className="mt-1 line-clamp-2 text-[11px] text-[#526670]">{row.evidencePreview}</p>:null}
-              <button type="button" aria-expanded={expanded===row.findingId}
-                className="mt-2 rounded-md border border-[#D6DEE3] px-3 py-2 text-xs font-semibold"
-                onClick={()=>toggle(row.findingId)}>
-                {expanded===row.findingId?'Fechar detalhe':'Revisar descoberta'}
-              </button>
-              {expanded===row.findingId?<div className="mt-3">{body(row)}</div>:null}
+              {expanded===row.caseId?<div className="mt-3" onClick={e=>e.stopPropagation()}
+                onKeyDown={e=>e.stopPropagation()}>{body(row)}</div>:null}
             </article>
           ))}
         </div>
