@@ -9,8 +9,9 @@ const run = (id:string,type:string):LegacyRun=>({
   started_at:'2026-10-07T10:00:00Z',
 });
 function finding(input:Partial<LegacyDiscovery> & {id:string;run_id:string}):LegacyDiscovery{
+  const {id,run_id,...overrides}=input;
   return {
-    id:input.id,run_id:input.run_id,
+    id,run_id,
     finding_type:'NEW_MODEL',fingerprint:input.id,
     subject_key:JSON.stringify(['BR','VW','ID.4']),
     title:'VW ID.4',summary:'Official model',confidence:0.90,
@@ -19,7 +20,7 @@ function finding(input:Partial<LegacyDiscovery> & {id:string;run_id:string}):Leg
       {brand:'VW',model:'ID.4',officialVersionLabel:'Pro',propulsion:'BEV'},
     ]},
     payload:{reasonCode:'NEW_MODEL'},
-    created_at:'2026-10-07T10:00:00Z',...input,
+    created_at:'2026-10-07T10:00:00Z',...overrides,
   };
 }
 const runs=new Map<string,LegacyRun>([
