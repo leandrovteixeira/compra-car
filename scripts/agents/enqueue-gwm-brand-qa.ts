@@ -95,7 +95,8 @@ async function main() {
   console.log('O worker Railway vai reservar US$ 2 e executar o discovery. Verifique o Flight Control.');
 }
 
-main().catch(error => {
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  void main().catch(error => {
   const safe = [
     'QA_PILOT_INVALID_ARGUMENTS','QA_SUPABASE_CONFIG_REQUIRED',
     'QA_PILOT_PREFLIGHT_READ_FAILED','QA_GWM_NOT_ENABLED',
@@ -106,4 +107,5 @@ main().catch(error => {
     ? error.message : 'QA_GWM_PILOT_BLOCKED';
   console.error(code);
   process.exitCode = 1;
-});
+  });
+}
