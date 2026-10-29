@@ -45,6 +45,7 @@ describe('Brand connector provider with injected transport only', () => {
             { type: 'MODEL_INDEX', url: 'https://vw.com.br/modelos', priority: 1, notes: null },
           ],
           evidence: [
+            ...data.evidence,
             {
               url: 'https://vw.com.br/legal',
               title: 'Official ownership',
