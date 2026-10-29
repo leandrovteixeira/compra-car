@@ -77,10 +77,13 @@ async function main() {
       reserved < 0 || reserved > cap)
     throw new Error('QA_GWM_BUDGET_MISSING_OR_INVALID');
   if (pending) throw new Error('QA_GWM_BRAND_JOB_ALREADY_ACTIVE');
-  if (reserved > 0) throw new Error('QA_GWM_BRAND_BUDGET_ALREADY_RESERVED');
+  const remaining=Number((cap-reserved).toFixed(6));
+  if (remaining<0.01) throw new Error('QA_GWM_BRAND_BUDGET_EXHAUSTED');
 
   if (!params.enqueue) {
-    console.log('PREFLIGHT_OK GWM Brand Connector QA | orçamento US$ 2,00 disponível | nenhum job ativo');
+    console.log('PREFLIGHT_OK GWM Brand Connector QA | teto US$ 2,00 | '
+      + 'contabilizado/reservado US$ '+reserved.toFixed(2)
+      + ' | disponível US$ '+remaining.toFixed(2)+' | nenhum job ativo');
     console.log('Para enfileirar: pnpm --filter @compra-car/agents exec tsx enqueue-gwm-brand-qa.ts --enqueue');
     return;
   }
@@ -92,7 +95,7 @@ async function main() {
     .select('id,status,job_type,brand');
   if (error || !created?.[0]?.id) throw new Error('QA_GWM_ENQUEUE_FAILED');
   console.log('GWM_BRAND_JOB_QUEUED ' + created[0].id);
-  console.log('O worker Railway vai reservar US$ 2 e executar o discovery. Verifique o Flight Control.');
+  console.log('O worker Railway vai reservar até o saldo restante do teto US$ 2 e executar o discovery. Verifique o Flight Control.');
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -101,7 +104,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     'QA_PILOT_INVALID_ARGUMENTS','QA_SUPABASE_CONFIG_REQUIRED',
     'QA_PILOT_PREFLIGHT_READ_FAILED','QA_GWM_NOT_ENABLED',
     'QA_GWM_BUDGET_MISSING_OR_INVALID','QA_GWM_BRAND_JOB_ALREADY_ACTIVE',
-    'QA_GWM_BRAND_BUDGET_ALREADY_RESERVED','QA_GWM_ENQUEUE_FAILED',
+    'QA_GWM_BRAND_BUDGET_EXHAUSTED','QA_GWM_ENQUEUE_FAILED',
   ];
   const code = error instanceof Error && safe.includes(error.message)
     ? error.message : 'QA_GWM_PILOT_BLOCKED';
