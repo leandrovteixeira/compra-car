@@ -55,10 +55,11 @@ CREATE INDEX agent_handoff_observations_task_idx
 CREATE FUNCTION public.s26_enqueue_model_year_handoffs()
 RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path TO ''
 AS $fn$
-DECLARE f public.agent_findings;
-DECLARE v_brand text; DECLARE v_model text; DECLARE v_version text;
-DECLARE b text; DECLARE m text; DECLARE v text;
-DECLARE sk text; DECLARE tid uuid;
+DECLARE
+ f public.agent_findings;
+ v_brand text; v_model text; v_version text;
+ b text; m text; v text;
+ sk text; tid uuid;
 BEGIN
  IF NEW.status<>'COMPLETED' OR OLD.status='COMPLETED'
     OR NEW.agent_type<>'PRODUCT_YEAR' THEN RETURN NEW; END IF;
@@ -117,7 +118,8 @@ CREATE TRIGGER s26_product_year_dependency_intake
 CREATE FUNCTION public.s26_complete_matching_mmv_handoffs()
 RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path TO ''
 AS $fn$
-DECLARE b text; DECLARE m text; DECLARE v text;
+DECLARE
+ b text; m text; v text;
 BEGIN
  IF NEW.status<>'ACTIVE' THEN RETURN NEW; END IF;
  b:=lower(btrim(pg_catalog.regexp_replace(public.unaccent(NEW.brand),
