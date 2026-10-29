@@ -226,7 +226,11 @@ describe('Brand connector provider with injected transport only', () => {
       webSearchCount:1,
     }));
     expect(transport).toHaveBeenCalledWith(
-      expect.objectContaining({max_output_tokens:4000}),
+      expect.objectContaining({
+        max_output_tokens:6000,
+        reasoning:{effort:'low'},
+        instructions:expect.stringContaining('at most 8 official sourceEntries'),
+      }),
     );
   });
   it('redacts transport failures', async () => {
