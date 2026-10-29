@@ -264,7 +264,7 @@ describe('Safe stable diagnostics', () => {
         root,
       ),
     ).toBe(1);
-    expect(log).toHaveBeenLastCalledWith('BRAND_CONNECTOR_FAILED: OPENAI_AGENT_CONFIG_REQUIRED');
+    expect(log).toHaveBeenLastCalledWith('BRAND_CONNECTOR_FAILED: AGENT_OPENAI_KEY_MISSING');
     expect(await runBrandConnectorCli([...brandArgs, '--persist-findings'], {}, log, root)).toBe(1);
     expect(log).toHaveBeenLastCalledWith('BRAND_CONNECTOR_FAILED: SUPABASE_AGENT_CONFIG_REQUIRED');
     expect(fetch).not.toHaveBeenCalled();
