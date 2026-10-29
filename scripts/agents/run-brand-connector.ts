@@ -135,33 +135,6 @@ export async function runBrandConnectorCli(
       undefined,
       options.provider,
     );
-    if (options.provider === 'openai' && openAiUsage.current) {
-      const { createLegacySupabaseClient } = await import('@compra-car/adapter-supabase');
-      await recordAiUsage(
-        createLegacySupabaseClient({
-          url: env.SUPABASE_URL!,
-          serverKey: env.SUPABASE_SERVER_KEY!,
-        }),
-        {
-          // A run is not persisted until later in this CLI. Use the
-          // pre-persistence intended_run_id to avoid the agent_runs FK.
-          runId: null,
-          intendedRunId: bundle.run.id,
-          agentType: 'BRAND_CONNECTOR',
-          market: options.market,
-          brand: options.brand,
-          provider: 'openai',
-          model: openAiUsage.current.model,
-          inputTokens: openAiUsage.current.inputTokens,
-          outputTokens: openAiUsage.current.outputTokens,
-          totalTokens: openAiUsage.current.totalTokens,
-          webSearchCount: openAiUsage.current.webSearchCount,
-          reason: 'BRAND_CONNECTOR_RESEARCH',
-        },
-        env,
-      );
-      usageRecorded = true;
-    }
     const secrets = [...agentOpenAiSecrets(env),env.SUPABASE_SERVER_KEY ?? ''];
     const clean = JSON.parse(redactSecrets(JSON.stringify(bundle), secrets)) as typeof bundle;
     const finding = clean.findings[0]!.finding;
@@ -204,6 +177,32 @@ export async function runBrandConnectorCli(
       ].join('\n'),
     );
     if (options.persistFindings) await persistence!.persistRunBundle(clean);
+    if (options.provider === 'openai' && openAiUsage.current) {
+      const { createLegacySupabaseClient } = await import('@compra-car/adapter-supabase');
+      await recordAiUsage(
+        createLegacySupabaseClient({
+          url: env.SUPABASE_URL!,
+          serverKey: env.SUPABASE_SERVER_KEY!,
+        }),
+        {
+          // Link a persisted run only after the persistence transaction commits.
+          runId: options.persistFindings ? bundle.run.id : null,
+          intendedRunId: bundle.run.id,
+          agentType: 'BRAND_CONNECTOR',
+          market: options.market,
+          brand: options.brand,
+          provider: 'openai',
+          model: openAiUsage.current.model,
+          inputTokens: openAiUsage.current.inputTokens,
+          outputTokens: openAiUsage.current.outputTokens,
+          totalTokens: openAiUsage.current.totalTokens,
+          webSearchCount: openAiUsage.current.webSearchCount,
+          reason: 'BRAND_CONNECTOR_RESEARCH',
+        },
+        env,
+      );
+      usageRecorded = true;
+    }
     log(
       'Run: ' +
         bundle.run.id +
