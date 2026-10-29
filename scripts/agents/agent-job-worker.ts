@@ -30,8 +30,8 @@ const stagingUrl = 'https://shfsjyjxmgwnlexmdkcs.supabase.co';
 if (env.APP_ENV !== 'qa') throw new Error('AGENT_WORKER_QA_ONLY');
 if (env.SUPABASE_URL !== stagingUrl) throw new Error('AGENT_WORKER_STAGING_REQUIRED');
 if (!env.SUPABASE_SERVER_KEY?.trim()) throw new Error('SUPABASE_AGENT_CONFIG_REQUIRED');
-if (!env.OPENAI_API_KEY?.trim() || !env.OPENAI_AGENT_MODEL?.trim())
-  throw new Error('OPENAI_AGENT_CONFIG_REQUIRED');
+// Individual agent CLIs validate only their own credential at dispatch.
+// PRICE in deterministic mode and MY reusing an MMV run require no OpenAI key.
 
 const client = createLegacySupabaseClient({
   url: env.SUPABASE_URL,
