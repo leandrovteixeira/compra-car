@@ -18,7 +18,7 @@ export function agentOpenAiApiKey(env:Env,agent:AgentOpenAiKeyOwner):string|null
 
 export function requireAgentOpenAiApiKey(env:Env,agent:AgentOpenAiKeyOwner):string {
   const key=agentOpenAiApiKey(env,agent);
-  if(!key) throw new Error('AGENT_OPENAI_KEY_MISSING:'+AGENT_OPENAI_KEY_VARIABLES[agent]);
+  if(!key) throw new Error('AGENT_OPENAI_KEY_MISSING');
   return key;
 }
 
