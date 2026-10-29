@@ -45,6 +45,7 @@ export type ProjectionDiagnostics = Readonly<{
   yearToMmvIdentities: number;
   genericBodySplit: number;
   redundantAmbiguities: number;
+  legacyYear: number;
 }>;
 
 const value = (v: unknown): string => typeof v === 'string' ? v.trim() : '';
@@ -116,7 +117,7 @@ export function buildReviewProjection(
 
   const groups=new Map<string,ProjectedCase>();
   const diagnostics={yearToMmv:0,yearToMmvIdentities:new Set<string>(),
-    genericBodySplit:0,redundantAmbiguities:0};
+    genericBodySplit:0,redundantAmbiguities:0,legacyYear:0};
   for(const {f,r,brand,model,brandKey,modelKey,market} of rawCandidates){
     const reason=value(f.payload?.reasonCode);
     const v=candidateVersion(f);
@@ -172,6 +173,12 @@ export function buildReviewProjection(
         }
       }
     }else if(r.agent_type==='MODEL_YEAR'||r.agent_type==='PRODUCT_YEAR'){
+      // Historical MODEL_YEAR stores a text identity, not a canonical mmvId.
+      // It is not an actionable MY proposal under the current apply contract.
+      if(r.agent_type==='MODEL_YEAR'){
+        diagnostics.legacyYear++;
+        continue;
+      }
       if(f.finding_type==='POSSIBLE_NEW_MMV'||f.finding_type==='PRODUCT_YEAR_CONFLICT'){
         diagnostics.yearToMmv++;
         diagnostics.yearToMmvIdentities.add(JSON.stringify([baseKey,key(v)]));
@@ -221,7 +228,8 @@ export function buildReviewProjection(
     diagnostics:{yearToMmv:diagnostics.yearToMmv,
       yearToMmvIdentities:diagnostics.yearToMmvIdentities.size,
       genericBodySplit:diagnostics.genericBodySplit,
-      redundantAmbiguities:diagnostics.redundantAmbiguities}};
+      redundantAmbiguities:diagnostics.redundantAmbiguities,
+      legacyYear:diagnostics.legacyYear}};
 }
 
 export function reviewState(decision: string|null):ReviewStatus {
