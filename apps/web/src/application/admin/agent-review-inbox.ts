@@ -4,8 +4,8 @@ import { requireRole } from '@/auth/authorization';
 import { createPrivilegedAdminClient } from '@/auth/admin-client';
 import type { ReviewStatus, ReviewQueueItem } from '@compra-car/core/agent-platform';
 import {
-  buildReviewProjection, reviewState,
-  type LegacyDiscovery, type LegacyRun, type LegacyReview,
+  buildReviewProjection, reviewState, isResolvedMmvCase,
+  type LegacyDiscovery, type LegacyRun, type LegacyReview, type CurrentCanonicalMmv,
   type ProjectionDiagnostics,
 } from './agent-review-projection';
 
@@ -79,13 +79,17 @@ export async function loadReviewInbox(options:Readonly<{
 }>={}):Promise<ReviewInboxResponse>{
   await requireRole('admin');
   const client=createPrivilegedAdminClient();
-  const [findings,runsResult,reviewsResult]=await Promise.all([
+  const [findings,runsResult,reviewsResult,canonicalResult]=await Promise.all([
     readAllFindings(client),
     client.from('agent_runs').select('id,agent_type,brand,status,started_at,market'),
     client.from('agent_reviews').select('finding_id,decision,created_at')
       .order('created_at',{ascending:false}),
+    client.from('catalog_mmvs')
+      .select('id,market,brand,model,official_version_label,powertrain_label,propulsion,status')
+      .eq('status','ACTIVE'),
   ]);
-  if(runsResult.error||reviewsResult.error||!runsResult.data||!reviewsResult.data)
+  if(runsResult.error||reviewsResult.error||canonicalResult.error||
+     !runsResult.data||!reviewsResult.data||!canonicalResult.data)
     throw new Error('REVIEW_INBOX_DATA_UNAVAILABLE');
 
   const runs=new Map((runsResult.data as LegacyRun[]).map(run=>[run.id,run]));
@@ -94,7 +98,10 @@ export async function loadReviewInbox(options:Readonly<{
     if(!reviews.has(review.finding_id))reviews.set(review.finding_id,review);
 
   const projected=buildReviewProjection(findings,runs,reviews);
-  const all:ReviewInboxRow[]=projected.cases.map(g=>{
+  const existingCanonical=canonicalResult.data as CurrentCanonicalMmv[];
+  // Historical ACCEPT is not an apply receipt; verify real canonical identities.
+  const activeCases=projected.cases.filter(g=>!isResolvedMmvCase(g,existingCanonical));
+  const all:ReviewInboxRow[]=activeCases.map(g=>{
     const confidence=g.finding.confidence==null?null:Number(g.finding.confidence);
     return {
       caseId:g.finding.id,
