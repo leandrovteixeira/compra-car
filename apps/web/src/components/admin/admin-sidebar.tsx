@@ -64,9 +64,9 @@ export function AdminSidebar(props: SidebarProps) {
         onBlurCapture={(event) => {
           if (!event.currentTarget.contains(event.relatedTarget)) setHovered(false);
         }}
-        className="sticky top-0 z-30 hidden h-dvh w-[76px] shrink-0 overflow-visible lg:block"
+        className={`sticky top-0 z-30 hidden h-dvh shrink-0 overflow-visible transition-[width] duration-200 lg:block ${hovered ? 'w-[264px]' : 'w-[76px]'}`}
       >
-        <div className={`absolute inset-y-0 left-0 z-40 flex h-dvh flex-col overflow-hidden bg-[#1A1D21] text-white shadow-[6px_0_18px_rgba(26,29,33,0.16)] transition-[width] duration-200 ${hovered ? 'w-[264px]' : 'w-[76px]'}`}>
+        <div className="absolute inset-y-0 left-0 z-40 flex h-dvh w-full flex-col overflow-hidden bg-[#1A1D21] text-white shadow-[6px_0_18px_rgba(26,29,33,0.16)]">
           <SidebarContent {...props} expanded={hovered} onExpand={() => setHovered(true)} />
         </div>
       </aside>
