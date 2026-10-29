@@ -60,6 +60,7 @@ const GENERIC_BODY_TYPES = new Set([
   'suv','suv compacto','suv medio','suv grande','crossover',
   'hatch','hatchback','sedan','minivan','picape','pickup',
   'caminhonete','wagon','perua','coupe','cupe','conversivel',
+  'picape cabine simples','picape cabine dupla','cabine simples','cabine dupla',
 ]);
 
 function variants(f: LegacyDiscovery): readonly string[] {
