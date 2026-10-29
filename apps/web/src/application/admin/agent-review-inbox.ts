@@ -17,6 +17,9 @@ export type ReviewInboxRow = ReviewQueueItem & Readonly<{
   reasonCode: string | null;
   brand: string;
   model: string;
+  version: string;
+  selectedIdentity: Record<string,unknown> | null;
+  possibleAppearanceVariant: boolean;
   legacyAccepted: boolean;
   priorRuns: number;
 }>;
@@ -104,7 +107,7 @@ export async function loadReviewInbox(options:Readonly<{
   const all:ReviewInboxRow[]=activeCases.map(g=>{
     const confidence=g.finding.confidence==null?null:Number(g.finding.confidence);
     return {
-      caseId:g.finding.id,
+      caseId:g.businessKey,
       caseKind:g.kind,
       findingId:g.finding.id,
       findingType:g.finding.finding_type,
@@ -116,6 +119,9 @@ export async function loadReviewInbox(options:Readonly<{
       businessKey:g.businessKey,
       brand:g.brand,
       model:g.model,
+      version:g.version,
+      selectedIdentity:g.selectedIdentity,
+      possibleAppearanceVariant:g.possibleAppearanceVariant,
       title:g.discovery,
       shortDescription:g.discovery,
       recommendation:g.recommendation,
@@ -143,7 +149,8 @@ export async function loadReviewInbox(options:Readonly<{
       options.agent==='YEAR'
         ?['MODEL_YEAR','PRODUCT_YEAR'].includes(row.sourceAgent)
         :row.sourceAgent===options.agent))&&
-    (!term||[row.brand+' '+row.model,row.brand,row.model,row.title,row.shortDescription,
+    (!term||[row.brand+' '+row.model+' '+row.version,row.brand+' '+row.model,
+      row.brand,row.model,row.version,row.title,row.shortDescription,
       row.recommendation,row.agentLabel,row.reasonCode]
       .some(v=>v?.toLocaleLowerCase('pt-BR').includes(term)))
   );
