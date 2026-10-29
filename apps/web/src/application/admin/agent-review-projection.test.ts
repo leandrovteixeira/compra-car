@@ -106,7 +106,10 @@ describe('Sprint 26 human review inbox projection',()=>{
     const a=finding({id:'a',run_id:'r1',finding_type:'NEW_VERSION',
       subject:{brand:'VW',model:'ID.4',officialVersionLabel:'Pro'}});
     const b=finding({id:'b',run_id:'r2',finding_type:'NEW_VERSION',
-      subject:{brand:'VW',model:'ID.4',officialVersionLabel:'GTX'}});
+      subject:{brand:'VW',model:'ID.4',officialVersionLabel:'GTX'},
+      proposal:{action:'STAGE_MMV_IDENTITIES',identities:[
+        {brand:'VW',model:'ID.4',officialVersionLabel:'GTX',propulsion:'BEV'},
+      ]}});
     expect(buildReviewProjection([a,b],runs,new Map()).cases).toHaveLength(2);
   });
   it('keeps generic SUV/car-body descriptions out of human work',()=>{
