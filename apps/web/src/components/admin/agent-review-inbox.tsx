@@ -1,8 +1,9 @@
 'use client';
 
 import { Fragment, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import type { ReviewStatus, ReviewAction } from '@compra-car/core/agent-platform';
-import type { ReviewInboxRow } from '@/application/admin/agent-review-inbox';
+import type { ReviewInboxRow, ReviewSort, ReviewDirection } from '@/application/admin/agent-review-inbox';
 
 type FindingDetail = {
   findingId: string;
@@ -72,6 +73,9 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
   const observed = [
     get('brand'),get('model'),get('officialVersionLabel'),get('modelYear'),
   ].filter(Boolean).join(' ');
+  const proposal=detail.proposal&&Array.isArray(detail.proposal.identities)
+    ?detail.proposal.identities as Record<string,unknown>[]:[];
+  const versionLabels=proposal.map(v=>String(v.officialVersionLabel??'').trim()).filter(Boolean);
   const data = detail.evidenceAssessment as Record<string,unknown>|null;
   const readiness = data && typeof data==='object' && typeof data.readiness==='string'
     ? data.readiness : null;
@@ -81,7 +85,13 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
         <section className="rounded-md bg-white p-3">
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#526670]">Observado</h3>
           <p className="text-[13px] font-semibold">{observed || detail.title}</p>
-          <p className="mt-1 text-xs leading-5 text-[#526670]">{detail.summary || row.shortDescription}</p>
+          {versionLabels.length?<p className="mt-1 text-xs font-medium text-[#526670]">
+            Versões propostas: {versionLabels.join(' · ')}
+          </p>:null}
+          {detail.summary?<details className="mt-2 text-xs leading-5 text-[#526670]">
+            <summary className="cursor-pointer line-clamp-2">{detail.summary}</summary>
+            <p className="mt-2 whitespace-pre-wrap">{detail.summary}</p>
+          </details>:null}
           {detail.reasonCode ? <p className="mt-2 text-xs text-[#526670]">Motivo: <strong>{detail.reasonCode}</strong></p>:null}
         </section>
         <section className="rounded-md bg-white p-3">
@@ -125,7 +135,32 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
   );
 }
 
-export function AgentReviewInbox({items}:{readonly items:readonly ReviewInboxRow[]}){
+export function AgentReviewInbox({items,sort,direction}:{readonly items:readonly ReviewInboxRow[];readonly sort:ReviewSort;readonly direction:ReviewDirection}){
+  const router=useRouter();
+  const params=useSearchParams();
+  const order=(field:ReviewSort)=>{
+    const next=new URLSearchParams(params.toString());
+    next.set('sort',field);
+    next.set('direction',field===sort
+      ?(direction==='asc'?'desc':'asc')
+      :(field==='date'||field==='confidence'?'desc':'asc'));
+    next.delete('page');
+    router.replace('/admin/agents?'+next.toString(),{scroll:false});
+  };
+  const th=(field:ReviewSort,label:string,width:string)=>(
+    <th scope="col" aria-sort={sort===field?(direction==='asc'?'ascending':'descending'):undefined}
+      className="sticky top-0 z-20 border-b border-[#D6DEE3] bg-[#DCE8ED] px-2.5 py-3 text-left"
+      style={{width}}>
+      <button type="button" onClick={()=>order(field)}
+        className="flex w-full items-center gap-1 whitespace-nowrap text-left hover:text-[#EF7732]"
+        aria-label={`Ordenar por ${label}`}>
+        {label}
+        <span aria-hidden="true" className="text-[10px]">
+          {sort===field?(direction==='asc'?'↑':'↓'):'↕'}
+        </span>
+      </button>
+    </th>
+  );
   const [expanded,setExpanded]=useState<string|null>(null);
   const [detail,setDetail]=useState<FindingDetail|null>(null);
   const [loading,setLoading]=useState(false);
@@ -156,52 +191,59 @@ export function AgentReviewInbox({items}:{readonly items:readonly ReviewInboxRow
   );
   return (
     <>
-      <div className="hidden lg:block">
-        <div className="overflow-x-auto rounded-lg border border-[#D6DEE3]">
-          <table className="w-full min-w-[1040px] table-fixed border-collapse bg-white text-left text-[13px]">
-            <thead className="sticky top-0 z-10 bg-[#DCE8ED] text-[11px] font-semibold uppercase text-[#526670]">
-              <tr>
-                <th className="w-[28%] px-3 py-3">Descoberta</th>
-                <th className="w-[12%] px-3 py-3">Agente</th>
-                <th className="w-[11%] px-3 py-3">Data</th>
-                <th className="w-[10%] px-3 py-3">Confiança</th>
-                <th className="w-[10%] px-3 py-3">Status</th>
-                <th className="w-[19%] px-3 py-3">Recomendação / evidência</th>
-                <th className="w-[10%] px-3 py-3">Ação</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((row)=>(
-                <Fragment key={row.findingId}>
-                  <tr className={`border-t border-[#EAF1F4] ${expanded===row.findingId?'bg-[#EDF4F6]':''}`}>
-                    <td className="px-3 py-2.5">
-                      <p className="truncate font-semibold" title={row.title}>{row.title}</p>
-                      <p className="mt-1 line-clamp-1 text-xs text-[#526670]" title={row.shortDescription}>{row.shortDescription}</p>
-                    </td>
-                    <td className="px-3 py-2.5 text-xs">{row.agentLabel}</td>
-                    <td className="whitespace-nowrap px-3 py-2.5 text-xs">{date(row.observedAt)}</td>
-                    <td className="px-3 py-2.5 font-medium">{percent(row.confidence)}</td>
-                    <td className="px-3 py-2.5"><Status status={row.status}/></td>
-                    <td className="px-3 py-2.5">
-                      <p className="text-xs font-medium">{row.recommendation}</p>
-                      <p className="mt-1 line-clamp-1 text-[11px] text-[#526670]" title={row.evidencePreview??undefined}>
-                        {row.evidencePreview??(row.evidenceCount>0?`${row.evidenceCount} evidência(s)`:'Sem evidência resumida')}
-                      </p>
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <button type="button" aria-expanded={expanded===row.findingId}
-                        onClick={()=>toggle(row.findingId)}
-                        className="rounded-md border border-[#D6DEE3] bg-white px-3 py-2 text-xs font-semibold hover:bg-[#EAF1F4] focus-visible:outline-2 focus-visible:outline-[#9ABCC8]">
-                        {expanded===row.findingId?'Fechar':'Revisar'}
-                      </button>
-                    </td>
-                  </tr>
-                  {expanded===row.findingId?<tr><td colSpan={7} className="p-0">{body(row)}</td></tr>:null}
-                </Fragment>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <div className="hidden rounded-lg border border-[#D6DEE3] lg:block">
+        <table className="w-full table-fixed border-separate border-spacing-0 bg-white text-left text-[12px]">
+          <thead className="text-[10px] font-semibold uppercase text-[#526670]">
+            <tr>
+              {th('brand','Marca','11%')}
+              {th('model','Modelo','12%')}
+              <th scope="col" className="sticky top-0 z-20 border-b border-[#D6DEE3] bg-[#DCE8ED] px-2.5 py-3" style={{width:'20%'}}>DESCOBERTA</th>
+              {th('agent','Agente','10%')}
+              {th('date','Data','11%')}
+              {th('confidence','Confiança','9%')}
+              <th scope="col" className="sticky top-0 z-20 border-b border-[#D6DEE3] bg-[#DCE8ED] px-2.5 py-3" style={{width:'9%'}}>STATUS</th>
+              <th scope="col" className="sticky top-0 z-20 border-b border-[#D6DEE3] bg-[#DCE8ED] px-2.5 py-3" style={{width:'12%'}}>RECOMENDAÇÃO</th>
+              <th scope="col" className="sticky top-0 z-20 border-b border-[#D6DEE3] bg-[#DCE8ED] px-2.5 py-3" style={{width:'6%'}}>AÇÃO</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map(row=>(
+              <Fragment key={row.findingId}>
+                <tr className={`border-b border-[#EAF1F4] ${expanded===row.findingId?'bg-[#EDF4F6]':''}`}>
+                  <td className="px-2.5 py-3 font-semibold" title={row.brand}>
+                    <p className="truncate">{row.brand||'—'}</p>
+                  </td>
+                  <td className="px-2.5 py-3 font-medium" title={row.model}>
+                    <p className="truncate">{row.model||'—'}</p>
+                  </td>
+                  <td className="px-2.5 py-3" title={row.title}>
+                    <p className="line-clamp-2 font-medium">{row.title}</p>
+                    {row.priorRuns>1?<p className="mt-1 text-[10px] text-[#61747B]">
+                      {row.priorRuns} observações consolidadas
+                    </p>:null}
+                  </td>
+                  <td className="px-2.5 py-3 text-[11px]">{row.agentLabel}</td>
+                  <td className="whitespace-nowrap px-2.5 py-3 text-[11px]">{date(row.observedAt)}</td>
+                  <td className="px-2.5 py-3 font-semibold tabular-nums">{percent(row.confidence)}</td>
+                  <td className="px-2.5 py-3"><Status status={row.status}/></td>
+                  <td className="px-2.5 py-3">
+                    <p className="line-clamp-2 text-[11px] font-medium">{row.recommendation}</p>
+                    {row.evidencePreview?<p className="mt-1 truncate text-[10px] text-[#61747B]"
+                      title={row.evidencePreview}>{row.evidencePreview}</p>:null}
+                  </td>
+                  <td className="px-2.5 py-3">
+                    <button type="button" aria-expanded={expanded===row.findingId}
+                      onClick={()=>toggle(row.findingId)}
+                      className="rounded-md border border-[#D6DEE3] bg-white px-2.5 py-2 text-xs font-semibold hover:bg-[#EAF1F4] focus-visible:outline-2 focus-visible:outline-[#9ABCC8]">
+                      {expanded===row.findingId?'Fechar':'Revisar'}
+                    </button>
+                  </td>
+                </tr>
+                {expanded===row.findingId?<tr><td colSpan={9} className="p-0">{body(row)}</td></tr>:null}
+              </Fragment>
+            ))}
+          </tbody>
+        </table>
       </div>
       <section className="lg:hidden" aria-label="Revisões para celular">
         <div className="sticky top-0 z-10 flex items-center justify-between rounded-t-md border border-[#D6DEE3] bg-[#DCE8ED] px-3 py-3 text-[11px] font-semibold uppercase text-[#526670]">
@@ -212,7 +254,8 @@ export function AgentReviewInbox({items}:{readonly items:readonly ReviewInboxRow
             <article key={row.findingId} className="px-3 py-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-[13px] font-semibold">{row.title}</h3>
+                  <h3 className="text-[13px] font-semibold">{[row.brand,row.model].filter(Boolean).join(' ')}</h3>
+                  <p className="mt-1 text-xs">{row.title}</p>
                   <p className="mt-1 text-[11px] text-[#526670]">{row.agentLabel} · {date(row.observedAt)} · {percent(row.confidence)}</p>
                 </div>
                 <Status status={row.status}/>
