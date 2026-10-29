@@ -130,8 +130,15 @@ export class OpenAIBrandConnectorResearchProvider implements BrandConnectorResea
       response = await this.transport({
         model: this.options.model,
         store: false,
-        max_output_tokens: 4000,
-        instructions: this.options.prompt,
+        // Source mapping is bounded extraction, not long-horizon reasoning.
+        reasoning: { effort: 'low' },
+        max_output_tokens: 6000,
+        instructions: this.options.prompt + '\n' +
+          'For the requested market only, return a compact, evidence-backed JSON: ' +
+          'at most 8 official sourceEntries, 8 evidence items, 5 searchHints, ' +
+          '8 terminologyHints, 4 aliases, 6 checksPerformed and 4 warnings. ' +
+          'Prefer high-signal manufacturer sources. Keep excerpts under 140 characters, ' +
+          'notes under 100, and verificationSummary under 240. Do not pad arrays.',
         input: JSON.stringify(input),
         tools: [
           { type: 'web_search', user_location: { type: 'approximate', country: input.market } },
