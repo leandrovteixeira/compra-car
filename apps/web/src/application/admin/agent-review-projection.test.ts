@@ -62,6 +62,26 @@ describe('Sprint 26 human review inbox projection',()=>{
     expect(p.cases).toHaveLength(1);
     expect(p.diagnostics.genericBodySplit).toBe(1);
   });
+  it('suppresses Saveiro cab-size descriptors when full versions are in the NEW_MODEL proposal',()=>{
+    const model=finding({id:'saveiro-new',run_id:'r1',
+      subject:{brand:'VW',model:'Saveiro'},
+      proposal:{action:'STAGE_MMV_IDENTITIES',identities:[
+        {officialVersionLabel:'Robust CS',bodyStyle:'Picape cabine simples'},
+        {officialVersionLabel:'Robust CD',bodyStyle:'Picape cabine dupla'},
+        {officialVersionLabel:'Trendline CS',bodyStyle:'Picape cabine simples'},
+        {officialVersionLabel:'Extreme CD',bodyStyle:'Picape cabine dupla'},
+      ]},
+    });
+    const body=finding({id:'saveiro-body',run_id:'r2',finding_type:'AMBIGUOUS_MMV',
+      subject:{brand:'VW',model:'Saveiro',bodyStyle:'Picape cabine dupla'},
+      payload:{reasonCode:'POSSIBLE_BODY_SPLIT'},
+      proposal:{action:'REVIEW_MODEL_BODY_SPLIT',proposedModel:'Saveiro Picape cabine dupla'},
+    });
+    const projected=buildReviewProjection([model,body],runs,new Map());
+    expect(projected.cases).toHaveLength(1);
+    expect(projected.cases[0]?.discovery).toContain('4 versões');
+    expect(projected.diagnostics.genericBodySplit).toBe(1);
+  });
   it('does not ask operator of Model Year to create MMV',()=>{
     const year=finding({id:'year',run_id:'r3',finding_type:'POSSIBLE_NEW_MMV',
       subject:{brand:'VW',model:'ID.4',officialVersionLabel:'Pro',modelYear:2027},
