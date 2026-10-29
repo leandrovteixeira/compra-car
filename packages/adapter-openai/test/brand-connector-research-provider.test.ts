@@ -200,6 +200,34 @@ describe('Brand connector provider with injected transport only', () => {
     });
     await expect(provider.researchConnector(input)).rejects.toThrow();
   });
+  it('captures token usage and reports output limit before rejecting incomplete research', async () => {
+    const onUsage=vi.fn();
+    const incomplete=await response({
+      status:'incomplete',
+      incomplete_details:{reason:'max_output_tokens'},
+      usage:{
+        input_tokens:2100,
+        output_tokens:4000,
+        total_tokens:6100,
+        input_tokens_details:{cached_tokens:0},
+        output_tokens_details:{reasoning_tokens:0},
+      } as Response['usage'],
+    });
+    const transport=vi.fn(async()=>incomplete);
+    const provider=new OpenAIBrandConnectorResearchProvider({
+      apiKey:'synthetic',model:'mock',prompt:'generic',
+      transport,onUsage,
+    });
+    await expect(provider.researchConnector(input)).rejects.toThrow('CONNECTOR_RESEARCH_OUTPUT_LIMIT');
+    expect(onUsage).toHaveBeenCalledOnce();
+    expect(onUsage).toHaveBeenCalledWith(expect.objectContaining({
+      inputTokens:2100,outputTokens:4000,totalTokens:6100,
+      webSearchCount:1,
+    }));
+    expect(transport).toHaveBeenCalledWith(
+      expect.objectContaining({max_output_tokens:4000}),
+    );
+  });
   it('redacts transport failures', async () => {
     const provider = new OpenAIBrandConnectorResearchProvider({
       apiKey: 'synthetic',
