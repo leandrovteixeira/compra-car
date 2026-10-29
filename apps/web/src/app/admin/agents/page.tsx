@@ -43,7 +43,7 @@ export default async function AgentsPage({
     flight ? loadAgentControlCenterSummary() : Promise.resolve(null),
     flight && process.env.APP_ENV==='qa' ? loadBrandTargets() : Promise.resolve([]),
     flight && process.env.APP_ENV==='qa' ? loadAgentJobs(20) : Promise.resolve([]),
-    flight ? loadAgentRuns({limit:20,offset:0,agentType:agent}) : Promise.resolve(null),
+    flight ? loadAgentRuns({limit:20,offset:0,agentType:agent&&agent!=='YEAR'?agent:undefined}) : Promise.resolve(null),
   ]);
   const launcherBrands=[...new Set(brandTargets
     .filter(({target})=>target.enabled).map(({target})=>canonicalVehicleBrand(target.brand)))]
