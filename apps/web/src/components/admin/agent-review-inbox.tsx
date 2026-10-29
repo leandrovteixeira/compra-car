@@ -120,8 +120,15 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
           <p className="mt-2 text-xs leading-5 text-[#526670]">
             {row.legacyAccepted
               ? 'Existe uma revisão ACCEPT legada. Ela não comprova alteração canônica.'
-              : 'Os comandos definitivos só serão ativados após validar a transação de decisão e persistência.'}
+              : 'As ações gerais desta fila continuam em preparação. Connectors podem ser revisados no fluxo administrativo existente.'}
           </p>
+          {(row.caseKind==='CONNECTOR_NEW'||row.caseKind==='CONNECTOR_UPDATE')&&row.status==='WAITING'?(
+            <a href={'/admin/agents/findings/'+encodeURIComponent(detail.findingId)}
+              className="ui-button ui-button--primary ui-button--action mt-3 inline-flex"
+              onClick={event=>event.stopPropagation()}>
+              Revisar e aprovar Connector
+            </a>
+          ):null}
           <div className="mt-2 flex flex-wrap gap-1.5">
             {(actionPolicy[row.caseKind]??[]).map(a=><span key={a} className="rounded border border-[#D6DEE3] bg-[#F6F7F8] px-2 py-1 text-[11px] text-[#526670]">{actionLabels[a]}</span>)}
           </div>
