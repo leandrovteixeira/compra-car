@@ -20,6 +20,7 @@ import {
   productResearchMaxWaitMs,
 } from '@compra-car/adapter-openai';
 import { loadAgentEnvironment } from './agent-environment';
+import { requireAgentOpenAiApiKey } from './agent-openai-credentials';
 
 export function parseModelYearArguments(args: readonly string[]) {
   const values = args.filter((value) => value !== '--');
@@ -217,7 +218,7 @@ export async function runModelYearCli(
   try {
     const { scope, provider, persistFindings, parentRunId } = parseModelYearArguments(args);
     env = await loadAgentEnvironment(repositoryRoot, env);
-    if (provider === 'openai' && !parentRunId && (!env.OPENAI_API_KEY?.trim() || !env.OPENAI_AGENT_MODEL?.trim()))
+    if (provider === 'openai' && !parentRunId && (!env.OPENAI_MODEL_YEAR_API_KEY?.trim() || !env.OPENAI_AGENT_MODEL?.trim()))
       throw new Error('OPENAI_AGENT_CONFIG_REQUIRED');
     if (
       (provider === 'openai' || persistFindings) &&
@@ -249,7 +250,7 @@ export async function runModelYearCli(
         : parentRunId
           ? new FixtureProductResearchProvider()
           : new OpenAIProductResearchProvider({
-              apiKey: env.OPENAI_API_KEY!,
+              apiKey: requireAgentOpenAiApiKey(env,'MODEL_YEAR'),
               model: env.OPENAI_AGENT_MODEL!,
               maxWaitMs: productResearchMaxWaitMs(env.OPENAI_AGENT_MAX_WAIT_MS),
               prompt: await readFile(
