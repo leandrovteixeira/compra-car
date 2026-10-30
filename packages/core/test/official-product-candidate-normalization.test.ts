@@ -61,6 +61,12 @@ describe('official product candidate normalization', () => {
       officialVersionLabel: 'TERRAFORCE',
       trim: 'TerraForce',
     }).officialVersionLabel).toBe('TERRAFORCE');
+    expect(normalizeDiscoveredVariantLabels({
+      brand: 'GWM',
+      model: 'GWM TANK 300',
+      officialVersionLabel: 'GWM TANK 300 TERRAFORCE',
+      trim: 'TerraForce',
+    }).officialVersionLabel).toBe('TERRAFORCE');
   });
 
 });
