@@ -270,22 +270,27 @@ export async function runModelYearCli(
           .eq('mmv_id',mmv.id).eq('status','CONFIRMED').limit(10);
         if(mapError)throw new Error('MY_FIPE_MAPPING_READ_FAILED');
         for(const mapping of mappings??[]) {
-          const {data:values,error:valueError}=await db.from('fipe_reference_values')
-            .select('ano_modelo,mes_referencia,codigo_tabela_referencia')
-            .eq('codigo_fipe',mapping.fipe_code).limit(150);
+          const {data:values,error:valueError}=await db.from('agent_fipe_valuation_history')
+            .select('model_year,reference_year,reference_month')
+            .eq('fipe_code',mapping.fipe_code)
+            .order('reference_year',{ascending:false})
+            .order('reference_month',{ascending:false}).limit(150);
           if(valueError)throw new Error('MY_FIPE_VALUES_READ_FAILED');
           const years=new Set<number>();
           let zeroKm=false;
+          const latest=values?.[0];
           for(const row of values??[]) {
-            const parsed=Number(row.ano_modelo);
-            if(parsed===32000){zeroKm=true;continue;}
+            const parsed=Number(row.model_year);
+            const latestReference=latest&&row.reference_year===latest.reference_year&&
+              row.reference_month===latest.reference_month;
+            if(parsed===32000){if(latestReference)zeroKm=true;continue;}
             if(Number.isInteger(parsed)&&parsed>=2001&&parsed<=2100)years.add(parsed);
           }
           fipePreflight.push([
             mmv.id,mapping.fipe_code,
             'FIPE_MY='+([...years].sort((a,b)=>a-b).join(',')||'none'),
             'FIPE_ZERO_KM='+zeroKm,
-            'FIPE_REFERENCE='+String(mapping.reference_period??'unspecified'),
+            'FIPE_REFERENCE='+String(latest?latest.reference_month+'/'+latest.reference_year:(mapping.reference_period??'unspecified')),
           ].join(' | '));
         }
       }
