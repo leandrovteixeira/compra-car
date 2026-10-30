@@ -51,8 +51,8 @@ describe('MMV platform mapping', () => {
       bodyModelProposals: [],
     }, { provider: 'fixture' });
     const mapped = bundle.findings[0]!.finding;
-    expect(mapped.proposal?.action).toBe('REVIEW_UNNAMED_MMV');
-    expect(mapped.proposal?.unnamedCandidates).toHaveLength(1);
+    expect(mapped.proposal?.action).toBe('STAGE_MMV_IDENTITIES');
+    expect(mapped.proposal?.identities).toHaveLength(1);
     expect(mapped.payload.unnamedCommercialVersions).toHaveLength(1);
     expect(JSON.stringify(mapped.proposal)).not.toContain('Versão única');
   });
@@ -86,8 +86,8 @@ describe('MMV platform mapping', () => {
       matchedCandidates: [],
       bodyModelProposals: [],
     }, { provider: 'fixture' }).findings[0]!.finding;
-    expect(mapped.proposal?.action).toBe('REVIEW_UNNAMED_MMV');
-    expect(mapped.proposal?.namedIdentities).toHaveLength(1);
+    expect(mapped.proposal?.action).toBe('STAGE_MMV_IDENTITIES');
+    expect(mapped.proposal?.identities).toHaveLength(2);
     expect(mapped.proposal?.unnamedCandidates).toHaveLength(1);
     expect(mapped.payload.unnamedCommercialVersions).toHaveLength(1);
   });
