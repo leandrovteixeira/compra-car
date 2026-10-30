@@ -3,7 +3,7 @@
 import { Fragment, useActionState, useEffect, useState } from 'react';
 import { reviewAgentFindingAction } from '@/app/admin/agents/actions';
 import { useRouter, useSearchParams } from 'next/navigation';
-import type { ReviewStatus, ReviewAction } from '@compra-car/core/agent-platform';
+import type { ReviewStatus } from '@compra-car/core/agent-platform';
 import type { ReviewInboxRow, ReviewSort, ReviewDirection } from '@/application/admin/agent-review-inbox';
 
 type FindingDetail = {
@@ -28,26 +28,6 @@ const statusLabels: Record<ReviewStatus,string> = {
   APPROVED: 'Aprovado',
   REJECTED: 'Rejeitado',
   POSTPONED: 'Adiado',
-};
-const actionLabels: Record<ReviewAction,string> = {
-  APPROVE:'Aprovar',MERGE:'Canonicalizar',REJECT:'Rejeitar',POSTPONE:'Adiar',
-};
-const actionPolicy: Record<ReviewInboxRow['caseKind'],readonly ReviewAction[]> = {
-  BRAND_NEW:['APPROVE','REJECT','POSTPONE'],
-  BRAND_AMBIGUOUS:['APPROVE','MERGE','REJECT','POSTPONE'],
-  CONNECTOR_NEW:['APPROVE','REJECT','POSTPONE'],
-  CONNECTOR_UPDATE:['APPROVE','REJECT','POSTPONE'],
-  MMV_NEW:['APPROVE','REJECT','POSTPONE'],
-  MMV_AMBIGUOUS:['APPROVE','MERGE','REJECT','POSTPONE'],
-  MMV_MATCHED:[],
-  MODEL_YEAR_NEW:['APPROVE','REJECT','POSTPONE'],
-  MODEL_YEAR_MATCHED:[],
-  PRICE_NEW:['APPROVE','REJECT','POSTPONE'],
-  PRICE_CHANGE:['APPROVE','REJECT','POSTPONE'],
-  SPEC_NEW:['APPROVE','MERGE','REJECT','POSTPONE'],
-  SPEC_AMBIGUOUS:['APPROVE','MERGE','REJECT','POSTPONE'],
-  SPEC_MATCHED:[],
-  WATCHER_SIGNAL:['APPROVE','REJECT','POSTPONE'],
 };
 const date = (raw:string|null) => raw && Number.isFinite(Date.parse(raw))
   ? new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short',timeZone:'America/Sao_Paulo'}).format(new Date(raw))
