@@ -4,6 +4,7 @@ import { Fragment, useActionState, useEffect, useState } from 'react';
 import { reviewMmvIdentityAction } from '@/app/admin/agents/identity-actions';
 import { reviewConnectorAction } from '@/app/admin/agents/connector-decisions';
 import { reviewModelYearAction } from '@/app/admin/agents/model-year-decisions';
+import { reviewFipeCandidateAction } from '@/app/admin/agents/fipe-decisions';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { ReviewStatus } from '@compra-car/core/agent-platform';
 import type { ReviewInboxRow, ReviewSort, ReviewDirection } from '@/application/admin/agent-review-inbox';
@@ -199,6 +200,40 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
   );
 }
 
+function FipeReviewDetail({row}:{row:ReviewInboxRow}){
+  const router=useRouter();
+  const [state,action,pending]=useActionState(reviewFipeCandidateAction,{status:'idle' as const,message:''});
+  useEffect(()=>{if(state.status==='success')router.refresh();},[state.status,router]);
+  const candidate=row.fipeCandidate;
+  if(!candidate)return null;
+  return <div className="grid gap-3 border-t border-[#D6DEE3] bg-[#F6F7F8] p-4 lg:grid-cols-3">
+    <section className="rounded-md bg-white p-3">
+      <h3 className="text-xs font-semibold uppercase text-[#526670]">Observado</h3>
+      <p className="mt-2 text-sm font-semibold">{row.brand} {row.model} {row.version}</p>
+      <p className="mt-2 text-xs text-[#526670]">Código FIPE: {candidate.code}</p>
+      <p className="mt-1 text-xs text-[#526670]">{candidate.label}</p>
+    </section>
+    <section className="rounded-md bg-white p-3">
+      <h3 className="text-xs font-semibold uppercase text-[#526670]">Proposta e decisão</h3>
+      <p className="mt-2 text-xs text-[#526670]">Correspondência sugerida · Confiança {percent(row.confidence)}</p>
+      <p className="mt-1 text-xs text-[#526670]">{candidate.dependencyState==='READY'?'Pronto para decisão':'Dependência pendente'}</p>
+      <form action={action} onClick={e=>e.stopPropagation()} className="mt-3 flex flex-wrap gap-2">
+        <input type="hidden" name="candidateId" value={candidate.id}/>
+        <button type="submit" name="decision" value="ACCEPT" disabled={pending||candidate.dependencyState!=='READY'} className="ui-button ui-button--primary ui-button--action">Aprovar</button>
+        <button type="submit" name="decision" value="REJECT" disabled={pending} className="ui-button ui-button--destructive ui-button--action">Rejeitar</button>
+        <button type="submit" name="decision" value="DEFER" disabled={pending} className="ui-button ui-button--secondary ui-button--action">Adiar</button>
+        {state.message?<p role={state.status==='error'?'alert':'status'} className="w-full text-xs">{state.message}</p>:null}
+      </form>
+      <p className="mt-2 text-xs text-[#526670]">Aprovar vincula a FIPE ao MMV e libera o MY sem outro clique.</p>
+    </section>
+    <section className="rounded-md bg-white p-3">
+      <h3 className="text-xs font-semibold uppercase text-[#526670]">Evidências</h3>
+      <a className="mt-2 inline-block text-xs text-[#A9541B] underline" href={candidate.url} target="_blank" rel="noopener noreferrer">Consultar código FIPE na fonte</a>
+      <p className="mt-2 text-xs text-[#526670]">Coleta via Parallelum · vínculo sujeito à aprovação humana</p>
+    </section>
+  </div>;
+}
+
 export function AgentReviewInbox({items,sort,direction}:{readonly items:readonly ReviewInboxRow[];readonly sort:ReviewSort;readonly direction:ReviewDirection}){
   const router=useRouter();
   const params=useSearchParams();
@@ -233,6 +268,7 @@ export function AgentReviewInbox({items,sort,direction}:{readonly items:readonly
     if(!expanded){setDetail(null);setError(null);setLoading(false);return;}
     const selected=items.find(row=>row.caseId===expanded);
     if(!selected){setExpanded(null);return;}
+    if(selected.fipeCandidate){setDetail(null);setError(null);setLoading(false);return;}
     const controller=new AbortController();
     setLoading(true);setError(null);setDetail(null);
     fetch('/admin/agents/review-detail/'+encodeURIComponent(selected.findingId),{
@@ -251,6 +287,7 @@ export function AgentReviewInbox({items,sort,direction}:{readonly items:readonly
     }
   };
   const body=(row:ReviewInboxRow)=>(
+    row.fipeCandidate?<FipeReviewDetail row={row}/>:
     loading?<div className="p-4 text-sm text-[#526670]" role="status">Carregando detalhes…</div>:
     error?<p role="alert" className="p-4 text-sm text-[#A33737]">{error}</p>:
     detail&&detail.findingId===row.findingId?<DetailContent detail={detail} row={row}/>:null
