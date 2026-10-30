@@ -88,7 +88,8 @@ describe('MMV platform mapping', () => {
     }, { provider: 'fixture' }).findings[0]!.finding;
     expect(mapped.proposal?.action).toBe('STAGE_MMV_IDENTITIES');
     expect(mapped.proposal?.identities).toHaveLength(2);
-    expect(mapped.proposal?.unnamedCandidates).toHaveLength(1);
+    expect((mapped.proposal?.identities as { officialVersionLabel: string | null }[]).some(v => v.officialVersionLabel === null)).toBe(true);
+    expect((mapped.proposal?.identities as { officialVersionLabel: string | null }[]).some(v => v.officialVersionLabel === 'TerraForce')).toBe(true);
     expect(mapped.payload.unnamedCommercialVersions).toHaveLength(1);
   });
 
