@@ -71,7 +71,7 @@ function projectedVersion(model: string, raw: string): string {
   const normalizedLabel = key(label);
   if (!label || normalizedLabel === normalizedModel) return '';
   const tokens = model.trim().split(/\s+/u);
-  const pattern = tokens.map(t => t.replace(/[.*+?^${}()|[\]\\]/gu, '\\const GENERIC_BODY_TYPES = new Set([')).join('\\s+');
+  const pattern = tokens.map(t => t.replace(/[^a-zA-Z0-9]/gu, '\\$&')).join('\\s+');
   return label.replace(new RegExp('^' + pattern + '(?:\\s+|$)', 'iu'), '').trim();
 }
 
