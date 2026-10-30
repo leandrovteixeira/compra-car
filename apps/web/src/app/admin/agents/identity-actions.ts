@@ -33,12 +33,13 @@ export async function reviewMmvIdentityAction(
   const identities = Array.isArray(finding.proposal.identities) ? finding.proposal.identities : [];
   if (identities.filter((item: {identityKey?: unknown})=>item?.identityKey===identityKey).length!==1)
     return {status:'error',message:'Identidade não encontrada ou duplicada neste finding.'};
-  const {error:writeError}=await client.from('agent_mmv_identity_reviews').insert({
-    finding_id:findingId,identity_key:identityKey,finding_fingerprint:fingerprint,
-    decision,reviewed_by:profile.id,
+  const {data:result,error:writeError}=await client.rpc('s26_decide_mmv_identity',{
+    p_finding:findingId,p_identity_key:identityKey,p_fingerprint:fingerprint,
+    p_decision:decision,p_actor:profile.id,
   });
-  if (writeError) return {status:'error',message:'Não foi possível registrar a decisão individual.'};
+  if(writeError) return {status:'error',message:'Não foi possível concluir a decisão. Nenhuma aplicação parcial foi gravada. '+writeError.message};
+
   revalidatePath('/admin/agents');
   revalidatePath('/admin/agents/findings/'+findingId);
-  return {status:'success',message:'Decisão registrada apenas para esta identidade. Catálogo inalterado.'};
+  return {status:'success',message:decision==='ACCEPT'?'Aprovado e aplicado ao catálogo nesta mesma operação.':'Decisão individual registrada. Catálogo inalterado.'};
 }
