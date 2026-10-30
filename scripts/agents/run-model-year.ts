@@ -27,8 +27,10 @@ export function parseModelYearArguments(args: readonly string[]) {
   const values = args.filter((value) => value !== '--');
   const options = new Map<string, string>();
   let persistFindings = false;
+  let noFipe = false;
   for (let index = 0; index < values.length; index += 1) {
     const name = values[index];
+    if (name === '--no-fipe') { noFipe = true; continue; }
     if (name === '--persist-findings') {
       if (persistFindings) throw new Error('INVALID_AGENT_ARGUMENTS');
       persistFindings = true;
@@ -58,6 +60,7 @@ export function parseModelYearArguments(args: readonly string[]) {
     provider,
     persistFindings,
     parentRunId,
+    noFipe,
   };
 }
 
@@ -217,7 +220,7 @@ export async function runModelYearCli(
   repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..'),
 ): Promise<number> {
   try {
-    const { scope, provider, persistFindings, parentRunId } = parseModelYearArguments(args);
+    const { scope, provider, persistFindings, parentRunId, noFipe } = parseModelYearArguments(args);
     env = await loadAgentEnvironment(repositoryRoot, env);
     if (provider === 'openai' && !parentRunId) {
       requireAgentOpenAiApiKey(env, 'MODEL_YEAR');
@@ -261,7 +264,7 @@ export async function runModelYearCli(
     // FIPE preflight is read-only. Only confirmed mappings can constrain MY
     // research: a candidate mapping must never become an automatic identity.
     const fipePreflight: string[] = [];
-    if (provider === 'openai' && !parentRunId) {
+    if (provider === 'openai' && !parentRunId && !noFipe) {
       const {createLegacySupabaseClient}=await import('@compra-car/adapter-supabase');
       const db=createLegacySupabaseClient({url:env.SUPABASE_URL!,serverKey:env.SUPABASE_SERVER_KEY!});
       for (const mmv of canonicalYearTargets) {
@@ -298,7 +301,7 @@ export async function runModelYearCli(
     const modelYearResearchInstructions = [
       'MODEL YEAR DISCOVERY — PRIORITY: Find authoritative production year (PY) and model year (MY) evidence for these existing canonical MMVs:',
       'Confirmed FIPE references (none means no verified mapping; never infer an absent MY):',
-      ...(fipePreflight.length?fipePreflight:['No confirmed FIPE mappings available for these canonical identities.']),
+      ...(noFipe?['ISOLATED TEST: FIPE input deliberately disabled. Do not consult or rely on FIPE data.']:fipePreflight.length?fipePreflight:['No confirmed FIPE mappings available for these canonical identities.']),
       'FIPE year 32000 means zero-km valuation, not MY 32000. Only treat a current reference 0-km record and the maximum real MY of the SAME confirmed FIPE code as a lead for current sales, never proof.',
       ...canonicalYearTargets.map(m=>`- ${m.brand} ${m.model} | official version: ${m.officialVersionLabel ?? '(commercial version unspecified)'} | canonical ID: ${m.id}`),
       'Search separately for EVERY approved MMV and for multiple model years, not just the first available technical sheet.',
