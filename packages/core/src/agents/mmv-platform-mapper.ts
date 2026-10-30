@@ -85,24 +85,25 @@ function mmvProposalForObservation(
     const identity = stagedMmvIdentity(candidate, observation.reasonCode);
     return identity ? [identity] : [];
   });
-  if (!identities.length) {
-    // Review-only: an official model may be sold without a commercial
-    // version name. Never invent a trim or feed a null label into canonical
-    // MMV apply, whose current contract still requires a string.
-    const unnamed = source.filter((candidate) =>
-      !candidate.officialVersionLabel?.trim() && !candidate.trim?.trim() &&
-      candidate.evidence.length > 0,
-    );
-    return unnamed.length
-      ? {
-          action: 'REVIEW_UNNAMED_MMV',
-          reasonCode: observation.reasonCode,
-          market: 'BR',
-          candidates: unnamed.map(candidateDetails),
-          requiresReview: true,
-        }
-      : null;
+  const unnamed = source.filter((candidate) =>
+    !candidate.officialVersionLabel?.trim() &&
+    !candidate.trim?.trim() &&
+    candidate.evidence.length > 0,
+  );
+  // A mixed finding must never silently apply only the named variants.
+  // Carry both sets into a single review-only proposal until the canonical
+  // persistence contract supports a true NULL commercial version label.
+  if (unnamed.length) {
+    return {
+      action: 'REVIEW_UNNAMED_MMV',
+      reasonCode: observation.reasonCode,
+      market: 'BR',
+      namedIdentities: identities,
+      unnamedCandidates: unnamed.map(candidateDetails),
+      requiresReview: true,
+    };
   }
+  if (!identities.length) return null;
 
   return {
     action: 'STAGE_MMV_IDENTITIES',
