@@ -260,6 +260,12 @@ export async function runModelYearCli(
     const modelYearResearchInstructions = [
       'MODEL YEAR DISCOVERY — PRIORITY: Find authoritative production year (PY) and model year (MY) evidence for these existing canonical MMVs:',
       ...canonicalYearTargets.map(m=>`- ${m.brand} ${m.model} | official version: ${m.officialVersionLabel ?? '(commercial version unspecified)'} | canonical ID: ${m.id}`),
+      'Search separately for EVERY approved MMV and for multiple model years, not just the first available technical sheet.',
+      'Explicitly seek the latest announced AND commercially on-sale model year in Brazil as of the run date, plus the preceding model year.',
+      'Look for official launch announcements, sales opening dates, current configurators and current price lists; a historic technical sheet only proves that the historic MY existed.',
+      'For each MY, retain dated primary evidence identifying both the vehicle variant and the year. Search for newer FLEX derivatives and model-year rollover even if an old PDF remains online.',
+      'Where a 2027 model replaced a 2026 model, return separate evidence-backed 2026 and 2027 candidates; never silently collapse them into one MY.',
+      'If current on-sale status is not explicitly supported, do not assert it. Highest confirmed MY and currently on-sale MY are separate questions.',
       'Search official manufacturer model pages and published specifications for explicit model year and production year.',
       'Do not guess a year from the current calendar, a web publication date, or an unrelated variant. Missing year must remain null.',
       'Preserve precisely the canonical brand, model and commercial version; versionless vehicles must keep a null version.',
