@@ -123,8 +123,7 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
               <p className="w-full text-xs text-[#526670]">Aprovar ativa o Connector imediatamente, sem segunda confirmação.</p>
             </form>
           ):null}
-          {row.caseKind==='MMV_NEW' && typeof row.selectedIdentity?.identityKey==='string' &&
-            !row.legacyAccepted ? (
+          {row.caseKind==='MMV_NEW' && typeof row.selectedIdentity?.identityKey==='string' ? (
             <form action={reviewAction} className="mt-3 flex flex-wrap gap-2"
               onClick={event=>event.stopPropagation()}>
               <input type="hidden" name="findingId" value={detail.findingId}/>
