@@ -281,6 +281,32 @@ export class ModelYearAgent {
       });
     }
 
-    return { observations, findings };
+    // Rank only evidence-backed MY observations for each resolved MMV.
+    // A maximum observed MY is not proof that it is currently on sale.
+    const latestByMmv = new Map<string, number>();
+    for (const observation of observations) {
+      const previous = latestByMmv.get(observation.mmvId);
+      if (previous === undefined || observation.modelYear > previous)
+        latestByMmv.set(observation.mmvId, observation.modelYear);
+    }
+    const annotated = findings.map((finding) => {
+      const mmvId = finding.mmvId;
+      const year = typeof finding.subject.modelYear === 'number'
+        ? finding.subject.modelYear : null;
+      const latest = mmvId ? latestByMmv.get(mmvId) : undefined;
+      if (latest === undefined || year === null) return finding;
+      return {
+        ...finding,
+        payload: {
+          ...finding.payload,
+          latestObservedModelYear: latest,
+          isLatestObservedModelYear: year === latest,
+          commercialAvailability: 'UNVERIFIED',
+          commercialAvailabilityReason:
+            'O maior MY confirmado neste run não comprova disponibilidade comercial atual.',
+        },
+      };
+    });
+    return { observations, findings: annotated };
   }
 }
