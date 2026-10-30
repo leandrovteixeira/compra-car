@@ -1,4 +1,5 @@
 import 'server-only';
+import { loadFipeReviewItems } from './fipe-review-inbox';
 
 import { requireRole } from '@/auth/authorization';
 import { createPrivilegedAdminClient } from '@/auth/admin-client';
@@ -13,6 +14,7 @@ import {
 export type ReviewInboxRow = ReviewQueueItem & Readonly<{
   findingId: string;
   runId: string;
+  fipeCandidate: { id:string; code:string; label:string; url:string; dependencyState:string } | null;
   identityDecision: 'ACCEPT'|'REJECT'|'DEFER'|null;
   findingType: string;
   agentLabel: string;
@@ -41,6 +43,7 @@ const labels:Record<string,string>={
   MODEL_YEAR:'Ano-modelo',
   PRODUCT_YEAR:'Ano-modelo',
   PRICE_INTELLIGENCE:'Preços',
+  FIPE_DISCOVERY:'FIPE Agent',
   SPEC_INTELLIGENCE:'Specs',
 };
 const cleanText=(s:string):string=>s
@@ -84,7 +87,7 @@ export async function loadReviewInbox(options:Readonly<{
 }>={}):Promise<ReviewInboxResponse>{
   await requireRole('admin');
   const client=createPrivilegedAdminClient();
-  const [findings,runsResult,reviewsResult,canonicalResult,connectorResult]=await Promise.all([
+  const [findings,runsResult,reviewsResult,canonicalResult,connectorResult,fipeItems]=await Promise.all([
     readAllFindings(client),
     client.from('agent_runs').select('id,agent_type,brand,status,started_at,market'),
     client.from('agent_reviews').select('finding_id,decision,created_at')
@@ -93,6 +96,7 @@ export async function loadReviewInbox(options:Readonly<{
       .select('id,market,brand,model,official_version_label,powertrain_label,propulsion,status')
       .eq('status','ACTIVE'),
     client.from('brand_connectors').select('source_finding_id').eq('status','ACTIVE'),
+    loadFipeReviewItems(),
   ]);
   if(runsResult.error||reviewsResult.error||canonicalResult.error||connectorResult.error||
      !runsResult.data||!reviewsResult.data||!canonicalResult.data||!connectorResult.data)
@@ -118,6 +122,7 @@ export async function loadReviewInbox(options:Readonly<{
       caseKind:g.kind,
       findingId:g.finding.id,
       runId:g.run.id,
+      fipeCandidate:null,
       identityDecision:null,
       findingType:g.finding.finding_type,
       sourceFindingType:g.finding.finding_type,
@@ -146,6 +151,28 @@ export async function loadReviewInbox(options:Readonly<{
       priorRuns:g.priorRuns,
     };
   });
+  for(const item of fipeItems){
+    all.push({
+      caseId:'FIPE:'+item.id,caseKind:'MMV_AMBIGUOUS',
+      findingId:item.id,runId:'',fipeCandidate:{
+        id:item.id,code:item.fipeCode,label:item.fipeLabel,url:item.sourceUrl,
+        dependencyState:item.dependencyState,
+      },
+      identityDecision:null,findingType:'FIPE_MAPPING',
+      sourceFindingType:'FIPE_MAPPING',sourceAgent:'FIPE_DISCOVERY',
+      agentLabel:'FIPE Agent',reasonCode:null,businessKey:'FIPE:'+item.id,
+      brand:item.brand,model:item.model,version:item.version??'',
+      selectedIdentity:null,possibleAppearanceVariant:false,
+      title:'Correspondência FIPE · '+item.fipeCode,
+      shortDescription:item.fipeLabel,
+      recommendation:'Validar código FIPE',
+      confidence:item.confidence,evidenceCount:1,
+      evidencePreview:item.fipeLabel,primaryEvidenceUrl:item.sourceUrl,
+      observedAt:item.createdAt,status:'WAITING',
+      snapshotFingerprint:'FIPE:'+item.id,caseVersion:0,
+      legacyAccepted:false,priorRuns:1,
+    });
+  }
   // Read immutable individual decisions and overlay only the exact identity
   // and source finding fingerprint, never an unrelated sibling's review.
   const {data:individualReviews,error:individualError}=await client
@@ -202,10 +229,10 @@ export async function loadReviewInbox(options:Readonly<{
   const limit=Number.isSafeInteger(options.limit)?Math.min(50,Math.max(1,options.limit!)):25;
   const visible=filtered.slice((page-1)*limit,page*limit);
 
-  if(visible.length){
+  if(visible.some(row=>!row.fipeCandidate)){
     const {data:evidence,error}=await client.from('agent_evidence')
       .select('finding_id,source_url,excerpt,title')
-      .in('finding_id',visible.map(row=>row.findingId))
+      .in('finding_id',visible.filter(row=>!row.fipeCandidate).map(row=>row.findingId))
       .order('created_at',{ascending:false}).limit(1000);
     if(error||!evidence)throw new Error('REVIEW_INBOX_EVIDENCE_UNAVAILABLE');
     const first=new Map<string,{source_url:string;excerpt:string|null;title:string|null}>();
@@ -216,6 +243,7 @@ export async function loadReviewInbox(options:Readonly<{
     }
     for(let i=0;i<visible.length;i++){
       const row=visible[i]!;
+      if(row.fipeCandidate)continue;
       const matched=first.get(row.findingId);
       visible[i]={
         ...row,evidenceCount:counts.get(row.findingId)??0,
