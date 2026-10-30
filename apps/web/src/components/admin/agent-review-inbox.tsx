@@ -139,7 +139,7 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
               {reviewState.message?<p className="w-full text-xs" role={reviewState.status==='error'?'alert':'status'}>{reviewState.message}</p>:null}
               <p className="w-full text-xs text-[#526670]">Aprovar aplica a identidade ao catálogo automaticamente; Rejeitar e Adiar não alteram o catálogo.</p>
             </form>
-          ):(
+          ):(row.caseKind==='CONNECTOR_NEW'||row.caseKind==='CONNECTOR_UPDATE')?null:(
             <div className="mt-2">
               <p className="text-xs text-[#526670]">Ações por identidade indisponíveis neste caso; o finding de origem pode conter múltiplas versões.</p>
               <a className="mt-2 inline-block text-xs text-[#A9541B] underline"
