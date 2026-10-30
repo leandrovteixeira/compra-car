@@ -153,13 +153,14 @@ export async function loadReviewInbox(options:Readonly<{
     const lookup=JSON.stringify([receipt.finding_id,receipt.identity_key,receipt.finding_fingerprint]);
     if(!latestByIdentity.has(lookup))latestByIdentity.set(lookup,receipt.decision);
   }
-  for(const row of all){
+  for(let i=0;i<all.length;i++){
+    const row=all[i]!;
     const identityKey=row.selectedIdentity?.identityKey;
     if(typeof identityKey!=='string')continue;
     const decision=latestByIdentity.get(JSON.stringify([row.findingId,identityKey,row.snapshotFingerprint]));
     if(decision==='ACCEPT'||decision==='REJECT'||decision==='DEFER'){
-      row.identityDecision=decision;
-      row.status=decision==='ACCEPT'?'APPROVED':decision==='REJECT'?'REJECTED':'POSTPONED';
+      all[i]={...row,identityDecision:decision,
+        status:decision==='ACCEPT'?'APPROVED':decision==='REJECT'?'REJECTED':'POSTPONED'};
     }
   }
   const statusCounts:Record<ReviewStatus,number>={
