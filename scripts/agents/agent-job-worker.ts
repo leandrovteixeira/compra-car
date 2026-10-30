@@ -23,6 +23,7 @@ type JobRow = {
     marketModel?: string | null;
     mode?: 'discover' | 'health-check';
     parentRunId?: string;
+    noFipe?: boolean;
   };
 };
 
@@ -121,6 +122,7 @@ async function execute(job: JobRow) {
         'openai',
         '--persist-findings',
         ...(job.input.parentRunId ? ['--parent-run-id', job.input.parentRunId] : []),
+        ...(job.input.noFipe ? ['--no-fipe'] : []),
       ],
       env,
       log,
