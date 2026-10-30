@@ -259,6 +259,16 @@ export async function runModelYearCli(
       canonicalYearTargets=await new CanonicalMmvSupabaseAdapter(
         createLegacySupabaseClient({url:env.SUPABASE_URL!,serverKey:env.SUPABASE_SERVER_KEY!}),
       ).listCanonicalMmvs({market:'BR',brand:scope.brand,status:'ACTIVE'});
+      if (noFipe) {
+        const {createLegacySupabaseClient}=await import('@compra-car/adapter-supabase');
+        const db=createLegacySupabaseClient({url:env.SUPABASE_URL!,serverKey:env.SUPABASE_SERVER_KEY!});
+        const {data:confirmed,error}=await db.from('catalog_mmv_fipe_mappings')
+          .select('mmv_id').eq('status','CONFIRMED')
+          .in('mmv_id',canonicalYearTargets.map(m=>m.id));
+        if(error)throw new Error('MY_FIPE_TARGET_FILTER_FAILED');
+        const linked=new Set((confirmed??[]).map(row=>row.mmv_id));
+        canonicalYearTargets=canonicalYearTargets.filter(m=>!linked.has(m.id));
+      }
       if (!canonicalYearTargets.length) throw new Error('MODEL_YEAR_CANONICAL_MMVS_REQUIRED');
     }
     // FIPE preflight is read-only. Only confirmed mappings can constrain MY
@@ -305,6 +315,7 @@ export async function runModelYearCli(
       'FIPE year 32000 means zero-km valuation, not MY 32000. Only treat a current reference 0-km record and the maximum real MY of the SAME confirmed FIPE code as a lead for current sales, never proof.',
       ...canonicalYearTargets.map(m=>`- ${m.brand} ${m.model} | official version: ${m.officialVersionLabel ?? '(commercial version unspecified)'} | canonical ID: ${m.id}`),
       'Search separately for EVERY approved MMV and for multiple model years, not just the first available technical sheet.',
+      ...(noFipe?['ISOLATED TEST: Return findings ONLY for the explicitly listed canonical MMVs. Do not return Haval H9, Poer or other unlisted products. Search the Tank 300 standard and TerraForce individually.']:[]),
       'Explicitly seek the latest announced AND commercially on-sale model year in Brazil as of the run date, plus the preceding model year.',
       'Look for official launch announcements, sales opening dates, current configurators and current price lists; a historic technical sheet only proves that the historic MY existed.',
       'For each MY, retain dated primary evidence identifying both the vehicle variant and the year. Search for newer FLEX derivatives and model-year rollover even if an old PDF remains online.',
