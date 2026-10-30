@@ -258,8 +258,43 @@ export async function runModelYearCli(
       ).listCanonicalMmvs({market:'BR',brand:scope.brand,status:'ACTIVE'});
       if (!canonicalYearTargets.length) throw new Error('MODEL_YEAR_CANONICAL_MMVS_REQUIRED');
     }
+    // FIPE preflight is read-only. Only confirmed mappings can constrain MY
+    // research: a candidate mapping must never become an automatic identity.
+    const fipePreflight: string[] = [];
+    if (provider === 'openai' && !parentRunId) {
+      const {createLegacySupabaseClient}=await import('@compra-car/adapter-supabase');
+      const db=createLegacySupabaseClient({url:env.SUPABASE_URL!,serverKey:env.SUPABASE_SERVER_KEY!});
+      for (const mmv of canonicalYearTargets) {
+        const {data:mappings,error:mapError}=await db.from('catalog_mmv_fipe_mappings')
+          .select('fipe_code,status,reference_period,model_year_hint')
+          .eq('mmv_id',mmv.id).eq('status','CONFIRMED').limit(10);
+        if(mapError)throw new Error('MY_FIPE_MAPPING_READ_FAILED');
+        for(const mapping of mappings??[]) {
+          const {data:values,error:valueError}=await db.from('fipe_reference_values')
+            .select('ano_modelo,mes_referencia,codigo_tabela_referencia')
+            .eq('codigo_fipe',mapping.fipe_code).limit(150);
+          if(valueError)throw new Error('MY_FIPE_VALUES_READ_FAILED');
+          const years=new Set<number>();
+          let zeroKm=false;
+          for(const row of values??[]) {
+            const parsed=Number(row.ano_modelo);
+            if(parsed===32000){zeroKm=true;continue;}
+            if(Number.isInteger(parsed)&&parsed>=2001&&parsed<=2100)years.add(parsed);
+          }
+          fipePreflight.push([
+            mmv.id,mapping.fipe_code,
+            'FIPE_MY='+([...years].sort((a,b)=>a-b).join(',')||'none'),
+            'FIPE_ZERO_KM='+zeroKm,
+            'FIPE_REFERENCE='+String(mapping.reference_period??'unspecified'),
+          ].join(' | '));
+        }
+      }
+    }
     const modelYearResearchInstructions = [
       'MODEL YEAR DISCOVERY — PRIORITY: Find authoritative production year (PY) and model year (MY) evidence for these existing canonical MMVs:',
+      'Confirmed FIPE references (none means no verified mapping; never infer an absent MY):',
+      ...(fipePreflight.length?fipePreflight:['No confirmed FIPE mappings available for these canonical identities.']),
+      'FIPE year 32000 means zero-km valuation, not MY 32000. Only treat a current reference 0-km record and the maximum real MY of the SAME confirmed FIPE code as a lead for current sales, never proof.',
       ...canonicalYearTargets.map(m=>`- ${m.brand} ${m.model} | official version: ${m.officialVersionLabel ?? '(commercial version unspecified)'} | canonical ID: ${m.id}`),
       'Search separately for EVERY approved MMV and for multiple model years, not just the first available technical sheet.',
       'Explicitly seek the latest announced AND commercially on-sale model year in Brazil as of the run date, plus the preceding model year.',
