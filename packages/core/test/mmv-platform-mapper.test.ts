@@ -57,6 +57,41 @@ describe('MMV platform mapping', () => {
     expect(JSON.stringify(mapped.proposal)).not.toContain('Versão única');
   });
 
+  it('does not silently omit an unnamed base when a named edition exists', async () => {
+    const original = await result();
+    const sample = original.findings.find((finding) => finding.type === 'NEW_MODEL')!;
+    const base = {
+      ...sample.candidate,
+      brand: 'GWM',
+      model: 'TANK 300',
+      taxonomy: 'VARIANT' as const,
+      officialVersionLabel: null,
+      trim: null,
+    };
+    const edition = {
+      ...base,
+      officialVersionLabel: 'TerraForce',
+      trim: 'TerraForce',
+    };
+    const finding = {
+      ...sample,
+      candidate: { ...base, taxonomy: 'MODEL' as const },
+      variants: [base, edition],
+      reasonCode: 'NEW_MODEL' as const,
+    };
+    const mapped = mapMmvRunToPlatform({
+      ...original,
+      brand: 'GWM',
+      findings: [finding],
+      matchedCandidates: [],
+      bodyModelProposals: [],
+    }, { provider: 'fixture' }).findings[0]!.finding;
+    expect(mapped.proposal?.action).toBe('REVIEW_UNNAMED_MMV');
+    expect(mapped.proposal?.namedIdentities).toHaveLength(1);
+    expect(mapped.proposal?.unnamedCandidates).toHaveLength(1);
+    expect(mapped.payload.unnamedCommercialVersions).toHaveLength(1);
+  });
+
   it('maps all current types with review semantics and shared report UUID', async () => {
     const input = await result();
     const bundle = mapMmvRunToPlatform(input, { provider: 'fixture' });
