@@ -85,7 +85,24 @@ function mmvProposalForObservation(
     const identity = stagedMmvIdentity(candidate, observation.reasonCode);
     return identity ? [identity] : [];
   });
-  if (!identities.length) return null;
+  if (!identities.length) {
+    // Review-only: an official model may be sold without a commercial
+    // version name. Never invent a trim or feed a null label into canonical
+    // MMV apply, whose current contract still requires a string.
+    const unnamed = source.filter((candidate) =>
+      !candidate.officialVersionLabel?.trim() && !candidate.trim?.trim() &&
+      candidate.evidence.length > 0,
+    );
+    return unnamed.length
+      ? {
+          action: 'REVIEW_UNNAMED_MMV',
+          reasonCode: observation.reasonCode,
+          market: 'BR',
+          candidates: unnamed.map(candidateDetails),
+          requiresReview: true,
+        }
+      : null;
+  }
 
   return {
     action: 'STAGE_MMV_IDENTITIES',
@@ -236,6 +253,12 @@ export function mapMmvRunToPlatform(
           associatedProductRows: observation.matchedProducts as unknown as AgentObject[],
           structuredCandidate: candidateDetails(candidate),
           resolvedVariants: observation.variants.map(candidateDetails),
+          unnamedCommercialVersions: observation.variants
+            .filter((variant) =>
+              !variant.officialVersionLabel?.trim() && !variant.trim?.trim() &&
+              variant.evidence.length > 0,
+            )
+            .map(candidateDetails),
           marketReconciliation: marketReconciliation as unknown as AgentObject[],
         },
         createdAt: result.completedAt,
