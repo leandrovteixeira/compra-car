@@ -3,6 +3,7 @@ import { createLegacySupabaseClient } from '@compra-car/adapter-supabase';
 import { runNewProductCheckCli } from './run-new-product-check';
 import { runBrandConnectorCli } from './run-brand-connector';
 import { runModelYearCli } from './run-model-year';
+import { runFipePilot } from './fipe-agent-pilot';
 import { runPriceCli } from './run-price';
 import { monitorBrandSources } from './source-monitor';
 import { journalWorkerJob } from './engineering-worker-telemetry';
@@ -107,6 +108,10 @@ async function execute(job: JobRow) {
       log,
       repositoryRoot,
     );
+  } else if (job.job_type === 'FIPE_DISCOVERY') {
+    await runFipePilot(env,log);
+    await completeWithoutRun(job.id);
+    return;
   } else if (job.job_type === 'PRODUCT_YEAR') {
     code = await runModelYearCli(
       [
