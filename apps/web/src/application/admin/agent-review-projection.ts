@@ -88,9 +88,11 @@ function identityVariants(f: LegacyDiscovery): readonly Record<string,unknown>[]
   const model=projectedModel(value(f.subject.brand),value(f.subject.model)).toLocaleLowerCase('pt-BR').trim();
   return objects(obj(f.proposal)?.identities).filter(o=>{
     const label=projectedVersion(model,value(o.officialVersionLabel)||value(o.trim));
-    return !!label &&
+    const explicitUnnamed = o.officialVersionLabel === null && o.trim === null &&
+      typeof o.identityKey === 'string' && o.identityKey.includes('mmv-current:');
+    return explicitUnnamed || (!!label &&
       label.toLocaleLowerCase('pt-BR').trim()!==model &&
-      !/\s+\/\s+/u.test(label);
+      !/\s+\/\s+/u.test(label));
   });
 }
 function variants(f: LegacyDiscovery): readonly string[] {
@@ -196,8 +198,14 @@ export function buildReviewProjection(
         if(identity&&['NEW_MODEL','NEW_VERSION'].includes(f.finding_type)){
           kind=paintParent?'MMV_AMBIGUOUS':'MMV_NEW';
           businessKey=JSON.stringify(['MMV',baseKey,key(label)]);
-          discovery=paintParent?'Possível variação de acabamento':'Nova versão';
+          discovery=paintParent?'Possível variação de acabamento':
+            label?'Nova versão':'Modelo sem denominação comercial de versão';
           recommendation=paintParent?'Criar ou vincular à '+paintParent:'Validar novo MMV';
+        }else if(f.finding_type==='NEW_MODEL'&&!identity){
+          kind='MMV_NEW';
+          businessKey=JSON.stringify(['MMV',baseKey,'']);
+          discovery='Modelo sem versão comercial identificada';
+          recommendation='Validar identidade-base';
         }else if(f.finding_type==='AMBIGUOUS_MMV'){
           if(reason==='POSSIBLE_BODY_SPLIT'){
             const body=value(f.subject.bodyStyle);
