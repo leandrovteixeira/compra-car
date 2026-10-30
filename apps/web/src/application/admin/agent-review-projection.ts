@@ -320,8 +320,9 @@ function sameCanonicalIdentity(
   item: CurrentCanonicalMmv,
   market: string,
 ): boolean {
-  const brand = value(proposal.brand), model = value(proposal.model);
-  const version = value(proposal.officialVersionLabel) || value(proposal.trim);
+  const brand = value(proposal.brand);
+  const model = projectedModel(brand,value(proposal.model));
+  const version = projectedVersion(model,value(proposal.officialVersionLabel) || value(proposal.trim));
   const sameVersion = version
     ? item.official_version_label !== null && key(version) === key(item.official_version_label)
     : proposal.officialVersionLabel === null && proposal.trim === null &&
