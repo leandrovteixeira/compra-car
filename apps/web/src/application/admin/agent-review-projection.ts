@@ -59,6 +59,22 @@ const obj = (v: unknown): Record<string, unknown> | null =>
 const objects = (v: unknown): readonly Record<string, unknown>[] =>
   Array.isArray(v) ? v.filter((x): x is Record<string, unknown> => obj(x) !== null) : [];
 
+/** Manufacturer-family naming used only for projection; findings stay immutable. */
+function projectedModel(brand: string, model: string): string {
+  if (vehicleBrandComparisonKey(brand) === 'gwm' && /^h[679]$/iu.test(model.trim()))
+    return 'HAVAL ' + model.trim().toUpperCase();
+  return model;
+}
+function projectedVersion(model: string, raw: string): string {
+  const label = raw.trim();
+  const normalizedModel = key(model);
+  const normalizedLabel = key(label);
+  if (!label || normalizedLabel === normalizedModel) return '';
+  const tokens = model.trim().split(/\s+/u);
+  const pattern = tokens.map(t => t.replace(/[.*+?^${}()|[\]\\]/gu, '\\const GENERIC_BODY_TYPES = new Set([')).join('\\s+');
+  return label.replace(new RegExp('^' + pattern + '(?:\\s+|$)', 'iu'), '').trim();
+}
+
 const GENERIC_BODY_TYPES = new Set([
   'suv','suv compacto','suv medio','suv grande','crossover',
   'hatch','hatchback','sedan','minivan','picape','pickup',
@@ -69,16 +85,17 @@ const GENERIC_BODY_TYPES = new Set([
 function identityVariants(f: LegacyDiscovery): readonly Record<string,unknown>[] {
   // A slash-delimited list or model name alone is not a commercial version.
   // Keep the raw observation and evidence, but do not offer approval of a fake MMV.
-  const model=value(f.subject.model).toLocaleLowerCase('pt-BR').trim();
+  const model=projectedModel(value(f.subject.brand),value(f.subject.model)).toLocaleLowerCase('pt-BR').trim();
   return objects(obj(f.proposal)?.identities).filter(o=>{
-    const label=value(o.officialVersionLabel)||value(o.trim);
+    const label=projectedVersion(model,value(o.officialVersionLabel)||value(o.trim));
     return !!label &&
       label.toLocaleLowerCase('pt-BR').trim()!==model &&
       !/\s+\/\s+/u.test(label);
   });
 }
 function variants(f: LegacyDiscovery): readonly string[] {
-  return [...new Set(identityVariants(f).map(o=>value(o.officialVersionLabel)||value(o.trim)))];
+  const m=projectedModel(value(f.subject.brand),value(f.subject.model));
+  return [...new Set(identityVariants(f).map(o=>projectedVersion(m,value(o.officialVersionLabel)||value(o.trim))))];
 }
 function variantLabel(identity: Record<string,unknown>): string {
   return value(identity.officialVersionLabel) || value(identity.trim);
@@ -96,13 +113,14 @@ function appearanceParent(
 }
 function candidateVersion(f: LegacyDiscovery): string {
   const raw = obj(f.payload?.structuredCandidate);
-  return value(f.subject.officialVersionLabel) ||
-    value(raw?.officialVersionLabel) || value(raw?.trim);
+  const model=projectedModel(value(f.subject.brand),value(f.subject.model));
+  return projectedVersion(model,value(f.subject.officialVersionLabel) ||
+    value(raw?.officialVersionLabel) || value(raw?.trim));
 }
 function subject(f: LegacyDiscovery, r: LegacyRun) {
   const raw = obj(f.payload?.structuredCandidate);
   const brand = value(f.subject.brand) || value(raw?.brand) || r.brand || '';
-  const model = value(f.subject.model) || value(raw?.model);
+  const model = projectedModel(brand,value(f.subject.model) || value(raw?.model));
   const canonicalBrand = vehicleBrandComparisonKey(brand || '—');
   return {brand, model, brandKey: canonicalBrand,
     modelKey: key(model), market:r.market??'BR'};
@@ -156,7 +174,7 @@ export function buildReviewProjection(
     const individual=proposedVariants.length>0
       ?proposedVariants : [null];
     for(const identity of individual){
-      const label=identity?variantLabel(identity):v;
+      const label=identity?projectedVersion(model,variantLabel(identity)):v;
       const paintParent=identity?appearanceParent(identity,proposedVariants):null;
       let kind:ReviewCaseKind|null=null;
       let businessKey='';
