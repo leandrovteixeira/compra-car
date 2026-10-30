@@ -52,6 +52,7 @@ describe('MMV platform mapping', () => {
     }, { provider: 'fixture' });
     const mapped = bundle.findings[0]!.finding;
     expect(mapped.proposal?.action).toBe('REVIEW_UNNAMED_MMV');
+    expect(mapped.proposal?.unnamedCandidates).toHaveLength(1);
     expect(mapped.payload.unnamedCommercialVersions).toHaveLength(1);
     expect(JSON.stringify(mapped.proposal)).not.toContain('Versão única');
   });
