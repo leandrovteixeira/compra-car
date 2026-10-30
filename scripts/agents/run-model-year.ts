@@ -20,6 +20,7 @@ import {
   productResearchMaxWaitMs,
 } from '@compra-car/adapter-openai';
 import { loadAgentEnvironment } from './agent-environment';
+import { recordAiUsage } from './ai-usage';
 import { requireAgentOpenAiApiKey } from './agent-openai-credentials';
 
 export function parseModelYearArguments(args: readonly string[]) {
@@ -337,6 +338,23 @@ export async function runModelYearCli(
         }),
       );
       await platform.persistRunBundle(bundle);
+      if (provider === 'openai' && !parentRunId) {
+        const meta=discovery.researchMetadata;
+        if (!meta.model || !Number.isFinite(meta.totalTokens) || !meta.totalTokens)
+          throw new Error('MODEL_YEAR_PROVIDER_USAGE_MISSING');
+        await recordAiUsage(
+          createLegacySupabaseClient({
+            url:env.SUPABASE_URL!,serverKey:env.SUPABASE_SERVER_KEY!,
+          }),{
+            runId:discovery.runId,agentType:'PRODUCT_YEAR',
+            market:scope.country,brand:scope.brand,provider:meta.provider,
+            model:meta.model,inputTokens:meta.inputTokens,
+            outputTokens:meta.outputTokens,totalTokens:meta.totalTokens,
+            webSearchCount:meta.webSearchCount,reason:'MODEL_YEAR_RESEARCH',
+          },env,
+        );
+        log('Model Year provider token usage persisted.');
+      }
       log('Operational Model Year findings persisted. Catalog unchanged.');
     }
 
