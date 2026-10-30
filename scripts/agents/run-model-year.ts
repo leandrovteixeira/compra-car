@@ -246,6 +246,28 @@ export async function runModelYearCli(
             );
           })();
 
+    // For independent MY runs, guide research toward approved canonical MMVs.
+    // A previous MMV run is not a sufficient source for MY/PY discovery.
+    let canonicalYearTargets: readonly CanonicalMmv[] = [];
+    if (provider === 'openai' && !parentRunId) {
+      const {CanonicalMmvSupabaseAdapter,createLegacySupabaseClient} =
+        await import('@compra-car/adapter-supabase');
+      canonicalYearTargets=await new CanonicalMmvSupabaseAdapter(
+        createLegacySupabaseClient({url:env.SUPABASE_URL!,serverKey:env.SUPABASE_SERVER_KEY!}),
+      ).listCanonicalMmvs({market:'BR',brand:scope.brand,status:'ACTIVE'});
+      if (!canonicalYearTargets.length) throw new Error('MODEL_YEAR_CANONICAL_MMVS_REQUIRED');
+    }
+    const modelYearResearchInstructions = [
+      'MODEL YEAR DISCOVERY — PRIORITY: Find authoritative production year (PY) and model year (MY) evidence for these existing canonical MMVs:',
+      ...canonicalYearTargets.map(m=>`- ${m.brand} ${m.model} | official version: ${m.officialVersionLabel ?? '(commercial version unspecified)'} | canonical ID: ${m.id}`),
+      'Search official manufacturer model pages and published specifications for explicit model year and production year.',
+      'Do not guess a year from the current calendar, a web publication date, or an unrelated variant. Missing year must remain null.',
+      'Preserve precisely the canonical brand, model and commercial version; versionless vehicles must keep a null version.',
+      'Only attach resolvedMmvId when the evidence uniquely identifies the matching canonical MMV.',
+      'Do not use owners manuals or repair manuals as supporting sources.',
+      'Return independent per-MMV candidates with year evidence; do not invent a commercial version.',
+    ].join('\\n');
+
     const research =
       provider === 'fixture'
         ? new FixtureProductResearchProvider()
@@ -255,10 +277,10 @@ export async function runModelYearCli(
               apiKey: requireAgentOpenAiApiKey(env,'MODEL_YEAR'),
               model: env.OPENAI_AGENT_MODEL!,
               maxWaitMs: productResearchMaxWaitMs(env.OPENAI_AGENT_MAX_WAIT_MS),
-              prompt: await readFile(
+              prompt: (await readFile(
                 resolve(repositoryRoot, 'docs/agents/prompts/new-product-check-agent-v1.md'),
                 'utf8',
-              ),
+              )) + '\\n\\n' + modelYearResearchInstructions,
             });
 
     const discovery = parentRunId
