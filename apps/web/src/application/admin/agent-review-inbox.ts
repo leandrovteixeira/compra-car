@@ -84,7 +84,7 @@ export async function loadReviewInbox(options:Readonly<{
 }>={}):Promise<ReviewInboxResponse>{
   await requireRole('admin');
   const client=createPrivilegedAdminClient();
-  const [findings,runsResult,reviewsResult,canonicalResult]=await Promise.all([
+  const [findings,runsResult,reviewsResult,canonicalResult,connectorResult]=await Promise.all([
     readAllFindings(client),
     client.from('agent_runs').select('id,agent_type,brand,status,started_at,market'),
     client.from('agent_reviews').select('finding_id,decision,created_at')
@@ -92,9 +92,10 @@ export async function loadReviewInbox(options:Readonly<{
     client.from('catalog_mmvs')
       .select('id,market,brand,model,official_version_label,powertrain_label,propulsion,status')
       .eq('status','ACTIVE'),
+    client.from('brand_connectors').select('source_finding_id').eq('status','ACTIVE'),
   ]);
-  if(runsResult.error||reviewsResult.error||canonicalResult.error||
-     !runsResult.data||!reviewsResult.data||!canonicalResult.data)
+  if(runsResult.error||reviewsResult.error||canonicalResult.error||connectorResult.error||
+     !runsResult.data||!reviewsResult.data||!canonicalResult.data||!connectorResult.data)
     throw new Error('REVIEW_INBOX_DATA_UNAVAILABLE');
 
   const runs=new Map((runsResult.data as LegacyRun[]).map(run=>[run.id,run]));
@@ -105,7 +106,11 @@ export async function loadReviewInbox(options:Readonly<{
   const projected=buildReviewProjection(findings,runs,reviews);
   const existingCanonical=canonicalResult.data as CurrentCanonicalMmv[];
   // Historical ACCEPT is not an apply receipt; verify real canonical identities.
-  const activeCases=projected.cases.filter(g=>!isResolvedMmvCase(g,existingCanonical));
+  const activeConnectorSources=new Set(connectorResult.data.map(item=>item.source_finding_id));
+  const activeCases=projected.cases.filter(g=>
+    !isResolvedMmvCase(g,existingCanonical) &&
+    !(g.kind.startsWith('CONNECTOR_') && activeConnectorSources.has(g.finding.id))
+  );
   const all:ReviewInboxRow[]=activeCases.map(g=>{
     const confidence=g.finding.confidence==null?null:Number(g.finding.confidence);
     return {
