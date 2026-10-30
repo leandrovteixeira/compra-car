@@ -106,13 +106,6 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
               ? 'Existe uma revisão ACCEPT legada. Ela não comprova alteração canônica.'
               : 'As ações gerais desta fila continuam em preparação. Connectors podem ser revisados no fluxo administrativo existente.'}
           </p>
-          {(row.caseKind==='CONNECTOR_NEW'||row.caseKind==='CONNECTOR_UPDATE')&&row.status==='WAITING'?(
-            <a href={'/admin/agents/findings/'+encodeURIComponent(detail.findingId)}
-              className="ui-button ui-button--primary ui-button--action mt-3 inline-flex"
-              onClick={event=>event.stopPropagation()}>
-              Revisar e aprovar Connector
-            </a>
-          ):null}
           {row.caseKind==='MMV_NEW' && typeof row.selectedIdentity?.identityKey==='string' &&
             !row.legacyAccepted ? (
             <form action={reviewAction} className="mt-3 flex flex-wrap gap-2"
@@ -127,7 +120,7 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
               <button type="submit" name="decision" value="DEFER" disabled={reviewPending}
                 className="ui-button ui-button--secondary ui-button--action">Adiar</button>
               {reviewState.message?<p className="w-full text-xs" role={reviewState.status==='error'?'alert':'status'}>{reviewState.message}</p>:null}
-              <p className="w-full text-xs text-[#526670]">Decisão individual; outras versões e catálogo permanecem inalterados.</p>
+              <p className="w-full text-xs text-[#526670]">Aprovar aplica a identidade ao catálogo automaticamente; Rejeitar e Adiar não alteram o catálogo.</p>
             </form>
           ):(
             <div className="mt-2">
