@@ -1,7 +1,7 @@
 'use client';
 
 import { Fragment, useActionState, useEffect, useState } from 'react';
-import { reviewAgentFindingAction } from '@/app/admin/agents/actions';
+import { reviewMmvIdentityAction } from '@/app/admin/agents/identity-actions';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { ReviewStatus } from '@compra-car/core/agent-platform';
 import type { ReviewInboxRow, ReviewSort, ReviewDirection } from '@/application/admin/agent-review-inbox';
@@ -47,7 +47,7 @@ function Status({status}:{readonly status:ReviewStatus}){
 }
 function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:ReviewInboxRow}){
   const router = useRouter();
-  const [reviewState, reviewAction, reviewPending] = useActionState(reviewAgentFindingAction, {status:'idle' as const,message:''});
+  const [reviewState, reviewAction, reviewPending] = useActionState(reviewMmvIdentityAction, {status:'idle' as const,message:''});
   useEffect(()=>{if(reviewState.status==='success')router.refresh();},[reviewState.status,router]);
   const subject = detail.subject ?? {};
   const get = (key:string) => {
@@ -113,11 +113,13 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
               Revisar e aprovar Connector
             </a>
           ):null}
-          {row.caseKind==='MMV_NEW' && proposal.length===1 &&
-            row.status==='WAITING' && !row.legacyAccepted ? (
+          {row.caseKind==='MMV_NEW' && typeof row.selectedIdentity?.identityKey==='string' &&
+            !row.legacyAccepted ? (
             <form action={reviewAction} className="mt-3 flex flex-wrap gap-2"
               onClick={event=>event.stopPropagation()}>
               <input type="hidden" name="findingId" value={detail.findingId}/>
+              <input type="hidden" name="identityKey" value={String(row.selectedIdentity?.identityKey)}/>
+              <input type="hidden" name="fingerprint" value={row.snapshotFingerprint}/>
               <button type="submit" name="decision" value="ACCEPT" disabled={reviewPending}
                 className="ui-button ui-button--primary ui-button--action">Aprovar</button>
               <button type="submit" name="decision" value="REJECT" disabled={reviewPending}
@@ -125,7 +127,7 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
               <button type="submit" name="decision" value="DEFER" disabled={reviewPending}
                 className="ui-button ui-button--secondary ui-button--action">Adiar</button>
               {reviewState.message?<p className="w-full text-xs" role={reviewState.status==='error'?'alert':'status'}>{reviewState.message}</p>:null}
-              <p className="w-full text-xs text-[#526670]">A decisão registra a revisão humana. Não aplica o MMV ao catálogo.</p>
+              <p className="w-full text-xs text-[#526670]">Decisão individual; outras versões e catálogo permanecem inalterados.</p>
             </form>
           ):(
             <div className="mt-2">
