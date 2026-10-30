@@ -12,6 +12,7 @@ import {
 /** Read-only UX projection: no reviews or catalog data are written here. */
 export type ReviewInboxRow = ReviewQueueItem & Readonly<{
   findingId: string;
+  runId: string;
   findingType: string;
   agentLabel: string;
   reasonCode: string | null;
@@ -110,6 +111,7 @@ export async function loadReviewInbox(options:Readonly<{
       caseId:g.businessKey,
       caseKind:g.kind,
       findingId:g.finding.id,
+      runId:g.run.id,
       findingType:g.finding.finding_type,
       sourceFindingType:g.finding.finding_type,
       sourceAgent:g.run.agent_type,
