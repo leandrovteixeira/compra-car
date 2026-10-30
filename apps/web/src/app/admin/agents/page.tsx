@@ -12,8 +12,6 @@ import { AgentReviewFilters, type AgentFilter } from '@/components/admin/agent-r
 import { AgentRunHistory } from '@/components/admin/agent-platform-views';
 import { AgentControlCenterOverview } from '@/components/admin/agent-control-center-overview';
 import { AgentReviewInbox } from '@/components/admin/agent-review-inbox';
-import { loadFipeReviewItems } from '@/application/admin/fipe-review-inbox';
-import { FipeReviewQueue } from '@/components/admin/fipe-review-queue';
 import { AgentRunLauncher } from '@/components/admin/agent-run-launcher';
 import { AgentJobQueue } from '@/components/admin/agent-job-queue';
 import { PageHeader } from '@/components/admin/page-header';
@@ -32,7 +30,7 @@ export default async function AgentsPage({
     params.agent === 'MODEL_YEAR' || params.agent === 'PRODUCT_YEAR'
       ? 'YEAR'
       : typeof params.agent==='string' &&
-        ['BRAND_CONNECTOR','MMV_DISCOVERY','YEAR','SPEC_INTELLIGENCE','PRICE_INTELLIGENCE']
+        ['BRAND_CONNECTOR','MMV_DISCOVERY','FIPE_DISCOVERY','YEAR','SPEC_INTELLIGENCE','PRICE_INTELLIGENCE']
           .includes(params.agent) ? params.agent as AgentFilter : '';
   const sort:ReviewSort=typeof params.sort==='string' &&
     ['date','confidence','brand','model','agent'].includes(params.sort)
@@ -42,15 +40,13 @@ export default async function AgentsPage({
   const requestedPage=typeof params.page==='string'?Number(params.page):1;
   const page=Number.isSafeInteger(requestedPage)&&requestedPage>0?requestedPage:1;
 
-  const [inbox, summary, brandTargets, jobs, runs, handoffs, fipeItems] = await Promise.all([
+  const [inbox, summary, brandTargets, jobs, runs, handoffs] = await Promise.all([
     !flight ? loadReviewInbox({page,limit:25,status,agent,search,sort,direction}) : Promise.resolve(null),
     flight ? loadAgentControlCenterSummary() : Promise.resolve(null),
     flight && process.env.APP_ENV==='qa' ? loadBrandTargets() : Promise.resolve([]),
     flight && process.env.APP_ENV==='qa' ? loadAgentJobs(20) : Promise.resolve([]),
     flight ? loadAgentRuns({limit:20,offset:0,agentType:agent&&agent!=='YEAR'?agent:undefined}) : Promise.resolve(null),
     flight ? loadAgentHandoffSummary() : Promise.resolve(null),
-    !flight && (agent==='' || agent==='MMV_DISCOVERY') && (status==='WAITING'||status==='ALL')
-      ? loadFipeReviewItems() : Promise.resolve([]),
   ]);
   const launcherBrands=[...new Set(brandTargets
     .filter(({target})=>target.enabled).map(({target})=>canonicalVehicleBrand(target.brand)))]
@@ -96,7 +92,6 @@ export default async function AgentsPage({
               sort={sort}
               direction={direction}
             />
-            <FipeReviewQueue items={fipeItems}/>
             <AgentReviewInbox items={inbox.items} sort={sort} direction={direction}/>
             <nav aria-label="Paginação de revisões" className="flex flex-wrap items-center justify-end gap-4 text-xs text-text-secondary">
               {page>1?<Link className="underline" href={pageLink(page-1)}>‹ Anterior</Link>:null}
