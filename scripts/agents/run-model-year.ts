@@ -325,7 +325,7 @@ export async function runModelYearCli(
           ' (latest FIPE MY with current zero-km reference; canonical MY approval handled separately).');
       canonicalYearTargets=canonicalYearTargets.filter(m=>!fipeCoveredMmvs.has(m.id));
       if(!canonicalYearTargets.length) {
-        log('MY FIPE-first: no unresolved MMVs to research. OpenAI calls: 0');
+        log('NO_MY_RESEARCH_REQUIRED: FIPE coverage complete. OpenAI calls: 0');
         return 0;
       }
     }
