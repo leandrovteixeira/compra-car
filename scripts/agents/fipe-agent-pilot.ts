@@ -73,7 +73,9 @@ export async function runFipePilot(env:NodeJS.ProcessEnv=process.env,log=console
      // Matching is review-only: do not promote a tentative FIPE code to canonical.
      for(const target of relevant) {
        const labelNorm=normalize(label), versionNorm=normalize(target.official_version_label||'');
-       if(versionNorm&&!labelNorm.includes(versionNorm))continue;
+       const h6Phev19=normalize(target.model)==='haval h6' &&
+         versionNorm==='phev19' && /\\bh6 19\\b/.test(labelNorm);
+       if(versionNorm&&!labelNorm.includes(versionNorm)&&!h6Phev19)continue;
        const {error:candidateError}=await db.from('agent_fipe_mapping_candidates').upsert({
          mmv_id:target.id,fipe_code:fipeCode,fipe_model_label:label,provider:'parallelum-v2',
          source_url:BASE+'/cars/brands/'+gwm.code+'/models/'+model.code+'/years/'+year.code,
