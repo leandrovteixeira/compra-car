@@ -34,13 +34,17 @@ function exactMmvMatches(
     );
   }
   const version = versionLabel(candidate);
-  if (!version) return [];
+  if (!version) {
+    return mmvs.filter((mmv) => mmv.status === 'ACTIVE' &&
+      vehicleBrandComparisonKey(mmv.brand) === vehicleBrandComparisonKey(candidate.brand) &&
+      key(mmv.model) === key(candidate.model) && mmv.officialVersionLabel === null);
+  }
   return mmvs.filter(
     (mmv) =>
       mmv.status === 'ACTIVE' &&
       vehicleBrandComparisonKey(mmv.brand) === vehicleBrandComparisonKey(candidate.brand) &&
       key(mmv.model) === key(candidate.model) &&
-      key(mmv.officialVersionLabel) === key(version),
+      mmv.officialVersionLabel !== null && key(mmv.officialVersionLabel) === key(version),
   );
 }
 
@@ -111,7 +115,7 @@ export class ModelYearAgent {
           mmvId: mmv.id,
           brand: mmv.brand,
           model: mmv.model,
-          officialVersionLabel: mmv.officialVersionLabel,
+          officialVersionLabel: mmv.officialVersionLabel ?? '',
           productionYear: null,
           modelYear: candidate.modelYear,
           confidence: candidate.confidence,
@@ -127,7 +131,7 @@ export class ModelYearAgent {
           findingType: 'NEW_PRODUCT_YEAR',
           reasonCode: isNew ? 'NEW_MODEL_YEAR' : 'CONFIRMED_MODEL_YEAR',
           mmvId: mmv.id,
-          title: `${mmv.brand} ${mmv.model} ${mmv.officialVersionLabel} — MY${candidate.modelYear}`,
+          title: `${mmv.brand} ${mmv.model} ${mmv.officialVersionLabel ?? ''} — MY${candidate.modelYear}`,
           summary: isNew
             ? `Novo MY${candidate.modelYear} encontrado. O ano de fabricação ainda não foi confirmado e permanecerá vazio.`
             : `MY${candidate.modelYear} confirmado novamente; o PY continua sem inferência.`,
@@ -137,7 +141,7 @@ export class ModelYearAgent {
             mmvId: mmv.id,
             brand: mmv.brand,
             model: mmv.model,
-            officialVersionLabel: mmv.officialVersionLabel,
+            officialVersionLabel: mmv.officialVersionLabel ?? '',
             productionYear: null,
             modelYear: candidate.modelYear,
           },
@@ -230,7 +234,7 @@ export class ModelYearAgent {
         mmvId: mmv.id,
         brand: mmv.brand,
         model: mmv.model,
-        officialVersionLabel: mmv.officialVersionLabel,
+        officialVersionLabel: mmv.officialVersionLabel ?? '',
         productionYear,
         modelYear: candidate.modelYear,
         confidence: candidate.confidence,
@@ -244,7 +248,7 @@ export class ModelYearAgent {
         findingType: 'NEW_PRODUCT_YEAR',
         reasonCode: isNew ? 'NEW_MODEL_YEAR' : 'CONFIRMED_MODEL_YEAR',
         mmvId: mmv.id,
-        title: `${mmv.brand} ${mmv.model} ${mmv.officialVersionLabel} — MY${candidate.modelYear}`,
+        title: `${mmv.brand} ${mmv.model} ${mmv.officialVersionLabel ?? ''} — MY${candidate.modelYear}`,
         summary: isNew
           ? `Novo par fabricação/modelo ${productionYear}/${candidate.modelYear} encontrado para um MMV já conhecido.`
           : `O par ${productionYear}/${candidate.modelYear} foi confirmado novamente nas fontes atuais.`,
@@ -254,7 +258,7 @@ export class ModelYearAgent {
           mmvId: mmv.id,
           brand: mmv.brand,
           model: mmv.model,
-          officialVersionLabel: mmv.officialVersionLabel,
+          officialVersionLabel: mmv.officialVersionLabel ?? '',
           productionYear,
           modelYear: candidate.modelYear,
         },
