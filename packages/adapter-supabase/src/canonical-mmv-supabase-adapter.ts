@@ -49,7 +49,7 @@ function canonicalMmv(row: Row): CanonicalMmv {
     identityKey: text(row, 'identity_key'),
     brand: text(row, 'brand'),
     model: text(row, 'model'),
-    officialVersionLabel: text(row, 'official_version_label'),
+    officialVersionLabel: optionalText(row, 'official_version_label'),
     bodyStyle: optionalText(row, 'body_style'),
     powertrainLabel: optionalText(row, 'powertrain_label'),
     propulsion: optionalText(row, 'propulsion'),
