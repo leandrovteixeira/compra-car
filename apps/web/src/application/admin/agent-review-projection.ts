@@ -136,10 +136,12 @@ function completeness(f: LegacyDiscovery): number {
   return ids.length*100+technical*5+(f.confidence===null?0:Number(f.confidence));
 }
 function better(a:LegacyDiscovery,b:LegacyDiscovery): boolean {
+  // The review row must represent the latest observation. Older evidence is
+  // available through run history, never silently substituted for newer data.
+  const newest=Date.parse(a.created_at)-Date.parse(b.created_at);
+  if(newest!==0)return newest>0;
   const scoreA=completeness(a),scoreB=completeness(b);
-  return scoreA!==scoreB?scoreA>scoreB:
-    Date.parse(a.created_at)!==Date.parse(b.created_at)
-      ?Date.parse(a.created_at)>Date.parse(b.created_at):a.id.localeCompare(b.id)>0;
+  return scoreA!==scoreB?scoreA>scoreB:a.id.localeCompare(b.id)>0;
 }
 export function buildReviewProjection(
   findings: readonly LegacyDiscovery[],
