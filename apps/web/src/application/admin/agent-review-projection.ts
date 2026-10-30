@@ -238,7 +238,12 @@ export function buildReviewProjection(
         if(f.finding_type==='POSSIBLE_NEW_MMV'||f.finding_type==='PRODUCT_YEAR_CONFLICT'){
           diagnostics.yearToMmv++;
           diagnostics.yearToMmvIdentities.add(JSON.stringify([baseKey,key(v)]));
-          continue;
+          // Escalate into the MMV review pool without fabricating an approvable
+          // MMV proposal. Human review can inspect evidence and start discovery.
+          kind='MMV_AMBIGUOUS';
+          businessKey=JSON.stringify(['MY_MMV_ESCALATION',baseKey,key(v)]);
+          discovery='Identidade MMV pendente · MY identificado';
+          recommendation='Resolver identidade no MMV antes de vincular o ano-modelo';
         }
         if(f.finding_type==='NEW_PRODUCT_YEAR'||f.finding_type==='NEW_MODEL_YEAR'){
           if(reason==='CONFIRMED_MODEL_YEAR')continue;
