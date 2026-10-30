@@ -30,7 +30,10 @@ export function normalizeDiscoveredVariantLabels<T extends {
     : candidate.model;
   const normalizeLabel = (label: string | null) => {
     if (!label) return null;
-    const stripped = stripRedundantModelPrefix(model, label);
+    const withoutBrand = brand
+      ? label.trim().replace(new RegExp('^' + escapeRegExp(brand) + '\\s+', 'iu'), '')
+      : label;
+    const stripped = stripRedundantModelPrefix(model, withoutBrand);
     return stripped && key(stripped) !== key(model) && (!brand || key(stripped) !== key(brand + ' ' + model))
       ? stripped : null;
   };
