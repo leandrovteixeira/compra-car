@@ -45,7 +45,7 @@ function stagedMmvIdentity(
   reasonCode: string | null | undefined,
 ): AgentObject | null {
   const officialVersionLabel = candidate.officialVersionLabel ?? candidate.trim;
-  if (!officialVersionLabel?.trim()) return null;
+  if (!officialVersionLabel?.trim() && candidate.evidence.length === 0) return null;
   return {
     identityKey: mmvDiscoveryIdentityKey(candidate, {
       includeCommercialPowertrain: reasonCode === 'SAME_LABEL_DISTINCT_POWERTRAIN',
@@ -85,24 +85,6 @@ function mmvProposalForObservation(
     const identity = stagedMmvIdentity(candidate, observation.reasonCode);
     return identity ? [identity] : [];
   });
-  const unnamed = source.filter((candidate) =>
-    !candidate.officialVersionLabel?.trim() &&
-    !candidate.trim?.trim() &&
-    candidate.evidence.length > 0,
-  );
-  // A mixed finding must never silently apply only the named variants.
-  // Carry both sets into a single review-only proposal until the canonical
-  // persistence contract supports a true NULL commercial version label.
-  if (unnamed.length) {
-    return {
-      action: 'REVIEW_UNNAMED_MMV',
-      reasonCode: observation.reasonCode,
-      market: 'BR',
-      namedIdentities: identities,
-      unnamedCandidates: unnamed.map(candidateDetails),
-      requiresReview: true,
-    };
-  }
   if (!identities.length) return null;
 
   return {
