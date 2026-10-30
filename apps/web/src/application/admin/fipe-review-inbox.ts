@@ -4,7 +4,7 @@ import {createPrivilegedAdminClient} from '@/auth/admin-client';
 
 export type FipeReviewItem={
  id:string; brand:string;model:string;version:string|null;fipeCode:string;
- fipeLabel:string;confidence:number;decision:string;sourceUrl:string;dependencyState:string;
+ fipeLabel:string;confidence:number;decision:string;sourceUrl:string;dependencyState:string;createdAt:string;
 };
 export async function loadFipeReviewItems():Promise<FipeReviewItem[]>{
  await requireRole('admin');
@@ -31,7 +31,7 @@ export async function loadFipeReviewItems():Promise<FipeReviewItem[]>{
    id:item.id,brand:mmv.brand,model:mmv.model,version:mmv.official_version_label,
    fipeCode:item.fipe_code,fipeLabel:item.fipe_model_label,
    confidence:Number(item.match_confidence),decision:item.decision,
-   sourceUrl:item.source_url,dependencyState:byDependency.get('fipe-candidate:'+item.id)??'BLOCKED',
+   sourceUrl:item.source_url,createdAt:item.created_at,dependencyState:byDependency.get('fipe-candidate:'+item.id)??'BLOCKED',
   }];
  });
 }
