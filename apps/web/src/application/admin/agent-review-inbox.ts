@@ -13,6 +13,7 @@ import {
 export type ReviewInboxRow = ReviewQueueItem & Readonly<{
   findingId: string;
   runId: string;
+  identityDecision: 'ACCEPT'|'REJECT'|'DEFER'|null;
   findingType: string;
   agentLabel: string;
   reasonCode: string | null;
@@ -112,6 +113,7 @@ export async function loadReviewInbox(options:Readonly<{
       caseKind:g.kind,
       findingId:g.finding.id,
       runId:g.run.id,
+      identityDecision:null,
       findingType:g.finding.finding_type,
       sourceFindingType:g.finding.finding_type,
       sourceAgent:g.run.agent_type,
@@ -139,6 +141,27 @@ export async function loadReviewInbox(options:Readonly<{
       priorRuns:g.priorRuns,
     };
   });
+  // Read immutable individual decisions and overlay only the exact identity
+  // and source finding fingerprint, never an unrelated sibling's review.
+  const {data:individualReviews,error:individualError}=await client
+    .from('agent_mmv_identity_reviews')
+    .select('finding_id,identity_key,finding_fingerprint,decision,created_at,id')
+    .order('created_at',{ascending:false}).order('id',{ascending:false}).limit(5000);
+  if(individualError||!individualReviews)throw new Error('REVIEW_INBOX_IDENTITY_DECISIONS_UNAVAILABLE');
+  const latestByIdentity=new Map<string,string>();
+  for(const receipt of individualReviews){
+    const lookup=JSON.stringify([receipt.finding_id,receipt.identity_key,receipt.finding_fingerprint]);
+    if(!latestByIdentity.has(lookup))latestByIdentity.set(lookup,receipt.decision);
+  }
+  for(const row of all){
+    const identityKey=row.selectedIdentity?.identityKey;
+    if(typeof identityKey!=='string')continue;
+    const decision=latestByIdentity.get(JSON.stringify([row.findingId,identityKey,row.snapshotFingerprint]));
+    if(decision==='ACCEPT'||decision==='REJECT'||decision==='DEFER'){
+      row.identityDecision=decision;
+      row.status=decision==='ACCEPT'?'APPROVED':decision==='REJECT'?'REJECTED':'POSTPONED';
+    }
+  }
   const statusCounts:Record<ReviewStatus,number>={
     WAITING:0,APPROVED:0,REJECTED:0,POSTPONED:0,
   };
