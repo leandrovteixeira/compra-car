@@ -309,7 +309,7 @@ export type CurrentCanonicalMmv = Readonly<{
   market: string;
   brand: string;
   model: string;
-  official_version_label: string;
+  official_version_label: string | null;
   powertrain_label: string | null;
   propulsion: string | null;
   status: string;
@@ -322,11 +322,14 @@ function sameCanonicalIdentity(
 ): boolean {
   const brand = value(proposal.brand), model = value(proposal.model);
   const version = value(proposal.officialVersionLabel) || value(proposal.trim);
-  if (!brand || !model || !version || item.status !== 'ACTIVE' ||
+  const sameVersion = version
+    ? item.official_version_label !== null && key(version) === key(item.official_version_label)
+    : proposal.officialVersionLabel === null && proposal.trim === null &&
+      item.official_version_label === null;
+  if (!brand || !model || !sameVersion || item.status !== 'ACTIVE' ||
       market !== item.market ||
       vehicleBrandComparisonKey(brand) !== vehicleBrandComparisonKey(item.brand) ||
-      key(model) !== key(item.model) ||
-      key(version) !== key(item.official_version_label)) return false;
+      key(model) !== key(item.model)) return false;
   const propulsion = value(proposal.propulsion);
   const powertrain = value(proposal.powertrainLabel);
   return (!propulsion || !item.propulsion || key(propulsion) === key(item.propulsion)) &&
