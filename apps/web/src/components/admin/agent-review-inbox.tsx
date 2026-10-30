@@ -1,6 +1,7 @@
 'use client';
 
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useActionState, useEffect, useState } from 'react';
+import { reviewAgentFindingAction } from '@/app/admin/agents/actions';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { ReviewStatus, ReviewAction } from '@compra-car/core/agent-platform';
 import type { ReviewInboxRow, ReviewSort, ReviewDirection } from '@/application/admin/agent-review-inbox';
@@ -65,6 +66,9 @@ function Status({status}:{readonly status:ReviewStatus}){
   return <span className={`inline-flex whitespace-nowrap rounded-md px-2 py-1 text-[11px] font-semibold ${labelClasses[status]}`}>{statusLabels[status]}</span>;
 }
 function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:ReviewInboxRow}){
+  const router = useRouter();
+  const [reviewState, reviewAction, reviewPending] = useActionState(reviewAgentFindingAction, {status:'idle' as const,message:''});
+  useEffect(()=>{if(reviewState.status==='success')router.refresh();},[reviewState.status,router]);
   const subject = detail.subject ?? {};
   const get = (key:string) => {
     const val=subject[key];
@@ -129,9 +133,28 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
               Revisar e aprovar Connector
             </a>
           ):null}
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {(actionPolicy[row.caseKind]??[]).map(a=><span key={a} className="rounded border border-[#D6DEE3] bg-[#F6F7F8] px-2 py-1 text-[11px] text-[#526670]">{actionLabels[a]}</span>)}
-          </div>
+          {row.caseKind==='MMV_NEW' && proposal.length===1 &&
+            row.status==='WAITING' && !row.legacyAccepted ? (
+            <form action={reviewAction} className="mt-3 flex flex-wrap gap-2"
+              onClick={event=>event.stopPropagation()}>
+              <input type="hidden" name="findingId" value={detail.findingId}/>
+              <button type="submit" name="decision" value="ACCEPT" disabled={reviewPending}
+                className="ui-button ui-button--primary ui-button--action">Aprovar</button>
+              <button type="submit" name="decision" value="REJECT" disabled={reviewPending}
+                className="ui-button ui-button--destructive ui-button--action">Rejeitar</button>
+              <button type="submit" name="decision" value="DEFER" disabled={reviewPending}
+                className="ui-button ui-button--secondary ui-button--action">Adiar</button>
+              {reviewState.message?<p className="w-full text-xs" role={reviewState.status==='error'?'alert':'status'}>{reviewState.message}</p>:null}
+              <p className="w-full text-xs text-[#526670]">A decisão registra a revisão humana. Não aplica o MMV ao catálogo.</p>
+            </form>
+          ):(
+            <div className="mt-2">
+              <p className="text-xs text-[#526670]">Ações por identidade indisponíveis neste caso; o finding de origem pode conter múltiplas versões.</p>
+              <a className="mt-2 inline-block text-xs text-[#A9541B] underline"
+                href={'/admin/agents/findings/'+encodeURIComponent(detail.findingId)}
+                onClick={event=>event.stopPropagation()}>Abrir detalhe e histórico</a>
+            </div>
+          )}
         </section>
         <section className="rounded-md bg-white p-3">
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#526670]">Evidências</h3>
