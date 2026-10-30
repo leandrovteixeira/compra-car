@@ -26,6 +26,36 @@ async function result(captured = false) {
   }).run({ brand: 'Jeep', country: 'BR' }, platformFixtureId(1));
 }
 describe('MMV platform mapping', () => {
+  it('retains evidence-backed nameless base models for review without inventing a label', async () => {
+    const original = await result();
+    const exemplar = original.findings.find((finding) => finding.type === 'NEW_MODEL')!;
+    const candidate = {
+      ...exemplar.candidate,
+      brand: 'GWM',
+      model: 'HAVAL H7',
+      taxonomy: 'MODEL' as const,
+      trim: null,
+      officialVersionLabel: null,
+    };
+    const finding = {
+      ...exemplar,
+      candidate,
+      variants: [candidate],
+      reasonCode: 'NEW_MODEL' as const,
+    };
+    const bundle = mapMmvRunToPlatform({
+      ...original,
+      brand: 'GWM',
+      findings: [finding],
+      matchedCandidates: [],
+      bodyModelProposals: [],
+    }, { provider: 'fixture' });
+    const mapped = bundle.findings[0]!.finding;
+    expect(mapped.proposal?.action).toBe('REVIEW_UNNAMED_MMV');
+    expect(mapped.payload.unnamedCommercialVersions).toHaveLength(1);
+    expect(JSON.stringify(mapped.proposal)).not.toContain('Versão única');
+  });
+
   it('maps all current types with review semantics and shared report UUID', async () => {
     const input = await result();
     const bundle = mapMmvRunToPlatform(input, { provider: 'fixture' });
