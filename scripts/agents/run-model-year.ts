@@ -274,6 +274,7 @@ export async function runModelYearCli(
     // FIPE preflight is read-only. Only confirmed mappings can constrain MY
     // research: a candidate mapping must never become an automatic identity.
     const fipePreflight: string[] = [];
+    const fipeCoveredMmvs = new Set<string>();
     if (provider === 'openai' && !parentRunId && !noFipe) {
       const {createLegacySupabaseClient}=await import('@compra-car/adapter-supabase');
       const db=createLegacySupabaseClient({url:env.SUPABASE_URL!,serverKey:env.SUPABASE_SERVER_KEY!});
@@ -299,6 +300,15 @@ export async function runModelYearCli(
             if(parsed===32000){if(latestReference)zeroKm=true;continue;}
             if(Number.isInteger(parsed)&&parsed>=2001&&parsed<=2100)years.add(parsed);
           }
+          // A current zero-km FIPE entry plus the highest actual MY for the
+          // same code is a deterministic coverage signal, not sales proof.
+          // Missing MY must first be proposed through the FIPE-to-MY flow.
+          const now=new Date();
+          const currentReference=!!latest && latest.reference_year===now.getUTCFullYear() &&
+            latest.reference_month>=now.getUTCMonth()+1-1;
+          const newestYear=years.size?Math.max(...years):null;
+          if(currentReference&&zeroKm&&newestYear!==null)
+            fipeCoveredMmvs.add(mmv.id);
           fipePreflight.push([
             mmv.id,mapping.fipe_code,
             'FIPE_MY='+([...years].sort((a,b)=>a-b).join(',')||'none'),
@@ -306,6 +316,17 @@ export async function runModelYearCli(
             'FIPE_REFERENCE='+String(latest?latest.reference_month+'/'+latest.reference_year:(mapping.reference_period??'unspecified')),
           ].join(' | '));
         }
+      }
+    }
+    if (provider==='openai'&&!parentRunId&&!noFipe) {
+      const covered=canonicalYearTargets.filter(m=>fipeCoveredMmvs.has(m.id));
+      for(const mmv of covered)
+        log('MY FIPE-first: skip redundant source research for '+mmv.id+
+          ' (latest FIPE MY with current zero-km reference; canonical MY approval handled separately).');
+      canonicalYearTargets=canonicalYearTargets.filter(m=>!fipeCoveredMmvs.has(m.id));
+      if(!canonicalYearTargets.length) {
+        log('MY FIPE-first: no unresolved MMVs to research. OpenAI calls: 0');
+        return 0;
       }
     }
     const modelYearResearchInstructions = [
