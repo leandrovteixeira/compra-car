@@ -38,7 +38,7 @@ export function parseModelYearArguments(args: readonly string[]) {
     }
     const value = values[++index];
     if (
-      !['--brand', '--provider', '--parent-run-id'].includes(name ?? '') ||
+      !['--brand', '--provider', '--parent-run-id', '--mmv-id'].includes(name ?? '') ||
       !value ||
       value.startsWith('--') ||
       options.has(name!)
@@ -49,6 +49,7 @@ export function parseModelYearArguments(args: readonly string[]) {
   const brand = options.get('--brand');
   const provider = options.get('--provider');
   const parentRunId = options.get('--parent-run-id') ?? null;
+  const mmvId = options.get('--mmv-id') ?? null;
   if (
     !brand ||
     (provider !== 'fixture' && provider !== 'openai') ||
@@ -61,6 +62,7 @@ export function parseModelYearArguments(args: readonly string[]) {
     persistFindings,
     parentRunId,
     noFipe,
+    mmvId,
   };
 }
 
@@ -220,7 +222,7 @@ export async function runModelYearCli(
   repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..'),
 ): Promise<number> {
   try {
-    const { scope, provider, persistFindings, parentRunId, noFipe } = parseModelYearArguments(args);
+    const { scope, provider, persistFindings, parentRunId, noFipe, mmvId } = parseModelYearArguments(args);
     env = await loadAgentEnvironment(repositoryRoot, env);
     if (provider === 'openai' && !parentRunId) {
       requireAgentOpenAiApiKey(env, 'MODEL_YEAR');
@@ -259,15 +261,17 @@ export async function runModelYearCli(
       canonicalYearTargets=await new CanonicalMmvSupabaseAdapter(
         createLegacySupabaseClient({url:env.SUPABASE_URL!,serverKey:env.SUPABASE_SERVER_KEY!}),
       ).listCanonicalMmvs({market:'BR',brand:scope.brand,status:'ACTIVE'});
-      if (noFipe) {
-        const {createLegacySupabaseClient}=await import('@compra-car/adapter-supabase');
-        const db=createLegacySupabaseClient({url:env.SUPABASE_URL!,serverKey:env.SUPABASE_SERVER_KEY!});
-        const {data:confirmed,error}=await db.from('catalog_mmv_fipe_mappings')
-          .select('mmv_id').eq('status','CONFIRMED')
-          .in('mmv_id',canonicalYearTargets.map(m=>m.id));
-        if(error)throw new Error('MY_FIPE_TARGET_FILTER_FAILED');
-        const linked=new Set((confirmed??[]).map(row=>row.mmv_id));
-        canonicalYearTargets=canonicalYearTargets.filter(m=>!linked.has(m.id));
+      const db=createLegacySupabaseClient({url:env.SUPABASE_URL!,serverKey:env.SUPABASE_SERVER_KEY!});
+      const {data:eligibility,error:eligibilityError}=await db.from('agent_my_launch_eligibility')
+        .select('mmv_id,eligibility').eq('brand',scope.brand);
+      if(eligibilityError)throw new Error('MY_LAUNCH_ELIGIBILITY_READ_FAILED');
+      const eligible=new Set((eligibility??[]).filter(x=>x.eligibility==='ELIGIBLE').map(x=>x.mmv_id));
+      canonicalYearTargets=canonicalYearTargets.filter(m=>eligible.has(m.id) && (!mmvId||m.id===mmvId));
+      if(canonicalYearTargets.length>1 && !mmvId)
+        canonicalYearTargets=[canonicalYearTargets.sort((a,b)=>a.id.localeCompare(b.id))[0]!];
+      if(!canonicalYearTargets.length){
+        log('NO_MY_RESEARCH_REQUIRED: no launch MMV without canonical MY or pending FIPE coverage. OpenAI calls: 0');
+        return 0;
       }
       if (!canonicalYearTargets.length) throw new Error('MODEL_YEAR_CANONICAL_MMVS_REQUIRED');
     }
@@ -330,14 +334,14 @@ export async function runModelYearCli(
       }
     }
     const modelYearResearchInstructions = [
-      'MODEL YEAR DISCOVERY — PRIORITY: Find authoritative production year (PY) and model year (MY) evidence for these existing canonical MMVs:',
+      'FIRST MODEL YEAR AT LAUNCH — determine only the initial commercial MY of the single listed canonical MMV in Brazil:',
       'Confirmed FIPE references (none means no verified mapping; never infer an absent MY):',
       ...(noFipe?['ISOLATED TEST: FIPE input deliberately disabled. Do not consult or rely on FIPE data.']:fipePreflight.length?fipePreflight:['No confirmed FIPE mappings available for these canonical identities.']),
       'FIPE year 32000 means zero-km valuation, not MY 32000. Only treat a current reference 0-km record and the maximum real MY of the SAME confirmed FIPE code as a lead for current sales, never proof.',
       ...canonicalYearTargets.map(m=>`- ${m.brand} ${m.model} | official version: ${m.officialVersionLabel ?? '(commercial version unspecified)'} | canonical ID: ${m.id}`),
-      'Search separately for EVERY approved MMV and for multiple model years, not just the first available technical sheet.',
-      ...(noFipe?['ISOLATED TEST: Return findings ONLY for the explicitly listed canonical MMVs. Do not return Haval H9, Poer or other unlisted products. Search the Tank 300 standard and TerraForce individually.']:[]),
-      'Explicitly seek the latest announced AND commercially on-sale model year in Brazil as of the run date, plus the preceding model year.',
+      'Search only the listed MMV; identify its first launch MY, not the newest MY across years.',
+      'Never propose a different model or variant as a fallback; if launch MY is unverified, report unknown.',
+      'Prioritize explicit launch MY in the current or next calendar year; these are search hints, not forced answers.',
       'Look for official launch announcements, sales opening dates, current configurators and current price lists; a historic technical sheet only proves that the historic MY existed.',
       'For each MY, retain dated primary evidence identifying both the vehicle variant and the year. Search for newer FLEX derivatives and model-year rollover even if an old PDF remains online.',
       'Where a 2027 model replaced a 2026 model, return separate evidence-backed 2026 and 2027 candidates; never silently collapse them into one MY.',
@@ -389,11 +393,12 @@ export async function runModelYearCli(
             });
             const mmvRepository = new CanonicalMmvSupabaseAdapter(client);
             const yearRepository = new CanonicalModelYearSupabaseAdapter(client);
-            const mmvs = await mmvRepository.listCanonicalMmvs({
+            const allMmvs = await mmvRepository.listCanonicalMmvs({
               market: 'BR',
               brand: scope.brand,
               status: 'ACTIVE',
             });
+            const mmvs = provider==='openai'&&!parentRunId ? allMmvs.filter(m=>canonicalYearTargets.some(t=>t.id===m.id)) : allMmvs;
             const years = (
               await Promise.all(mmvs.map((mmv) => yearRepository.listModelYears({ mmvId: mmv.id })))
             ).flat();
