@@ -24,6 +24,7 @@ type JobRow = {
     mode?: 'discover' | 'health-check';
     parentRunId?: string;
     noFipe?: boolean;
+    mmvId?: string;
   };
 };
 
@@ -123,6 +124,7 @@ async function execute(job: JobRow) {
         '--persist-findings',
         ...(job.input.parentRunId ? ['--parent-run-id', job.input.parentRunId] : []),
         ...(job.input.noFipe ? ['--no-fipe'] : []),
+        ...(job.input.mmvId ? ['--mmv-id', job.input.mmvId] : []),
       ],
       env,
       log,
