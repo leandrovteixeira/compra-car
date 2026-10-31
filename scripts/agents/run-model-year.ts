@@ -268,7 +268,7 @@ export async function runModelYearCli(
       const eligible=new Set((eligibility??[]).filter(x=>x.eligibility==='ELIGIBLE').map(x=>x.mmv_id));
       canonicalYearTargets=canonicalYearTargets.filter(m=>eligible.has(m.id) && (!mmvId||m.id===mmvId));
       if(canonicalYearTargets.length>1 && !mmvId)
-        canonicalYearTargets=[canonicalYearTargets.sort((a,b)=>a.id.localeCompare(b.id))[0]!];
+        canonicalYearTargets=[[...canonicalYearTargets].sort((a,b)=>a.id.localeCompare(b.id))[0]!];
       if(!canonicalYearTargets.length){
         log('NO_MY_RESEARCH_REQUIRED: no launch MMV without canonical MY or pending FIPE coverage. OpenAI calls: 0');
         return 0;
