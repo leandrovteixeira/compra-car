@@ -22,6 +22,23 @@ function currentPriceCents(target: PriceTarget): number | null {
   return cents(target.currentPrice?.money.amount ?? null);
 }
 
+export type PriceCheckState = 'not_found' | 'unchanged' | 'new_price';
+
+/** Classify a verified observation against the existing published MSRP.
+ * Missing/ambiguous evidence must never be interpreted as a new price.
+ */
+export function classifyPriceCheck(
+  target: PriceTarget,
+  observation: PriceObservation | null,
+): PriceCheckState {
+  if (!observation || observation.ambiguityReasons.length > 0 ||
+      observation.evidence.length === 0 || observation.currencyCode !== 'BRL' ||
+      cents(observation.msrpAmount) === null) return 'not_found';
+  const baseline = currentPriceCents(target);
+  return baseline !== null && baseline === cents(observation.msrpAmount)
+    ? 'unchanged' : 'new_price';
+}
+
 export function reconcilePriceObservations(observations: readonly PriceObservation[]) {
   const accepted: PriceObservation[] = [];
   const rejected: { observation: PriceObservation; reason: string }[] = [];
@@ -80,7 +97,7 @@ export function mapPriceRunToPlatform(input: {
   const findings = reconciled.accepted.flatMap((observation) => {
     const observed = cents(observation.msrpAmount),
       current = currentPriceCents(observation.target);
-    if (observed === current) return [];
+    if (classifyPriceCheck(observation.target, observation) !== 'new_price') return [];
 
     const findingId = randomUUID();
     const findingType = current === null ? ('NEW_PRICE' as const) : ('PRICE_CHANGE' as const);
@@ -181,6 +198,8 @@ export function mapPriceRunToPlatform(input: {
         NEW_PRICE: findings.filter((f) => f.finding.findingType === 'NEW_PRICE').length,
         PRICE_CHANGE: findings.filter((f) => f.finding.findingType === 'PRICE_CHANGE').length,
         unchangedPrices: reconciled.accepted.length - findings.length,
+        notFoundPrices: input.metrics.targetsSelected - reconciled.accepted.length,
+        priceCheckStateSchema: 1,
       },
       configSnapshot: {
         connectorFingerprint: hash(input.connector),
