@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import {
   DeterministicFirstPriceResearch,
   PriceAgent,
+  validateConnectorDefinition,
   connectorEntryPriceKind,
   makePriceSnapshot,
   type PriceSourceKind,
@@ -37,11 +38,16 @@ function safePriceFailure(error: unknown): string {
 function parse(args: readonly string[]) {
   const values = args[0] === '--' ? args.slice(1) : [...args];
   let brand: string | null = null,
-    persistFindings = false;
+    persistFindings = false,
+    shadowConnectorRunId: string | null = null;
   for (let i = 0; i < values.length; i++) {
     const token = values[i]!;
     if (token === '--persist-findings') {
       persistFindings = true;
+      continue;
+    }
+    if (token === '--shadow-connector-run-id') {
+      shadowConnectorRunId = values[++i]?.trim() || null;
       continue;
     }
     if (token === '--brand') {
@@ -51,7 +57,9 @@ function parse(args: readonly string[]) {
     throw new Error('INVALID_AGENT_ARGUMENTS');
   }
   if (!brand) throw new Error('INVALID_AGENT_ARGUMENTS');
-  return { brand, persistFindings };
+  if (shadowConnectorRunId && !/^[0-9a-f-]{36}$/iu.test(shadowConnectorRunId))
+    throw new Error('INVALID_AGENT_ARGUMENTS');
+  return { brand, persistFindings, shadowConnectorRunId };
 }
 
 function entryAppliesToTarget(
@@ -247,7 +255,7 @@ export async function runPriceCli(
   const attemptId = randomUUID();
   let attemptedBrand = 'unknown';
   try {
-    const { brand, persistFindings } = parse(args);
+    const { brand, persistFindings, shadowConnectorRunId } = parse(args);
     attemptedBrand = brand;
     env = await loadAgentEnvironment(root, env);
     if (env.PRICE_AGENT_LLM_ENABLED === '1') requireAgentOpenAiApiKey(env,'PRICE_INTELLIGENCE');
@@ -269,12 +277,39 @@ export async function runPriceCli(
       persistence ??= platform;
       telemetry = new PriceAgentSupabaseTelemetry(client);
 
+      // QA shadow mode reads a completed Brand discovery proposal, never
+      // activates it or changes the approved connector in the database.
+      let shadowSources: {sourceEntries: readonly {type:string;url:string;priority:number;notes?:string|null}[];allowedDomains:readonly string[]} | null = null;
+      if (shadowConnectorRunId) {
+        if (env.APP_ENV !== 'qa') throw new Error('PRICE_SHADOW_QA_ONLY');
+        const {data:parent,error:parentError} = await client.from('agent_runs')
+          .select('agent_type,status,brand,market').eq('id',shadowConnectorRunId).single();
+        if(parentError || !parent || parent.agent_type!=='BRAND_CONNECTOR' ||
+           parent.status!=='COMPLETED' || parent.brand!==brand || parent.market!=='BR')
+          throw new Error('PRICE_SHADOW_PARENT_INVALID');
+        const {data:proposals,error:proposalError} = await client.from('agent_findings')
+          .select('proposal').eq('run_id',shadowConnectorRunId).limit(2);
+        if(proposalError || proposals?.length!==1 || !proposals[0]?.proposal)
+          throw new Error('PRICE_SHADOW_PROPOSAL_REQUIRED');
+        const proposal = validateConnectorDefinition(proposals[0].proposal);
+        if(proposal.brand!==brand || proposal.market!=='BR') throw new Error('PRICE_SHADOW_SCOPE_MISMATCH');
+        shadowSources = proposal;
+      }
+
       agent ??= new PriceAgent({
         // The QA Product Year registry now uses UUID MMV identities. The legacy
         // Price selection reader uses text identities and would silently drop
         // valid targets; use the active catalog until a registry-backed reader lands.
         catalog: new PriceAgentSupabaseCatalogReader(client),
-        connector: connectors,
+        connector: shadowSources ? {
+          async getActiveConnector(targetBrand: string, market: string) {
+            const active = await connectors.getActiveConnector(targetBrand, market);
+            if (!active) return null;
+            const existing = new Set(active.sourceEntries.map(s=>s.url));
+            return {...active, sourceEntries:[...active.sourceEntries,
+              ...shadowSources!.sourceEntries.filter(s=>!existing.has(s.url))]};
+          },
+        } : connectors,
         research: await operationalResearch(env),
       });
     }
