@@ -193,6 +193,49 @@ export class PriceAgentSupabaseTelemetry {
     }
   }
 
+
+  /** Append observed results without changing published MSRP or approvals. */
+  async persistPriceObservations(input: {
+    runId: string;
+    targets: readonly PriceTarget[];
+    observations: readonly import('@compra-car/core/agents').PriceObservation[];
+  }): Promise<void> {
+    const accepted = new Map<string, import('@compra-car/core/agents').PriceObservation>();
+    for (const item of input.observations) {
+      const amount = Number(item.msrpAmount);
+      if (!item.msrpAmount || !Number.isFinite(amount) || amount < 20000 ||
+          amount > 5000000 || item.ambiguityReasons.length ||
+          !item.evidence.length || item.retailBonusAmount === item.msrpAmount) continue;
+      if (!accepted.has(item.target.productId)) accepted.set(item.target.productId, item);
+    }
+    const rows = input.targets.map((target) => {
+      const observation = accepted.get(target.productId);
+      const evidence = observation?.evidence[0];
+      const previous = target.currentPrice?.money.amount;
+      const state = !observation ? 'not_found'
+        : previous !== null && previous !== undefined &&
+          Number(previous) === Number(observation.msrpAmount)
+          ? 'unchanged' : 'new_price';
+      return {
+        run_id: input.runId,
+        product_id: Number(target.productId),
+        market: 'BR',
+        brand: target.brand,
+        model_year: target.modelYear,
+        source_url: evidence?.sourceUrl ?? 'urn:price:no-official-evidence',
+        source_fingerprint: evidence?.contentHash ?? 'not_found',
+        amount_brl: observation?.msrpAmount ?? null,
+        state,
+        evidence_excerpt: evidence?.excerpt ?? null,
+        confidence: observation?.confidence ?? null,
+      };
+    });
+    if (!rows.length) return;
+    const {error} = await this.client.from('agent_price_observations')
+      .upsert(rows,{onConflict:'run_id,product_id,source_url'});
+    if (error) throw new Error('PRICE_OBSERVATION_JOURNAL_WRITE_FAILED');
+  }
+
   async persistUsage(input: {
     runId: string;
     market: string;
