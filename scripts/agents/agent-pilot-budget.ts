@@ -6,7 +6,7 @@
 export type PaidAgentKind='BRAND_CONNECTOR'|'MMV_DISCOVERY'|'PRODUCT_YEAR'|'PRICE_INTELLIGENCE';
 export type AgentBudgetJob=Readonly<{
   job_type:string;market:string;brand:string;
-  input?:Readonly<{parentRunId?:string|null}>;
+  input?:Readonly<{parentRunId?:string|null;provider?:string}>;
 }>;
 
 export type AgentBudgetClient=Readonly<{
@@ -23,7 +23,7 @@ export function needsAgentBudget(job:AgentBudgetJob,env:Readonly<Record<string,s
     case 'BRAND_CONNECTOR':
     case 'MMV_DISCOVERY':return true;
     case 'PRODUCT_YEAR':return !job.input?.parentRunId;
-    case 'PRICE_INTELLIGENCE':return env.PRICE_AGENT_LLM_ENABLED==='1';
+    case 'PRICE_INTELLIGENCE':return job.input?.provider==='openai' || env.PRICE_AGENT_LLM_ENABLED==='1';
     default:return false;
   }
 }
