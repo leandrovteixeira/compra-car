@@ -208,13 +208,30 @@ export class PriceAgentSupabaseTelemetry {
           !item.evidence.length || item.retailBonusAmount === item.msrpAmount) continue;
       if (!accepted.has(item.target.productId)) accepted.set(item.target.productId, item);
     }
+    const productIds = input.targets.map(t => Number(t.productId)).filter(Number.isSafeInteger);
+    const previous = new Map<string, number>();
+    if (productIds.length) {
+      const {data,error} = await this.client.from('agent_price_observations')
+        .select('product_id,source_url,amount_brl,state,observed_at')
+        .in('product_id',productIds)
+        .neq('state','not_found')
+        .order('observed_at',{ascending:false}).limit(3000);
+      if (error) throw new Error('PRICE_OBSERVATION_HISTORY_READ_FAILED');
+      for (const item of data ?? []) {
+        const key = String(item.product_id) + '|' + item.source_url;
+        if (!previous.has(key) && item.amount_brl !== null)
+          previous.set(key, Number(item.amount_brl));
+      }
+    }
     const rows = input.targets.map((target) => {
       const observation = accepted.get(target.productId);
       const evidence = observation?.evidence[0];
       const previous = target.currentPrice?.money.amount;
+      const baseline = previous.get(target.productId + '|' + (evidence?.sourceUrl ?? ''));
+      const published = target.currentPrice?.money.amount;
       const state = !observation ? 'not_found'
-        : previous !== null && previous !== undefined &&
-          Number(previous) === Number(observation.msrpAmount)
+        : (baseline !== undefined && baseline === Number(observation.msrpAmount)) ||
+          (published !== undefined && Number(published) === Number(observation.msrpAmount))
           ? 'unchanged' : 'new_price';
       return {
         run_id: input.runId,
