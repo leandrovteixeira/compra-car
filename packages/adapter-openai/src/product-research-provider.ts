@@ -177,9 +177,9 @@ export class OpenAIProductResearchProvider implements ProductResearchProvider {
             input: JSON.stringify({
               country: source.country,
               brand: source.brand,
-              allowedDomains: source.allowedDomains,
-              allowedHosts: source.allowedHosts,
-              allowedSubdomainRoots: source.allowedSubdomainRoots ?? [],
+              allowedDomains: this.options.allowExternalSources ? [] : source.allowedDomains,
+              allowedHosts: this.options.allowExternalSources ? [] : source.allowedHosts,
+              allowedSubdomainRoots: this.options.allowExternalSources ? [] : (source.allowedSubdomainRoots ?? []),
               researchStages: ['MODEL_DISCOVERY', 'VARIANT_RESOLUTION'],
               searchHints: source.searchHints,
               researchedAt: new Date().toISOString(),
