@@ -79,7 +79,7 @@ function kindForEntry(type: string): PriceSourceKind | null {
 function priceBudget(raw: string | undefined): number {
   if (raw === undefined) return 1;
   const value = Number(raw);
-  if (!Number.isFinite(value) || value <= 0 || value > 10) throw new Error('INVALID_AGENT_ARGUMENTS');
+  if (!Number.isFinite(value) || value <= 0 || value > 2) throw new Error('INVALID_AGENT_ARGUMENTS');
   return value;
 }
 
