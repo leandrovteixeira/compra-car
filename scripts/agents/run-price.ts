@@ -301,7 +301,22 @@ export async function runPriceCli(
       JSON.stringify(clean, null, 2) + '\n',
     );
 
-    if (persistFindings) await persistence!.persistRunBundle(clean.bundle);
+    if (persistFindings) {
+      await persistence!.persistRunBundle(clean.bundle);
+      // Nonblocking price verification journal: a journal outage must not
+      // invalidate a completed discovery or re-apply catalog changes.
+      if (telemetry) {
+        try {
+          await telemetry.persistPriceObservations({
+            runId: clean.bundle.run.id,
+            targets: clean.targets,
+            observations: clean.research.observations,
+          });
+        } catch {
+          log('PRICE_OBSERVATION_JOURNAL_WRITE_FAILED');
+        }
+      }
+    }
     try {
       const usages = clean.research.usage ?? [];
       await recordEngineeringRunEvent(resolve(root,'.local-reports/agents/engineering/run-events.jsonl'),{
