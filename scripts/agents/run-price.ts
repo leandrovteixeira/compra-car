@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url';
 import {
   DeterministicFirstPriceResearch,
   PriceAgent,
+  extractRawCommercialPrices,
+  matchRawPrice,
   validateConnectorDefinition,
   connectorEntryPriceKind,
   makePriceSnapshot,
@@ -339,6 +341,24 @@ export async function runPriceCli(
       env.PRICE_AGENT_LLM_ENABLED === '1' && agentOpenAiApiKey(env,'PRICE_INTELLIGENCE')
         ? 'hybrid' : 'deterministic',
     );
+
+    // Shadow-only source-first audit. Never creates findings or catalog prices.
+    // Shared source URLs may occur for multiple targets; dedupe on URL+content hash.
+    const rawSeen = new Set<string>();
+    const shadow = { extracted: 0, matched: 0, ambiguous: 0, unresolved: 0 };
+    for (const snapshot of result.research.snapshots) {
+      const key = snapshot.finalUrl + '|' + snapshot.contentHash;
+      if (rawSeen.has(key)) continue;
+      rawSeen.add(key);
+      for (const raw of extractRawCommercialPrices(snapshot.body)) {
+        shadow.extracted++;
+        const match = matchRawPrice(raw,snapshot.finalUrl,result.targets);
+        if (match.status === 'MATCHED') shadow.matched++;
+        else if (match.status === 'AMBIGUOUS') shadow.ambiguous++;
+        else shadow.unresolved++;
+      }
+    }
+    log('PRICE_SOURCE_FIRST_SHADOW ' + JSON.stringify(shadow));
 
     if (telemetry) {
       const fingerprintSnapshots = await supplementalMappingSnapshots(result);
