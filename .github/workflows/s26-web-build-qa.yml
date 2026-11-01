@@ -1,0 +1,20 @@
+name: S26 Web Build QA
+on:
+  push:
+    branches: [sprint-26-agent-ux-control-center]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '10.34.5'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @compra-car/web exec tsc --noEmit
+      - run: pnpm --filter @compra-car/web build
