@@ -452,7 +452,16 @@ export class DeterministicFirstPriceResearch implements PriceResearchProvider {
       }
     }
 
-    const initiallyResolved = new Set(observations.map((o) => o.target.productId));
+    // A syntactically extracted amount is not necessarily a valid MSRP.
+    // In particular, automotive pages often show retail bonuses beside price
+    // labels. Such candidates must remain eligible for AI reconciliation.
+    const hasValidPrice = (o: PriceObservation) =>
+      o.msrpAmount !== null &&
+      /^\\d+(?:\\.\\d{2})$/u.test(o.msrpAmount) &&
+      o.evidence.length > 0 &&
+      o.ambiguityReasons.length === 0 &&
+      (o.retailBonusAmount === null || o.retailBonusAmount !== o.msrpAmount);
+    const initiallyResolved = new Set(observations.filter(hasValidPrice).map((o) => o.target.productId));
     for (const target of targets) {
       if (initiallyResolved.has(target.productId)) continue;
       const relevantSnapshots = [...this.snapshots.values()].filter(
@@ -465,7 +474,7 @@ export class DeterministicFirstPriceResearch implements PriceResearchProvider {
       }
     }
 
-    const resolved = new Set(observations.map((o) => o.target.productId));
+    const resolved = new Set(observations.filter(hasValidPrice).map((o) => o.target.productId));
     const unresolved = targets.filter((target) => !resolved.has(target.productId));
     const unresolvedEligibleForAi = unresolved.filter((target) => {
       const relevantSnapshots = [...this.snapshots.values()].filter(
