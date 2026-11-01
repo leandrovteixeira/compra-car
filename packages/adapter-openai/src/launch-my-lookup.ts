@@ -1,4 +1,3 @@
-// @ts-nocheck -- temporarily isolate the compiler failure in this new adapter
 import OpenAI from 'openai';
 
 export type LaunchMyLookup = Readonly<{
