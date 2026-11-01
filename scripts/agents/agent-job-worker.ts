@@ -87,6 +87,19 @@ async function execute(job: JobRow) {
     console.log('[agent-job]', job.id, line);
   };
 
+  // Reject redundant paid launch research before reserving a budget.
+  if(job.job_type==='PRODUCT_YEAR'&&!job.input.parentRunId){
+    let query=client.from('agent_my_launch_eligibility').select('mmv_id').eq('brand',job.brand).eq('eligibility','ELIGIBLE').limit(1);
+    if(job.input.mmvId)query=query.eq('mmv_id',job.input.mmvId);
+    const {data,error}=await query;
+    if(error)throw new Error('MY_LAUNCH_PREFLIGHT_FAILED');
+    if(!data?.length){
+      log('MY launch preflight: no eligible MMV; zero AI calls and no budget reserved');
+      await completeWithoutRun(job.id);
+      return;
+    }
+  }
+
   // A non-reserved paid job never reaches any OpenAI CLI. The entire USD 2
   // reservation is held until independent reconciliation of real provider usage.
   const paid=needsAgentBudget(job,env);
