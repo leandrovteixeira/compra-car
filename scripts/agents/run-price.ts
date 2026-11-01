@@ -164,7 +164,7 @@ async function supplementalMappingSnapshots(
   return out;
 }
 
-async function operationalResearch(env: Readonly<Record<string, string | undefined>>) {
+async function operationalResearch(env: Readonly<Record<string, string | undefined>>, diagnostic: (line:string)=>void = () => {}) {
   const requestCache = new Map<string, Promise<{ body: string; finalUrl: string } | null>>();
   const reconciliation = env.PRICE_AGENT_LLM_ENABLED === '1' && agentOpenAiApiKey(env,'PRICE_INTELLIGENCE')
     ? new (await import('@compra-car/adapter-openai')).OpenAIPriceReconciliationProvider({
@@ -195,6 +195,7 @@ async function operationalResearch(env: Readonly<Record<string, string | undefin
           })),
       ];
       const seen = new Set<string>();
+      let approvedCount=0, applicableCount=0, failedFetchCount=0;
 
       for (const entry of [...entries].sort((a, b) => a.priority - b.priority)) {
         // Never fetch an AI-suggested address outside the trusted connector hosts.
@@ -209,11 +210,13 @@ async function operationalResearch(env: Readonly<Record<string, string | undefin
             });
         } catch { /* malformed evidence is ignored */ }
         if (!approved) continue;
+        approvedCount++;
         if (seen.has(entry.url)) continue;
         seen.add(entry.url);
         if (!entryAppliesToTarget(entry, target.model)) continue;
         const sourceKind = connectorEntryPriceKind(entry as Parameters<typeof connectorEntryPriceKind>[0]) ?? kindForEntry(entry.type);
         if (!sourceKind) continue;
+        applicableCount++;
 
         let pending = requestCache.get(entry.url);
         if (!pending) {
@@ -237,7 +240,7 @@ async function operationalResearch(env: Readonly<Record<string, string | undefin
         }
 
         const loaded = await pending;
-        if (!loaded) continue;
+        if (!loaded) { failedFetchCount++; continue; }
         out.push(
           makePriceSnapshot({
             target,
@@ -247,6 +250,11 @@ async function operationalResearch(env: Readonly<Record<string, string | undefin
           }),
         );
       }
+      diagnostic('PRICE_SOURCE_DIAGNOSTIC model=' + target.model +
+        ' historical=' + (target.knownOfficialPriceUrls?.length ?? 0) +
+        ' candidate=' + entries.length + ' allowed=' + approvedCount +
+        ' applicable=' + applicableCount + ' fetched=' + out.length +
+        ' unavailable=' + failedFetchCount);
       return out;
     },
   });
@@ -321,7 +329,7 @@ export async function runPriceCli(
               ...shadowSources!.sourceEntries.filter(s=>!existing.has(s.url))]};
           },
         } : connectors,
-        research: await operationalResearch(env),
+        research: await operationalResearch(env,log),
       });
     }
 
