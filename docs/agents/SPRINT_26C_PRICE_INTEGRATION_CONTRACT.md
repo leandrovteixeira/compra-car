@@ -41,3 +41,9 @@ Use existing agent_jobs / agent_runs / agent_ai_usage_events and budget tables. 
 
 ## UI boundary
 Do not rework layout yet. Generic review presentation may show one finding/action per row. Agent-specific detail drawers can reveal evidence and payloads. Later UX work must not change storage semantics.
+
+## OpenAI credential isolation (required)
+- Price Agent must read `OPENAI_PRICE_AGENT_API_KEY` instead of the generic `OPENAI_API_KEY` for every OpenAI invocation (including retry, enrichment and fallback paths).
+- Fail closed with an actionable missing-credential error when the Price-specific key is absent; do not silently fall back to the generic key or another agent's credential.
+- Configure the secret independently in QA worker/runtime and production only at promotion time. Never commit key values or print secrets in logs, findings or usage telemetry.
+- Add a QA smoke check for credential presence without exposing its value, and test that the generic key alone does not authorize a Price run.
