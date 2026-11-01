@@ -2,7 +2,7 @@ import { resolve } from 'node:path';
 import { createLegacySupabaseClient } from '@compra-car/adapter-supabase';
 import { runNewProductCheckCli } from './run-new-product-check';
 import { runBrandConnectorCli } from './run-brand-connector';
-import { runModelYearCli } from './run-model-year';
+import { runLaunchMyJob } from './run-launch-my';
 import { runMyLaunchBenchmark } from './my-launch-benchmark';
 import { runFipePilot } from './fipe-agent-pilot';
 import { runPriceCli } from './run-price';
@@ -139,21 +139,11 @@ async function execute(job: JobRow) {
     await completeWithoutRun(job.id);
     return;
   } else if (job.job_type === 'PRODUCT_YEAR') {
-    code = await runModelYearCli(
-      [
-        '--brand',
-        job.brand,
-        '--provider',
-        'openai',
-        '--persist-findings',
-        ...(job.input.parentRunId ? ['--parent-run-id', job.input.parentRunId] : []),
-        ...(job.input.noFipe ? ['--no-fipe'] : []),
-        ...(job.input.mmvId ? ['--mmv-id', job.input.mmvId] : []),
-      ],
-      env,
-      log,
-      repositoryRoot,
-    );
+    const runId=await runLaunchMyJob({jobId:job.id,brand:job.brand,mmvId:job.input.mmvId},env,log);
+    if(!runId){await completeWithoutRun(job.id);return;}
+    await complete(job.id,runId);
+    await journal('SUCCESS',runId);
+    return;
   } else if (job.job_type === 'PRICE_INTELLIGENCE') {
     code = await runPriceCli(['--brand',job.brand,'--persist-findings'],env,log,repositoryRoot);
   } else if (job.job_type === 'SOURCE_MONITOR') {
