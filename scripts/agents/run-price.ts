@@ -279,7 +279,7 @@ export async function runPriceCli(
 
       // QA shadow mode reads a completed Brand discovery proposal, never
       // activates it or changes the approved connector in the database.
-      let shadowSources: {sourceEntries: readonly {type:string;url:string;priority:number;notes?:string|null}[];allowedDomains:readonly string[]} | null = null;
+      let shadowSources: ReturnType<typeof validateConnectorDefinition> | null = null;
       if (shadowConnectorRunId) {
         if (env.APP_ENV !== 'qa') throw new Error('PRICE_SHADOW_QA_ONLY');
         const {data:parent,error:parentError} = await client.from('agent_runs')
