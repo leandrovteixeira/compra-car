@@ -3,6 +3,7 @@ import { createLegacySupabaseClient } from '@compra-car/adapter-supabase';
 import { runNewProductCheckCli } from './run-new-product-check';
 import { runBrandConnectorCli } from './run-brand-connector';
 import { runModelYearCli } from './run-model-year';
+import { runMyLaunchBenchmark } from './my-launch-benchmark';
 import { runFipePilot } from './fipe-agent-pilot';
 import { runPriceCli } from './run-price';
 import { monitorBrandSources } from './source-monitor';
@@ -25,6 +26,8 @@ type JobRow = {
     parentRunId?: string;
     noFipe?: boolean;
     mmvId?: string;
+    benchmarkModel?: string;
+    benchmarkVersion?: string;
   };
 };
 
@@ -88,7 +91,7 @@ async function execute(job: JobRow) {
   };
 
   // Reject redundant paid launch research before reserving a budget.
-  if(job.job_type==='PRODUCT_YEAR'&&!job.input.parentRunId){
+  if(job.job_type==='PRODUCT_YEAR'&&!job.input.parentRunId&&!job.input.benchmarkModel){
     let query=client.from('agent_my_launch_eligibility').select('mmv_id').eq('brand',job.brand).eq('eligibility','ELIGIBLE').limit(1);
     if(job.input.mmvId)query=query.eq('mmv_id',job.input.mmvId);
     const {data,error}=await query;
@@ -125,6 +128,14 @@ async function execute(job: JobRow) {
     );
   } else if (job.job_type === 'FIPE_DISCOVERY') {
     await runFipePilot(env,log);
+    await completeWithoutRun(job.id);
+    return;
+  } else if (job.job_type === 'PRODUCT_YEAR' && job.input.benchmarkModel) {
+    if(!job.input.benchmarkVersion)throw new Error('MY_BENCHMARK_VERSION_REQUIRED');
+    await runMyLaunchBenchmark({
+      id:job.id,brand:job.brand,model:job.input.benchmarkModel,
+      version:job.input.benchmarkVersion,
+    },env,log);
     await completeWithoutRun(job.id);
     return;
   } else if (job.job_type === 'PRODUCT_YEAR') {
