@@ -61,9 +61,18 @@ function entryAppliesToTarget(
   if (entry.type === 'PRICE_LIST') return true;
   if (!['MODEL_PAGE', 'CONFIGURATOR'].includes(entry.type)) return true;
   try {
-    const path = new URL(entry.url).pathname.toLowerCase();
-    const needle = model.trim().toLowerCase();
-    return path.includes('/' + needle) || path.includes(needle + '.');
+    const path = decodeURIComponent(new URL(entry.url).pathname).toLocaleLowerCase('pt-BR');
+    // Match official URL slugs such as /tank-300 against the canonical
+    // commercial name "TANK 300", without matching an unrelated model.
+    const slug = (text: string) => text.normalize('NFKD')
+      .replace(/[\u0300-\u036f]/gu, '')
+      .toLocaleLowerCase('pt-BR')
+      .replace(/[^a-z0-9]+/gu, '-').replace(/^-|-$/gu, '');
+    const modelSlug = slug(model);
+    return !!modelSlug && path.split('/').some((segment) => {
+      const pageSlug = slug(segment.replace(/\.[a-z0-9]+$/iu, ''));
+      return pageSlug === modelSlug || pageSlug.startsWith(modelSlug + '-');
+    });
   } catch {
     return false;
   }
