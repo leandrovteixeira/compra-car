@@ -145,6 +145,9 @@ async function execute(job: JobRow) {
     await journal('SUCCESS',runId);
     return;
   } else if (job.job_type === 'PRICE_INTELLIGENCE') {
+    // The Price CLI persists an immutable run/finding bundle, consumed by the
+    // shared Reviews inbox. Never run against an unexpected market.
+    if (job.market !== 'BR') throw new Error('PRICE_MARKET_UNSUPPORTED');
     code = await runPriceCli(['--brand',job.brand,'--persist-findings'],env,log,repositoryRoot);
   } else if (job.job_type === 'SOURCE_MONITOR') {
     const result = await monitorBrandSources(client, job.brand, job.market);
@@ -191,7 +194,8 @@ async function execute(job: JobRow) {
     const code=logs.find(
         (line) => line.startsWith('NEW_PRODUCT_CHECK_FAILED:') ||
           line.startsWith('BRAND_CONNECTOR_FAILED:') ||
-          line.startsWith('Model Year run failed:'),
+          line.startsWith('Model Year run failed:') ||
+          line.startsWith('PRICE_AGENT_FAILED'),
       ) ?? 'AGENT_JOB_EXECUTION_FAILED';
     await fail(
       job.id,
@@ -199,7 +203,8 @@ async function execute(job: JobRow) {
         (line) =>
           line.startsWith('NEW_PRODUCT_CHECK_FAILED:') ||
           line.startsWith('BRAND_CONNECTOR_FAILED:') ||
-          line.startsWith('Model Year run failed:'),
+          line.startsWith('Model Year run failed:') ||
+          line.startsWith('PRICE_AGENT_FAILED'),
       ) ?? 'AGENT_JOB_EXECUTION_FAILED',
     );
     await journal('FAILED',job.id,code);
