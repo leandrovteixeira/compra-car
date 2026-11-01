@@ -62,24 +62,35 @@ function parse(args: readonly string[]) {
   return { brand, persistFindings, shadowConnectorRunId };
 }
 
-function entryAppliesToTarget(
+export function entryAppliesToTarget(
   entry: { readonly type: string; readonly url: string },
   model: string,
 ): boolean {
   if (entry.type === 'PRICE_LIST') return true;
   if (!['MODEL_PAGE', 'CONFIGURATOR'].includes(entry.type)) return true;
   try {
-    const path = decodeURIComponent(new URL(entry.url).pathname).toLocaleLowerCase('pt-BR');
-    // Match official URL slugs such as /tank-300 against the canonical
-    // commercial name "TANK 300", without matching an unrelated model.
-    const slug = (text: string) => text.normalize('NFKD')
+    const path = decodeURIComponent(new URL(entry.url).pathname);
+    const slug = (value: string) => value.normalize('NFKD')
       .replace(/[\u0300-\u036f]/gu, '')
-      .toLocaleLowerCase('pt-BR')
-      .replace(/[^a-z0-9]+/gu, '-').replace(/^-|-$/gu, '');
+      .toLowerCase().replace(/[^a-z0-9]+/gu, '-').replace(/^-|-$/gu, '');
+    const compact = (value: string) => slug(value).replace(/-/gu, '');
     const modelSlug = slug(model);
-    return !!modelSlug && path.split('/').some((segment) => {
-      const pageSlug = slug(segment.replace(/\.[a-z0-9]+$/iu, ''));
-      return pageSlug === modelSlug || pageSlug.startsWith(modelSlug + '-');
+    const tokens = modelSlug.split('-').filter(Boolean);
+    if (!tokens.length) return false;
+    const segments = path.split('/').map(x => slug(x.replace(/\\.[a-z0-9]+$/iu, '')));
+    return segments.some(segment => {
+      if (!segment) return false;
+      // ORA 5 -> /ora5 and TANK 300 -> /tank-300.
+      if (segment === modelSlug || segment.startsWith(modelSlug + '-')) return true;
+      if (compact(segment) === compact(modelSlug)) return true;
+      // A version-specific name can use a base model page, but require
+      // at least the two-token family prefix (HAVAL H6, ORA 03, TANK 300).
+      if (tokens.length >= 3) {
+        const family = tokens.slice(0,2).join('-');
+        return segment === family || compact(segment) === compact(family) ||
+          segment.startsWith(family + '-');
+      }
+      return false;
     });
   } catch {
     return false;
