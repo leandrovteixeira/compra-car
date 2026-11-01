@@ -60,7 +60,7 @@ export async function lookupLaunchModelYear(input:Readonly<{
  if(webSearchCount<1)throw new Error('MY_LOOKUP_NO_WEB_SEARCH');
  const result={...decoded};
  if(result.status==='CONFIRMED'&&(
-    !Number.isInteger(result.modelYear)||result.modelYear!<2000||result.modelYear!>2100||
+    !Number.isInteger(result.modelYear)||(result.modelYear ?? 0)<2000||(result.modelYear ?? 9999)>2100||
     !result.sourceUrl?.startsWith('https://')||!result.evidence?.trim()
  ))throw new Error('MY_LOOKUP_EVIDENCE_INCOMPLETE');
  if(result.status!=='CONFIRMED')result.modelYear=null;
