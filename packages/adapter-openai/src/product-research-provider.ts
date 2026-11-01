@@ -92,6 +92,7 @@ export class OpenAIProductResearchProvider implements ProductResearchProvider {
       readonly apiKey: string;
       readonly model: string;
       readonly prompt: string;
+      readonly allowExternalSources?: boolean;
       readonly transport?: ProductResearchTransport | ProductResearchBackgroundTransport;
       readonly maxWaitMs?: number;
       readonly clock?: { now(): number; sleep(ms: number): Promise<void> };
@@ -186,7 +187,7 @@ export class OpenAIProductResearchProvider implements ProductResearchProvider {
             tools: [
               {
                 type: 'web_search',
-                filters: { allowed_domains: [...source.allowedDomains] },
+                ...(this.options.allowExternalSources ? {} : {filters: { allowed_domains: [...source.allowedDomains] }}),
                 user_location: { type: 'approximate', country: source.country },
               },
             ],
