@@ -106,6 +106,27 @@ export class PriceAgentSupabaseCatalogReader implements PriceCatalogReader {
       ]);
     }
 
+    // Historic findings are URL discovery hints, NOT proof of current price.
+    const {data:historical,error:historicalError} = await this.client
+      .from('agent_findings').select('id,subject_key,created_at')
+      .in('subject_key',ids.map(String)).in('finding_type',['NEW_PRICE','PRICE_CHANGE'])
+      .order('created_at',{ascending:false}).limit(1500);
+    if (historicalError) throw new Error('PRICE_EVIDENCE_HISTORY_READ_FAILED');
+    const findingProduct = new Map((historical ?? []).map(item => [item.id,String(item.subject_key)]));
+    const officialUrls = new Map<string,Set<string>>();
+    if(findingProduct.size){
+      const {data:evidences,error:evidenceError} = await this.client.from('agent_evidence')
+        .select('finding_id,source_url').in('finding_id',[...findingProduct.keys()]).limit(3000);
+      if(evidenceError) throw new Error('PRICE_EVIDENCE_URL_READ_FAILED');
+      for(const evidence of evidences ?? []){
+        const productId=findingProduct.get(evidence.finding_id);
+        if(!productId)continue;
+        const urls=officialUrls.get(productId) ?? new Set<string>();
+        if(urls.size<8) urls.add(evidence.source_url);
+        officialUrls.set(productId,urls);
+      }
+    }
+
     return products.map((row) => {
       const price = current.get(row.id);
       return {
@@ -116,6 +137,7 @@ export class PriceAgentSupabaseCatalogReader implements PriceCatalogReader {
         version: row.version,
         modelYear: row.model_year,
         knownPriceAliases: aliases.get(row.id) ?? [],
+        knownOfficialPriceUrls: [...(officialUrls.get(String(row.id)) ?? [])],
         knownPriceReconciliations: reconciliations.get(row.id) ?? [],
         currentPrice:
           price && price.currency_code === 'BRL'
