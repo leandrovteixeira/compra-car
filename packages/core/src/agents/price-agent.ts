@@ -33,7 +33,9 @@ export function classifyPriceCheck(
 ): PriceCheckState {
   if (!observation || observation.ambiguityReasons.length > 0 ||
       observation.evidence.length === 0 || observation.currencyCode !== 'BRL' ||
-      cents(observation.msrpAmount) === null) return 'not_found';
+      cents(observation.msrpAmount) === null ||
+      (observation.retailBonusAmount !== null &&
+       cents(observation.retailBonusAmount) === cents(observation.msrpAmount))) return 'not_found';
   const baseline = currentPriceCents(target);
   return baseline !== null && baseline === cents(observation.msrpAmount)
     ? 'unchanged' : 'new_price';
@@ -55,6 +57,7 @@ export function reconcilePriceObservations(observations: readonly PriceObservati
       (o) =>
         o.currencyCode === 'BRL' &&
         cents(o.msrpAmount) !== null &&
+        (o.retailBonusAmount === null || cents(o.retailBonusAmount) !== cents(o.msrpAmount)) &&
         o.confidence >= 0 &&
         o.confidence <= 1 &&
         o.evidence.length > 0,
