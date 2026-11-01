@@ -18,6 +18,8 @@ export interface PriceTarget {
   readonly modelYear: number;
   readonly currentPrice: Pick<ProductPublicPrice, 'id' | 'money' | 'startsOn' | 'status'> | null;
   readonly knownPriceAliases?: readonly string[];
+  /** Previously evidenced official URLs: hints only, never accepted as current price. */
+  readonly knownOfficialPriceUrls?: readonly string[];
   readonly knownPriceReconciliations?: readonly {
     readonly observedLabel: string;
     readonly sourceUrl: string;
