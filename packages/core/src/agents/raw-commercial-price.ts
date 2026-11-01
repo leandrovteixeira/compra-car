@@ -21,7 +21,7 @@ function normalizeHtml(html: string): string {
 }
 export function extractRawCommercialPrices(html: string): readonly RawCommercialPrice[] {
   const text = normalizeHtml(html);
-  const pattern = /(?:preço\s+(?:único|público\s+sugerido|sugerido|de\s+tabela)|valor\s+à\s+vista|por)\s*:?\s*R\$\s*(\d{1,3}(?:\.\d{3})*,\d{2})/giu;
+  const pattern = /(?:preço\s+(?:único|público\s+sugerido|sugerido|de\s+tabela)|valor\s+à\s+vista|por)\s*:?\s*R\$\s*(\d{1,3}(?:\.\d{3})+(?:,\d{2})?|\d{5,7}(?:,\d{2})?)/giu;
   const found: RawCommercialPrice[] = [];
   const seen = new Set<string>();
   for (const match of text.matchAll(pattern)) {
