@@ -1,4 +1,3 @@
-// @ts-nocheck -- temporarily isolate compiler errors in QA
 import {randomUUID,createHash} from 'node:crypto';
 import {lookupLaunchModelYear} from '@compra-car/adapter-openai';
 import {createLegacySupabaseClient} from '@compra-car/adapter-supabase';
