@@ -343,8 +343,8 @@ export async function runModelYearCli(
       'Search beyond Brand Connector domains. Independently investigate the official Brazilian manufacturer website, build-and-price configurator, official commercial conditions, authorized dealer 0-km inventory, and specialist automotive news.',
       'Prioritize search phrases: brand + exact model + exact version + 0km + 2026/2027, ano modelo, condições comerciais, estoque concessionária and ofertas.',
       'Search at least one authorized dealer and official commercial conditions if available; do not stop on a launch news article that omits the MY.',
-      'Commercial inventory showing fabrication/model years 2026/2027 is direct evidence of PY 2026 and MY 2027 for that exact vehicle. A publication date or launch date is not MY evidence.',
-      'Find and cite the exact URL and excerpt stating model year, version, Brazilian market and offer date. Do not extrapolate a MY from another trim.',
+      'Commercial inventory marked 2026/2027 is evidence of MY 2027 for that exact vehicle. Ignore the fabrication year; the result needs MY only.',
+      'Find and cite the exact URL and excerpt stating MY, exact version, Brazilian market and offer date. Do not extrapolate across trims. Production year is out of scope.',
       'If dealer offers disagree, preserve the conflict and distinguish older inventory from recent sales. Prefer explicit currently valid offer from brand over an undated third-party listing.',
       'One well-grounded result is preferable to multiple speculative MYs. Unknown is acceptable if none is explicitly supported.',
       'Do not guess a year from the current calendar, a web publication date, or an unrelated variant. Missing year must remain null.',
@@ -362,6 +362,7 @@ export async function runModelYearCli(
           : new OpenAIProductResearchProvider({
               apiKey: requireAgentOpenAiApiKey(env,'MODEL_YEAR'),
               model: env.OPENAI_AGENT_MODEL!,
+              allowExternalSources: true,
               maxWaitMs: productResearchMaxWaitMs(env.OPENAI_AGENT_MAX_WAIT_MS),
               prompt: (await readFile(
                 resolve(repositoryRoot, 'docs/agents/prompts/new-product-check-agent-v1.md'),
