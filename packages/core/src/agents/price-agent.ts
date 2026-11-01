@@ -18,6 +18,13 @@ function cents(amount: string | null): number | null {
   return Number.isSafeInteger(Math.round(n * 100)) ? Math.round(n * 100) : null;
 }
 
+function plausibleVehicleMsrp(amount: string | null): boolean {
+  const value = cents(amount);
+  // Conservative sanity gate for Brazil; values outside this range require
+  // manual investigation instead of automatic NEW_PRICE proposals.
+  return value !== null && value >= 2000000 && value <= 500000000;
+}
+
 function currentPriceCents(target: PriceTarget): number | null {
   return cents(target.currentPrice?.money.amount ?? null);
 }
@@ -33,7 +40,7 @@ export function classifyPriceCheck(
 ): PriceCheckState {
   if (!observation || observation.ambiguityReasons.length > 0 ||
       observation.evidence.length === 0 || observation.currencyCode !== 'BRL' ||
-      cents(observation.msrpAmount) === null ||
+      !plausibleVehicleMsrp(observation.msrpAmount) ||
       (observation.retailBonusAmount !== null &&
        cents(observation.retailBonusAmount) === cents(observation.msrpAmount))) return 'not_found';
   const baseline = currentPriceCents(target);
@@ -56,7 +63,7 @@ export function reconcilePriceObservations(observations: readonly PriceObservati
     const valid = list.filter(
       (o) =>
         o.currencyCode === 'BRL' &&
-        cents(o.msrpAmount) !== null &&
+        plausibleVehicleMsrp(o.msrpAmount) &&
         (o.retailBonusAmount === null || cents(o.retailBonusAmount) !== cents(o.msrpAmount)) &&
         o.confidence >= 0 &&
         o.confidence <= 1 &&
