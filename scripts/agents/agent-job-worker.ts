@@ -28,6 +28,7 @@ type JobRow = {
     mmvId?: string;
     benchmarkModel?: string;
     benchmarkVersion?: string;
+    shadowConnectorRunId?: string;
   };
 };
 
@@ -154,7 +155,8 @@ async function execute(job: JobRow) {
     const priceEnv = priceAiRequested
       ? { ...env, PRICE_AGENT_LLM_ENABLED: '1', PRICE_AGENT_HARD_COST_CAP_USD: '2' }
       : { ...env, PRICE_AGENT_LLM_ENABLED: '0', PRICE_AGENT_HARD_COST_CAP_USD: '2' };
-    code = await runPriceCli(['--brand',job.brand,'--persist-findings'],priceEnv,log,repositoryRoot);
+    code = await runPriceCli(['--brand',job.brand,'--persist-findings',
+      ...(job.input.shadowConnectorRunId ? ['--shadow-connector-run-id',job.input.shadowConnectorRunId] : [])],priceEnv,log,repositoryRoot);
   } else if (job.job_type === 'SOURCE_MONITOR') {
     const result = await monitorBrandSources(client, job.brand, job.market);
     console.log('[source-monitor]', job.id, JSON.stringify(result));
