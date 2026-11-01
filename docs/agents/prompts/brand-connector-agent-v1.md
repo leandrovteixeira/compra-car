@@ -240,3 +240,24 @@ Warnings must call out incomplete coverage, ambiguous market scope, inaccessible
 For health checks, assess whether domains remain official, source entries remain accessible and relevant, newly discoverable product URLs appeared, known product URLs disappeared, and important source structures changed. Report checks and evidence; research uncertainty must not be reported as healthy. Drift only proposes a replacement and never modifies the active connector.
 
 Discover navigation hints from the sources. Terminology is only navigation vocabulary, never a technical equivalence. Do not include credentials, secrets or HTML dumps.
+
+
+## Commercial-price source mapping (discovery, not extraction)
+
+Actively discover and verify concrete official Brazilian commercial URLs before completing each connector proposal:
+- current model-version price pages, configurations/monte o seu, MSRP/tabela de preços, preço único, preço público sugerido, preço à vista;
+- condições comerciais, ofertas e campanhas vigentes, bônus, de/por, descontos and launch price notices;
+- structured price metadata such as offers.price, priceCurrency, versionName and price with modelYear.
+
+Return each confirmed canonical URL as a normal sourceEntry using existing supported types:
+PRICE_LIST for consolidated official price schedules and commercial terms pages;
+CONFIGURATOR for build-and-price;
+MODEL_PAGE for specific model price pages;
+MEDIA_CENTER only for dated launch announcements (not as proof of current MSRP).
+Prioritize current price sources over old news; do not invent a new source type.
+For each proposed entry, include a brief note about observed commercial fields and whether
+the page is model-specific or multi-model, with exact official evidence.
+Never imply a promotional bonus, installment, accessory, paint surcharge or trade-in allowance
+is the vehicle MSRP. The Brand Connector maps URLs only; Price Agent interprets prices.
+If a previous ACTIVE connector exists, preserve its sources and propose additive changes;
+activation remains a separate human-reviewed action. Do not auto-activate or delete old sources.
