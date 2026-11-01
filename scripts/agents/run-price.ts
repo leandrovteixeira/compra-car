@@ -163,6 +163,10 @@ async function operationalResearch(env: Readonly<Record<string, string | undefin
       const out = [];
       const entries = [
         ...connector.sourceEntries,
+        ...(target.knownOfficialPriceUrls ?? []).map(url => ({
+          // Historic URLs remain only hints; download fresh official content.
+          type: 'PRICE_LIST' as const, url, priority: -200,
+        })),
         ...(target.knownPriceReconciliations ?? [])
           .filter((item) => item.sourceFingerprint)
           .map((item) => ({
@@ -174,6 +178,18 @@ async function operationalResearch(env: Readonly<Record<string, string | undefin
       const seen = new Set<string>();
 
       for (const entry of [...entries].sort((a, b) => a.priority - b.priority)) {
+        // Never fetch an AI-suggested address outside the trusted connector hosts.
+        let approved = false;
+        try {
+          const url = new URL(entry.url);
+          approved = url.protocol === 'https:' &&
+            connector.allowedDomains.some(domain => {
+              const host = domain.toLowerCase().replace(/^www\\./u,'');
+              const candidate = url.hostname.toLowerCase().replace(/^www\\./u,'');
+              return candidate===host || candidate.endsWith('.'+host);
+            });
+        } catch { /* malformed evidence is ignored */ }
+        if (!approved) continue;
         if (seen.has(entry.url)) continue;
         seen.add(entry.url);
         if (!entryAppliesToTarget(entry, target.model)) continue;
