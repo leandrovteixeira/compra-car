@@ -16,6 +16,7 @@ export type AgentBudgetClient=Readonly<{
 }>;
 
 export const GWM_PILOT_RESERVATION_USD=2;
+export const MY_LAUNCH_RESERVATION_USD=0.20;
 
 export function needsAgentBudget(job:AgentBudgetJob,env:Readonly<Record<string,string|undefined>>):boolean {
   switch(job.job_type){
@@ -51,7 +52,7 @@ export async function reserveAgentPilotBudget(
   // Reserve the remaining amount atomically, up to a maximum of US$ 2.
   const {data,error}=await client.rpc('agent_spend_reserve_remaining',{
     p_budget_key:budgetKey,p_model:job.job_type,
-    p_max_amount_usd:GWM_PILOT_RESERVATION_USD,
+    p_max_amount_usd:job.job_type==='PRODUCT_YEAR'?MY_LAUNCH_RESERVATION_USD:GWM_PILOT_RESERVATION_USD,
   });
   if(error)throw new Error(cleanCode(error));
   const result = data && typeof data==='object' && !Array.isArray(data)
@@ -59,7 +60,7 @@ export async function reserveAgentPilotBudget(
   const id=result?.id;
   const reservedUsd=Number(result?.reservedUsd);
   if(typeof id!=='string'||!id.trim()||!Number.isFinite(reservedUsd)||
-     reservedUsd<0.01||reservedUsd>GWM_PILOT_RESERVATION_USD)
+     reservedUsd<0.01||reservedUsd>(job.job_type==='PRODUCT_YEAR'?MY_LAUNCH_RESERVATION_USD:GWM_PILOT_RESERVATION_USD))
     throw new Error('COST_ADMISSION_FAILED');
   return {id,budgetKey,reservedUsd};
 }
