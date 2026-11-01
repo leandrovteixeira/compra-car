@@ -110,7 +110,7 @@ async function execute(job: JobRow) {
     ?await reserveAgentPilotBudget(client as unknown as AgentBudgetClient,job)
     :null;
   try {
-  let code: number;
+  let code: number = 1;
   if (job.job_type === 'MMV_DISCOVERY') {
     code = await runNewProductCheckCli(
       [
@@ -182,10 +182,6 @@ async function execute(job: JobRow) {
     return;
   }
 
-  if (job.job_type === 'PRODUCT_YEAR' && code === 0 && logs.some(line => line.startsWith('NO_MY_RESEARCH_REQUIRED:'))) {
-    await completeWithoutRun(job.id);
-    return;
-  }
   const runLine = logs.find((line) => line.startsWith('Run: '));
   const runId = runLine?.match(
     /^Run:\s+([0-9a-fA-F-]{36})(?:\s|$)/u,
