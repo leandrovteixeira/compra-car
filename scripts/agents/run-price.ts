@@ -384,15 +384,35 @@ export async function runPriceCli(
       ]),
     ) as typeof result;
 
+    // Persist experimental coverage metrics with the run, not only worker stdout.
+    // This does not affect the canonical findings or approved public prices.
+    const audited = {
+      ...clean,
+      bundle: {
+        ...clean.bundle,
+        run: {
+          ...clean.bundle.run,
+          summary: {
+            ...clean.bundle.run.summary,
+            sourceFirstExtracted: shadow.extracted,
+            sourceFirstMatched: shadow.matched,
+            sourceFirstAmbiguous: shadow.ambiguous,
+            sourceFirstUnresolved: shadow.unresolved,
+            sourceFirstSnapshots: rawSeen.size,
+          },
+        },
+      },
+    };
+
     const directory = resolve(root, '.local-reports/agents/price');
     await mkdir(directory, { recursive: true });
     await writeFile(
       resolve(directory, clean.bundle.run.id + '.json'),
-      JSON.stringify(clean, null, 2) + '\n',
+      JSON.stringify(audited, null, 2) + '\n',
     );
 
     if (persistFindings) {
-      await persistence!.persistRunBundle(clean.bundle);
+      await persistence!.persistRunBundle(audited.bundle);
       // Nonblocking price verification journal: a journal outage must not
       // invalidate a completed discovery or re-apply catalog changes.
       if (telemetry) {
