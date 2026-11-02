@@ -21,7 +21,10 @@ function normalizeHtml(html: string): string {
 }
 export function extractRawCommercialPrices(html: string): readonly RawCommercialPrice[] {
   const text = normalizeHtml(html);
-  const pattern = /(?:preço\s+(?:único|público\s+sugerido|sugerido|de\s+tabela)|valor\s+à\s+vista|por)\s*:?\s*R\$\s*(\d{1,3}(?:\.\d{3})+(?:,\d{2})?|\d{5,7}(?:,\d{2})?)/giu;
+  // Some manufacturer pages render commercial labels with missing characters
+  // and spaces (e.g. "P eço ú ico") while keeping the BRL amount intact.
+  // Require a recognizable price label; never collect arbitrary R$ numbers.
+  const pattern = /(?:preço\s+(?:único|público\s+sugerido|sugerido|de\s+tabela)|p\s*r?\s*eço\s+ú\s*n?\s*ico|valor\s+à\s+vista|por)\s*[:*]?\s*R\$\s*(\d{1,3}(?:\.\d{3})+(?:,\d{2})?|\d{5,7}(?:,\d{2})?)/giu;
   const found: RawCommercialPrice[] = [];
   const seen = new Set<string>();
   for (const match of text.matchAll(pattern)) {
@@ -30,7 +33,7 @@ export function extractRawCommercialPrices(html: string): readonly RawCommercial
     const index = match.index ?? 0;
     const context = text.slice(Math.max(0,index-240),Math.min(text.length,index+250));
     const prefix = match[0].slice(0,match[0].indexOf('R$')).toLowerCase();
-    const label = /único/u.test(prefix) ? 'SINGLE_PRICE' :
+    const label = /único|ú\s*n?\s*ico/u.test(prefix) ? 'SINGLE_PRICE' :
       /\bpor\b/u.test(prefix) ? 'PROMOTIONAL_PRICE' : 'MSRP';
     const year = context.match(/(?:ano[ -]?modelo|MY|modelo)\s*(?:20\d\d\s*\/\s*)?(20\d\d)/iu);
     const key = [amount,label,context].join('|');
