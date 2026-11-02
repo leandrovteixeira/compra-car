@@ -15,7 +15,7 @@ import {
 type Fetcher = typeof fetch;
 type LinkedPage = { url: string; from: string };
 const MAX_INDEXES = 3;
-const MAX_PRODUCTS = 24;
+const MAX_PRODUCTS = 64;
 const MAX_HTML_BYTES = 2_000_000;
 
 type NetworkStats = {
@@ -90,6 +90,11 @@ function linkedUrls(html: string, base: string, allowed: readonly string[]): str
 
 function kindForUrl(url: string): ConnectorSourceEntry['type'] | null {
   const path = new URL(url).pathname.toLowerCase();
+  // Prevent sitemap-only navigation, checkout and media pages from being
+  // misclassified as commercial vehicle pages.
+  if (/(?:^|\/)(?:media-center|news|noticias|blog|imprensa|servicos|acessorios)(?:\/|$)/u.test(path) ||
+      /\/(?:pedido|pedidos|login|checkout|reserve|reserva|carrinho|configurador)$/u.test(path))
+    return null;
   // A product page is a concrete leaf, not a generic model index.
   if (/\/(?:modelos|veiculos(?:-[a-z]+){0,2}|carros|suvs|electric-vehicles|hybrid-vehicles|commercial-vehicles|utilitarios)\/[a-z0-9][a-z0-9-]*(?:\.html)?$/u.test(path))
     return 'MODEL_PAGE';
@@ -193,7 +198,10 @@ export async function expandBrandProductSources(
       return { candidate, page };
     }));
     for (const { candidate, page } of pages) {
-      if (!page) { failed.push(candidate.url); continue; }
+      if (!page || kindForUrl(page.url) !== 'MODEL_PAGE') {
+        failed.push(candidate.url);
+        continue;
+      }
       verified++;
       const signals = pageSignals(page.html);
       if (signals.includes('BRL_AMOUNT_VISIBLE')) productPagesWithBrlAmount++;
