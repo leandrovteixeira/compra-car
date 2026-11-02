@@ -80,7 +80,7 @@ export class OpenAICompactPriceMatcher implements PriceCompactMatchProvider {
       webSearchCount:0,
     };
     const estimatedCostUsd=priceAiCost(MODEL,measured);
-    const usage:PriceAiUsage={model:MODEL,...measured,estimatedCostUsd};
+    const usage:PriceAiUsage={model:MODEL,...measured,estimatedCostUsd,reason:'PRICE_COMPACT_IDENTITY_ONLY'};
     if(estimatedCostUsd>budgetUsd)throw new Error('PRICE_COMPACT_ACTUAL_BUDGET_EXCEEDED');
     let parsed:unknown;
     try{parsed=JSON.parse(response.output_text);}catch{
