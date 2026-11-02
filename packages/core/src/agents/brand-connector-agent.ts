@@ -186,6 +186,7 @@ export function mapBrandConnectorRun(
       e.type === 'MODEL_PAGE' && (e.notes ?? '').includes('verified from official index'),
     ).length,
   };
+  const sourceCrawlTelemetry = result.sourceCrawlTelemetry ?? null;
   const fingerprint = connectorFingerprint(proposal);
   const proposedAliasKeys = [...new Set(aliases.map((alias) => brandKey(alias.alias)))].sort();
   const activeAliasKeys = [...new Set((input.activeIdentity?.aliases ?? []).map(brandKey))].sort();
@@ -224,6 +225,7 @@ export function mapBrandConnectorRun(
     sourceEntries: proposal.sourceEntries as unknown as AgentObject[],
     sourceCoverage: [...new Set(proposal.sourceEntries.map((e) => e.type))],
     sourceInventory,
+    ...(sourceCrawlTelemetry ? { sourceCrawlTelemetry } : {}),
     checksPerformed,
     connectorFingerprint: fingerprint,
     ...(input.activeConnector
@@ -239,7 +241,7 @@ export function mapBrandConnectorRun(
       market: proposal.market,
       provider,
       runMode: input.mode,
-      schemaVersion: '19C.3',
+      schemaVersion: sourceCrawlTelemetry ? '19C.4' : '19C.3',
       startedAt,
       completedAt,
       input: { brand: proposal.brand, market: proposal.market, mode: input.mode },
@@ -251,6 +253,20 @@ export function mapBrandConnectorRun(
         modelPagesVerifiedFromIndex: sourceInventory.productPagesVerifiedFromIndex,
         modelPagesWithPriceSignals: sourceInventory.productPagesWithPriceSignals,
         sourcesByType: sourceCounts,
+        ...(sourceCrawlTelemetry ? {
+          httpRequests: sourceCrawlTelemetry.httpRequests,
+          httpFailedRequests: sourceCrawlTelemetry.httpFailedRequests,
+          httpRedirects: sourceCrawlTelemetry.httpRedirects,
+          htmlBytesDownloaded: sourceCrawlTelemetry.htmlBytesDownloaded,
+          crawlElapsedMs: sourceCrawlTelemetry.elapsedMs,
+          crawlIndexPhaseMs: sourceCrawlTelemetry.indexPhaseMs,
+          crawlProductPhaseMs: sourceCrawlTelemetry.productPhaseMs,
+          productLinksFound: sourceCrawlTelemetry.productLinksFound,
+          productPagesVerified: sourceCrawlTelemetry.productPagesVerified,
+          productPagesWithBrlAmount: sourceCrawlTelemetry.productPagesWithBrlAmount,
+          productPagesWithPriceTermsOnly: sourceCrawlTelemetry.productPagesWithPriceTermsOnly,
+          productPagesFailed: sourceCrawlTelemetry.failedProductPages.length,
+        } : {}),
       },
       configSnapshot: {
         connectorVersion: input.activeConnector?.version ?? null,
