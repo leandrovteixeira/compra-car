@@ -2,6 +2,7 @@ import {createLegacySupabaseClient} from '@compra-car/adapter-supabase';
 import {createWatcherQaExecutor,assertWatcherQaTarget,WATCHER_QA_URL} from '@compra-car/adapter-supabase/watcher-qa';
 import {createWatcherFeedTransport,nodeWatcherFeedNetwork} from './watcher-feed-transport';
 import {runWatcherIncremental} from './watcher-incremental';
+import {enrichWatcherImages} from './watcher-image-enrichment';
 
 type Job={id:string;source_id:string;status:string;window_utc:string};
 async function main(){
@@ -25,6 +26,7 @@ async function main(){
    repository,transport,now:new Date().toISOString(),
   }));
   success=result.status==='PASS';
+  if(success) await enrichWatcherImages(client).catch(()=>console.warn('WATCHER_IMAGES_NONBLOCKING_FAILURE'));
   console.log(JSON.stringify({status:result.status,jobId:job.id,received:result.received,receipt:result.receipt}));
  }catch(err){
   code=err instanceof Error&&/^WATCHER_INCREMENTAL_[A-Z_]+$/u.test(err.message)?
