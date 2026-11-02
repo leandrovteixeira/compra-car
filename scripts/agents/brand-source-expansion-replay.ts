@@ -66,6 +66,23 @@ export async function replayBrandProductSourceExpansion(
       ? payload.checksPerformed as string[] : [],
     driftDetected:false,
   };
+  // The replay has zero new OpenAI calls. Preserve the original discovery
+  // receipt separately so a dashboard can show full pipeline spend without
+  // charging the replay twice.
+  const { data: parentUsage, error: usageError } = await client
+    .from('agent_ai_usage_events')
+    .select('model,input_tokens,output_tokens,web_search_count,estimated_cost_usd')
+    .eq('run_id',sourceRunId).eq('agent_type','BRAND_CONNECTOR');
+  if (usageError) throw new Error('BRAND_REPLAY_AI_TELEMETRY_UNAVAILABLE');
+  const priorAiCalls=(parentUsage??[]).length;
+  const priorAiInputTokens=(parentUsage??[]).reduce(
+    (total,item)=>total+Number(item.input_tokens??0),0);
+  const priorAiOutputTokens=(parentUsage??[]).reduce(
+    (total,item)=>total+Number(item.output_tokens??0),0);
+  const priorAiWebSearches=(parentUsage??[]).reduce(
+    (total,item)=>total+Number(item.web_search_count??0),0);
+  const priorAiEstimatedCostUsd=(parentUsage??[]).reduce(
+    (total,item)=>total+Number(item.estimated_cost_usd??0),0);
   const expanded=await expandBrandProductSources(input,researched);
   const provider:BrandConnectorResearchProvider={
     researchConnector:async()=>expanded.research,
@@ -81,6 +98,12 @@ export async function replayBrandProductSourceExpansion(
         aiModel:null,aiEstimatedCostUsd:0,aiCostEstimatePriced:true,
         aiCostScope:'OpenAI API only; HTTP/network compute excluded',
         sourceResearchRunId:sourceRunId,
+        linkedResearchAiCalls:priorAiCalls,
+        linkedResearchAiInputTokens:priorAiInputTokens,
+        linkedResearchAiOutputTokens:priorAiOutputTokens,
+        linkedResearchAiWebSearches:priorAiWebSearches,
+        linkedResearchAiEstimatedCostUsd:Number(priorAiEstimatedCostUsd.toFixed(6)),
+        pipelineAiEstimatedCostUsd:Number(priorAiEstimatedCostUsd.toFixed(6)),
       },
     },
   };

@@ -233,7 +233,7 @@ export function mapBrandConnectorRun(
     sourceEntries: proposal.sourceEntries as unknown as AgentObject[],
     sourceCoverage: [...new Set(proposal.sourceEntries.map((e) => e.type))],
     sourceInventory,
-    ...(sourceCrawlTelemetry ? { sourceCrawlTelemetry } : {}),
+    ...(sourceCrawlTelemetry ? { sourceCrawlTelemetry: { ...sourceCrawlTelemetry } } : {}),
     checksPerformed,
     connectorFingerprint: fingerprint,
     ...(input.activeConnector
