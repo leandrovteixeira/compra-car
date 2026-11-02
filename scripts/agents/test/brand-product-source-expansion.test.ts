@@ -114,6 +114,55 @@ describe('universal Brand Connector product-source expansion',()=>{
     ]),
   );
  });
+ it('recovers SPA product pages from official sitemap and embedded routes',async()=>{
+  const origin='https://www.gwmmotors.com.br';
+  const pages:Record<string,{body:string;contentType:string}>={
+    [origin+'/pt/modelos']:{body:'<script>const routes=["\\/pt\\/modelos\\/haval-h7"];</script>',contentType:'text/html'},
+    [origin+'/pt']:{body:'<main>GWM model index</main>',contentType:'text/html'},
+    [origin+'/sitemap.xml']:{
+      body:'<sitemapindex><sitemap><loc>'+origin+'/models-sitemap.xml</loc></sitemap></sitemapindex>',
+      contentType:'application/xml',
+    },
+    [origin+'/models-sitemap.xml']:{
+      body:'<urlset>'+
+        '<url><loc>'+origin+'/pt/modelos/haval-h6-phev-19</loc></url>'+
+        '<url><loc>'+origin+'/pt/modelos/haval-h6-hev-one</loc></url>'+
+        '<url><loc>https://outside.example/pt/modelos/evil</loc></url>'+
+        '</urlset>',
+      contentType:'application/xml',
+    },
+  };
+  const linked=[
+    'haval-h7','haval-h6-phev-19','haval-h6-hev-one',
+  ];
+  for(const name of linked)pages[origin+'/pt/modelos/'+name]={
+    body:'<h1>GWM '+name+'</h1><p>Preço único: R$ 250.000</p>',
+    contentType:'text/html',
+  };
+  const fetcher:typeof fetch=async url=>{
+    const found=pages[String(url)];
+    return found
+      ?new Response(found.body,{status:200,headers:{'content-type':found.contentType}})
+      :new Response('',{status:404});
+  };
+  const research:BrandConnectorResearch={
+    ...base,observedBrandLabel:'GWM',canonicalBrand:'GWM',
+    candidateDomains:['gwmmotors.com.br'],
+    sourceEntries:[{type:'MODEL_INDEX',url:origin+'/pt/modelos',priority:1}],
+    evidence:[{url:origin+'/pt/modelos',title:'GWM index',excerpt:'Official car list'}],
+  };
+  const result=await expandBrandProductSources({
+    brand:'GWM',market:'BR',mode:'discover',
+  },research,fetcher);
+  expect(result.report.productPagesVerified).toBe(3);
+  expect(result.report.productLinksFound).toBe(3);
+  expect(result.report.httpRequests).toBe(7);
+  expect(result.research.sourceEntries.filter(x=>x.type==='MODEL_PAGE')
+    .map(x=>x.url)).toEqual(expect.arrayContaining(
+      linked.map(name=>origin+'/pt/modelos/'+name),
+    ));
+  expect(JSON.stringify(result.research)).not.toContain('outside.example');
+ });
  it('reports nonresponding product pages as coverage gaps',async()=>{
   const failing:typeof fetch=async (url)=>String(url).endsWith('kardian.html')
     ? new Response('',{status:404}) : fakeFetch(url);
