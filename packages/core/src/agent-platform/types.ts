@@ -1,5 +1,6 @@
 export const AGENT_TYPES = [
   'BRAND_CONNECTOR',
+  'FIPE_DISCOVERY',
   'MMV_DISCOVERY',
   'MODEL_YEAR',
   'PRODUCT_YEAR',
@@ -27,6 +28,9 @@ export const AGENT_FINDING_TYPES = [
   'SPEC_CHANGE',
   'NEW_PRICE',
   'PRICE_CHANGE',
+  'FIPE_MAPPING_CANDIDATE',
+  'FIPE_MODEL_YEAR_CANDIDATE',
+  'LAUNCH_EVIDENCE',
 ] as const;
 export const AGENT_REVIEW_DECISIONS = ['ACCEPT', 'REJECT', 'DEFER'] as const;
 export type AgentType = (typeof AGENT_TYPES)[number];
