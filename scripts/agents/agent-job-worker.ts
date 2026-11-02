@@ -150,7 +150,10 @@ async function execute(job: JobRow) {
   } else if (job.job_type === 'PRICE_INTELLIGENCE') {
     if (job.input.priceDirectProbe === true) {
       if (job.brand !== 'GWM' || job.market !== 'BR') throw new Error('PRICE_PROBE_SCOPE_INVALID');
-      await runOra5PriceProbe(log);
+      const probe = await runOra5PriceProbe(log);
+      const {error: probeError} = await client.from('agent_jobs')
+        .update({input:{...job.input,priceDirectProbeResult:probe}}).eq('id',job.id);
+      if (probeError) throw new Error('PRICE_PROBE_RESULT_PERSIST_FAILED');
       await completeWithoutRun(job.id);
       return;
     }
