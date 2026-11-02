@@ -42,11 +42,11 @@ const cachedCover = unstable_cache(async (raw: string): Promise<string | null> =
     const response = await fetch(article, {
       redirect: 'manual',
       signal: AbortSignal.timeout(4500),
-      headers: { Accept: 'text/html' },
+      headers: { Accept: 'text/html,application/xhtml+xml', 'User-Agent': 'Mozilla/5.0 (compatible; CompraCarNews/1.0; +https://compra-carqa.up.railway.app)' },
     });
     if (!response.ok || !(response.headers.get('content-type') ?? '').includes('text/html')) return null;
     const length = Number(response.headers.get('content-length') ?? 0);
-    if (length > MAX_HTML_BYTES) return null;
+    // Ignore Content-Length: publisher pages can be large while OG metadata is in the head.
     const reader = response.body?.getReader();
     if (!reader) return null;
     let total = 0;
@@ -59,13 +59,18 @@ const cachedCover = unstable_cache(async (raw: string): Promise<string | null> =
         if (total > MAX_HTML_BYTES) return null;
         chunks.push(next.value);
         // Usually OG metadata is within the first part of the head.
-        if (total > 40_000) break;
+        if (total > 120_000 && /<\/head\s*>/i.test(new TextDecoder().decode(Buffer.concat(chunks)))) break;
       }
     } finally { await reader.cancel().catch(() => undefined); }
     const html = new TextDecoder().decode(Buffer.concat(chunks));
-    return imageFromHtml(html);
-  } catch { return null; }
-}, ['watcher-news-cover-v1'], { revalidate: 86400 });
+    const image = imageFromHtml(html);
+    if (!image) console.warn('WATCHER_NEWS_IMAGE_MISSING', { source: HOST, httpStatus: response.status, bytesRead: total, metadataFound: /og:image|twitter:image/i.test(html) });
+    return image;
+  } catch (error) {
+    console.warn('WATCHER_NEWS_IMAGE_FETCH_FAILED', error instanceof Error ? error.name : 'UNKNOWN');
+    return null;
+  }
+}, ['watcher-news-cover-v2'], { revalidate: 3600 });
 
 export async function getNewsCover(raw?: string): Promise<string | null> {
   const url = safeArticleUrl(raw);
