@@ -54,7 +54,7 @@ const cachedCover = unstable_cache(async (raw: string): Promise<string | null> =
       const location = response.headers.get('location');
       if (!location) break;
       const next = new URL(location, target);
-      if (!isArticleHost(next) || !/^\\/news\\/\\d+\\//.test(next.pathname)) {
+      if (!isArticleHost(next) || !/^\/news\/\d+\//.test(next.pathname)) {
         console.warn('WATCHER_NEWS_IMAGE_REDIRECT_BLOCKED', { status: response.status, host: next.hostname });
         return null;
       }
