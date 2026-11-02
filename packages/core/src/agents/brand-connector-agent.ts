@@ -179,8 +179,16 @@ export function mapBrandConnectorRun(
     total: proposal.sourceEntries.length,
     byType: sourceCounts,
     productPages: proposal.sourceEntries.filter(e => e.type === 'MODEL_PAGE').length,
+    // A commercial keyword is not an extracted amount nor a verified MSRP.
     productPagesWithPriceSignals: proposal.sourceEntries.filter(e =>
-      e.type === 'MODEL_PAGE' && /(?:^|[,; ])PRICE(?:[,; ]|$)/u.test(e.notes ?? ''),
+      e.type === 'MODEL_PAGE' &&
+      /\b(?:BRL_AMOUNT_VISIBLE|PRICE_TERMS_ONLY|PRICE)\b/u.test(e.notes ?? ''),
+    ).length,
+    productPagesWithBrlAmount: proposal.sourceEntries.filter(e =>
+      e.type === 'MODEL_PAGE' && /\bBRL_AMOUNT_VISIBLE\b/u.test(e.notes ?? ''),
+    ).length,
+    productPagesWithPriceTermsOnly: proposal.sourceEntries.filter(e =>
+      e.type === 'MODEL_PAGE' && /\bPRICE_TERMS_ONLY\b/u.test(e.notes ?? ''),
     ).length,
     productPagesVerifiedFromIndex: proposal.sourceEntries.filter(e =>
       e.type === 'MODEL_PAGE' && (e.notes ?? '').includes('verified from official index'),
@@ -252,6 +260,8 @@ export function mapBrandConnectorRun(
         modelPages: sourceInventory.productPages,
         modelPagesVerifiedFromIndex: sourceInventory.productPagesVerifiedFromIndex,
         modelPagesWithPriceSignals: sourceInventory.productPagesWithPriceSignals,
+        modelPagesWithBrlAmount: sourceInventory.productPagesWithBrlAmount,
+        modelPagesWithPriceTermsOnly: sourceInventory.productPagesWithPriceTermsOnly,
         sourcesByType: sourceCounts,
         ...(sourceCrawlTelemetry ? {
           httpRequests: sourceCrawlTelemetry.httpRequests,
