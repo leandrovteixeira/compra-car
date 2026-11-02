@@ -248,7 +248,6 @@ export class PriceAgentSupabaseTelemetry {
     const rows = input.targets.map((target) => {
       const observation = accepted.get(target.productId);
       const evidence = observation?.evidence[0];
-      const previous = target.currentPrice?.money.amount;
       const baseline = previous.get(target.productId + '|' + (evidence?.sourceUrl ?? ''));
       const published = target.currentPrice?.money.amount;
       const state = !observation ? 'not_found'
