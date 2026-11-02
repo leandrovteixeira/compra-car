@@ -2,6 +2,7 @@ import { resolve } from 'node:path';
 import { createLegacySupabaseClient } from '@compra-car/adapter-supabase';
 import { runNewProductCheckCli } from './run-new-product-check';
 import { runBrandConnectorCli } from './run-brand-connector';
+import { replayBrandProductSourceExpansion } from './brand-source-expansion-replay';
 import { refreshGwmBrandPriceSources } from './gwm-brand-price-source-refresh';
 import { runLaunchMyJob } from './run-launch-my';
 import { runMyLaunchBenchmark } from './my-launch-benchmark';
@@ -32,6 +33,7 @@ type JobRow = {
     benchmarkVersion?: string;
     shadowConnectorRunId?: string;
     brandPriceSourceRefresh?: boolean;
+    brandSourceExpandRunId?: string;
     priceAuditOnly?: boolean;
     priceDirectProbe?: boolean;
     priceProbeModel?: 'ORA5' | 'WEY07';
@@ -119,6 +121,18 @@ async function execute(job: JobRow) {
     const result = await refreshGwmBrandPriceSources(client, log);
     await complete(job.id, result.runId);
     await journal('SUCCESS',result.runId);
+    return;
+  }
+
+  // Reuse an existing Brand research result and crawl its official model
+  // index. Deterministic only: no OpenAI key, no paid reservation.
+  if (job.job_type === 'BRAND_CONNECTOR' && job.input.brandSourceExpandRunId) {
+    if (job.market !== 'BR') throw new Error('BRAND_REPLAY_MARKET_UNSUPPORTED');
+    const replay = await replayBrandProductSourceExpansion(
+      client, job.input.brandSourceExpandRunId, job.brand, log,
+    );
+    await complete(job.id, replay.runId);
+    await journal('SUCCESS', replay.runId);
     return;
   }
 
