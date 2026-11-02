@@ -20,6 +20,7 @@ import { PriceAgentSupabaseCatalogReader, PriceAgentSupabaseTelemetry } from '@c
 import { loadAgentEnvironment } from './agent-environment';
 import { redactSecrets } from './report-writer';
 import { agentOpenAiApiKey,agentOpenAiSecrets,requireAgentOpenAiApiKey } from './agent-openai-credentials';
+import { officialGwmPricePageForTarget, isCompetingGwmProductPage } from './gwm-price-sources';
 import { recordEngineeringRunEvent } from './engineering-run-log';
 import { engineeringFailureReason } from './engineering-failure-reason';
 
@@ -186,7 +187,15 @@ async function operationalResearch(env: Readonly<Record<string, string | undefin
     hardCostCapUsd: priceBudget(env.PRICE_AGENT_HARD_COST_CAP_USD),
     fetch: async (target, connector) => {
       const out = [];
+      const officialProductPage = officialGwmPricePageForTarget(target);
       const entries = [
+        // Dedicated first-party product pages take precedence over old news and
+        // previously discovered URLs; do not mix prices across H6 trims.
+        ...(officialProductPage ? [{
+          type: 'MODEL_PAGE' as const,
+          url: officialProductPage,
+          priority: -500,
+        }] : []),
         ...connector.sourceEntries,
         ...(target.knownOfficialPriceUrls ?? []).map(url => ({
           // Historic URLs remain only hints; download fresh official content.
@@ -219,6 +228,7 @@ async function operationalResearch(env: Readonly<Record<string, string | undefin
         approvedCount++;
         if (seen.has(entry.url)) continue;
         seen.add(entry.url);
+        if (isCompetingGwmProductPage(target, entry.url)) continue;
         if (!entryAppliesToTarget(entry, target.model)) continue;
         const sourceKind = connectorEntryPriceKind(entry as Parameters<typeof connectorEntryPriceKind>[0]) ?? kindForEntry(entry.type);
         if (!sourceKind) continue;
