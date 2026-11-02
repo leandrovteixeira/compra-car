@@ -352,7 +352,7 @@ export async function runPriceCli(
       rawSeen.add(key);
       for (const raw of extractUniversalPriceCandidates(snapshot.body)) {
         shadow.extracted++;
-        const match = matchRawPrice(raw,snapshot.finalUrl,result.targets);
+        const match = matchRawPrice({amount:raw.amount,context:raw.context,label:raw.kind,versionHint:raw.versionHint,modelYearHint:raw.modelYearHint},snapshot.finalUrl,result.targets);
         if (match.status === 'MATCHED') shadow.matched++;
         else if (match.status === 'AMBIGUOUS') shadow.ambiguous++;
         else shadow.unresolved++;
