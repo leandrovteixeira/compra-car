@@ -17,7 +17,7 @@ export async function setAdminUserStatusAction(state: AdminUserActionState, data
   return setStatus(state, data);
 }
 
-export async function setAdminUserRoleAction(state: AdminUserActionState, data: FormData) {
+export async function setAdminUserRoleAction(_state: AdminUserActionState, _data: FormData) {
   await requireFeature23C('settings');
   return { status: 'error' as const, message: 'Mudança de perfil legado desativada. Use concessões de acesso Corporate.' };
 }
