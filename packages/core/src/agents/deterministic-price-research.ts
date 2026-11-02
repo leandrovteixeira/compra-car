@@ -462,13 +462,24 @@ export class DeterministicFirstPriceResearch implements PriceResearchProvider {
     observations.push(...sourceFirst.observations);
     let compactMatchDecisions: PriceResearchResult['compactMatchDecisions'] = [];
     if (this.ports.compactMatcher && sourceFirst.candidates.length) {
-      const compactResult = await this.ports.compactMatcher.match(
-        sourceFirst.candidates, targets, connector,
-        this.ports.hardCostCapUsd ?? 0.03,
+      const indices = sourceFirst.candidates.flatMap((candidate, index) =>
+        candidate.kind !== 'PROMOTIONAL_PRICE' &&
+        candidate.candidateProductIds.length > 0 &&
+        candidate.status !== 'MATCHED'
+          ? [index] : [],
       );
-      compactMatchDecisions = compactResult.decisions;
-      usage.push(...compactResult.usage);
-      // Matching is identity telemetry only. No AI price or MY may mutate MSRP.
+      if (indices.length) {
+        const compactResult = await this.ports.compactMatcher.match(
+          indices.map(index => sourceFirst.candidates[index]!),
+          targets, connector, this.ports.hardCostCapUsd ?? 0.03,
+        );
+        compactMatchDecisions = compactResult.decisions.map(decision => ({
+          ...decision,
+          candidateIndex: indices[decision.candidateIndex]!,
+        }));
+        usage.push(...compactResult.usage);
+      }
+      // Identity results are evidence telemetry only: no AI MSRP or MY mutation.
     }
 
     // A syntactically extracted amount is not necessarily a valid MSRP.
