@@ -63,6 +63,7 @@ export function reconcilePriceObservations(observations: readonly PriceObservati
     const valid = list.filter(
       (o) =>
         o.currencyCode === 'BRL' &&
+        o.ambiguityReasons.length === 0 &&
         plausibleVehicleMsrp(o.msrpAmount) &&
         (o.retailBonusAmount === null || cents(o.retailBonusAmount) !== cents(o.msrpAmount)) &&
         o.confidence >= 0 &&
