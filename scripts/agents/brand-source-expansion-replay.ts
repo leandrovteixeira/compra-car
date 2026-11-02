@@ -15,6 +15,7 @@ import { expandBrandProductSources } from './brand-product-source-expansion';
 export async function replayBrandProductSourceExpansion(
   client: ReturnType<typeof createLegacySupabaseClient>,
   sourceRunId: string,
+  expectedBrand: string,
   log: (line: string) => void = console.log,
 ): Promise<{ runId: string; verified: number; added: number }> {
   if (!/^[0-9a-f-]{36}$/iu.test(sourceRunId)) throw new Error('BRAND_REPLAY_INVALID_RUN_ID');
@@ -25,7 +26,7 @@ export async function replayBrandProductSourceExpansion(
     .eq('run_id',sourceRunId).limit(2);
   if (runError || findingError || !run ||
     run.agent_type !== 'BRAND_CONNECTOR' || run.status !== 'COMPLETED' ||
-    run.market !== 'BR' || !run.brand || findings?.length !== 1 ||
+    run.market !== 'BR' || run.brand !== expectedBrand || findings?.length !== 1 ||
     !['NEW_BRAND_CONNECTOR','CONNECTOR_DRIFT'].includes(findings[0]!.finding_type))
     throw new Error('BRAND_REPLAY_PARENT_INVALID');
   const finding = findings[0]!;
