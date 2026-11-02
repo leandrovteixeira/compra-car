@@ -31,6 +31,7 @@ type JobRow = {
     parentRunId?: string;
     noFipe?: boolean;
     mmvId?: string;
+    allowMyFallback?: boolean;
     launchWatchId?: string;
     launchWatchAuditMmvId?: string;
     benchmarkModel?: string;
@@ -204,6 +205,20 @@ async function execute(job: JobRow) {
     await complete(job.id,fipeRunId);
     await journal('SUCCESS',fipeRunId);
     log('FIPE: '+JSON.stringify({runId:fipeRunId,reviewRun, ...fipe}));
+    // Semiautonomous QA: paid MY is permitted only when both the explicit
+    // job flag AND operator-controlled environment gate are enabled.
+    // The DB dispatcher independently rechecks all FIPE/MY blockers.
+    if(job.input.allowMyFallback===true &&
+       env.QA_SEMIAUTONOMOUS_MY_ENABLED==='1'){
+      const {data:dispatch,error:dispatchError}=await client.rpc(
+        'qa_dispatch_fipe_my',{
+          p_brand:job.brand,p_mmv_id:job.input.mmvId??null,
+          p_allow_paid_my:true,
+        });
+      if(dispatchError){
+        console.error('[agent-worker] FIPE-MY eligible dispatch failed',job.id);
+      }else log('FIPE-MY eligible dispatch: '+JSON.stringify(dispatch));
+    }
     return;
   } else if (job.job_type === 'PRODUCT_YEAR' && job.input.benchmarkModel) {
     if(!job.input.benchmarkVersion)throw new Error('MY_BENCHMARK_VERSION_REQUIRED');
