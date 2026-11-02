@@ -17,13 +17,14 @@ export type AgentBudgetClient=Readonly<{
 
 export const GWM_PILOT_RESERVATION_USD=2;
 export const MY_LAUNCH_RESERVATION_USD=0.20;
+export const PRICE_COMPACT_RESERVATION_USD=0.03;
 
 export function needsAgentBudget(job:AgentBudgetJob,env:Readonly<Record<string,string|undefined>>):boolean {
   switch(job.job_type){
     case 'BRAND_CONNECTOR':
     case 'MMV_DISCOVERY':return true;
     case 'PRODUCT_YEAR':return !job.input?.parentRunId;
-    case 'PRICE_INTELLIGENCE':return job.input?.provider==='openai' || env.PRICE_AGENT_LLM_ENABLED==='1';
+    case 'PRICE_INTELLIGENCE':return job.input?.provider==='openai' || job.input?.provider==='compact-match' || env.PRICE_AGENT_LLM_ENABLED==='1';
     default:return false;
   }
 }
@@ -50,9 +51,13 @@ export async function reserveAgentPilotBudget(
   const budgetKey=agentPilotBudgetKey(job);
   // Reconciled prior usage remains charged to the same US$ 2 pilot cap.
   // Reserve the remaining amount atomically, up to a maximum of US$ 2.
+  const maxReserve=job.job_type==='PRODUCT_YEAR'
+    ? MY_LAUNCH_RESERVATION_USD
+    : job.job_type==='PRICE_INTELLIGENCE' && job.input?.provider==='compact-match'
+      ? PRICE_COMPACT_RESERVATION_USD : GWM_PILOT_RESERVATION_USD;
   const {data,error}=await client.rpc('agent_spend_reserve_remaining',{
     p_budget_key:budgetKey,p_model:job.job_type,
-    p_max_amount_usd:job.job_type==='PRODUCT_YEAR'?MY_LAUNCH_RESERVATION_USD:GWM_PILOT_RESERVATION_USD,
+    p_max_amount_usd:maxReserve,
   });
   if(error)throw new Error(cleanCode(error));
   const result = data && typeof data==='object' && !Array.isArray(data)
@@ -60,7 +65,7 @@ export async function reserveAgentPilotBudget(
   const id=result?.id;
   const reservedUsd=Number(result?.reservedUsd);
   if(typeof id!=='string'||!id.trim()||!Number.isFinite(reservedUsd)||
-     reservedUsd<0.01||reservedUsd>(job.job_type==='PRODUCT_YEAR'?MY_LAUNCH_RESERVATION_USD:GWM_PILOT_RESERVATION_USD))
+     reservedUsd<0.01||reservedUsd>maxReserve)
     throw new Error('COST_ADMISSION_FAILED');
   return {id,budgetKey,reservedUsd};
 }
