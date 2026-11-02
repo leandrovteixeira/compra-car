@@ -31,6 +31,7 @@ type JobRow = {
     benchmarkVersion?: string;
     shadowConnectorRunId?: string;
     priceDirectProbe?: boolean;
+    priceProbeModel?: 'ORA5' | 'WEY07';
   };
 };
 
