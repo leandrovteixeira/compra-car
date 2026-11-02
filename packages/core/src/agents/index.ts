@@ -56,6 +56,7 @@ export * from './price-agent-types';
 export * from './raw-commercial-price';
 export * from './universal-price-extractor';
 export * from './raw-price-matching';
+export * from './source-first-price-reconciliation';
 export * from './price-source-policy';
 export * from './price-target-binding';
 export * from './deterministic-price-research';
