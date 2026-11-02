@@ -54,7 +54,7 @@ const cachedCover = unstable_cache(async (raw: string): Promise<string | null> =
       const location = response.headers.get('location');
       if (!location) break;
       const next = new URL(location, target);
-      if (!isArticleHost(next) || !/^\/news\/\d+\//.test(next.pathname)) {
+      if (!isArticleHost(next)) {
         console.warn('WATCHER_NEWS_IMAGE_REDIRECT_BLOCKED', { status: response.status, host: next.hostname });
         return null;
       }
@@ -87,7 +87,7 @@ const cachedCover = unstable_cache(async (raw: string): Promise<string | null> =
     console.warn('WATCHER_NEWS_IMAGE_FETCH_FAILED', error instanceof Error ? error.name : 'UNKNOWN');
     return null;
   }
-}, ['watcher-news-cover-v3'], { revalidate: 3600 });
+}, ['watcher-news-cover-v4'], { revalidate: 3600 });
 
 export async function getNewsCover(raw?: string): Promise<string | null> {
   const url = safeArticleUrl(raw);
