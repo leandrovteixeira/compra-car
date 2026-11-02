@@ -2,6 +2,7 @@ import { resolve } from 'node:path';
 import { createLegacySupabaseClient } from '@compra-car/adapter-supabase';
 import { runNewProductCheckCli } from './run-new-product-check';
 import { runBrandConnectorCli } from './run-brand-connector';
+import { refreshGwmBrandPriceSources } from './gwm-brand-price-source-refresh';
 import { runLaunchMyJob } from './run-launch-my';
 import { runMyLaunchBenchmark } from './my-launch-benchmark';
 import { runFipePilot } from './fipe-agent-pilot';
@@ -30,6 +31,7 @@ type JobRow = {
     benchmarkModel?: string;
     benchmarkVersion?: string;
     shadowConnectorRunId?: string;
+    brandPriceSourceRefresh?: boolean;
     priceAuditOnly?: boolean;
     priceDirectProbe?: boolean;
     priceProbeModel?: 'ORA5' | 'WEY07';
@@ -106,6 +108,18 @@ async function execute(job: JobRow) {
       await completeWithoutRun(job.id);
       return;
     }
+  }
+
+  // Deterministic Brand Connector source verification: only official GWM BR,
+  // no AI invocation and no billing reservation. Generates review proposal,
+  // never activates or mutates the currently approved connector.
+  if (job.job_type === 'BRAND_CONNECTOR' && job.input.brandPriceSourceRefresh === true) {
+    if (job.brand !== 'GWM' || job.market !== 'BR')
+      throw new Error('BRAND_PRICE_REFRESH_SCOPE_INVALID');
+    const result = await refreshGwmBrandPriceSources(client, log);
+    await complete(job.id, result.runId);
+    await journal('SUCCESS',result.runId);
+    return;
   }
 
   // A non-reserved paid job never reaches any OpenAI CLI. The entire USD 2
