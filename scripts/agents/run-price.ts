@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import {
   DeterministicFirstPriceResearch,
   PriceAgent,
-  extractRawCommercialPrices,
+  extractUniversalPriceCandidates,
   matchRawPrice,
   validateConnectorDefinition,
   connectorEntryPriceKind,
@@ -350,7 +350,7 @@ export async function runPriceCli(
       const key = snapshot.finalUrl + '|' + snapshot.contentHash;
       if (rawSeen.has(key)) continue;
       rawSeen.add(key);
-      for (const raw of extractRawCommercialPrices(snapshot.body)) {
+      for (const raw of extractUniversalPriceCandidates(snapshot.body)) {
         shadow.extracted++;
         const match = matchRawPrice(raw,snapshot.finalUrl,result.targets);
         if (match.status === 'MATCHED') shadow.matched++;
