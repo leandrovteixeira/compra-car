@@ -21,6 +21,12 @@ Scope: QA Supabase project `shfsjyjxmgwnlexmdkcs` only. No change to Production 
 - Targeted GWM FIPE run: `agent_jobs.id=6a5fe098-fca2-41d8-92e5-e755f456d967`, `agent_runs.id=74faafb0-5de0-44ad-96ea-035eb0984bba`, COMPLETED, **1 MMV target**, **10 API requests**, **2 candidates observed**, **6 valuations**, **0 OpenAI calls**, no duplicated review findings.
 - No QA background MY schedule or automated approval has been enabled.
 
+### Last orchestration checks
+
+- **Guarded fallback test (rollback):** rejected pending FIPE candidates for Tank 300 in a transaction, inserted a completed no-result FIPE attempt, and invoked `qa_dispatch_fipe_my(..., true)`. Exactly **one scoped PRODUCT_YEAR** job was queued, with `reason=FIPE_UNAVAILABLE_MY_RESEARCH`. The transaction rolled back; **no paid request or lasting change**.
+- **Live worker build:** Railway worker deployment at commit `6b490eaafc` reported SUCCESS. The code requires both job `allowMyFallback=true` and worker `QA_SEMIAUTONOMOUS_MY_ENABLED=1` before it ever invokes the paid-MY dispatcher.
+- **Shared schema:** `AGENT_TYPES` and `AGENT_FINDING_TYPES` now recognize FIPE and launch evidence. UI display/action routing must still be confirmed in browser before signing off semi-autonomy.
+
 ## Operational readiness / remaining UX integration
 
 Backend writes are ready, but to call QA *semi-autonomous* operational:
