@@ -59,6 +59,18 @@ describe('universal Brand Connector product-source expansion',()=>{
   expect(JSON.stringify(result.research.sourceEntries)).not.toContain('182990');
   expect(JSON.stringify(result.research.sourceEntries)).not.toContain('MY2026');
  });
+ it('does not count generic storefront homepage as a vehicle model page',async()=>{
+  const research={...base,sourceEntries:[
+    ...base.sourceEntries,
+    {type:'MODEL_PAGE' as const,url:'https://www.loja.renault.com.br/',priority:2},
+    {type:'CONFIGURATOR' as const,url:'https://www.loja.renault.com.br/',priority:3},
+  ]};
+  const expanded=await expandBrandProductSources(input,{
+    ...research,candidateDomains:['renault.com.br','loja.renault.com.br'],
+  },fakeFetch);
+  expect(expanded.research.sourceEntries.filter(e=>e.type==='MODEL_PAGE')).toHaveLength(2);
+  expect(expanded.research.sourceEntries.filter(e=>e.type==='CONFIGURATOR')).toHaveLength(1);
+ });
  it('reports nonresponding product pages as coverage gaps',async()=>{
   const failing:typeof fetch=async (url)=>String(url).endsWith('kardian.html')
     ? new Response('',{status:404}) : fakeFetch(url);
