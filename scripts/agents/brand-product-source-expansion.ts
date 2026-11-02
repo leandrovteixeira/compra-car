@@ -160,10 +160,23 @@ export async function expandBrandProductSources(
     }
   }
 
-  const known = new Set(research.sourceEntries.map(e => e.type + '|' + e.url));
+  // An official storefront home page is not a per-vehicle MODEL_PAGE.
+  // Retain its URL under the configured CONFIGURATOR type, or classify it
+  // as OTHER_OFFICIAL if there is no configurator entry.
+  const existingEntries = research.sourceEntries.flatMap(e => {
+    if (e.type !== 'MODEL_PAGE') return [e];
+    let isRoot = false;
+    try { isRoot = new URL(e.url).pathname === '/'; } catch { /* validated later */ }
+    if (!isRoot) return [e];
+    if (research.sourceEntries.some(x => x.url === e.url && x.type === 'CONFIGURATOR'))
+      return [];
+    return [{ ...e, type: 'OTHER_OFFICIAL' as const,
+      notes:'Official storefront root; no individual vehicle identity' }];
+  });
+  const known = new Set(existingEntries.map(e => e.type + '|' + e.url));
   const newEntries = additions.filter(e => !known.has(e.type + '|' + e.url));
   const allEntries = [
-    ...research.sourceEntries,
+    ...existingEntries,
     // Preserve previous approved sources during health-check updates.
     ...(input.activeConnector?.sourceEntries ?? []).filter(e =>
       !known.has(e.type + '|' + e.url)),
