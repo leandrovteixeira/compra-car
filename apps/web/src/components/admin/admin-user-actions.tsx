@@ -9,6 +9,7 @@ import {
   setAdminUserRoleAction,
   setAdminUserStatusAction,
 } from '@/app/admin/users/actions';
+import { removeUnusedPendingAccount } from '@/app/admin/users/remove-pending-action';
 import { APP_NAME } from '@/config/app-identity';
 import { adminUserRoleLabel } from './admin-user-presentation';
 
@@ -30,6 +31,8 @@ function Feedback({ state }: { readonly state: AdminUserActionState }) {
 export function AdminUserActions({ user }: { readonly user: AdminUserDto }) {
   const disableDialog = useRef<HTMLDialogElement>(null);
   const roleDialog = useRef<HTMLDialogElement>(null);
+  const deleteDialog = useRef<HTMLDialogElement>(null);
+  const [deleteState, deleteAction, deletePending] = useActionState(removeUnusedPendingAccount, INITIAL);
   const [statusState, statusAction, statusPending] = useActionState(
     setAdminUserStatusAction,
     INITIAL,
@@ -93,6 +96,10 @@ export function AdminUserActions({ user }: { readonly user: AdminUserDto }) {
             Perfil inconsistente: alterações de perfil e status indisponíveis.
           </p>
         )}
+        {user.status === 'pending' && user.profileState === 'valid' ? (
+          <button type="button" onClick={() => deleteDialog.current?.showModal()} className={`${buttonClass} border-rose-800 text-rose-300`}>Excluir conta não ativada</button>
+        ) : null}
+        <Feedback state={deleteState} />
         {user.email ? (
           <form action={recoveryAction}>
             <input name="userId" type="hidden" value={user.id} />
@@ -103,6 +110,16 @@ export function AdminUserActions({ user }: { readonly user: AdminUserDto }) {
         ) : null}
         <Feedback state={recoveryState} />
       </div>
+      <dialog ref={deleteDialog} aria-labelledby={`remove-${user.id}`} className="m-auto w-[min(92vw,30rem)] rounded-2xl border border-rose-800 bg-slate-900 p-6 text-white backdrop:bg-slate-950/85">
+        <h2 id={`remove-${user.id}`} className="text-xl font-bold">Excluir conta não ativada?</h2>
+        <p className="mt-3 text-sm text-slate-300">{label}. Exclusão permanente apenas para conta pendente, sem confirmação, login ou vínculos. Não é possível desfazer.</p>
+        <form action={deleteAction} className="mt-5 grid gap-3">
+          <input type="hidden" name="userId" value={user.id} />
+          <label className="text-sm">Digite EXCLUIR para confirmar<input className="ui-field mt-2 w-full" name="confirmation" required autoComplete="off" /></label>
+          <Feedback state={deleteState} />
+          <div className="flex justify-end gap-3"><button type="button" onClick={() => deleteDialog.current?.close()} className="rounded-lg border border-slate-600 px-4 py-2">Cancelar</button><button type="submit" disabled={deletePending} className="rounded-lg bg-rose-600 px-4 py-2 font-semibold">Excluir definitivamente</button></div>
+        </form>
+      </dialog>
       <dialog
         aria-labelledby={`disable-${user.id}`}
         className="m-auto w-[min(92vw,30rem)] rounded-2xl border border-slate-700 bg-slate-900 p-6 text-slate-100 backdrop:bg-slate-950/85"
