@@ -261,3 +261,23 @@ Never imply a promotional bonus, installment, accessory, paint surcharge or trad
 is the vehicle MSRP. The Brand Connector maps URLs only; Price Agent interprets prices.
 If a previous ACTIVE connector exists, preserve its sources and propose additive changes;
 activation remains a separate human-reviewed action. Do not auto-activate or delete old sources.
+
+### Mandatory per-version commercial page coverage
+
+Do not assume one MODEL_PAGE per model is sufficient. Some manufacturer sites
+publish one dedicated product and public-price page per commercial trim, even
+though the catalog shares the same model family. Walk the official model index,
+follow every available model and version link, and include each distinct
+verified per-trim page as its own MODEL_PAGE source entry.
+
+For a brand with dedicated pages, report the number of current commercial
+versions checked and how many of those pages contained a clearly labeled
+public vehicle price. If the count is incomplete, explicitly flag missing
+version URLs in warnings. A successful download of an index or old media-center
+release is not equivalent to validated current per-version price coverage.
+Do not send a price amount or inferred model-year identity in the connector
+metadata; those belong to the downstream Price Agent.
+
+When refreshing an existing connector, preserve already verified official
+price pages in the proposed source inventory unless the provider independently
+verifies that they have been retired. Never activate the replacement automatically.
