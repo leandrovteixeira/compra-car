@@ -1,4 +1,5 @@
 import { resolve } from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { createLegacySupabaseClient } from '@compra-car/adapter-supabase';
 import { runNewProductCheckCli } from './run-new-product-check';
 import { runBrandConnectorCli } from './run-brand-connector';
@@ -181,8 +182,28 @@ async function execute(job: JobRow) {
       repositoryRoot,
     );
   } else if (job.job_type === 'FIPE_DISCOVERY') {
-    await runFipePilot(env,log);
-    await completeWithoutRun(job.id);
+    const fipeStarted=new Date().toISOString();
+    const fipeRunId=randomUUID();
+    const fipe=await runFipePilot(env,log,{
+      brand:job.brand,mmvId:job.input.mmvId,
+    });
+    const {error:fipeRunErr}=await client.from('agent_runs').insert({
+      id:fipeRunId,agent_type:'FIPE_DISCOVERY',status:'COMPLETED',
+      brand:job.brand,market:job.market,provider:'parallelum-v2',
+      run_mode:'CANONICAL_FIPE_MAPPING',schema_version:'FIPE-1',
+      started_at:fipeStarted,completed_at:new Date().toISOString(),
+      input:{jobId:job.id,mmvId:job.input.mmvId??null},
+      summary:{requests:fipe.requests,candidatesObserved:fipe.candidateCount,
+        valuationsObserved:fipe.valuationCount,targets:fipe.targets,
+        aiCalls:0,estimatedCostUsd:0},
+    });
+    if(fipeRunErr)throw new Error('FIPE_AGENT_RUN_PERSIST_FAILED');
+    const {data:reviewRun,error:stageErr}=await client.rpc(
+      'qa_stage_fipe_review_findings',{p_brand:job.brand});
+    if(stageErr)throw new Error('FIPE_REVIEW_STAGING_FAILED');
+    await complete(job.id,fipeRunId);
+    await journal('SUCCESS',fipeRunId);
+    log('FIPE: '+JSON.stringify({runId:fipeRunId,reviewRun, ...fipe}));
     return;
   } else if (job.job_type === 'PRODUCT_YEAR' && job.input.benchmarkModel) {
     if(!job.input.benchmarkVersion)throw new Error('MY_BENCHMARK_VERSION_REQUIRED');
@@ -293,14 +314,14 @@ async function execute(job: JobRow) {
   await journal('SUCCESS',runId);
 
   if (job.job_type === 'MMV_DISCOVERY' && !job.input.shadowConnectorRunId) {
-    const { error } = await client.rpc('enqueue_product_year_job', {
-      p_brand: job.brand,
-      p_created_by: job.created_by,
-      p_parent_run_id: runId,
+    // A completed brand-wide discovery only makes *approved canonical* MMVs
+    // eligible for FIPE-first dispatch. Never queue paid MY directly.
+    const {data:dispatch,error:dispatchError}=await client.rpc('qa_dispatch_fipe_my',{
+      p_brand:job.brand,p_mmv_id:null,p_allow_paid_my:false,
     });
-    if (error) {
-      console.error('[agent-worker] could not enqueue PRODUCT_YEAR', job.id, error);
-    }
+    if(dispatchError){
+      console.error('[agent-worker] QA FIPE-first dispatch failed',job.id);
+    }else log('FIPE-first dispatch: '+JSON.stringify(dispatch));
   }
   } finally {
     if(reservation){
