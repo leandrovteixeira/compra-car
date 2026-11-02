@@ -16,6 +16,7 @@ import type {
   PriceAiUsage,
   PriceIdentityMapping,
   PriceReconciliationProvider,
+  PriceCompactMatchProvider,
   PriceObservation,
   PriceResearchProvider,
   PriceResearchResult,
@@ -359,6 +360,7 @@ export class DeterministicFirstPriceResearch implements PriceResearchProvider {
         ): Promise<PriceObservation | null>;
       };
       reconciliation?: PriceReconciliationProvider;
+      compactMatcher?: PriceCompactMatchProvider;
       hardCostCapUsd?: number;
     },
   ) {}
@@ -458,6 +460,16 @@ export class DeterministicFirstPriceResearch implements PriceResearchProvider {
     // All other extracted prices remain evidence candidates, never MSRP findings.
     const sourceFirst = reconcileSourceFirstPrices([...this.snapshots.values()], targets);
     observations.push(...sourceFirst.observations);
+    let compactMatchDecisions: PriceResearchResult['compactMatchDecisions'] = [];
+    if (this.ports.compactMatcher && sourceFirst.candidates.length) {
+      const compactResult = await this.ports.compactMatcher.match(
+        sourceFirst.candidates, targets, connector,
+        this.ports.hardCostCapUsd ?? 0.03,
+      );
+      compactMatchDecisions = compactResult.decisions;
+      usage.push(...compactResult.usage);
+      // Matching is identity telemetry only. No AI price or MY may mutate MSRP.
+    }
 
     // A syntactically extracted amount is not necessarily a valid MSRP.
     // In particular, automotive pages often show retail bonuses beside price
@@ -511,6 +523,7 @@ export class DeterministicFirstPriceResearch implements PriceResearchProvider {
     return {
       observations,
       sourceFirstCandidates: sourceFirst.candidates,
+      compactMatchDecisions,
       snapshots: [...this.snapshots.values()],
       mappings,
       usage,
