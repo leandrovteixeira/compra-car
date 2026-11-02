@@ -9,6 +9,11 @@ describe('source-first commercial extraction',()=>{
     expect(extractRawCommercialPrices('ORA 5 Preço único: R$ 165.990')[0])
       .toMatchObject({amount:'165990.00',label:'SINGLE_PRICE'});
   });
+  it('extracts the fragmented commercial label captured from real GWM HTML',()=>{
+    const html = '<p>P eço ú ico:*<b /><span><b>R$ 165.990</b></span></p>';
+    expect(extractRawCommercialPrices(html)[0])
+      .toMatchObject({amount:'165990.00',label:'SINGLE_PRICE'});
+  });
   it('does not mistake bonus or model number for vehicle MSRP',()=>{
     expect(extractRawCommercialPrices('Tank 300 Bônus promocional de R$ 20.000,00')).toHaveLength(0);
     expect(extractRawCommercialPrices('Preço único: R$ 300,00')).toHaveLength(0);
