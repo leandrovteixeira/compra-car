@@ -94,6 +94,25 @@ export interface PriceReconciliationProvider {
   }>;
 }
 
+export interface PriceCompactMatchDecision {
+  readonly candidateIndex: number;
+  readonly productId: string | null;
+  readonly status: 'IDENTITY_MATCHED_MY_UNVERIFIED' | 'VERIFIED_IDENTITY' | 'UNRESOLVED';
+  readonly reason: string;
+}
+
+export interface PriceCompactMatchProvider {
+  match(
+    candidates: readonly import('./source-first-price-reconciliation').SourceFirstPriceCandidate[],
+    targets: readonly PriceTarget[],
+    connector: BrandConnector,
+    budgetUsd: number,
+  ): Promise<{
+    readonly decisions: readonly PriceCompactMatchDecision[];
+    readonly usage: readonly PriceAiUsage[];
+  }>;
+}
+
 export interface PriceResearchResult {
   readonly observations: readonly PriceObservation[];
   readonly snapshots: readonly PriceSourceSnapshot[];
@@ -101,6 +120,7 @@ export interface PriceResearchResult {
   readonly usage?: readonly PriceAiUsage[];
   /** Unverified source-first offers retained for QA and later compact identity matching. */
   readonly sourceFirstCandidates?: readonly import('./source-first-price-reconciliation').SourceFirstPriceCandidate[];
+  readonly compactMatchDecisions?: readonly PriceCompactMatchDecision[];
   readonly diagnostics?: readonly {
     readonly target: string;
     readonly sourceUrl: string;
