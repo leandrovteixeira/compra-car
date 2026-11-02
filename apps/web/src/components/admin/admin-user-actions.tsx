@@ -16,7 +16,7 @@ import { adminUserRoleLabel } from './admin-user-presentation';
 const INITIAL: AdminUserActionState = { status: 'idle' };
 const buttonClass =
   'min-h-10 w-full rounded-lg border border-slate-700 px-3 text-left text-sm font-semibold disabled:opacity-60';
-function Feedback({ state }: { readonly state: AdminUserActionState }) {
+function Feedback({ state }: { readonly state: { readonly status: 'idle' | 'error' | 'success'; readonly message?: string } }) {
   if (state.status === 'idle') return null;
   return (
     <p
