@@ -4,7 +4,6 @@ import { requireFeature23C } from '@/auth/account-tier-server';
 import type { AdminUserActionState } from '@/application/admin/admin-user-management';
 import {
   sendAdminUserPasswordRecoveryAction as recover,
-  setAdminUserRoleAction as setRole,
   setAdminUserStatusAction as setStatus,
 } from '@/server/admin-user-management';
 
@@ -20,7 +19,7 @@ export async function setAdminUserStatusAction(state: AdminUserActionState, data
 
 export async function setAdminUserRoleAction(state: AdminUserActionState, data: FormData) {
   await requireFeature23C('settings');
-  return setRole(state, data);
+  return { status: 'error' as const, message: 'Mudança de perfil legado desativada. Use concessões de acesso Corporate.' };
 }
 
 export async function sendAdminUserPasswordRecoveryAction(
