@@ -18,7 +18,7 @@ import { redactSecrets } from './report-writer';
 import { requireAgentOpenAiApiKey, agentOpenAiSecrets } from './agent-openai-credentials';
 import { loadAgentEnvironment } from './agent-environment';
 import { safeAgentFailure } from './agent-diagnostics';
-import { recordAiUsage } from './ai-usage';
+import { recordAiUsage, estimateAiCostUsd } from './ai-usage';
 import { withProductSourceExpansion } from './brand-product-source-expansion';
 export function parseBrandConnectorArguments(args: readonly string[]) {
   const values = args[0] === '--' ? args.slice(1) : args,
@@ -129,7 +129,7 @@ export async function runBrandConnectorCli(
     // traversal then expands concrete product pages before the review proposal.
     const enrichedResearch = options.provider === 'openai'
       ? withProductSourceExpansion(research) : research;
-    const bundle = await new BrandConnectorAgent(enrichedResearch).run(
+    const baseBundle = await new BrandConnectorAgent(enrichedResearch).run(
       {
         brand: options.brand,
         market: options.market,
@@ -140,6 +140,27 @@ export async function runBrandConnectorCli(
       undefined,
       options.provider,
     );
+    const metered = openAiUsage.current;
+    const estimated = metered ? estimateAiCostUsd(metered, env) : null;
+    const bundle = {
+      ...baseBundle,
+      run: {
+        ...baseBundle.run,
+        summary: {
+          ...baseBundle.run.summary,
+          aiCalls: metered ? 1 : 0,
+          aiInputTokens: metered?.inputTokens ?? 0,
+          aiOutputTokens: metered?.outputTokens ?? 0,
+          aiWebSearches: metered?.webSearchCount ?? 0,
+          aiModel: metered?.model ?? null,
+          aiEstimatedCostUsd: estimated?.priced ? estimated.cost : null,
+          aiCostEstimatePriced: estimated?.priced ?? !metered,
+          // HTTP traversal uses ordinary requests. This does not claim
+          // its network/compute cost is included in OpenAI token costs.
+          aiCostScope: 'OpenAI API only; HTTP/network compute excluded',
+        },
+      },
+    };
     const secrets = [...agentOpenAiSecrets(env),env.SUPABASE_SERVER_KEY ?? ''];
     const clean = JSON.parse(redactSecrets(JSON.stringify(bundle), secrets)) as typeof bundle;
     const finding = clean.findings[0]!.finding;
@@ -168,6 +189,13 @@ export async function runBrandConnectorCli(
         'Candidate domains: ' + cell(finding.payload.candidateDomains),
         'Sources: ' + cell(finding.payload.sourceCoverage),
         'Source inventory: ' + cell(finding.payload.sourceInventory),
+        'AI calls: ' + cell(clean.run.summary.aiCalls),
+        'AI token input/output: ' + cell(clean.run.summary.aiInputTokens) +
+          ' / ' + cell(clean.run.summary.aiOutputTokens),
+        'AI web search calls: ' + cell(clean.run.summary.aiWebSearches),
+        'AI estimated cost USD: ' + cell(clean.run.summary.aiEstimatedCostUsd),
+        'HTTP source crawl: ' + cell(finding.payload.sourceCrawlTelemetry),
+
         '',
         ...(finding.payload.sourceEntries
           ? (finding.payload.sourceEntries as unknown as { type: string; url: string; notes?: string }[]).map(
