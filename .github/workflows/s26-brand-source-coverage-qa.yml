@@ -1,0 +1,32 @@
+name: S26 Brand Source Coverage QA
+on:
+  push:
+    branches: [sprint-26-agent-ux-control-center]
+    paths:
+      - 'scripts/agents/brand-product-source-expansion.ts'
+      - 'scripts/agents/brand-source-expansion-replay.ts'
+      - 'scripts/agents/run-brand-connector.ts'
+      - 'scripts/agents/test/brand-product-source-expansion.test.ts'
+      - 'packages/core/src/agents/brand-connector-agent.ts'
+      - '.github/workflows/s26-brand-source-coverage-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-coverage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '10.34.5'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Agent TypeScript
+        run: pnpm --filter @compra-car/agents typecheck
+      - name: Renault Boreal and external-link regression
+        run: pnpm --filter @compra-car/agents exec vitest run test/brand-product-source-expansion.test.ts
