@@ -20,7 +20,7 @@ import { PriceAgentSupabaseCatalogReader, PriceAgentSupabaseTelemetry } from '@c
 import { loadAgentEnvironment } from './agent-environment';
 import { redactSecrets } from './report-writer';
 import { agentOpenAiApiKey,agentOpenAiSecrets,requireAgentOpenAiApiKey } from './agent-openai-credentials';
-import { officialGwmPricePageForTarget, isCompetingGwmProductPage } from './gwm-price-sources';
+import { officialGwmPricePageForTarget, isCompetingGwmProductPage, resolveGwmPageCandidates, officialGwmProductPriceCoverage } from './gwm-price-sources';
 import { recordEngineeringRunEvent } from './engineering-run-log';
 import { engineeringFailureReason } from './engineering-failure-reason';
 
@@ -359,7 +359,12 @@ export async function runPriceCli(
     // The core research pipeline now owns source-first extraction.
     // Keep QA audit details in the persisted run summary for every candidate,
     // including unresolved model/MY, without creating financial findings.
-    const sourceCandidates = result.research.sourceFirstCandidates ?? [];
+    const sourceCandidates = resolveGwmPageCandidates(result.targets,
+      result.research.sourceFirstCandidates ?? []);
+    const officialCoverage = officialGwmProductPriceCoverage(result.targets, sourceCandidates);
+    if (brand.toUpperCase() === 'GWM') {
+      log('PRICE_GWM_PRODUCT_PAGE_COVERAGE ' + JSON.stringify(officialCoverage));
+    }
     const shadow = {
       extracted: sourceCandidates.length,
       matched: sourceCandidates.filter(c => c.status === 'MATCHED').length,
@@ -408,6 +413,11 @@ export async function runPriceCli(
             sourceFirstAmbiguous: shadow.ambiguous,
             sourceFirstUnresolved: shadow.unresolved,
             sourceFirstSnapshots: rawSeen.size,
+            gwmProductPagesExpected: officialCoverage.expected,
+            gwmProductPagesPriced: officialCoverage.priced,
+            gwmProductPagesMissing: officialCoverage.missing.length,
+            gwmMissingProductPages: officialCoverage.missing,
+
             sourceFirstCandidates: sourceCandidates.slice(0, 40).map(item => ({
               sourceUrl: item.sourceUrl,
               amount: item.amount,
