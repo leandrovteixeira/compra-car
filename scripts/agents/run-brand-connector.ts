@@ -19,6 +19,7 @@ import { requireAgentOpenAiApiKey, agentOpenAiSecrets } from './agent-openai-cre
 import { loadAgentEnvironment } from './agent-environment';
 import { safeAgentFailure } from './agent-diagnostics';
 import { recordAiUsage } from './ai-usage';
+import { withProductSourceExpansion } from './brand-product-source-expansion';
 export function parseBrandConnectorArguments(args: readonly string[]) {
   const values = args[0] === '--' ? args.slice(1) : args,
     options = new Map<string, string>();
@@ -124,7 +125,11 @@ export async function runBrandConnectorCli(
               openAiUsage.current = usage;
             },
           }));
-    const bundle = await new BrandConnectorAgent(research).run(
+    // The paid research discovers official domains/indexes. A bounded, free
+    // traversal then expands concrete product pages before the review proposal.
+    const enrichedResearch = options.provider === 'openai'
+      ? withProductSourceExpansion(research) : research;
+    const bundle = await new BrandConnectorAgent(enrichedResearch).run(
       {
         brand: options.brand,
         market: options.market,
@@ -162,10 +167,11 @@ export async function runBrandConnectorCli(
         '',
         'Candidate domains: ' + cell(finding.payload.candidateDomains),
         'Sources: ' + cell(finding.payload.sourceCoverage),
+        'Source inventory: ' + cell(finding.payload.sourceInventory),
         '',
         ...(finding.payload.sourceEntries
-          ? (finding.payload.sourceEntries as unknown as { type: string; url: string }[]).map(
-              (e) => '- ' + cell(e.type) + ': ' + cell(e.url),
+          ? (finding.payload.sourceEntries as unknown as { type: string; url: string; notes?: string }[]).map(
+              (e) => '- ' + cell(e.type) + ': ' + cell(e.url) + (e.notes ? ' — ' + cell(e.notes) : ''),
             )
           : []),
         '',
