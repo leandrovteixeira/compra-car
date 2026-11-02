@@ -1,7 +1,6 @@
 import 'server-only';
 
 import Link from 'next/link';
-import { getNewsCover } from '@/server/news-cover';
 import { requireRole } from '@/auth/authorization';
 import { createPrivilegedAdminClient } from '@/auth/admin-client';
 import { CatalogPageHeading } from '@/components/admin/catalog-page-heading';
@@ -80,8 +79,11 @@ export default async function NewsPage({
     return matchesStatus && (!q || haystack.includes(q.toLocaleLowerCase('pt-BR')));
   });
   const visible = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const covers = await Promise.all(visible.map((article) => getNewsCover(article.item_payload?.url)));
-  const coverById = new Map(visible.map((article, index) => [article.id, covers[index]]));
+  const { data: media } = await client.from('watcher_article_images')
+    .select('revision_id,image_url,status')
+    .in('revision_id',visible.length ? visible.map((row) => row.id) : ['00000000-0000-0000-0000-000000000000']);
+  const coverById = new Map((media ?? []).filter((row) => row.status === 'FOUND' && row.image_url)
+    .map((row) => [row.revision_id as string,row.image_url as string]));
   const counts = {
     total: items.length,
     completed: items.filter((i) => byRevision.get(i.id)?.state === 'COMPLETED').length,
