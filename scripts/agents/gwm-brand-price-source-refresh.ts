@@ -1,4 +1,4 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { createLegacySupabaseClient } from '@compra-car/adapter-supabase';
 import {
   BrandConnectorAgent,
   extractUniversalPriceCandidates,
@@ -16,7 +16,7 @@ import { officialGwmPricePageForTarget } from './gwm-price-sources';
  * canonical pricing or activate the connector.
  */
 export async function refreshGwmBrandPriceSources(
-  client: SupabaseClient,
+  client: ReturnType<typeof createLegacySupabaseClient>,
   log: (line: string) => void = console.log,
 ): Promise<{ runId: string; verified: number; expected: number; newSources: number }> {
   const connectors = new BrandConnectorSupabaseAdapter(client);
