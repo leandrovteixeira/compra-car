@@ -14,6 +14,8 @@ function safeArticleUrl(raw?: string): string | null {
     const url = new URL(raw);
     if (!isArticleHost(url) ||
         !/^\/news\/\d+\//.test(url.pathname) || url.username || url.password) return null;
+    // Motor1 canonical article links normally end with a slash.
+    if (!url.pathname.endsWith('/')) url.pathname += '/';
     return url.toString();
   } catch { return null; }
 }
@@ -54,8 +56,8 @@ const cachedCover = unstable_cache(async (raw: string): Promise<string | null> =
       const location = response.headers.get('location');
       if (!location) break;
       const next = new URL(location, target);
-      if (!isArticleHost(next) || !/^\/news\/\d+\//.test(next.pathname)) {
-        console.warn('WATCHER_NEWS_IMAGE_REDIRECT_BLOCKED', { status: response.status, host: next.hostname });
+      if (!isArticleHost(next)) {
+        console.warn('WATCHER_NEWS_IMAGE_REDIRECT_BLOCKED', { status: response.status, host: next.hostname, protocol: next.protocol, path: next.pathname.slice(0,140) });
         return null;
       }
       target = next.toString();
@@ -87,7 +89,7 @@ const cachedCover = unstable_cache(async (raw: string): Promise<string | null> =
     console.warn('WATCHER_NEWS_IMAGE_FETCH_FAILED', error instanceof Error ? error.name : 'UNKNOWN');
     return null;
   }
-}, ['watcher-news-cover-v3'], { revalidate: 3600 });
+}, ['watcher-news-cover-v5'], { revalidate: 3600 });
 
 export async function getNewsCover(raw?: string): Promise<string | null> {
   const url = safeArticleUrl(raw);
