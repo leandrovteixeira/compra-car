@@ -5,8 +5,6 @@ import { fileURLToPath } from 'node:url';
 import {
   DeterministicFirstPriceResearch,
   PriceAgent,
-  extractUniversalPriceCandidates,
-  matchRawPrice,
   validateConnectorDefinition,
   connectorEntryPriceKind,
   makePriceSnapshot,
@@ -342,23 +340,18 @@ export async function runPriceCli(
         ? 'hybrid' : 'deterministic',
     );
 
-    // Shadow-only source-first audit. Never creates findings or catalog prices.
-    // Shared source URLs may occur for multiple targets; dedupe on URL+content hash.
-    const rawSeen = new Set<string>();
-    const shadow = { extracted: 0, matched: 0, ambiguous: 0, unresolved: 0 };
-    for (const snapshot of result.research.snapshots) {
-      const key = snapshot.finalUrl + '|' + snapshot.contentHash;
-      if (rawSeen.has(key)) continue;
-      rawSeen.add(key);
-      for (const raw of extractUniversalPriceCandidates(snapshot.body)) {
-        shadow.extracted++;
-        const match = matchRawPrice({amount:raw.amount,context:raw.context,label:raw.kind,versionHint:raw.versionHint,modelYearHint:raw.modelYearHint},snapshot.finalUrl,result.targets);
-        if (match.status === 'MATCHED') shadow.matched++;
-        else if (match.status === 'AMBIGUOUS') shadow.ambiguous++;
-        else shadow.unresolved++;
-      }
-    }
-    log('PRICE_SOURCE_FIRST_SHADOW ' + JSON.stringify(shadow));
+    // The core research pipeline now owns source-first extraction.
+    // Keep QA audit details in the persisted run summary for every candidate,
+    // including unresolved model/MY, without creating financial findings.
+    const sourceCandidates = result.research.sourceFirstCandidates ?? [];
+    const shadow = {
+      extracted: sourceCandidates.length,
+      matched: sourceCandidates.filter(c => c.status === 'MATCHED').length,
+      ambiguous: sourceCandidates.filter(c => c.status === 'AMBIGUOUS').length,
+      unresolved: sourceCandidates.filter(c => c.status === 'UNRESOLVED').length,
+    };
+    const rawSeen = new Set(result.research.snapshots.map(s => s.finalUrl + '|' + s.contentHash));
+    log('PRICE_SOURCE_FIRST_AUDIT ' + JSON.stringify(shadow));
 
     if (telemetry) {
       const fingerprintSnapshots = await supplementalMappingSnapshots(result);
@@ -399,6 +392,16 @@ export async function runPriceCli(
             sourceFirstAmbiguous: shadow.ambiguous,
             sourceFirstUnresolved: shadow.unresolved,
             sourceFirstSnapshots: rawSeen.size,
+            sourceFirstCandidates: sourceCandidates.slice(0, 40).map(item => ({
+              sourceUrl: item.sourceUrl,
+              amount: item.amount,
+              kind: item.kind,
+              method: item.method,
+              status: item.status,
+              candidateProductIds: [...item.candidateProductIds],
+              reason: item.reason,
+            })),
+
           },
         },
       },
