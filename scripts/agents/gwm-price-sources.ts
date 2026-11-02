@@ -68,3 +68,66 @@ export function isCompetingGwmProductPage(
       url.pathname !== new URL(assigned).pathname);
   } catch { return false; }
 }
+
+export interface OfficialGwmExtractedCandidate {
+  readonly sourceUrl: string;
+  readonly amount: string;
+  readonly kind: 'MSRP' | 'SINGLE_PRICE' | 'PROMOTIONAL_PRICE';
+  readonly candidateProductIds: readonly string[];
+  readonly status: 'MATCHED' | 'AMBIGUOUS' | 'UNRESOLVED';
+}
+
+/**
+ * Source-to-trim routing is deterministic when the manufacturer has a
+ * dedicated page per trim. This narrows candidates but never proves MY.
+ */
+export function resolveGwmPageCandidates<T extends OfficialGwmExtractedCandidate>(
+  targets: readonly PriceTarget[],
+  candidates: readonly T[],
+): readonly T[] {
+  const byPage = new Map<string, string[]>();
+  for (const target of targets) {
+    const page = officialGwmPricePageForTarget(target);
+    if (!page) continue;
+    const ids = byPage.get(page) ?? [];
+    ids.push(target.productId);
+    byPage.set(page, ids);
+  }
+  return candidates.map(candidate => {
+    const ids = byPage.get(candidate.sourceUrl);
+    if (!ids?.length) return candidate;
+    // Status stays ambiguous unless the page explicitly verifies MY.
+    return {
+      ...candidate,
+      candidateProductIds: ids,
+      status: candidate.status === 'MATCHED' ? 'MATCHED' : 'AMBIGUOUS',
+    } as T;
+  });
+}
+
+export function officialGwmProductPriceCoverage(
+  targets: readonly PriceTarget[],
+  candidates: readonly OfficialGwmExtractedCandidate[],
+): {
+  readonly expected: number;
+  readonly priced: number;
+  readonly missing: readonly { productId: string; url: string }[];
+} {
+  const missing: { productId: string; url: string }[] = [];
+  let expected = 0;
+  let priced = 0;
+  for (const target of targets) {
+    const url = officialGwmPricePageForTarget(target);
+    if (!url) continue;
+    expected++;
+    const found = candidates.some(candidate =>
+      candidate.sourceUrl === url &&
+      (candidate.kind === 'MSRP' || candidate.kind === 'SINGLE_PRICE') &&
+      /^\d+(?:\.\d{2})$/u.test(candidate.amount) &&
+      Number(candidate.amount) >= 20000 && Number(candidate.amount) <= 5000000
+    );
+    if (found) priced++;
+    else missing.push({ productId: target.productId, url });
+  }
+  return { expected, priced, missing };
+}
