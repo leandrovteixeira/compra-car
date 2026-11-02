@@ -72,7 +72,7 @@ function linkedUrls(html: string, base: string, allowed: readonly string[]): str
 function kindForUrl(url: string): ConnectorSourceEntry['type'] | null {
   const path = new URL(url).pathname.toLowerCase();
   // A product page is a concrete leaf, not a generic model index.
-  if (/\/(?:modelos|veiculos-de-passeio|veiculos|carros|suvs)\/[a-z0-9][a-z0-9-]*(?:\.html)?$/u.test(path))
+  if (/\/(?:modelos|veiculos(?:-[a-z]+){0,2}|carros|suvs|electric-vehicles|hybrid-vehicles|commercial-vehicles|utilitarios)\/[a-z0-9][a-z0-9-]*(?:\.html)?$/u.test(path))
     return 'MODEL_PAGE';
   if (/\/(?:configurador|configure|monte-o-seu)(?:\/|$)/u.test(path))
     return 'CONFIGURATOR';
