@@ -194,6 +194,32 @@ describe('universal Brand Connector product-source expansion',()=>{
    expect(result.research.sourceEntries.filter(e=>e.type==='MODEL_PAGE')).toHaveLength(0);
    expect(result.report.failedProductPages).toContain(root+'/pt/modelos/haval-h7');
  });
+ it('rechecks inherited GWM model URLs instead of counting them blindly',async()=>{
+   const root='https://www.gwmmotors.com.br';
+   const fetcher:typeof fetch=async url=>{
+     const target=String(url);
+     if(target.endsWith('/pt/modelos/haval-h7'))return new Response(
+       '<h1>Haval H7</h1><p>R$ 259.000</p>',
+       {status:200,headers:{'content-type':'text/html'}});
+     if(target.endsWith('/pt/modelos'))return new Response('<h1>Index</h1>',{
+       status:200,headers:{'content-type':'text/html'}});
+     return new Response('',{status:404});
+   };
+   const research:BrandConnectorResearch={...base,
+     observedBrandLabel:'GWM',canonicalBrand:'GWM',
+     candidateDomains:['gwmmotors.com.br'],
+     sourceEntries:[
+       {type:'MODEL_INDEX',url:root+'/pt/modelos',priority:1},
+       {type:'MODEL_PAGE',url:root+'/pt/modelos/haval-h7',priority:2},
+     ],
+     evidence:[{url:root+'/pt/modelos',title:'GWM',excerpt:'Official'}],
+   };
+   const result=await expandBrandProductSources({
+     brand:'GWM',market:'BR',mode:'discover',
+   },research,fetcher);
+   expect(result.report.productPagesVerified).toBe(1);
+   expect(result.report.productPagesWithBrlAmount).toBe(1);
+ });
  it('reports nonresponding product pages as coverage gaps',async()=>{
   const failing:typeof fetch=async (url)=>String(url).endsWith('kardian.html')
     ? new Response('',{status:404}) : fakeFetch(url);
