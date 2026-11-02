@@ -12,6 +12,8 @@ import {
   FixtureProductResearchProvider,
   BuiltInBrandConnectorResolver,
   OperationalBrandConnectorResolver,
+  validateConnectorDefinition,
+  connectorOfficialSource,
   connectorText,
   productCheckFixture,
   benchmarkProductFixture,
@@ -37,6 +39,7 @@ export function parseAgentArguments(args: readonly string[]) {
   let persistFindings = false;
   let discoveryOnly = false;
   let marketReconcile = false;
+  let shadowConnectorRunId: string | null = null;
   for (let index = 0; index < values.length; index += 1) {
     const name = values[index];
     if (name === '--discovery-only') {
@@ -47,6 +50,11 @@ export function parseAgentArguments(args: readonly string[]) {
     if (name === '--persist-findings') {
       if (persistFindings) throw new Error('INVALID_AGENT_ARGUMENTS');
       persistFindings = true;
+      continue;
+    }
+    if (name === '--shadow-connector-run-id') {
+      if (shadowConnectorRunId) throw new Error('INVALID_AGENT_ARGUMENTS');
+      shadowConnectorRunId = values[++index] ?? null;
       continue;
     }
     if (name === '--market-reconcile') {
@@ -72,7 +80,9 @@ export function parseAgentArguments(args: readonly string[]) {
     (provider !== 'fixture' && provider !== 'openai') ||
     (discoveryOnly && persistFindings) ||
     (marketReconcile && provider !== 'openai') ||
-    (marketModel !== null && !marketReconcile)
+    (marketModel !== null && !marketReconcile) ||
+    (shadowConnectorRunId !== null && !/^[0-9a-f-]{36}$/iu.test(shadowConnectorRunId)) ||
+    (shadowConnectorRunId !== null && provider !== 'openai')
   )
     throw new Error('INVALID_AGENT_ARGUMENTS');
   return {
@@ -82,6 +92,7 @@ export function parseAgentArguments(args: readonly string[]) {
     discoveryOnly,
     marketReconcile,
     marketModel,
+    shadowConnectorRunId,
   };
 }
 
@@ -93,7 +104,7 @@ export async function runNewProductCheckCli(
   persistence?: Pick<AgentPlatformRepository, 'persistRunBundle'>,
 ): Promise<number> {
   try {
-    const { scope, provider, persistFindings, discoveryOnly, marketReconcile, marketModel } =
+    const { scope, provider, persistFindings, discoveryOnly, marketReconcile, marketModel, shadowConnectorRunId } =
       parseAgentArguments(args);
     env = await loadAgentEnvironment(repositoryRoot, env);
     if (provider === 'openai') {
@@ -108,6 +119,28 @@ export async function runNewProductCheckCli(
     }
     const secrets = [...agentOpenAiSecrets(env), env.SUPABASE_SERVER_KEY ?? ''];
     const reports = new LocalProductReportWriter(repositoryRoot, secrets);
+    const shadowConnector = shadowConnectorRunId
+      ? await (async () => {
+          if (env.APP_ENV !== 'qa') throw new Error('MMV_SHADOW_QA_ONLY');
+          const { createLegacySupabaseClient } = await import('@compra-car/adapter-supabase');
+          const db=createLegacySupabaseClient({
+            url:env.SUPABASE_URL!,serverKey:env.SUPABASE_SERVER_KEY!,
+          });
+          const {data:run,error:runError}=await db.from('agent_runs')
+            .select('brand,market,agent_type,status').eq('id',shadowConnectorRunId).single();
+          const {data:findings,error:findingError}=await db.from('agent_findings')
+            .select('finding_type,proposal').eq('run_id',shadowConnectorRunId).limit(2);
+          if(runError || findingError || !run || run.agent_type !== 'BRAND_CONNECTOR' ||
+             run.status !== 'COMPLETED' || run.brand !== scope.brand ||
+             run.market !== scope.country || findings?.length !== 1 ||
+             !['NEW_BRAND_CONNECTOR','CONNECTOR_DRIFT'].includes(findings[0]!.finding_type))
+            throw new Error('MMV_SHADOW_PARENT_INVALID');
+          const proposal=validateConnectorDefinition(findings[0]!.proposal);
+          if(proposal.brand !== scope.brand || proposal.market !== scope.country)
+            throw new Error('MMV_SHADOW_SCOPE_MISMATCH');
+          return connectorOfficialSource(proposal);
+        })()
+      : null;
     const connectorResolver =
       provider === 'fixture'
         ? new BuiltInBrandConnectorResolver()
@@ -125,6 +158,11 @@ export async function runNewProductCheckCli(
               new BuiltInBrandConnectorResolver(),
             );
           })();
+    const effectiveResolver = shadowConnector
+      ? {
+          resolve: async () => shadowConnector,
+          resolveAlternates: async () => [shadowConnector],
+        } : connectorResolver;
     const research =
       provider === 'fixture'
         ? new FixtureProductResearchProvider()
@@ -159,7 +197,7 @@ export async function runNewProductCheckCli(
     if (discoveryOnly) {
       const result = await new CurrentMmvDiscoveryAgent({
         research,
-        connectorResolver,
+        connectorResolver: effectiveResolver,
       }).run(scope, runId);
       await new LocalCurrentDiscoveryReportWriter(repositoryRoot, secrets).write(result);
       log(
@@ -222,7 +260,7 @@ export async function runNewProductCheckCli(
       research,
       catalog,
       reports,
-      connectorResolver,
+      connectorResolver: effectiveResolver,
       canonicalMmvs,
       ambiguityAdjudicator,
     }).run(scope, runId);
