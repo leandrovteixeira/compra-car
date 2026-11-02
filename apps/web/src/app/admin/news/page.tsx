@@ -1,6 +1,7 @@
 import 'server-only';
 
 import Link from 'next/link';
+import { getNewsCover } from '@/server/news-cover';
 import { requireRole } from '@/auth/authorization';
 import { createPrivilegedAdminClient } from '@/auth/admin-client';
 import { CatalogPageHeading } from '@/components/admin/catalog-page-heading';
@@ -79,6 +80,8 @@ export default async function NewsPage({
     return matchesStatus && (!q || haystack.includes(q.toLocaleLowerCase('pt-BR')));
   });
   const visible = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const covers = await Promise.all(visible.map((article) => getNewsCover(article.item_payload?.url)));
+  const coverById = new Map(visible.map((article, index) => [article.id, covers[index]]));
   const counts = {
     total: items.length,
     completed: items.filter((i) => byRevision.get(i.id)?.state === 'COMPLETED').length,
@@ -131,7 +134,9 @@ export default async function NewsPage({
             const title = article.item_payload?.title || 'Notícia sem título';
             const sourceUrl = article.item_payload?.url;
             const safeUrl = sourceUrl && /^https:\/\//i.test(sourceUrl) ? sourceUrl : null;
-            return <article key={article.id} className="p-4 transition-colors hover:bg-[#F7F9FA] sm:p-5">
+            return <article key={article.id} className="flex gap-4 p-4 transition-colors hover:bg-[#F7F9FA] sm:p-5">
+              {coverById.get(article.id) ? <img src={coverById.get(article.id)!} alt="" loading="lazy" referrerPolicy="no-referrer" className="h-24 w-32 shrink-0 rounded-md bg-[#F0F3F5] object-cover sm:h-28 sm:w-44" /> : <div aria-hidden="true" className="flex h-24 w-32 shrink-0 items-center justify-center rounded-md bg-[#F0F3F5] text-xs text-[#61747B] sm:h-28 sm:w-44">News</div>}
+              <div className="min-w-0 flex-1">
               <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-[#61747B]">
                 <span>Motor1 Brasil</span><span>·</span><time dateTime={article.first_observed_at}>{formatDate(article.first_observed_at)}</time>
                 <span className={`rounded px-2 py-0.5 font-medium ${ai?.state === 'COMPLETED' ? 'bg-[#E8F4EF] text-[#237350]' : ai?.state === 'FAILED' ? 'bg-[#FFF1E7] text-[#B85C1B]' : 'bg-[#F0F3F5] text-[#526670]'}`}>{analysisLabel(ai?.state)}</span>
@@ -145,6 +150,7 @@ export default async function NewsPage({
                 </>}
                 {ai?.state === 'FAILED' && <span>Erro: {ai.failure_code ?? 'não informado'}</span>}
                 {safeUrl && <a href={safeUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-[#B85C1B] underline">Ler na fonte original ↗</a>}
+              </div>
               </div>
             </article>;
           })}
