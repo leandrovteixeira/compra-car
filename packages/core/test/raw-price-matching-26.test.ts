@@ -14,6 +14,14 @@ describe('compact source-to-canonical matching',()=>{
    expect(matchRawPrice({...price,modelYearHint:null},
      'https://www.gwmmotors.com.br/pt/modelos/ora5',[target]).status).toBe('AMBIGUOUS');
  });
+ it('disambiguates Haval H6 PHEV19 when published MY and commercial trim are explicit',()=>{
+   const h6=(id:string,version:string)=>({...target,productId:id,model:'Haval H6',version});
+   const x={...price,context:'Haval H6 PHEV19 ano modelo 2027 Preço único: R$ 250.000'};
+   expect(matchRawPrice(x,'https://www.gwmmotors.com.br/pt/modelos/haval-h6',
+     [h6('1','19 1.5 TGDI PHEV DHT'),h6('2','35 1.5 TGDI PHEV DHT'),
+      h6('3','2 1.5 TGDI HEV DHT')]))
+     .toMatchObject({status:'MATCHED',productId:'1'});
+ });
  it('does not invent an exact trim from a multi-version model page',()=>{
    const other={...target,productId:'888',version:'Premium'};
    expect(matchRawPrice(price,'https://www.gwmmotors.com.br/pt/modelos/ora5',
