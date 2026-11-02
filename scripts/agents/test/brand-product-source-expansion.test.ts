@@ -71,6 +71,22 @@ describe('universal Brand Connector product-source expansion',()=>{
   expect(expanded.research.sourceEntries.filter(e=>e.type==='MODEL_PAGE')).toHaveLength(2);
   expect(expanded.research.sourceEntries.filter(e=>e.type==='CONFIGURATOR')).toHaveLength(1);
  });
+ it('discovers electric and hybrid product-page categories',async()=>{
+  const index='<a href="/electric-vehicles/megane-e-tech.html">Megane</a>'+
+    '<a href="/veiculos-hibridos/koleos.html">Koleos</a>';
+  const fetcher:typeof fetch=async url=>{
+    const text=String(url).endsWith('veiculos.html')?index:'<h1>Model page</h1>';
+    return new Response(text,{status:200,headers:{'content-type':'text/html'}});
+  };
+  const expanded=await expandBrandProductSources(input,base,fetcher);
+  expect(expanded.report.productPagesVerified).toBe(2);
+  expect(expanded.research.sourceEntries.map(e=>e.url)).toEqual(
+    expect.arrayContaining([
+      'https://www.renault.com.br/electric-vehicles/megane-e-tech.html',
+      'https://www.renault.com.br/veiculos-hibridos/koleos.html',
+    ]),
+  );
+ });
  it('reports nonresponding product pages as coverage gaps',async()=>{
   const failing:typeof fetch=async (url)=>String(url).endsWith('kardian.html')
     ? new Response('',{status:404}) : fakeFetch(url);
