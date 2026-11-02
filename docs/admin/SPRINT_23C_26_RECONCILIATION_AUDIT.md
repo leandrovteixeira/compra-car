@@ -7,6 +7,8 @@ Data: 2026-11-02
 - QA tem 48 páginas Next.js; Sprint 26 tem 49. A página exclusivamente na 26 é `/admin/agents/flight-control`.
 - A rota `/admin/agents` existe em ambas mas renderiza UX diferentes: QA ainda utiliza a fila antiga; Sprint 26 usa `AgentReviewInbox`, `AgentControlCenterOverview` e `AgentHandoffPanel`.
 - `Políticas Vigentes` existe em ambas e sua implementação está disponível; o menu estava com `status: planned`. Este candidato define `active`.
+- A Sprint 26 também continha 231 arquivos novos ausentes da branch QA, incluindo revisão de findings, dashboard de agentes e endpoint de detalhe da revisão.
+- O feed News com imagens estava apenas na 23C e foi restaurado na candidata de reconciliação.
 - O submenu `Agentes` na 26 identifica `Revisões` e `Flight Control`; o 23C publicado identifica apenas `Agentes`.
 - A Staging DB contém migrações S26 até `20261101211502`; verificar parity com migrations do branch antes do deploy.
 
