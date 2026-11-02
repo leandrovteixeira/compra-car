@@ -10,6 +10,7 @@ import { runFipePilot } from './fipe-agent-pilot';
 import { runPriceCli } from './run-price';
 import { runOra5PriceProbe } from './price-ora5-direct-probe';
 import { monitorBrandSources } from './source-monitor';
+import { runMmvLaunchWatch } from './mmv-launch-watch';
 import { journalWorkerJob } from './engineering-worker-telemetry';
 import { needsAgentBudget, reserveAgentPilotBudget, finishAgentPilotBudget, type AgentBudgetClient } from './agent-pilot-budget';
 
@@ -29,6 +30,8 @@ type JobRow = {
     parentRunId?: string;
     noFipe?: boolean;
     mmvId?: string;
+    launchWatchId?: string;
+    launchWatchAuditMmvId?: string;
     benchmarkModel?: string;
     benchmarkVersion?: string;
     shadowConnectorRunId?: string;
@@ -133,6 +136,22 @@ async function execute(job: JobRow) {
     );
     await complete(job.id, replay.runId);
     await journal('SUCCESS', replay.runId);
+    return;
+  }
+
+  // An approved canonical MMV can be checked against official dedicated
+  // Brand Connector pages with zero AI. This must not trigger the brand-wide
+  // discovery or the MY Agent before commercial approval.
+  if (job.job_type === 'MMV_DISCOVERY' &&
+      (job.input.launchWatchId || job.input.launchWatchAuditMmvId)){
+    if (job.market !== 'BR') throw new Error('LAUNCH_WATCH_QA_BR_ONLY');
+    const runId=await runMmvLaunchWatch(client,{
+      brand:job.brand,market:job.market,watchId:job.input.launchWatchId,
+      mmvId:job.input.launchWatchAuditMmvId,
+      auditOnly:Boolean(job.input.launchWatchAuditMmvId),
+    },log);
+    await complete(job.id,runId);
+    await journal('SUCCESS',runId);
     return;
   }
 
