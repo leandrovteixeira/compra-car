@@ -13,3 +13,5 @@ export * from './watcher-news-extraction';
 export * from './watcher-launch-extraction';
 
 export * from './launch-my-lookup';
+
+export * from './price-compact-matcher';
