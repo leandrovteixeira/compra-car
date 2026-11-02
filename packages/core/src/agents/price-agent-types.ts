@@ -72,6 +72,7 @@ export interface PriceAiUsage {
   readonly reasoningTokens: number;
   readonly webSearchCount: number;
   readonly estimatedCostUsd: number;
+  readonly reason?: 'PRICE_COMPACT_IDENTITY_ONLY' | 'PRICE_CANONICAL_RECONCILIATION';
 }
 
 export interface PriceIdentityMapping {
