@@ -24,7 +24,8 @@ describe('compact source-to-canonical matching',()=>{
  });
  it('does not invent an exact trim from a multi-version model page',()=>{
    const other={...target,productId:'888',version:'Premium'};
-   expect(matchRawPrice(price,'https://www.gwmmotors.com.br/pt/modelos/ora5',
+   expect(matchRawPrice({...price,context:'ORA 5 ano modelo 2027 Preço único: R$ 165.990'},
+     'https://www.gwmmotors.com.br/pt/modelos/ora5',
      [target,other]).status).toBe('AMBIGUOUS');
  });
 });
