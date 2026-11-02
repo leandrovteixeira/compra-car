@@ -118,7 +118,7 @@ grant execute on function public.qa_stage_fipe_review_findings(text) to service_
 -- Review-sync hook reuses existing FIPE candidate acceptance procedure.
 create or replace function public.qa_sync_fipe_reviews()
 returns trigger language plpgsql security definer set search_path='' as $$
-declare f record; v_candidate record; existing_id uuid; brand_name text;
+declare f record; c record; existing_id uuid; brand_name text;
 begin
  select id,finding_type,subject,proposal into f
    from public.agent_findings where id=new.finding_id;
@@ -134,37 +134,37 @@ begin
      (f.subject->>'candidateId')::uuid,new.decision,new.reviewed_by);
    if new.decision='ACCEPT' then
      select m.brand into brand_name
-       from public.agent_fipe_mapping_candidates candidate
-       join public.catalog_mmvs m on m.id=candidate.mmv_id
-       where candidate.id=(f.subject->>'candidateId')::uuid;
+       from public.agent_fipe_mapping_candidates c
+       join public.catalog_mmvs m on m.id=c.mmv_id
+       where c.id=(f.subject->>'candidateId')::uuid;
      perform public.qa_stage_fipe_review_findings(brand_name);
    end if;
  else
-   select candidate.* into v_candidate from public.agent_fipe_model_year_candidates candidate
-     where candidate.id=(f.subject->>'candidateId')::uuid for update;
-   if not found or v_candidate.mmv_id::text is distinct from f.subject->>'mmvId'
-     or v_candidate.model_year::text is distinct from f.subject->>'modelYear'
-     or v_candidate.fipe_code is distinct from f.proposal->>'fipeCode'
+   select c.* into c from public.agent_fipe_model_year_candidates c
+     where c.id=(f.subject->>'candidateId')::uuid for update;
+   if not found or c.mmv_id::text is distinct from f.subject->>'mmvId'
+     or c.model_year::text is distinct from f.subject->>'modelYear'
+     or c.fipe_code is distinct from f.proposal->>'fipeCode'
      then raise exception 'FIPE_MY_CANDIDATE_STALE'; end if;
-   if v_candidate.decision='ACCEPT' and new.decision<>'ACCEPT' then
+   if c.decision='ACCEPT' and new.decision<>'ACCEPT' then
      raise exception 'FIPE_MY_ALREADY_APPLIED'; end if;
    if new.decision='ACCEPT' then
      if not exists(select 1 from public.catalog_mmv_fipe_mappings mp
-       where mp.mmv_id=v_candidate.mmv_id and mp.fipe_code=v_candidate.fipe_code
+       where mp.mmv_id=c.mmv_id and mp.fipe_code=c.fipe_code
          and mp.status='CONFIRMED')
        then raise exception 'FIPE_MY_MAPPING_NOT_CONFIRMED'; end if;
      select id into existing_id from public.catalog_mmv_model_years
-       where mmv_id=v_candidate.mmv_id and model_year=v_candidate.model_year limit 1;
+       where mmv_id=c.mmv_id and model_year=c.model_year limit 1;
      if existing_id is null then
        insert into public.catalog_mmv_model_years(mmv_id,production_year,
          model_year,status,confidence,source_finding_id,
          last_confirmed_finding_id,created_by)
-       values(v_candidate.mmv_id,null,v_candidate.model_year,'UNKNOWN',0.90,f.id,f.id,new.reviewed_by);
+       values(c.mmv_id,null,c.model_year,'UNKNOWN',0.90,f.id,f.id,new.reviewed_by);
      end if;
    end if;
    update public.agent_fipe_model_year_candidates
      set decision=new.decision,reviewed_by=new.reviewed_by,reviewed_at=now()
-     where id=v_candidate.id;
+     where id=c.id;
  end if;
  return new;
 end $$;
@@ -180,44 +180,44 @@ execute function public.qa_sync_fipe_reviews();
 create or replace function public.qa_dispatch_fipe_my(
   p_brand text,p_mmv_id uuid default null,p_allow_paid_my boolean default false
 ) returns jsonb language plpgsql security definer set search_path='' as $$
-declare v_target record; n_fipe integer:=0; n_my integer:=0; n_blocked integer:=0; e text;
+declare m record; n_fipe integer:=0; n_my integer:=0; n_blocked integer:=0; e text;
 begin
  if p_brand is null or length(btrim(p_brand)) not between 1 and 100 then
    raise exception 'FIPE_DISPATCH_BRAND_REQUIRED'; end if;
- for v_target in
-   select catalog.id,catalog.brand,e.eligibility
-   from public.catalog_mmvs catalog
-   join public.agent_my_launch_eligibility e on e.mmv_id=catalog.id
-   where catalog.market='BR' and catalog.status='ACTIVE'
-    and lower(catalog.brand)=lower(btrim(p_brand))
-    and (p_mmv_id is null or catalog.id=p_mmv_id)
-   order by catalog.created_at,catalog.id limit 20
+ for m in
+   select m.id,m.brand,e.eligibility
+   from public.catalog_mmvs m
+   join public.agent_my_launch_eligibility e on e.mmv_id=m.id
+   where m.market='BR' and m.status='ACTIVE'
+    and lower(m.brand)=lower(btrim(p_brand))
+    and (p_mmv_id is null or m.id=p_mmv_id)
+   order by m.created_at,m.id limit 20
  loop
-  if v_target.eligibility='HAS_CANONICAL_MY' then continue; end if;
-  if v_target.eligibility='ELIGIBLE' and
+  if m.eligibility='HAS_CANONICAL_MY' then continue; end if;
+  if m.eligibility='ELIGIBLE' and
      not exists(select 1 from public.agent_jobs j
         where j.job_type='FIPE_DISCOVERY'
           and j.status='COMPLETED'
-          and j.input->>'mmvId'=v_target.id::text
+          and j.input->>'mmvId'=m.id::text
           and j.completed_at>now()-interval '30 days')
    then
     if not exists(select 1 from public.agent_jobs j
         where j.job_type='FIPE_DISCOVERY'
           and j.status in ('QUEUED','RUNNING')
-          and j.input->>'mmvId'=v_target.id::text) then
+          and j.input->>'mmvId'=m.id::text) then
       insert into public.agent_jobs(job_type,status,market,brand,input)
-       values('FIPE_DISCOVERY','QUEUED','BR',v_target.brand,
-         pg_catalog.jsonb_build_object('mmvId',v_target.id,'reason','MMV_CANONICAL_FIPE_FIRST'));
+       values('FIPE_DISCOVERY','QUEUED','BR',m.brand,
+         pg_catalog.jsonb_build_object('mmvId',m.id,'reason','MMV_CANONICAL_FIPE_FIRST'));
       n_fipe:=n_fipe+1;
     end if;
-  elsif v_target.eligibility='ELIGIBLE' and p_allow_paid_my
+  elsif m.eligibility='ELIGIBLE' and p_allow_paid_my
      and not exists(select 1 from public.agent_jobs j
        where j.job_type='PRODUCT_YEAR' and j.status in ('QUEUED','RUNNING')
-         and j.input->>'mmvId'=v_target.id::text)
+         and j.input->>'mmvId'=m.id::text)
   then
     insert into public.agent_jobs(job_type,status,market,brand,input)
-     values('PRODUCT_YEAR','QUEUED','BR',v_target.brand,
-       pg_catalog.jsonb_build_object('mmvId',v_target.id,'provider','openai',
+     values('PRODUCT_YEAR','QUEUED','BR',m.brand,
+       pg_catalog.jsonb_build_object('mmvId',m.id,'provider','openai',
          'reason','FIPE_UNAVAILABLE_MY_RESEARCH'));
     n_my:=n_my+1;
   else
