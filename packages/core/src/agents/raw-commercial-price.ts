@@ -24,7 +24,7 @@ export function extractRawCommercialPrices(html: string): readonly RawCommercial
   // Some manufacturer pages render commercial labels with missing characters
   // and spaces (e.g. "P eço ú ico") while keeping the BRL amount intact.
   // Require a recognizable price label; never collect arbitrary R$ numbers.
-  const pattern = /(?:preço\s+(?:único|público\s+sugerido|sugerido|de\s+tabela)|p\s*r?\s*eço\s+ú\s*n?\s*ico|valor\s+à\s+vista|por)\s*[:*]?\s*R\$\s*(\d{1,3}(?:\.\d{3})+(?:,\d{2})?|\d{5,7}(?:,\d{2})?)/giu;
+  const pattern = /(?:preço\s+(?:único|público\s+sugerido|sugerido|de\s+tabela)|p\s*r?\s*eço\s+ú\s*n?\s*ico|valor\s+à\s+vista|por)[\s:*]{0,12}R\$\s*(\d{1,3}(?:\.\d{3})+(?:,\d{2})?|\d{5,7}(?:,\d{2})?)/giu;
   const found: RawCommercialPrice[] = [];
   const seen = new Set<string>();
   for (const match of text.matchAll(pattern)) {
