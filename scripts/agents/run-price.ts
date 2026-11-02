@@ -6,6 +6,7 @@ import {
   DeterministicFirstPriceResearch,
   PriceAgent,
   validateConnectorDefinition,
+  connectorFingerprint,
   connectorEntryPriceKind,
   makePriceSnapshot,
   type PriceSourceKind,
@@ -355,7 +356,24 @@ export async function runPriceCli(
         connector: shadowSources ? {
           async getActiveConnector(targetBrand: string, market: string) {
             const active = await connectors.getActiveConnector(targetBrand, market);
-            if (!active) return null;
+            if (!active) {
+              // Brand-from-zero test only: ephemeral official proposal adapter.
+              // This is never inserted into brand_connectors or activated.
+              const now = new Date().toISOString();
+              return {
+                ...shadowSources!,
+                id: shadowConnectorRunId!,
+                targetId: shadowConnectorRunId!,
+                version: 0,
+                status: 'ACTIVE' as const,
+                fingerprint: connectorFingerprint(shadowSources!),
+                sourceFindingId: null,
+                activatedBy: null,
+                activatedAt: now,
+                supersededAt: null,
+                createdAt: now,
+              };
+            }
             const existing = new Set(active.sourceEntries.map(s=>s.url));
             return {...active, sourceEntries:[...active.sourceEntries,
               ...shadowSources!.sourceEntries.filter(s=>!existing.has(s.url))]};
