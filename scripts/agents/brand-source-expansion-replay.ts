@@ -72,7 +72,17 @@ export async function replayBrandProductSourceExpansion(
   };
   const bundle=await new BrandConnectorAgent(provider).run(input,randomUUID(),'deterministic-expansion');
   const enrichedBundle={...bundle,
-    run:{...bundle.run,input:{...bundle.run.input,sourceBrandRunId:sourceRunId}},
+    run:{
+      ...bundle.run,
+      input:{...bundle.run.input,sourceBrandRunId:sourceRunId},
+      summary:{
+        ...bundle.run.summary,
+        aiCalls:0,aiInputTokens:0,aiOutputTokens:0,aiWebSearches:0,
+        aiModel:null,aiEstimatedCostUsd:0,aiCostEstimatePriced:true,
+        aiCostScope:'OpenAI API only; HTTP/network compute excluded',
+        sourceResearchRunId:sourceRunId,
+      },
+    },
   };
   await new AgentPlatformSupabaseAdapter(client).persistRunBundle(enrichedBundle);
   log('Run: '+bundle.run.id);
