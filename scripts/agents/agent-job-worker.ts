@@ -6,6 +6,7 @@ import { runLaunchMyJob } from './run-launch-my';
 import { runMyLaunchBenchmark } from './my-launch-benchmark';
 import { runFipePilot } from './fipe-agent-pilot';
 import { runPriceCli } from './run-price';
+import { runOra5PriceProbe } from './price-ora5-direct-probe';
 import { monitorBrandSources } from './source-monitor';
 import { journalWorkerJob } from './engineering-worker-telemetry';
 import { needsAgentBudget, reserveAgentPilotBudget, finishAgentPilotBudget, type AgentBudgetClient } from './agent-pilot-budget';
@@ -29,6 +30,7 @@ type JobRow = {
     benchmarkModel?: string;
     benchmarkVersion?: string;
     shadowConnectorRunId?: string;
+    priceDirectProbe?: boolean;
   };
 };
 
@@ -146,6 +148,12 @@ async function execute(job: JobRow) {
     await journal('SUCCESS',runId);
     return;
   } else if (job.job_type === 'PRICE_INTELLIGENCE') {
+    if (job.input.priceDirectProbe === true) {
+      if (job.brand !== 'GWM' || job.market !== 'BR') throw new Error('PRICE_PROBE_SCOPE_INVALID');
+      await runOra5PriceProbe(log);
+      await completeWithoutRun(job.id);
+      return;
+    }
     // The Price CLI persists an immutable run/finding bundle, consumed by the
     // shared Reviews inbox. Never run against an unexpected market.
     if (job.market !== 'BR') throw new Error('PRICE_MARKET_UNSUPPORTED');
