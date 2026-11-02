@@ -24,7 +24,7 @@ export const adminNavigationItems: readonly AdminNavigationItem[] = [
     { label: 'Análise de TPVA', status: 'planned' },
   ] },
   { label: 'Educação', status: 'planned' },
-  { href: '/admin/news', label: 'News', status: 'planned' },
+  { href: '/admin/news', label: 'News', status: 'active' },
   { href: '/admin/chat', label: 'Chat', status: 'planned' },
   { label: 'Agentes', status: 'active', children: [
     { href: '/admin/agents', label: 'Agentes', status: 'active' },
