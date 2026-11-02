@@ -163,6 +163,37 @@ describe('universal Brand Connector product-source expansion',()=>{
     ));
   expect(JSON.stringify(result.research)).not.toContain('outside.example');
  });
+ it('discards sitemap media, order forms and redirects to generic homepage',async()=>{
+   const root='https://www.gwmmotors.com.br';
+   const pages:Record<string,string>={
+     [root+'/pt/modelos']:'<a href="/pt/modelos/haval-h7">Haval H7</a>'+
+       '<a href="/pt/modelos/pedido">Pedido</a>'+
+       '<a href="/pt/media-center/modelos/haval-h7">Notícia</a>',
+     [root+'/pt']:'<h1>Home</h1>',
+     [root+'/pt/modelos/haval-h7']:'<h1>Haval H7</h1>',
+     [root+'/sitemap.xml']:'<urlset></urlset>',
+   };
+   const fetcher:typeof fetch=async url=>{
+     const text=String(url),body=pages[text];
+     if(body===undefined)return new Response('',{status:404});
+     if(text.endsWith('/pt/modelos/haval-h7'))return new Response('',{
+       status:302,headers:{location:'/pt'},
+     });
+     return new Response(body,{status:200,headers:{
+       'content-type':text.endsWith('.xml')?'application/xml':'text/html',
+     }});
+   };
+   const result=await expandBrandProductSources({
+     brand:'GWM',market:'BR',mode:'discover',
+   },{...base,brand:'GWM',canonicalBrand:'GWM',
+      observedBrandLabel:'GWM',candidateDomains:['gwmmotors.com.br'],
+      sourceEntries:[{type:'MODEL_INDEX',url:root+'/pt/modelos',priority:1}],
+      evidence:[{url:root+'/pt/modelos',title:'Official index',excerpt:'GWM'}],
+   } as BrandConnectorResearch,fetcher);
+   expect(result.report.productPagesVerified).toBe(0);
+   expect(result.research.sourceEntries.filter(e=>e.type==='MODEL_PAGE')).toHaveLength(0);
+   expect(result.report.failedProductPages).toContain(root+'/pt/modelos/haval-h7');
+ });
  it('reports nonresponding product pages as coverage gaps',async()=>{
   const failing:typeof fetch=async (url)=>String(url).endsWith('kardian.html')
     ? new Response('',{status:404}) : fakeFetch(url);
