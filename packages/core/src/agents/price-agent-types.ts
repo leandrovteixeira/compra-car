@@ -99,6 +99,8 @@ export interface PriceResearchResult {
   readonly snapshots: readonly PriceSourceSnapshot[];
   readonly mappings?: readonly PriceIdentityMapping[];
   readonly usage?: readonly PriceAiUsage[];
+  /** Unverified source-first offers retained for QA and later compact identity matching. */
+  readonly sourceFirstCandidates?: readonly import('./source-first-price-reconciliation').SourceFirstPriceCandidate[];
   readonly diagnostics?: readonly {
     readonly target: string;
     readonly sourceUrl: string;
