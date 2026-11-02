@@ -295,7 +295,7 @@ export class PriceAgentSupabaseTelemetry {
         total_tokens: item.inputTokens + item.outputTokens,
         web_search_count: item.webSearchCount,
         estimated_cost_usd: item.estimatedCostUsd,
-        reason: 'PRICE_CANONICAL_RECONCILIATION',
+        reason: item.reason ?? 'PRICE_CANONICAL_RECONCILIATION',
       })),
     );
     if (error) throw new Error('PRICE_USAGE_WRITE_FAILED');
