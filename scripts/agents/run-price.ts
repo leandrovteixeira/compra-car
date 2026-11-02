@@ -171,7 +171,11 @@ async function supplementalMappingSnapshots(
   return out;
 }
 
-async function operationalResearch(env: Readonly<Record<string, string | undefined>>, diagnostic: (line:string)=>void = () => {}) {
+async function operationalResearch(
+  env: Readonly<Record<string, string | undefined>>,
+  diagnostic: (line: string) => void = () => {},
+  connectorOnly = false,
+) {
   const requestCache = new Map<string, Promise<{ body: string; finalUrl: string } | null>>();
   const reconciliation = env.PRICE_AGENT_LLM_ENABLED === '1' && agentOpenAiApiKey(env,'PRICE_INTELLIGENCE')
     ? new (await import('@compra-car/adapter-openai')).OpenAIPriceReconciliationProvider({
@@ -187,11 +191,15 @@ async function operationalResearch(env: Readonly<Record<string, string | undefin
     hardCostCapUsd: priceBudget(env.PRICE_AGENT_HARD_COST_CAP_USD),
     fetch: async (target, connector) => {
       const out = [];
-      const officialProductPage = officialGwmPricePageForTarget(target);
+      const officialProductPage = connectorOnly ? null : officialGwmPricePageForTarget(target);
+      // QA transitional bootstrap only. Once the Brand Connector owns the
+      // dedicated page, do not inject it a second time.
+      const alreadyInConnector = officialProductPage !== null &&
+        connector.sourceEntries.some(entry => entry.url === officialProductPage);
       const entries = [
         // Dedicated first-party product pages take precedence over old news and
         // previously discovered URLs; do not mix prices across H6 trims.
-        ...(officialProductPage ? [{
+        ...(officialProductPage && !alreadyInConnector ? [{
           type: 'MODEL_PAGE' as const,
           url: officialProductPage,
           priority: -500,
@@ -345,7 +353,7 @@ export async function runPriceCli(
               ...shadowSources!.sourceEntries.filter(s=>!existing.has(s.url))]};
           },
         } : connectors,
-        research: await operationalResearch(env,log),
+        research: await operationalResearch(env,log,Boolean(shadowConnectorRunId)),
       });
     }
 
