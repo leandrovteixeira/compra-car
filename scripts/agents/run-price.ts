@@ -39,9 +39,14 @@ function parse(args: readonly string[]) {
   const values = args[0] === '--' ? args.slice(1) : [...args];
   let brand: string | null = null,
     persistFindings = false,
+    auditOnly = false,
     shadowConnectorRunId: string | null = null;
   for (let i = 0; i < values.length; i++) {
     const token = values[i]!;
+    if (token === '--audit-only') {
+      auditOnly = true;
+      continue;
+    }
     if (token === '--persist-findings') {
       persistFindings = true;
       continue;
@@ -59,7 +64,8 @@ function parse(args: readonly string[]) {
   if (!brand) throw new Error('INVALID_AGENT_ARGUMENTS');
   if (shadowConnectorRunId && !/^[0-9a-f-]{36}$/iu.test(shadowConnectorRunId))
     throw new Error('INVALID_AGENT_ARGUMENTS');
-  return { brand, persistFindings, shadowConnectorRunId };
+  if (auditOnly && persistFindings) throw new Error('PRICE_AUDIT_CONFLICTING_FLAGS');
+  return { brand, persistFindings, auditOnly, shadowConnectorRunId };
 }
 
 export function entryAppliesToTarget(
@@ -274,7 +280,7 @@ export async function runPriceCli(
   const attemptId = randomUUID();
   let attemptedBrand = 'unknown';
   try {
-    const { brand, persistFindings, shadowConnectorRunId } = parse(args);
+    const { brand, persistFindings, auditOnly, shadowConnectorRunId } = parse(args);
     attemptedBrand = brand;
     env = await loadAgentEnvironment(root, env);
     if (env.PRICE_AGENT_LLM_ENABLED === '1') requireAgentOpenAiApiKey(env,'PRICE_INTELLIGENCE');
@@ -414,6 +420,10 @@ export async function runPriceCli(
       JSON.stringify(audited, null, 2) + '\n',
     );
 
+    if (auditOnly) {
+      // QA operational audit: durable run metadata, zero review findings.
+      await persistence!.persistRunBundle({ ...audited.bundle, findings: [] });
+    }
     if (persistFindings) {
       await persistence!.persistRunBundle(audited.bundle);
       // Nonblocking price verification journal: a journal outage must not
