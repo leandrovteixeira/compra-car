@@ -177,7 +177,8 @@ async function operationalResearch(
   connectorOnly = false,
 ) {
   const requestCache = new Map<string, Promise<{ body: string; finalUrl: string } | null>>();
-  const reconciliation = env.PRICE_AGENT_LLM_ENABLED === '1' && agentOpenAiApiKey(env,'PRICE_INTELLIGENCE')
+  const compactEnabled = env.PRICE_AGENT_COMPACT_MATCH_ENABLED === '1';
+  const reconciliation = !compactEnabled && env.PRICE_AGENT_LLM_ENABLED === '1' && agentOpenAiApiKey(env,'PRICE_INTELLIGENCE')
     ? new (await import('@compra-car/adapter-openai')).OpenAIPriceReconciliationProvider({
         apiKey: requireAgentOpenAiApiKey(env,'PRICE_INTELLIGENCE'),
         models: ['gpt-5.6-luna', 'gpt-5.6-terra', 'gpt-5.6-sol'],
@@ -186,8 +187,13 @@ async function operationalResearch(
       })
     : undefined;
 
+  const compactMatcher = compactEnabled
+    ? new (await import('@compra-car/adapter-openai')).OpenAICompactPriceMatcher(
+        requireAgentOpenAiApiKey(env,'PRICE_INTELLIGENCE'),
+      ) : undefined;
   return new DeterministicFirstPriceResearch({
     reconciliation,
+    compactMatcher,
     hardCostCapUsd: priceBudget(env.PRICE_AGENT_HARD_COST_CAP_USD),
     fetch: async (target, connector) => {
       const out = [];
@@ -301,7 +307,9 @@ export async function runPriceCli(
     const { brand, persistFindings, auditOnly, shadowConnectorRunId } = parse(args);
     attemptedBrand = brand;
     env = await loadAgentEnvironment(root, env);
-    if (env.PRICE_AGENT_LLM_ENABLED === '1') requireAgentOpenAiApiKey(env,'PRICE_INTELLIGENCE');
+    if (env.PRICE_AGENT_LLM_ENABLED === '1' ||
+        env.PRICE_AGENT_COMPACT_MATCH_ENABLED === '1')
+      requireAgentOpenAiApiKey(env,'PRICE_INTELLIGENCE');
 
     let agent = dependencies.agent;
     let persistence = dependencies.persistence;
@@ -360,8 +368,10 @@ export async function runPriceCli(
     const result = await agent.run(
       brand,
       'BR',
-      env.PRICE_AGENT_LLM_ENABLED === '1' && agentOpenAiApiKey(env,'PRICE_INTELLIGENCE')
-        ? 'hybrid' : 'deterministic',
+      env.PRICE_AGENT_COMPACT_MATCH_ENABLED === '1'
+        ? 'compact-identity-only'
+        : env.PRICE_AGENT_LLM_ENABLED === '1' && agentOpenAiApiKey(env,'PRICE_INTELLIGENCE')
+          ? 'hybrid' : 'deterministic',
     );
 
     // The core research pipeline now owns source-first extraction.
@@ -421,6 +431,21 @@ export async function runPriceCli(
             sourceFirstAmbiguous: shadow.ambiguous,
             sourceFirstUnresolved: shadow.unresolved,
             sourceFirstSnapshots: rawSeen.size,
+            compactAiDecisionCount: result.research.compactMatchDecisions?.length ?? 0,
+            compactAiIdentityMatches:
+              result.research.compactMatchDecisions?.filter(
+                c => c.status === 'IDENTITY_MATCHED_MY_UNVERIFIED' || c.status === 'VERIFIED_IDENTITY'
+              ).length ?? 0,
+            compactAiDecisions: (result.research.compactMatchDecisions ?? []).map(
+              decision => ({
+                candidateIndex: decision.candidateIndex,
+                sourceUrl: sourceCandidates[decision.candidateIndex]?.sourceUrl ?? null,
+                productId: decision.productId,
+                status: decision.status,
+                reason: decision.reason,
+              }),
+            ),
+
             gwmProductPagesExpected: officialCoverage.expected,
             gwmProductPagesPriced: officialCoverage.priced,
             gwmProductPagesMissing: officialCoverage.missing.length,
