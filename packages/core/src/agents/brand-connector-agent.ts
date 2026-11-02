@@ -171,6 +171,21 @@ export function mapBrandConnectorRun(
     )
   )
     throw new Error('CONNECTOR_DOMAIN_EVIDENCE_REQUIRED');
+  const sourceCounts = Object.fromEntries(
+    [...new Set(proposal.sourceEntries.map(e => e.type))]
+      .sort().map(type => [type, proposal.sourceEntries.filter(e => e.type === type).length]),
+  );
+  const sourceInventory = {
+    total: proposal.sourceEntries.length,
+    byType: sourceCounts,
+    productPages: proposal.sourceEntries.filter(e => e.type === 'MODEL_PAGE').length,
+    productPagesWithPriceSignals: proposal.sourceEntries.filter(e =>
+      e.type === 'MODEL_PAGE' && /(?:^|[,; ])PRICE(?:[,; ]|$)/u.test(e.notes ?? ''),
+    ).length,
+    productPagesVerifiedFromIndex: proposal.sourceEntries.filter(e =>
+      e.type === 'MODEL_PAGE' && (e.notes ?? '').includes('verified from official index'),
+    ).length,
+  };
   const fingerprint = connectorFingerprint(proposal);
   const proposedAliasKeys = [...new Set(aliases.map((alias) => brandKey(alias.alias)))].sort();
   const activeAliasKeys = [...new Set((input.activeIdentity?.aliases ?? []).map(brandKey))].sort();
@@ -208,6 +223,7 @@ export function mapBrandConnectorRun(
     candidateDomains: noReplacement ? [] : proposal.allowedDomains,
     sourceEntries: proposal.sourceEntries as unknown as AgentObject[],
     sourceCoverage: [...new Set(proposal.sourceEntries.map((e) => e.type))],
+    sourceInventory,
     checksPerformed,
     connectorFingerprint: fingerprint,
     ...(input.activeConnector
@@ -227,7 +243,15 @@ export function mapBrandConnectorRun(
       startedAt,
       completedAt,
       input: { brand: proposal.brand, market: proposal.market, mode: input.mode },
-      summary: { findingType, confidence: result.confidence, canonicalBrand, aliasCount: aliases.length },
+      summary: {
+        findingType, confidence: result.confidence, canonicalBrand,
+        aliasCount: aliases.length,
+        sourceUrls: sourceInventory.total,
+        modelPages: sourceInventory.productPages,
+        modelPagesVerifiedFromIndex: sourceInventory.productPagesVerifiedFromIndex,
+        modelPagesWithPriceSignals: sourceInventory.productPagesWithPriceSignals,
+        sourcesByType: sourceCounts,
+      },
       configSnapshot: {
         connectorVersion: input.activeConnector?.version ?? null,
         brandIdentityId: input.activeIdentity?.id ?? null,
