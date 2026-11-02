@@ -37,7 +37,11 @@ function price(text:string):number|null{
  const n=Number(text.replace(/[^\d,.]/g,'').replace(/\./g,'').replace(',','.'));
  return Number.isFinite(n)&&n>0?n:null;
 }
-export async function runFipePilot(env:NodeJS.ProcessEnv=process.env,log=console.log){
+export async function runFipePilot(
+ env:NodeJS.ProcessEnv=process.env,
+ log:(message:string)=>void=console.log,
+ scope:{brand?:string;mmvId?:string}={},
+){
  if(env.APP_ENV!=='qa'||env.SUPABASE_URL!=='https://shfsjyjxmgwnlexmdkcs.supabase.co')
   throw new Error('FIPE_QA_ONLY');
  if(!env.SUPABASE_SERVER_KEY)throw new Error('FIPE_SUPABASE_KEY_REQUIRED');
@@ -47,23 +51,39 @@ export async function runFipePilot(env:NodeJS.ProcessEnv=process.env,log=console
  const {data:mmvs,error:mmvError}=await db.from('agent_fipe_unmapped_mmvs')
    .select('mmv_id,brand,model,official_version_label').order('brand').limit(100);
  if(mmvError)throw new Error('FIPE_UNMAPPED_MMVS_UNAVAILABLE');
- const targets=(mmvs||[]).filter(x=>x.brand==='GWM').map(x=>({
+ const targets=(mmvs||[]).filter(x=>
+   (!scope.brand || normalize(x.brand)===normalize(scope.brand)) &&
+   (!scope.mmvId || x.mmv_id===scope.mmvId)
+ ).map(x=>({
    id:x.mmv_id,brand:x.brand,model:x.model,official_version_label:x.official_version_label,
  })) as Mmv[];
+ if(!targets.length){
+   log(JSON.stringify({requests:0,requestLimit:max,targets:0,
+     candidatesObserved:0,valuationsObserved:0}));
+   return {requests:0,candidateCount:0,valuationCount:0,targets:0};
+ }
+ const requestedBrand=normalize(scope.brand??targets[0]!.brand);
+ if(targets.some(t=>normalize(t.brand)!==requestedBrand))throw new Error('FIPE_BRAND_SCOPE_REQUIRED');
  const brands=items(await getJson('/cars/brands',budget));
- const gwm=brands.find(x=>normalize(x.name)==='gwm');
- if(!gwm)throw new Error('FIPE_GWM_BRAND_NOT_FOUND');
- const models=items(await getJson('/cars/brands/'+encodeURIComponent(gwm.code)+'/models',budget));
+ const matches=brands.filter(x=>{
+   const provider=normalize(x.name),request=requestedBrand;
+   return provider===request ||
+     provider.startsWith(request+' ') ||request.startsWith(provider+' ');
+ });
+ if(matches.length!==1)throw new Error('FIPE_MANUFACTURER_NOT_UNIQUELY_RESOLVED');
+ const manufacturer=matches[0]!;
+ const brandPath='/cars/brands/'+encodeURIComponent(manufacturer.code);
+ const models=items(await getJson(brandPath+'/models',budget));
  let candidateCount=0,valuationCount=0;
  for(const model of models){
    const relevant=targets.filter(t=>matchingModel(t,model.name));
    if(!relevant.length)continue;
    if(budget.count>=budget.max-2)break;
-   const years=items(await getJson('/cars/brands/'+gwm.code+'/models/'+encodeURIComponent(model.code)+'/years',budget));
+   const years=items(await getJson('/cars/brands/'+manufacturer.code+'/models/'+encodeURIComponent(model.code)+'/years',budget));
    for(const year of years){
      if(budget.count>=budget.max)break;
      // Preserve the provider's distinct year/fuel identifier exactly.
-     const detail=await getJson('/cars/brands/'+gwm.code+'/models/'+encodeURIComponent(model.code)+'/years/'+encodeURIComponent(year.code),budget) as Record<string,unknown>;
+     const detail=await getJson('/cars/brands/'+manufacturer.code+'/models/'+encodeURIComponent(model.code)+'/years/'+encodeURIComponent(year.code),budget) as Record<string,unknown>;
      const fipeCode=typeof detail.codeFipe==='string'?detail.codeFipe:'';
      const label=typeof detail.model==='string'?detail.model:model.name;
      if(!/^\d{6}-\d$/.test(fipeCode))continue;
@@ -78,9 +98,9 @@ export async function runFipePilot(env:NodeJS.ProcessEnv=process.env,log=console
        if(versionNorm&&!labelNorm.includes(versionNorm)&&!h6Phev19)continue;
        const {error:candidateError}=await db.from('agent_fipe_mapping_candidates').upsert({
          mmv_id:target.id,fipe_code:fipeCode,fipe_model_label:label,provider:'parallelum-v2',
-         source_url:BASE+'/cars/brands/'+gwm.code+'/models/'+model.code+'/years/'+year.code,
+         source_url:BASE+'/cars/brands/'+manufacturer.code+'/models/'+model.code+'/years/'+year.code,
          match_confidence:versionNorm?0.78:0.55,
-         evidence:{brandName:gwm.name,modelCode:model.code,modelLabel:model.name,yearCode:year.code,modelYear:targetYear},
+         evidence:{brandName:manufacturer.name,modelCode:model.code,modelLabel:model.name,yearCode:year.code,modelYear:targetYear},
        },{onConflict:'mmv_id,fipe_code,provider',ignoreDuplicates:true});
        if(candidateError)throw new Error('FIPE_CANDIDATE_PERSIST_FAILED');
        candidateCount++;
@@ -90,9 +110,9 @@ export async function runFipePilot(env:NodeJS.ProcessEnv=process.env,log=console
          fipe_code:fipeCode,model_year:targetYear,
          fuel_code:String(detail.fuelAcronym||''),reference_year:reference.year,
          reference_month:reference.month,valuation_brl:amount,
-         manufacturer_label:String(detail.brand||gwm.name),
+         manufacturer_label:String(detail.brand||manufacturer.name),
          fipe_model_label:label,source_provider:'parallelum-v2',
-         source_url:BASE+'/cars/brands/'+gwm.code+'/models/'+model.code+'/years/'+year.code,
+         source_url:BASE+'/cars/brands/'+manufacturer.code+'/models/'+model.code+'/years/'+year.code,
          raw_payload:detail,
        },{onConflict:'fipe_code,model_year,fuel_code,reference_year,reference_month,source_provider',ignoreDuplicates:true});
        if(historyError)throw new Error('FIPE_VALUATION_PERSIST_FAILED');
@@ -102,7 +122,7 @@ export async function runFipePilot(env:NodeJS.ProcessEnv=process.env,log=console
  }
  log(JSON.stringify({requests:budget.count,requestLimit:budget.max,targets:targets.length,
    candidatesObserved:candidateCount,valuationsObserved:valuationCount}));
- return {requests:budget.count,candidateCount,valuationCount};
+ return {requests:budget.count,candidateCount,valuationCount,targets:targets.length};
 }
 if(process.argv[1]?.endsWith('fipe-agent-pilot.ts')){
  runFipePilot().catch(e=>{console.error(e instanceof Error?e.message:'FIPE_UNKNOWN_ERROR');process.exitCode=1;});
