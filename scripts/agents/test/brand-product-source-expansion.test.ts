@@ -49,6 +49,33 @@ describe('universal Brand Connector product-source expansion',()=>{
   expect(pages[0]?.notes).toContain('verified from official index');
   expect(result.research.evidence.some(e=>e.url.endsWith('/boreal.html'))).toBe(true);
  });
+ it('records transport and phase telemetry without treating generic price wording as an amount',async()=>{
+   const result=await expandBrandProductSources(input,base,fakeFetch);
+   expect(result.report).toMatchObject({
+     httpRequests:3,httpFailedRequests:0,httpRedirects:0,
+     productPagesVerified:2,productPagesWithBrlAmount:1,
+     productPagesWithPriceTermsOnly:0,
+   });
+   expect(result.report.htmlBytesDownloaded).toBeGreaterThan(0);
+   expect(result.report.elapsedMs).toBeGreaterThanOrEqual(0);
+   expect(result.research.sourceCrawlTelemetry).toEqual(result.report);
+   const observed=result.research.sourceEntries.filter(e=>e.type==='MODEL_PAGE');
+   expect(observed.find(x=>x.url.includes('/boreal.html'))?.notes)
+     .toContain('BRL_AMOUNT_VISIBLE');
+   expect(observed.find(x=>x.url.includes('/kardian.html'))?.notes)
+     .not.toContain('BRL_AMOUNT_VISIBLE');
+ });
+ it('does not count a price keyword without a vehicle amount',async()=>{
+   const index='<a href="/veiculos-de-passeio/boreal.html">Boreal</a>';
+   const fetcher:typeof fetch=async url=>new Response(
+     String(url).endsWith('veiculos.html')?index:
+       '<html><h1>Boreal</h1><p>Confira nossos preços e ofertas</p></html>',
+     {status:200,headers:{'content-type':'text/html'}},
+   );
+   const expanded=await expandBrandProductSources(input,base,fetcher);
+   expect(expanded.report.productPagesWithBrlAmount).toBe(0);
+   expect(expanded.report.productPagesWithPriceTermsOnly).toBe(1);
+ });
  it('preserves other verified sources and never invents MSRP or MY',async()=>{
   const result=await expandBrandProductSources(input,{
     ...base,sourceEntries:[...base.sourceEntries,{
