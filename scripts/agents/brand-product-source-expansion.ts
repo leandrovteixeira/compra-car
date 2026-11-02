@@ -3,6 +3,7 @@ import type {
   BrandConnectorResearchInput,
   BrandConnectorResearchProvider,
   ConnectorSourceEntry,
+  BrandSourceCrawlTelemetry,
 } from '@compra-car/core/agents';
 import { safeConnectorUrl } from '@compra-car/core/agents';
 
@@ -11,6 +12,14 @@ type LinkedPage = { url: string; from: string };
 const MAX_INDEXES = 3;
 const MAX_PRODUCTS = 24;
 const MAX_HTML_BYTES = 2_000_000;
+
+type NetworkStats = {
+  httpRequests: number;
+  httpFailedRequests: number;
+  httpRedirects: number;
+  htmlBytesDownloaded: number;
+};
+
 
 function officialUrl(raw: string, base: string, allowed: readonly string[]): string | null {
   try {
@@ -25,11 +34,13 @@ async function officialHtml(
   url: string,
   domains: readonly string[],
   fetcher: Fetcher,
+  stats: NetworkStats,
 ): Promise<{ url: string; html: string } | null> {
   let next = url;
   for (let redirects = 0; redirects <= 2; redirects++) {
     try {
       if (!officialUrl(next, next, domains)) return null;
+      stats.httpRequests++;
       const response = await fetcher(next, {
         redirect: 'manual',
         signal: AbortSignal.timeout(10000),
@@ -40,19 +51,22 @@ async function officialHtml(
         if (!location) return null;
         const redirected = officialUrl(location, next, domains);
         if (!redirected) return null;
+        stats.httpRedirects++;
         next = redirected;
         continue;
       }
       if (!response.ok || !/text\/html|application\/xhtml\+xml/iu.test(
         response.headers.get('content-type') ?? '',
-      )) return null;
+      )) { stats.httpFailedRequests++; return null; }
       const size = Number(response.headers.get('content-length') ?? '0');
-      if (size > MAX_HTML_BYTES) return null;
+      if (size > MAX_HTML_BYTES) { stats.httpFailedRequests++; return null; }
       const html = await response.text();
-      if (html.length > MAX_HTML_BYTES) return null;
+      stats.htmlBytesDownloaded += Buffer.byteLength(html, 'utf8');
+      if (html.length > MAX_HTML_BYTES) { stats.httpFailedRequests++; return null; }
       return { url: next, html };
-    } catch { return null; }
+    } catch { stats.httpFailedRequests++; return null; }
   }
+  stats.httpFailedRequests++;
   return null;
 }
 
@@ -85,23 +99,30 @@ function modelLabel(url: string): string {
     .replace(/\.html$/iu, '').replace(/-/gu, ' ').trim().slice(0, 100);
 }
 function pageSignals(html: string): string[] {
+  // Ignore scripts, CSS, navigation labels with no visible price. A keyword
+  // such as "preço" by itself never proves that an MSRP was extracted.
+  const visible = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/giu, ' ')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/giu, ' ')
+    .replace(/<[^>]+>/gu, ' ').replace(/&nbsp;|&#160;/giu, ' ')
+    .replace(/\s+/gu, ' ').trim();
   const signals: string[] = [];
-  if (/(?:R\$\s*\d|pre[cç]o|a partir de)/iu.test(html)) signals.push('PRICE');
-  if (/(?:versões e preços|compare as versões|vers[aã]o|versões)/iu.test(html))
+  const brl = /R\$\s*(?:\d{1,3}(?:\.\d{3})+(?:,\d{2})?|\d{5,7}(?:,\d{2})?)/giu;
+  const amounts = [...visible.matchAll(brl)].map(match =>
+    Number(match[0].replace(/R\$\s*/u, '').replace(/\./gu, '').replace(',', '.')),
+  );
+  if (amounts.some(value => Number.isFinite(value) && value >= 20000 && value <= 5000000))
+    signals.push('BRL_AMOUNT_VISIBLE');
+  else if (/(?:pre[cç]o|a partir de)/iu.test(visible))
+    signals.push('PRICE_TERMS_ONLY');
+  if (/(?:versões e preços|compare as versões|vers[aã]o|versões)/iu.test(visible))
     signals.push('VERSIONS');
-  if (/(?:especifica[cç][aã]o|ficha técnica|equipamentos)/iu.test(html))
+  if (/(?:especifica[cç][aã]o|ficha técnica|equipamentos)/iu.test(visible))
     signals.push('SPECS');
-  if (/(?:monte o seu|configure|configurador)/iu.test(html))
+  if (/(?:monte o seu|configure|configurador)/iu.test(visible))
     signals.push('CONFIGURATOR');
   return signals;
 }
-export type BrandSourceExpansionReport = Readonly<{
-  indexPagesChecked: number;
-  productLinksFound: number;
-  productPagesVerified: number;
-  addedProductPages: number;
-  failedProductPages: readonly string[];
-}>;
+export type BrandSourceExpansionReport = BrandSourceCrawlTelemetry;
 
 /** Generic HTTP link traversal. Brand Connector pays for discovery, not Price.
  * No inferred MSRP, MMV or MY is written. Any new sources remain a proposal
@@ -112,6 +133,8 @@ export async function expandBrandProductSources(
   research: BrandConnectorResearch,
   fetcher: Fetcher = fetch,
 ): Promise<{ research: BrandConnectorResearch; report: BrandSourceExpansionReport }> {
+  const startedAt = Date.now();
+  const stats: NetworkStats = {httpRequests:0,httpFailedRequests:0,httpRedirects:0,htmlBytesDownloaded:0};
   const domains = research.candidateDomains.length
     ? research.candidateDomains : (input.activeConnector?.allowedDomains ?? []);
   const seed = [...research.sourceEntries, ...(input.activeConnector?.sourceEntries ?? [])]
@@ -121,8 +144,9 @@ export async function expandBrandProductSources(
   const indexes = [...new Set(seed)].slice(0, MAX_INDEXES);
   const candidates: LinkedPage[] = [];
   let checked = 0;
+  const indexStart = Date.now();
   for (const index of indexes) {
-    const page = await officialHtml(index, domains, fetcher);
+    const page = await officialHtml(index, domains, fetcher, stats);
     if (!page) continue;
     checked++;
     for (const url of linkedUrls(page.html, page.url, domains)) {
@@ -130,21 +154,27 @@ export async function expandBrandProductSources(
       if (!candidates.some(c => c.url === url)) candidates.push({ url, from: page.url });
     }
   }
+  const indexPhaseMs = Date.now()-indexStart;
   const discovered = candidates.slice(0, MAX_PRODUCTS);
   const additions: ConnectorSourceEntry[] = [];
   const newEvidence: BrandConnectorResearch['evidence'][number][] = [];
   const failed: string[] = [];
   let verified = 0;
+  let productPagesWithBrlAmount = 0;
+  let productPagesWithPriceTermsOnly = 0;
+  const productStart = Date.now();
   // Bounded concurrency: at most four in-flight official product pages.
   for (let i = 0; i < discovered.length; i += 4) {
     const pages = await Promise.all(discovered.slice(i, i + 4).map(async candidate => {
-      const page = await officialHtml(candidate.url, domains, fetcher);
+      const page = await officialHtml(candidate.url, domains, fetcher, stats);
       return { candidate, page };
     }));
     for (const { candidate, page } of pages) {
       if (!page) { failed.push(candidate.url); continue; }
       verified++;
       const signals = pageSignals(page.html);
+      if (signals.includes('BRL_AMOUNT_VISIBLE')) productPagesWithBrlAmount++;
+      else if (signals.includes('PRICE_TERMS_ONLY')) productPagesWithPriceTermsOnly++;
       const label = modelLabel(page.url);
       additions.push({
         type: 'MODEL_PAGE', url: page.url, priority: 2,
@@ -160,6 +190,7 @@ export async function expandBrandProductSources(
     }
   }
 
+  const productPhaseMs = Date.now()-productStart;
   // An official storefront home page is not a per-vehicle MODEL_PAGE.
   // Retain its URL under the configured CONFIGURATOR type, or classify it
   // as OTHER_OFFICIAL if there is no configurator entry.
@@ -199,7 +230,13 @@ export async function expandBrandProductSources(
     productLinksFound: candidates.length,
     productPagesVerified: verified,
     addedProductPages: newEntries.length,
+    productPagesWithBrlAmount,
+    productPagesWithPriceTermsOnly,
     failedProductPages: failed,
+    ...stats,
+    elapsedMs: Date.now()-startedAt,
+    indexPhaseMs,
+    productPhaseMs,
   };
   const summary = ' Official index traversal: ' + checked + ' index pages; ' +
     candidates.length + ' product links; ' + verified +
@@ -215,6 +252,7 @@ export async function expandBrandProductSources(
     report,
     research: {
       ...research,
+      sourceCrawlTelemetry: report,
       candidateDomains: research.candidateDomains.length
         ? research.candidateDomains : (checked && verified ? domains : research.candidateDomains),
       sourceEntries,
