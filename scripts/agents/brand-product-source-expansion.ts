@@ -182,6 +182,18 @@ export async function expandBrandProductSources(
       });
     }
   }
+  // Previously approved/model-researched URLs are not assumed healthy.
+  // Verify each once alongside newly discovered candidates, so the coverage
+  // report reflects live HTTP success rather than an inherited inventory.
+  for (const entry of [...research.sourceEntries,
+    ...(input.activeConnector?.sourceEntries ?? [])]) {
+    if (entry.type !== 'MODEL_PAGE') continue;
+    const url = officialUrl(entry.url, entry.url, domains);
+    if (!url || kindForUrl(url) !== 'MODEL_PAGE') continue;
+    if (!candidates.some(c => c.url === url)) candidates.push({
+      url, from: 'existing-connector',
+    });
+  }
   const indexPhaseMs = Date.now()-indexStart;
   const discovered = candidates.slice(0, MAX_PRODUCTS);
   const additions: ConnectorSourceEntry[] = [];
