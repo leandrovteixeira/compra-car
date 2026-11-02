@@ -128,6 +128,7 @@ async function execute(job: JobRow) {
   const reservation=paid
     ?await reserveAgentPilotBudget(client as unknown as AgentBudgetClient,job)
     :null;
+  let completedRunId: string | null = null;
   try {
   let code: number = 1;
   if (job.job_type === 'MMV_DISCOVERY') {
@@ -254,6 +255,7 @@ async function execute(job: JobRow) {
     return;
   }
   await complete(job.id, runId);
+  completedRunId = runId;
   await journal('SUCCESS',runId);
 
   if (job.job_type === 'MMV_DISCOVERY') {
@@ -269,9 +271,43 @@ async function execute(job: JobRow) {
   } finally {
     if(reservation){
       try{
+        // Complete as UNKNOWN first; release unused reserve only after both
+        // provider usage and run summary agree on the number of API calls.
         await finishAgentPilotBudget(client as unknown as AgentBudgetClient,reservation);
+        if(job.job_type==='PRICE_INTELLIGENCE' &&
+           job.input.provider==='compact-match' && completedRunId){
+          const {data:run,error:runErr}=await client.from('agent_runs')
+            .select('summary').eq('id',completedRunId).single();
+          const {data:receipts,error:receiptErr}=await client
+            .from('agent_ai_usage_events')
+            .select('model,reason,estimated_cost_usd,input_tokens,output_tokens,web_search_count')
+            .eq('intended_run_id',completedRunId).eq('reason','PRICE_COMPACT_IDENTITY_ONLY');
+          const measured=Number(run?.summary?.llmCalls);
+          const listed=receipts??[];
+          const valid=!runErr&&!receiptErr&&Number.isInteger(measured)&&
+            measured>=0&&measured<=1&&listed.length===measured&&
+            listed.every(r=>r.model==='gpt-5.6-luna' &&
+              Number(r.web_search_count)===0 &&
+              Number.isFinite(Number(r.estimated_cost_usd)) &&
+              Number(r.estimated_cost_usd)>=0 &&
+              Number(r.input_tokens)>0&&Number(r.output_tokens)>=0);
+          if(valid){
+            const actual=listed.reduce((v,r)=>v+Number(r.estimated_cost_usd),0);
+            if(actual<=reservation.reservedUsd){
+              const {error:reconcileErr}=await client.rpc('agent_spend_reconcile',{
+                p_reservation_id:reservation.id,
+                p_actual_usd:actual,
+                p_source:'PROVIDER_USAGE',
+              });
+              if(reconcileErr)throw new Error('PRICE_COMPACT_RESERVATION_RECONCILE_FAILED');
+              console.log('[price-budget] compact',job.id,
+                'provider-metered tokens, estimated USD',actual.toFixed(6));
+            }
+          }
+        }
       }catch{
-        // Never release an uncertain paid reserve or lose the original job outcome.
+        // Retain UNKNOWN whenever usage is incomplete; never release a reserve
+        // using a guess or an unrelated agent's token receipt.
         console.error('[agent-worker] budget reservation requires reconciliation',job.id);
       }
     }
