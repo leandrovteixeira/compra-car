@@ -7,7 +7,8 @@ import {
   type ConnectorSourceEntry,
 } from '@compra-car/core/agents';
 import { BrandConnectorSupabaseAdapter } from '@compra-car/adapter-supabase/brand-connectors';
-import { AgentPlatformSupabaseAdapter, PriceAgentSupabaseCatalogReader } from '@compra-car/adapter-supabase';
+import { AgentPlatformSupabaseAdapter } from '@compra-car/adapter-supabase';
+import { PriceAgentSupabaseCatalogReader } from '@compra-car/adapter-supabase/price-agent-context';
 import { officialGwmPricePageForTarget } from './gwm-price-sources';
 
 /** Deterministic, QA-only Brand Connector source-map refresh.
@@ -56,7 +57,7 @@ export async function refreshGwmBrandPriceSources(
 
   const existing = new Set(active.sourceEntries.map(x=>x.url));
   const additions: ConnectorSourceEntry[] = verified.filter(v=>!existing.has(v.url))
-    .map((v,i)=>({
+    .map(v=>({
       type:'MODEL_PAGE',url:v.url,priority:1,
       notes:'Official Brazilian per-version model product page with public price',
     }));
