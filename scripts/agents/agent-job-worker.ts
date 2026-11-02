@@ -176,12 +176,19 @@ async function execute(job: JobRow) {
     // The Price CLI persists an immutable run/finding bundle, consumed by the
     // shared Reviews inbox. Never run against an unexpected market.
     if (job.market !== 'BR') throw new Error('PRICE_MARKET_UNSUPPORTED');
-    const priceAiRequested = job.input.provider === 'openai';
+    const compactRequested = job.input.provider === 'compact-match';
+    const priceAiRequested = job.input.provider === 'openai' || compactRequested;
     // An explicit paid Price job cannot silently downgrade to deterministic
     // or borrow a generic/other-agent key.
-    const priceEnv = priceAiRequested
-      ? { ...env, PRICE_AGENT_LLM_ENABLED: '1', PRICE_AGENT_HARD_COST_CAP_USD: '2' }
-      : { ...env, PRICE_AGENT_LLM_ENABLED: '0', PRICE_AGENT_HARD_COST_CAP_USD: '2' };
+    const priceEnv = compactRequested
+      ? { ...env, PRICE_AGENT_LLM_ENABLED: '0',
+          PRICE_AGENT_COMPACT_MATCH_ENABLED: '1',
+          PRICE_AGENT_HARD_COST_CAP_USD: '0.03' }
+      : priceAiRequested
+        ? { ...env, PRICE_AGENT_COMPACT_MATCH_ENABLED: '0',
+            PRICE_AGENT_LLM_ENABLED: '1', PRICE_AGENT_HARD_COST_CAP_USD: '2' }
+        : { ...env, PRICE_AGENT_COMPACT_MATCH_ENABLED: '0',
+            PRICE_AGENT_LLM_ENABLED: '0', PRICE_AGENT_HARD_COST_CAP_USD: '2' };
     code = await runPriceCli(['--brand',job.brand,
       job.input.priceAuditOnly === true ? '--audit-only' : '--persist-findings',
       ...(job.input.shadowConnectorRunId ? ['--shadow-connector-run-id',job.input.shadowConnectorRunId] : [])],priceEnv,log,repositoryRoot);
