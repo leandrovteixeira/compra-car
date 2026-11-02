@@ -385,7 +385,8 @@ describe('Sprint 26C invalid MSRP AI handoff', () => {
     await research.researchPrices([n], { ...connector, brand: 'Kia',
       allowedDomains: ['kia.com.br'], sourceEntries: [] });
     expect(reconcile).toHaveBeenCalledTimes(1);
-    expect(reconcile.mock.calls[0]?.[0]).toEqual([n]);
-    expect(reconcile.mock.calls[0]?.[2]).toBe(2);
+    const call = reconcile.mock.calls[0] as unknown as [readonly PriceTarget[], unknown, number] | undefined;
+    expect(call?.[0]).toEqual([n]);
+    expect(call?.[2]).toBe(2);
   });
 });
