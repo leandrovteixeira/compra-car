@@ -289,7 +289,7 @@ export async function runPriceCli(
     let persistence = dependencies.persistence;
     let telemetry: PriceAgentSupabaseTelemetry | undefined;
 
-    if (!agent || (persistFindings && !persistence)) {
+    if (!agent || ((persistFindings || auditOnly) && !persistence)) {
       if (!env.SUPABASE_URL?.trim() || !env.SUPABASE_SERVER_KEY?.trim())
         throw new Error('SUPABASE_AGENT_CONFIG_REQUIRED');
 
