@@ -29,6 +29,7 @@ function Feedback({ state }: { readonly state: { readonly status: 'idle' | 'erro
 }
 
 export function AdminUserActions({ user }: { readonly user: AdminUserDto }) {
+  const actionsMenu = useRef<HTMLDetailsElement>(null);
   const disableDialog = useRef<HTMLDialogElement>(null);
   const roleDialog = useRef<HTMLDialogElement>(null);
   const deleteDialog = useRef<HTMLDialogElement>(null);
@@ -42,6 +43,20 @@ export function AdminUserActions({ user }: { readonly user: AdminUserDto }) {
     sendAdminUserPasswordRecoveryAction,
     INITIAL,
   );
+  useEffect(() => {
+    const closeOutside = (event: PointerEvent) => {
+      if (actionsMenu.current?.open && !actionsMenu.current.contains(event.target as Node)) actionsMenu.current.open = false;
+    };
+    const closeEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && actionsMenu.current?.open) actionsMenu.current.open = false;
+    };
+    document.addEventListener('pointerdown', closeOutside);
+    document.addEventListener('keydown', closeEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeOutside);
+      document.removeEventListener('keydown', closeEscape);
+    };
+  }, []);
   const healthy = user.profileState === 'valid';
   const label = user.fullName || user.email || 'este usuário';
 
@@ -52,7 +67,7 @@ export function AdminUserActions({ user }: { readonly user: AdminUserDto }) {
     if (roleState.status === 'success') roleDialog.current?.close();
   }, [roleState]);
   return (
-    <details className="relative">
+    <details className="relative" ref={actionsMenu}>
       <summary
         aria-label={`Ações para ${label}`}
         className="touch-target-square inline-grid size-8 cursor-pointer list-none place-items-center rounded-md border border-border text-base text-text-secondary hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus"
@@ -64,7 +79,7 @@ export function AdminUserActions({ user }: { readonly user: AdminUserDto }) {
           <>
             <button
               className={buttonClass}
-              onClick={() => roleDialog.current?.showModal()}
+              onClick={() => { actionsMenu.current?.removeAttribute("open"); roleDialog.current?.showModal(); }}
               type="button"
             >
               Alterar perfil
@@ -72,7 +87,7 @@ export function AdminUserActions({ user }: { readonly user: AdminUserDto }) {
             {user.status === 'active' ? (
               <button
                 className={`${buttonClass} border-rose-800 text-rose-300`}
-                onClick={() => disableDialog.current?.showModal()}
+                onClick={() => { actionsMenu.current?.removeAttribute("open"); disableDialog.current?.showModal(); }}
                 type="button"
               >
                 Desativar acesso
@@ -97,7 +112,7 @@ export function AdminUserActions({ user }: { readonly user: AdminUserDto }) {
           </p>
         )}
         {user.status === 'pending' && user.profileState === 'valid' ? (
-          <button type="button" onClick={() => deleteDialog.current?.showModal()} className={`${buttonClass} border-rose-800 text-rose-300`}>Excluir conta não ativada</button>
+          <button type="button" onClick={() => { actionsMenu.current?.removeAttribute("open"); deleteDialog.current?.showModal(); }} className={`${buttonClass} border-rose-800 text-rose-300`}>Excluir conta não ativada</button>
         ) : null}
         <Feedback state={deleteState} />
         {user.email ? (
