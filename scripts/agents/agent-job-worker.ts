@@ -141,6 +141,7 @@ async function execute(job: JobRow) {
         '--persist-findings',
         ...(job.input.marketReconcile ? ['--market-reconcile'] : []),
         ...(job.input.marketModel ? ['--market-model', job.input.marketModel] : []),
+        ...(job.input.shadowConnectorRunId ? ['--shadow-connector-run-id',job.input.shadowConnectorRunId] : []),
       ],
       env,
       log,
@@ -258,7 +259,7 @@ async function execute(job: JobRow) {
   completedRunId = runId;
   await journal('SUCCESS',runId);
 
-  if (job.job_type === 'MMV_DISCOVERY') {
+  if (job.job_type === 'MMV_DISCOVERY' && !job.input.shadowConnectorRunId) {
     const { error } = await client.rpc('enqueue_product_year_job', {
       p_brand: job.brand,
       p_created_by: job.created_by,
