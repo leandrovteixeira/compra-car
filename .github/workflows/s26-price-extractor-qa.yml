@@ -6,9 +6,11 @@ on:
       - 'packages/core/src/agents/raw-commercial-price.ts'
       - 'packages/core/src/agents/universal-price-extractor.ts'
       - 'packages/core/src/agents/raw-price-matching.ts'
+      - 'packages/core/src/agents/source-first-price-reconciliation.ts'
       - 'packages/core/test/raw-commercial-price-26.test.ts'
       - 'packages/core/test/universal-price-extractor-26.test.ts'
       - 'packages/core/test/raw-price-matching-26.test.ts'
+      - 'packages/core/test/source-first-price-reconciliation-26.test.ts'
       - '.github/workflows/s26-price-extractor-qa.yml'
   workflow_dispatch:
 permissions:
@@ -30,4 +32,4 @@ jobs:
       - name: Core TypeScript
         run: pnpm --filter @compra-car/core exec tsc --noEmit
       - name: Source-first extraction and canonical-matching regressions
-        run: pnpm --filter @compra-car/core exec vitest run test/raw-commercial-price-26.test.ts test/universal-price-extractor-26.test.ts test/raw-price-matching-26.test.ts
+        run: pnpm --filter @compra-car/core exec vitest run test/raw-commercial-price-26.test.ts test/universal-price-extractor-26.test.ts test/raw-price-matching-26.test.ts test/source-first-price-reconciliation-26.test.ts
