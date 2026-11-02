@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { BrandConnector } from './brand-connector-types';
+import { reconcileSourceFirstPrices } from './source-first-price-reconciliation';
 import {
   priceContexts,
   priceSourceAppliesToModel,
@@ -452,6 +453,12 @@ export class DeterministicFirstPriceResearch implements PriceResearchProvider {
       }
     }
 
+    // Source-first extraction is independent of the legacy per-target parser.
+    // Only explicitly verified model, trim and MY can generate an observation.
+    // All other extracted prices remain evidence candidates, never MSRP findings.
+    const sourceFirst = reconcileSourceFirstPrices([...this.snapshots.values()], targets);
+    observations.push(...sourceFirst.observations);
+
     // A syntactically extracted amount is not necessarily a valid MSRP.
     // In particular, automotive pages often show retail bonuses beside price
     // labels. Such candidates must remain eligible for AI reconciliation.
@@ -503,6 +510,7 @@ export class DeterministicFirstPriceResearch implements PriceResearchProvider {
 
     return {
       observations,
+      sourceFirstCandidates: sourceFirst.candidates,
       snapshots: [...this.snapshots.values()],
       mappings,
       usage,
