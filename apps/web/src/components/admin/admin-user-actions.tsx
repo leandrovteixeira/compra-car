@@ -77,13 +77,6 @@ export function AdminUserActions({ user }: { readonly user: AdminUserDto }) {
       <div className="z-10 mt-2 grid min-w-64 gap-3 rounded-xl border border-slate-700 bg-slate-900 p-3 shadow-xl md:absolute md:right-0">
         {healthy ? (
           <>
-            <button
-              className={buttonClass}
-              onClick={() => { actionsMenu.current?.removeAttribute("open"); roleDialog.current?.showModal(); }}
-              type="button"
-            >
-              Alterar perfil
-            </button>
             {user.status === 'active' ? (
               <button
                 className={`${buttonClass} border-rose-800 text-rose-300`}
