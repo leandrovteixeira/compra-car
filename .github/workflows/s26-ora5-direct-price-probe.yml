@@ -1,0 +1,28 @@
+name: S26 Ora5 Direct HTML Price Probe
+on:
+  push:
+    branches: [sprint-26-agent-ux-control-center]
+    paths:
+      - 'scripts/agents/price-ora5-direct-probe.ts'
+      - 'scripts/agents/ora5-direct-probe-cli.ts'
+      - 'packages/core/src/agents/raw-commercial-price.ts'
+      - '.github/workflows/s26-ora5-direct-price-probe.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  direct-price-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '10.34.5'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Fetch official Ora 5 HTML and extract price without AI
+        run: pnpm --filter @compra-car/agents exec tsx ora5-direct-probe-cli.ts
