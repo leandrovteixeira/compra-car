@@ -1,4 +1,4 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { createLegacySupabaseClient } from '@compra-car/adapter-supabase';
 
 // Media metadata is deliberately separate from immutable news evidence.
 const PUBLISHER = 'motor1.uol.com.br';
@@ -66,7 +66,7 @@ async function resolveCover(raw: string): Promise<{image: string | null; error: 
     return {image:null,error:e instanceof Error&&e.name==='TimeoutError'?'TIMEOUT':'FETCH_FAILED'};
   }
 }
-type Db = SupabaseClient;
+type Db = ReturnType<typeof createLegacySupabaseClient>;
 export async function enrichWatcherImages(client: Db): Promise<void> {
   // Bounded and independent: no image error can roll back the news collector.
   const {data:revisions,error:readError}=await client.from('watcher_article_revisions')
