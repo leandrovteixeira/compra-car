@@ -6,6 +6,11 @@ import type {
   BrandSourceCrawlTelemetry,
 } from '@compra-car/core/agents';
 import { safeConnectorUrl } from '@compra-car/core/agents';
+import {
+  findEmbeddedProductUrls,
+  discoverOfficialSitemapProducts,
+  discoverHomepageProductUrls,
+} from './brand-index-fallback';
 
 type Fetcher = typeof fetch;
 type LinkedPage = { url: string; from: string };
@@ -149,9 +154,27 @@ export async function expandBrandProductSources(
     const page = await officialHtml(index, domains, fetcher, stats);
     if (!page) continue;
     checked++;
-    for (const url of linkedUrls(page.html, page.url, domains)) {
+    for (const url of [
+      ...linkedUrls(page.html, page.url, domains),
+      ...findEmbeddedProductUrls(page.html, page.url, domains),
+    ]) {
       if (kindForUrl(url) !== 'MODEL_PAGE') continue;
       if (!candidates.some(c => c.url === url)) candidates.push({ url, from: page.url });
+    }
+  }
+  // SPA indexes may use JSON state or APIs without real <a> tags. When
+  // their links are incomplete, reuse public manufacturer home/sitemap URLs.
+  // Never invent a slug or expand beyond the connector's official domains.
+  if (candidates.length < 10 && indexes.length) {
+    const fallback = await Promise.all([
+      discoverHomepageProductUrls(indexes[0]!,domains,fetcher,stats),
+      discoverOfficialSitemapProducts(indexes[0]!,domains,fetcher,stats),
+    ]);
+    for (const urls of fallback) for (const url of urls) {
+      if (kindForUrl(url) !== 'MODEL_PAGE') continue;
+      if (!candidates.some(c => c.url === url)) candidates.push({
+        url, from: indexes[0]!,
+      });
     }
   }
   const indexPhaseMs = Date.now()-indexStart;
