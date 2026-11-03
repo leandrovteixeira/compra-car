@@ -1,11 +1,15 @@
 import {describe,expect,it,vi} from 'vitest';
 import {
   NewProductCheckAgent,FixtureProductCatalogReader,
-  FixtureProductResearchProvider,mapMmvRunToPlatform,
+  toyotaFixtureCandidates,mapMmvRunToPlatform,
   type MmvGenerationAssessment,
 } from '../src/agents';
 
 const scope={country:'BR',brand:'Toyota'} as const;
+const historicalResearch={researchProducts:async()=>({
+  candidates:[{...toyotaFixtureCandidates[0]!,modelYear:2027,productionYear:2027}],
+  metadata:{provider:'fixture'},
+})};
 function makeAssessment(input:{
   candidateYear:number;
   mmvId:string;
@@ -41,7 +45,7 @@ describe('MMV Generation end-to-end discovery review integration',()=>{
     })];
   });
   const result=await new NewProductCheckAgent({
-    research:new FixtureProductResearchProvider(),
+    research:historicalResearch,
     catalog:new FixtureProductCatalogReader(),
     reports:{write:writer},
     generationAssessmentProvider:{assess:provider},
@@ -68,7 +72,7 @@ describe('MMV Generation end-to-end discovery review integration',()=>{
  });
  it('keeps legacy flow unchanged when generation evidence provider is disconnected',async()=>{
   const result=await new NewProductCheckAgent({
-    research:new FixtureProductResearchProvider(),
+    research:historicalResearch,
     catalog:new FixtureProductCatalogReader(),
     reports:{write:async()=>{}},
   }).run(scope,'00000000-0000-4000-8000-000000000012');
@@ -78,7 +82,7 @@ describe('MMV Generation end-to-end discovery review integration',()=>{
  });
  it('rejects foreign-source evidence and fails closed before publishing review finding',async()=>{
   await expect(new NewProductCheckAgent({
-    research:new FixtureProductResearchProvider(),
+    research:historicalResearch,
     catalog:new FixtureProductCatalogReader(),
     reports:{write:async()=>{}},
     generationAssessmentProvider:{
