@@ -59,29 +59,29 @@ export function AuthDrawer() {
         role="dialog"
         aria-modal="true"
         aria-labelledby="auth-drawer-title"
-        className="relative flex h-full w-full max-w-[485px] flex-col overflow-y-auto bg-white px-7 py-8 text-[#1A1D21] shadow-2xl sm:px-10"
+        className="relative flex h-full w-full max-w-[485px] flex-col overflow-y-hidden bg-white px-7 py-5 text-[#1A1D21] shadow-2xl max-[700px]:overflow-y-auto sm:px-10"
       >
         <button
           type="button"
           aria-label="Fechar"
           onClick={close}
-          className="absolute right-5 top-5 p-2 text-2xl text-[#1A1D21]"
+          className="absolute right-4 top-3 p-2 text-2xl text-[#1A1D21]"
         >
           ×
         </button>
-        <h2 id="auth-drawer-title" className="mt-14 text-2xl font-semibold">
+        <h2 id="auth-drawer-title" className="mt-7 text-2xl font-semibold">
           Bem-vindo
         </h2>
-        <p className="mt-2 text-sm text-[#64707A]">
+        <p className="mt-1 text-sm text-[#64707A]">
           Entre na sua conta para exportar e compartilhar comparações.
         </p>
-        <div className="mt-9 flex border-b border-[#DEE3E6]">
+        <div className="mt-4 flex border-b border-[#DEE3E6]">
           <button
             type="button"
             onClick={() => setMode('login')}
             aria-selected={mode === 'login'}
             role="tab"
-            className={`w-1/2 border-b-[3px] py-3 text-sm ${mode === 'login' ? 'border-[#EF7732] font-semibold text-[#EF7732]' : 'border-transparent text-[#64707A]'}`}
+            className={`w-1/2 border-b-[3px] py-2 text-sm ${mode === 'login' ? 'border-[#EF7732] font-semibold text-[#EF7732]' : 'border-transparent text-[#64707A]'}`}
           >
             Entrar
           </button>
@@ -90,20 +90,20 @@ export function AuthDrawer() {
             onClick={() => setMode('signup')}
             aria-selected={mode === 'signup'}
             role="tab"
-            className={`w-1/2 border-b-[3px] py-3 text-sm ${mode === 'signup' ? 'border-[#EF7732] font-semibold text-[#EF7732]' : 'border-transparent text-[#64707A]'}`}
+            className={`w-1/2 border-b-[3px] py-2 text-sm ${mode === 'signup' ? 'border-[#EF7732] font-semibold text-[#EF7732]' : 'border-transparent text-[#64707A]'}`}
           >
             Criar conta
           </button>
         </div>
         {mode === 'login' ? (
-          <form action={login} className="mt-9 flex flex-col gap-5">
+          <form action={login} className="mt-4 flex flex-col gap-3">
             {searchParams.get('confirmed') === '1' && <p role="status" className="text-sm text-emerald-700">E-mail confirmado! Entre com sua senha.</p>}
             {searchParams.get('auth_error') && <p role="alert" className="text-sm text-red-700">Não foi possível confirmar o e-mail. Solicite um novo link de confirmação.</p>}
             <input type="hidden" name="next" value={returnTo} />
             <label className="flex flex-col gap-2 text-sm font-medium">
               Email
               <input
-                className="ui-field min-h-11"
+                className="ui-field min-h-10"
                 name="email"
                 type="email"
                 autoComplete="email"
@@ -114,7 +114,7 @@ export function AuthDrawer() {
               Senha
               <span className="relative">
                 <input
-                  className="ui-field min-h-11 w-full pr-12"
+                  className="ui-field min-h-10 w-full pr-12"
                   name="password"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
@@ -164,7 +164,7 @@ export function AuthDrawer() {
             </a>
             <button
               type="submit"
-              className="mt-2 min-h-12 rounded-lg bg-[#EF7732] text-center font-semibold text-white"
+              className="mt-1 min-h-11 rounded-lg bg-[#EF7732] text-center font-semibold text-white"
             >
               Entrar
             </button>
@@ -228,7 +228,7 @@ export function AuthDrawer() {
               className="mt-2 min-h-12 rounded-lg bg-[#EF7732] text-center font-semibold text-white disabled:opacity-60">
               {signupPending ? 'Criando conta…' : 'Criar conta gratuita'}
             </button>
-            <p className="text-xs leading-5 text-[#64707A]">Você receberá um e-mail para confirmar sua conta. A promoção para acesso corporativo depende de aprovação.</p>
+            <p className="text-xs leading-4 text-[#64707A]">Você receberá um e-mail para confirmar sua conta. A promoção para acesso corporativo depende de aprovação.</p>
           </form>
         )}
       </section>
