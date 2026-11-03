@@ -328,6 +328,74 @@ export function mapMmvRunToPlatform(
     };
   });
   findings.push(...bodyFindings);
+  const generationFindings: AgentFindingBundle[] = (result.generationChangeProposals ?? []).map(
+    ({assessment,classification}) => {
+      const id=uuid();
+      const fingerprint=createHash('sha256').update(canonicalAgentJson([
+        'mmv-generation-change:v1', result.market, result.brand,
+        assessment.previousMmvId,assessment.currentMmvId,
+        assessment.previousModelYear,assessment.currentModelYear,
+        assessment.signals.map(x=>[x.dimension,x.severity,x.reason,
+          x.evidence.map(e=>[e.sourceUrl,e.modelYear,e.sourceKind,e.excerpt])]),
+      ])).digest('hex');
+      const evidence=[...new Map(
+        assessment.signals.flatMap(x=>x.evidence).map(e=>[
+          canonicalAgentJson([e.sourceUrl,e.modelYear,e.excerpt]),e,
+        ])
+      ).values()].map(e=>{
+        const url=safeAgentSourceUrl(e.sourceUrl);
+        if(!url)throw new AgentPlatformError('INVALID_INPUT');
+        return {
+          id:uuid(),findingId:id,sourceType:'TECHNICAL_SHEET',
+          sourceUrl:url,sourceDomain:new URL(url).hostname,
+          title:'MY '+e.modelYear+' generation comparison',
+          excerpt:e.excerpt.slice(0,1000),
+          evidenceFingerprint:createHash('sha256').update(
+            canonicalAgentJson([e.sourceUrl,e.modelYear,e.excerpt])
+          ).digest('hex'),
+          metadata:{sourceKind:e.sourceKind,modelYear:e.modelYear},
+          capturedAt:result.completedAt,createdAt:result.completedAt,
+        };
+      });
+      return {
+        finding:{
+          id,runId:result.runId,findingType:'AMBIGUOUS_MMV' as const,
+          fingerprint,subjectKey:canonicalAgentJson([
+            'mmv-generation:v1',result.market,assessment.currentMmvId,
+            assessment.previousModelYear,assessment.currentModelYear,
+          ]),
+          title:result.brand+' geração MY'+assessment.previousModelYear+
+            ' → MY'+assessment.currentModelYear+' ('+classification.changeType+')',
+          summary:classification.rationale.join(' | '),
+          confidence:null,requiresReview:true,
+          subject:{
+            brand:result.brand,
+            previousMmvId:assessment.previousMmvId,
+            currentMmvId:assessment.currentMmvId,
+            previousModelYear:assessment.previousModelYear,
+            currentModelYear:assessment.currentModelYear,
+          },
+          proposal:{
+            action:'REVIEW_GENERATION_CHANGE',
+            changeType:classification.changeType,
+            weightedScore:classification.weightedScore,
+            specCarryOverPolicy:classification.specCarryOverPolicy,
+            revalidateSubsystems:[...classification.revalidateSubsystems],
+          },
+          payload:{
+            reasonCode:'GENERATION_CHANGE_REVIEW',
+            requiresReview:true,
+            generationAssessment:assessment as unknown as AgentObject,
+            classification:classification as unknown as AgentObject,
+            noAutomaticCarryOver:true,
+          },
+          createdAt:result.completedAt,updatedAt:result.completedAt,
+        },
+        evidence,
+      };
+    }
+  );
+  findings.push(...generationFindings);
   return {
     run: {
       id: result.runId,
@@ -350,6 +418,7 @@ export function mapMmvRunToPlatform(
         rejectedCandidates: result.rejectedCandidates.length,
         rejectedExternalSources: result.rejectedExternalSources,
         bodyModelProposals: result.bodyModelProposals.length,
+        generationChangeProposals:(result.generationChangeProposals ?? []).length,
       },
       configSnapshot: {
         platformSchemaVersion: '19B.1',
