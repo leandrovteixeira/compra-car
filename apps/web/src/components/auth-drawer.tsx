@@ -95,6 +95,8 @@ export function AuthDrawer() {
         </div>
         {mode === 'login' ? (
           <form action={login} className="mt-9 flex flex-col gap-5">
+            {searchParams.get('confirmed') === '1' && <p role="status" className="text-sm text-emerald-700">E-mail confirmado! Entre com sua senha.</p>}
+            {searchParams.get('auth_error') && <p role="alert" className="text-sm text-red-700">Não foi possível confirmar o e-mail. Solicite um novo link de confirmação.</p>}
             <input type="hidden" name="next" value={returnTo} />
             <label className="flex flex-col gap-2 text-sm font-medium">
               Email
