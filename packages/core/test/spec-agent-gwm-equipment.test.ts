@@ -29,7 +29,7 @@ const page4=[
 describe('GWM equipment pages deterministic text extraction',()=>{
  const parsed=extractGwmEquipmentClaims27([page1,page2,page3,page4].join('\f'));
  it('keeps left/right columns separate with continuation text and categories',()=>{
-   expect(parsed.metrics.totalClaims).toBe(11);
+   expect(parsed.metrics.totalClaims).toBe(12);
    expect(parsed.metrics).toMatchObject({llmCalls:0,databaseWrites:0});
    expect(parsed.claims.some(x=>x.sourceLabel==='Bancos dianteiros com ajuste elétrico e ventilação e ajuste de lombar para o motorista'&&x.category==='INTERIOR')).toBe(true);
    expect(parsed.claims.some(x=>x.sourceLabel==='Faróis FULL-LED com ajuste de altura'&&x.category==='ILUMINAÇÃO')).toBe(true);
