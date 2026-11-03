@@ -53,6 +53,8 @@ jobs:
             'https://www.gwmmotors.com.br/content/dam/gwm/pages/br/pt/models/haval-h6-phev19-my25/ficha-tecnica-haval-h6-phev19-flex.pdf' \
             -o /tmp/gwm-h6-phev19-flex.pdf
           test "$(head -c 4 /tmp/gwm-h6-phev19-flex.pdf)" = '%PDF'
+          pdftotext -layout /tmp/gwm-h6-phev19-flex.pdf /tmp/gwm-full-layout.txt
+          pdftotext -raw /tmp/gwm-h6-phev19-flex.pdf /tmp/gwm-full-raw.txt
           pnpm --filter @compra-car/agents exec tsx spec-agent-gwm-dry-run.ts --pdf /tmp/gwm-h6-phev19-flex.pdf > /tmp/gwm-spec-dry-run.json
           node -e 'const x=require("/tmp/gwm-spec-dry-run.json"); console.log("GWM deterministic smoke:",JSON.stringify({summary:x.summary,chosenTextMode:x.chosenTextMode,unresolved:x.unresolved.length,databaseWrites:x.databaseWrites,llmCalls:x.llmCalls}))'
       - name: Upload GWM dry-run diagnostic
@@ -60,6 +62,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: gwm-spec-dry-run
-          path: /tmp/gwm-spec-dry-run.json
+          path: |
+            /tmp/gwm-spec-dry-run.json
+            /tmp/gwm-full-layout.txt
+            /tmp/gwm-full-raw.txt
           if-no-files-found: ignore
 
