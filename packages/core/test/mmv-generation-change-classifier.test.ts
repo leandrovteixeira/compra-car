@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import {
-  classifyMmvGenerationChange,MMV_GENERATION_WEIGHTS,
+  classifyMmvGenerationChange,suggestMmvDimensionSeverity,MMV_GENERATION_WEIGHTS,
   type MmvGenerationAssessment,type MmvGenerationSeverity,
 } from '../src/agents/mmv-generation-change-classifier';
 
@@ -75,5 +75,27 @@ describe('MMV Generation Change Classifier (review-only)',()=>{
     .toThrow('MMV_GENERATION_IDENTITY_INVALID');
   expect(()=>classifyMmvGenerationChange({...v,signals:[v.signals[0]!,v.signals[0]!,v.signals[2]!]}))
     .toThrow('MMV_GENERATION_SIGNALS_INVALID');
+ });
+});
+
+describe('deterministic dimension severity suggestions',()=>{
+ const previous={lengthMm:4703,widthMm:1886,heightMm:1730,wheelbaseMm:2738};
+ it('does not mistake one millimeter of ground clearance for a new generation',()=>{
+  const x=suggestMmvDimensionSeverity(previous,previous);
+  expect(x.severity).toBe(0);
+  expect(x.deltas.wheelbaseMm).toBe(0);
+ });
+ it('flags major wheelbase/platform-sized change',()=>{
+  const next={...previous,lengthMm:5100,wheelbaseMm:2940};
+  const x=suggestMmvDimensionSeverity(previous,next);
+  expect(x.severity).toBe(3);
+ });
+ it('flags moderate dimensional redesign independently of motor',()=>{
+  const x=suggestMmvDimensionSeverity(previous,{...previous,wheelbaseMm:2800});
+  expect(x.severity).toBe(2);
+ });
+ it('rejects missing or corrupted values instead of inferring continuity',()=>{
+  expect(()=>suggestMmvDimensionSeverity({...previous, wheelbaseMm:0},previous))
+    .toThrow('MMV_GENERATION_DIMENSIONS_INVALID');
  });
 });
