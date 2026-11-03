@@ -14,8 +14,9 @@
       "PDF_REFERENCIA_INDIRETA": 10,
       "PDF_NUMERICO_CONFERIDO": 34,
       "PDF_DESCRITO_IA_NAO_MAPEOU": 13,
-      "DERIVADO_CHECAR_FORMULA": 2,
-      "DIVERGENCIA_PDF_X_QA": 1
+      "DERIVADO_CHECAR_FORMULA": 1,
+      "FORMULA_OU_UNIDADE_INCONSISTENTE": 1,
+      "CONFLITO_FONTES_E_FICHA_QA": 1
     },
     "numericCounts": {
       "PDF_NUMERICO_CONFERIDO": 34,
@@ -33,7 +34,11 @@
     "missingInPDF": 44,
     "contradictions": [
       "SF_0027"
-    ]
+    ],
+    "derivedAnomalies": [
+      "PW_0036"
+    ],
+    "method": "Avaliação conservadora; sugestões da IA não estão aprovadas, ausência de evidência não é ausência de equipamento."
   },
   "audit": [
     {
@@ -2356,7 +2361,7 @@
       "ai_proposal_count": 0,
       "ai_source_claims": "",
       "risk_or_note": "",
-      "source_followup": "INMETRO PBEV — eficiência energética MJ/km; conferir tabela e variante 2027",
+      "source_followup": "PBEV Inmetro oficial, FE 0,64 MJ/km; não consta da ficha GWM, verificar linha 2027",
       "provenance_in_database": "Não recuperada: product_specs não conserva URL/documento de origem"
     },
     {
@@ -2793,7 +2798,7 @@
       "ai_proposal_count": 0,
       "ai_source_claims": "",
       "risk_or_note": "",
-      "source_followup": "Manual transmissão — duas velocidades; PDF 2027 indica DHAT-1, não número de relações",
+      "source_followup": "PDF MY27: transmissão DHAT-1. Ficha antiga MY26: 2 velocidades. Informação QA pode ter origem anterior.",
       "provenance_in_database": "Não recuperada: product_specs não conserva URL/documento de origem"
     },
     {
@@ -2839,7 +2844,7 @@
       "ai_proposal_count": 0,
       "ai_source_claims": "",
       "risk_or_note": "",
-      "source_followup": "Manual do proprietário específico MY2027 — potência motor elétrico 177 cv",
+      "source_followup": "Manual GWM MY26 registra motor 130 kW ≈177 cv; confirmação MY2027 Flex pendente",
       "provenance_in_database": "Não recuperada: product_specs não conserva URL/documento de origem"
     },
     {
@@ -2862,7 +2867,7 @@
       "ai_proposal_count": 0,
       "ai_source_claims": "",
       "risk_or_note": "",
-      "source_followup": "Manual do proprietário específico MY2027 — torque motor elétrico 299,8 Nm",
+      "source_followup": "Manual GWM MY26 registra motor 300 Nm; QA 299,8 Nm exige fonte específica MY2027",
       "provenance_in_database": "Não recuperada: product_specs não conserva URL/documento de origem"
     },
     {
@@ -3015,14 +3020,14 @@
       "is_present": null,
       "input_unit": "kg/Nm",
       "product_spec_id": 145429,
-      "pdf_status": "DERIVADO_CHECAR_FORMULA",
+      "pdf_status": "FORMULA_OU_UNIDADE_INCONSISTENTE",
       "pdf_page": "",
       "pdf_value": "",
-      "pdf_evidence": "Relação peso/torque cadastrada: requer fórmula e unidade documentadas; não publicada",
+      "pdf_evidence": "1915/55=34,81818; 1915/54,5=35,1376 kg/kgfm; 1915/535=3,5794 kg/Nm",
       "ai_proposed": false,
       "ai_proposal_count": 0,
       "ai_source_claims": "",
-      "risk_or_note": "Sem número explicitamente publicado",
+      "risk_or_note": "ALTA: QA 34,8182 ≈1915/55 (torque MY26 em kgfm); novo PDF diz 54,5 kgfm/535 Nm. Possível cálculo antigo com unidade kg/Nm errada",
       "source_followup": "",
       "provenance_in_database": "Não recuperada: product_specs não conserva URL/documento de origem"
     },
@@ -3636,15 +3641,15 @@
       "is_present": true,
       "input_unit": null,
       "product_spec_id": 145276,
-      "pdf_status": "DIVERGENCIA_PDF_X_QA",
+      "pdf_status": "CONFLITO_FONTES_E_FICHA_QA",
       "pdf_page": "5",
       "pdf_value": "",
       "pdf_evidence": "CONTRADIÇÃO: base diz discos traseiros sólidos; PDF diz ventilados",
       "ai_proposed": false,
       "ai_proposal_count": 0,
       "ai_source_claims": "",
-      "risk_or_note": "ALTA — conflito frontal com PDF: discos traseiros sólidos vs ventilados",
-      "source_followup": "",
+      "risk_or_note": "ALTA: PDF oficial GWM p.5 diz ventilados; revenda Hangar Motors diz sólidos; QA indica sólidos. Não atualizar sem validação de versão/chassi e fabricante.",
+      "source_followup": "https://www.hangarmotors.com.br/Veiculo/haval-h6-1.5-flex-phev19-e-traction-2027/4987387/detalhes",
       "provenance_in_database": "Não recuperada: product_specs não conserva URL/documento de origem"
     },
     {
