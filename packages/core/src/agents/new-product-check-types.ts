@@ -1,3 +1,4 @@
+import type { MmvGenerationReviewProposal } from './mmv-generation-review';
 import type {
   MmvBodyModelResolutionProposal,
   MmvDiscoveryReasonCode,
@@ -139,6 +140,8 @@ export interface CurrentMmvDiscoverySnapshot {
   readonly candidates: readonly OfficialProductCandidate[];
   /** Review-only proposals when explicit body evidence suggests distinct marketed models. */
   readonly bodyModelProposals: readonly MmvBodyModelResolutionProposal[];
+  /** Optional review-only generation transitions when historical evidence provider is connected. */
+  readonly generationChangeProposals?: readonly MmvGenerationReviewProposal[];
   readonly rejectedCandidates: readonly RejectedProductCandidate[];
   readonly rejectedExternalSources: number;
   readonly researchMetadata: ResearchMetadata;
