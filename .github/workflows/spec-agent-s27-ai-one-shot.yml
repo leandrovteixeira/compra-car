@@ -19,6 +19,7 @@ jobs:
     timeout-minutes: 15
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      SPEC_AGENT_OPENAI_API_KEY: ${{ secrets.SPEC_AGENT_OPENAI_API_KEY }}
       SPEC_AI_REPORT_PATH: /tmp/gwm-spec-ai-pilot.json
     steps:
       - uses: actions/checkout@v4
