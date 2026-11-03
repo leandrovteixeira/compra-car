@@ -34,7 +34,7 @@ jobs:
       - name: Typecheck core
         run: pnpm --filter @compra-car/core typecheck
       - name: Spec Agent unit and regression suite
-        run: pnpm --filter @compra-car/core exec vitest run test/spec-agent-reconciliation.test.ts test/spec-agent-baic-matrix.test.ts test/spec-agent-baic-import.test.ts test/spec-agent-review-projection.test.ts test/spec-agent-events.test.ts test/spec-agent-arcfox-golden.test.ts test/spec-agent-write-plan.test.ts test/spec-agent-pilot.test.ts test/spec-agent-persistence-plan.test.ts test/spec-agent-db-projection.test.ts test/spec-agent-catalog-suggestions.test.ts test/spec-agent-atomic-commit.test.ts test/spec-agent-gwm-phev19-2027-golden.test.ts test/spec-agent-gwm-technical.test.ts
+        run: pnpm --filter @compra-car/core exec vitest run test/spec-agent-reconciliation.test.ts test/spec-agent-baic-matrix.test.ts test/spec-agent-baic-import.test.ts test/spec-agent-review-projection.test.ts test/spec-agent-events.test.ts test/spec-agent-arcfox-golden.test.ts test/spec-agent-write-plan.test.ts test/spec-agent-pilot.test.ts test/spec-agent-persistence-plan.test.ts test/spec-agent-db-projection.test.ts test/spec-agent-catalog-suggestions.test.ts test/spec-agent-atomic-commit.test.ts test/spec-agent-gwm-phev19-2027-golden.test.ts test/spec-agent-gwm-technical.test.ts test/spec-agent-gwm-equipment.test.ts
       - name: Typecheck Supabase adapter
         run: pnpm --filter @compra-car/adapter-supabase typecheck
       - name: Spec Agent Supabase adapter tests
@@ -57,6 +57,9 @@ jobs:
           pdftotext -raw /tmp/gwm-h6-phev19-flex.pdf /tmp/gwm-full-raw.txt
           pnpm --filter @compra-car/agents exec tsx spec-agent-gwm-dry-run.ts --pdf /tmp/gwm-h6-phev19-flex.pdf > /tmp/gwm-spec-dry-run.json
           node -e 'const x=require("/tmp/gwm-spec-dry-run.json"); console.log("GWM deterministic smoke:",JSON.stringify({summary:x.summary,chosenTextMode:x.chosenTextMode,unresolved:x.unresolved.length,databaseWrites:x.databaseWrites,llmCalls:x.llmCalls}))'
+          pnpm --filter @compra-car/agents exec tsx spec-agent-gwm-equipment-benchmark.ts --text /tmp/gwm-full-layout.txt > /tmp/gwm-equipment-benchmark.json
+          node -e 'const x=require("/tmp/gwm-equipment-benchmark.json"); console.log("GWM equipment benchmark:",JSON.stringify({extraction:x.extraction,reconciliation:x.reconciliation,telemetry:x.telemetry}))'
+
       - name: Upload GWM dry-run diagnostic
         if: always()
         uses: actions/upload-artifact@v4
@@ -66,5 +69,6 @@ jobs:
             /tmp/gwm-spec-dry-run.json
             /tmp/gwm-full-layout.txt
             /tmp/gwm-full-raw.txt
+            /tmp/gwm-equipment-benchmark.json
           if-no-files-found: ignore
 
