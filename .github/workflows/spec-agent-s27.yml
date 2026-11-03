@@ -72,6 +72,7 @@ jobs:
             /tmp/gwm-spec-dry-run.json
             /tmp/gwm-full-layout.txt
             /tmp/gwm-full-raw.txt
+            /tmp/gwm-h6-phev19-flex.pdf
             /tmp/gwm-equipment-benchmark.json
           if-no-files-found: ignore
 
