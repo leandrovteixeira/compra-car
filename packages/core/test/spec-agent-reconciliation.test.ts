@@ -22,7 +22,7 @@ describe('Sprint 27 Spec Agent kernel', () => {
       {specCode:'PASSENGER_VENT',kind:'binary',value:'STANDARD',confirmed:true},
       {specCode:'POWER_KW',kind:'numeric',value:70,unit:'kW',confirmed:true}
     ];
-    const result = reconcileSpecDocuments27({target,documents:[document([])],aliases,binaryCatalog:['PASSENGER_VENT'],previousModelYearSpecs:previous});
+    const result = reconcileSpecDocuments27({target,documents:[document([])],aliases,binaryCatalog:['PASSENGER_VENT'],previousModelYearSpecs:previous,predecessorModelYear:2025});
     expect(result.specs.find(x => x.specCode === 'PASSENGER_VENT')?.value).toBe('NOT_AVAILABLE');
     expect(result.specs.find(x => x.specCode === 'POWER_KW')?.confirmed).toBe(false);
     expect(result.status).toBe('PENDING_REVIEW');
