@@ -120,7 +120,7 @@ export function classifyMmvGenerationChange(
     changeType='NEW_GENERATION';
   else if(design>=2)
     changeType='FACELIFT';
-  else if(score!>=0.4 || powertrain>=2 || dimensions>=2)
+  else if(design>0 || powertrain>0 || dimensions>0)
     changeType='MINOR_CHANGE';
   else
     changeType='UNCHANGED';
