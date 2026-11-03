@@ -8,6 +8,8 @@ on:
       - 'packages/core/test/price-check-classification-26.test.ts'
       - 'packages/core/src/agents/index.ts'
       - 'scripts/agents/spec-agent-*.ts'
+      - 'packages/adapter-supabase/src/spec-agent-*.ts'
+      - 'packages/adapter-supabase/test/spec-agent-*.test.ts'
       - '.github/workflows/spec-agent-s27.yml'
   workflow_dispatch:
 
@@ -33,5 +35,9 @@ jobs:
         run: pnpm --filter @compra-car/core typecheck
       - name: Spec Agent unit and regression suite
         run: pnpm --filter @compra-car/core exec vitest run test/spec-agent-reconciliation.test.ts test/spec-agent-baic-matrix.test.ts test/spec-agent-baic-import.test.ts test/spec-agent-review-projection.test.ts test/spec-agent-events.test.ts test/spec-agent-arcfox-golden.test.ts test/spec-agent-write-plan.test.ts test/spec-agent-pilot.test.ts test/spec-agent-persistence-plan.test.ts test/spec-agent-db-projection.test.ts test/spec-agent-catalog-suggestions.test.ts test/spec-agent-atomic-commit.test.ts
+      - name: Typecheck Supabase adapter
+        run: pnpm --filter @compra-car/adapter-supabase typecheck
+      - name: Spec Agent Supabase adapter tests
+        run: pnpm --filter @compra-car/adapter-supabase exec vitest run test/spec-agent-coverage-reader.test.ts
       - name: Typecheck agents scripts
         run: pnpm --filter @compra-car/agents typecheck
