@@ -13,6 +13,8 @@ export function AuthDrawer() {
   const searchParams = useSearchParams();
   const [mode, setMode] = useState<DrawerMode>('login');
   const [showPassword, setShowPassword] = useState(false);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const [signupState, signupAction, signupPending] = useActionState<SignUpState, FormData>(signUp, { status: 'idle' });
   const open = searchParams.get('auth') === 'login';
 
@@ -176,14 +178,46 @@ export function AuthDrawer() {
               <input className="ui-field min-h-11" name="email" type="email" autoComplete="email" required />
             </label>
             <label className="flex flex-col gap-2 text-sm font-medium">Senha
-              <input className="ui-field min-h-11" name="password" type={showPassword ? 'text' : 'password'} autoComplete="new-password" minLength={8} required />
+              <span className="relative">
+                <input key="password" className="ui-field min-h-11 w-full pr-12" name="password" type={showSignupPassword ? 'text' : 'password'}
+                  autoComplete="new-password" data-lpignore="true" minLength={8} required />
+                <button type="button" aria-label={showSignupPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                  aria-pressed={showSignupPassword} onClick={() => setShowSignupPassword(value => !value)}
+                  className="absolute inset-y-0 right-2 flex w-9 items-center justify-center text-[#1A1D21] hover:opacity-70">
+                  {showSignupPassword ? (
+                    <svg aria-hidden="true" className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8" />
+                      <path d="M8.1 5.3A10.5 10.5 0 0 1 12 4c5.3 0 9.3 5.2 10 8-.3 1.2-1.7 3.3-3.7 5M6 6C3.9 7.4 2.4 9.6 2 12c.7 2.8 4.7 8 10 8 1.3 0 2.6-.3 3.8-.8" />
+                    </svg>
+                  ) : (
+                    <svg aria-hidden="true" className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M2 12s3.6-8 10-8 10 8 10 8-3.6 8-10 8S2 12 2 12Z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  )}
+                </button>
+              </span>
             </label>
             <label className="flex flex-col gap-2 text-sm font-medium">Confirmar senha
-              <input className="ui-field min-h-11" name="confirmPassword" type={showPassword ? 'text' : 'password'} autoComplete="new-password" minLength={8} required />
-            </label>
-            <label className="flex items-center gap-2 text-sm text-[#64707A]">
-              <input type="checkbox" checked={showPassword} onChange={(event) => setShowPassword(event.target.checked)} />
-              Mostrar senhas
+              <span className="relative">
+                <input key="confirmPassword" className="ui-field min-h-11 w-full pr-12" name="confirmPassword" type={showConfirmation ? 'text' : 'password'}
+                  autoComplete="off" data-lpignore="true" minLength={8} required />
+                <button type="button" aria-label={showConfirmation ? 'Ocultar confirmar senha' : 'Mostrar confirmar senha'}
+                  aria-pressed={showConfirmation} onClick={() => setShowConfirmation(value => !value)}
+                  className="absolute inset-y-0 right-2 flex w-9 items-center justify-center text-[#1A1D21] hover:opacity-70">
+                  {showConfirmation ? (
+                    <svg aria-hidden="true" className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8" />
+                      <path d="M8.1 5.3A10.5 10.5 0 0 1 12 4c5.3 0 9.3 5.2 10 8-.3 1.2-1.7 3.3-3.7 5M6 6C3.9 7.4 2.4 9.6 2 12c.7 2.8 4.7 8 10 8 1.3 0 2.6-.3 3.8-.8" />
+                    </svg>
+                  ) : (
+                    <svg aria-hidden="true" className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M2 12s3.6-8 10-8 10 8 10 8-3.6 8-10 8S2 12 2 12Z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  )}
+                </button>
+              </span>
             </label>
             {signupState.status !== 'idle' && (
               <p role={signupState.status === 'error' ? 'alert' : 'status'} className={signupState.status === 'error' ? 'text-sm text-red-700' : 'text-sm text-emerald-700'}>
