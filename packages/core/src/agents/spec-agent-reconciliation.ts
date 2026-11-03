@@ -157,6 +157,10 @@ export function reconcileSpecDocuments27(input: {
       }
       const candidate: CanonicalSpec27 = { specCode: code, kind: observation.kind, value: observation.value, unit: observation.unit, methodology: observation.methodology, comparisonOperator: observation.comparisonOperator, evidence: observation.evidence, confirmed: true };
       const prior = next.get(code);
+      if (prior && prior.kind !== candidate.kind) {
+        findings.push({ code:'VALUE_CONFLICT',label:observation.label,specCode:code,message:'Canonical specification kind mismatch',evidence:observation.evidence });
+        continue;
+      }
       // Never collapse WLTP, NEDC, WLTC and PBEV into a single metric.
       if (prior && prior.methodology && candidate.methodology && normalize(prior.methodology) !== normalize(candidate.methodology)) {
         findings.push({ code: 'SOURCE_CONFLICT', label: observation.label, specCode: code, message: 'Different measurement methodologies need distinct canonical specifications', evidence: observation.evidence });
