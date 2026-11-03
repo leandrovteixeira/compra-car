@@ -37,6 +37,27 @@ describe('GWM H6 technical deterministic parser',()=>{
   expect(parsed.observations).toHaveLength(0);
   expect(parsed.unresolved[0]?.reason).toBe('FUEL_SPLIT_FAILED');
  });
+ it('reassembles the exact split-column suspension and brake pattern from PDF layout',()=>{
+  const source=[
+    'DADOS TÉCNICOS',
+    'Dianteira independente, McPherson, molas',
+    'helicoidais, amortecedores e barra estabilizadora',
+    'Suspensão',
+    'Traseira independente, Multilink, molas',
+    'helicoidais, amortecedores e barra estabilizadora',
+    'Dianteiro: Discos ventilados | Traseiro: Discos',
+    'Freios',
+    'ventilados',
+    'DIMENSÕES',
+    'Comprimento (mm) 4.703',
+  ].join('\\n');
+  const x=extractGwmH6Technical27(source);
+  expect(x.unresolved).toHaveLength(0);
+  expect(x.summary).toMatchObject({recognizedFields:4,numeric:1,text:3,llmCalls:0});
+  expect(x.observations.find(y=>y.fieldKey==='suspension_front')?.value).toContain('McPherson');
+  expect(x.observations.find(y=>y.fieldKey==='suspension_rear')?.value).toContain('Multilink');
+  expect(x.observations.find(y=>y.fieldKey==='brakes')?.value).toContain('Traseiro: Discos ventilados');
+ });
  it('requires the technical section',()=>{
   expect(()=>extractGwmH6Technical27('exterior e interior')).toThrow('GWM_TECHNICAL_SECTION_MISSING');
  });
