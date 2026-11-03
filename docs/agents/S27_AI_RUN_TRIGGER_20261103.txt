@@ -3,3 +3,5 @@ Approved budget: at most USD 2 per run. Human review only; no canonical writes.
 Triggered 2026-11-03. Do not modify this file to avoid unplanned additional runs.
 
 Second gated preflight after adding dedicated-key support; records budget before credential check. No source or canonical writes.
+
+Authorized final one-shot inference after user configured OPENAI_SPEC_AGENT_API_KEY. 2026-11-03. Budget <= USD 2. No automatic approvals.
