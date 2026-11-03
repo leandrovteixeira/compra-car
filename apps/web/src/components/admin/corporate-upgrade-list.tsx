@@ -1,5 +1,6 @@
 'use client';
 import { useActionState } from 'react';
+import { PendingSubmitButton } from '@/components/pending-submit-button';
 import { reviewCorporateRequest, type CorporateReviewState } from '@/app/admin/users/corporate-actions';
 const initial: CorporateReviewState = { status: 'idle' };
 interface Organization { readonly id: string; readonly name: string; readonly status: string; }
@@ -57,8 +58,9 @@ function CorporateRequestRow({ request, organizations }: { readonly request: Upg
  <option value="" disabled>Organização</option>
  {organizations.filter(org => org.status === 'active').map(org => <option key={org.id} value={org.id}>{org.name}</option>)}
  </select>
- <button className="rounded-lg bg-[#EF7732] px-4 py-2 font-semibold text-white" disabled={pending} type="submit" name="decision" value="approved">Aprovar</button>
- <button className="rounded-lg border border-border px-4 py-2" disabled={pending} type="submit" name="decision" value="rejected" formNoValidate>Rejeitar</button>
+ <PendingSubmitButton idleLabel="Aprovar" pendingLabel="Aprovando…" className="min-h-10 rounded-lg bg-[#EF7732] px-4 py-2 font-semibold text-white disabled:opacity-60" disabled={pending} name="decision" value="approved" />
+ <PendingSubmitButton idleLabel="Rejeitar" pendingLabel="Rejeitando…" className="min-h-10 rounded-lg border border-border px-4 py-2 disabled:opacity-60" disabled={pending} name="decision" value="rejected" formNoValidate />
+ {pending && <p role="status" aria-live="polite" className="w-full text-sm text-text-secondary">Processando solicitação…</p>}
  </form> : null}
  {state.message ? <p role={state.status === 'error' ? 'alert' : 'status'} className="mt-3 text-sm">{state.message}</p> : null}
  </article>;
