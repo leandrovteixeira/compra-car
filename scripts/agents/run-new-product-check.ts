@@ -18,6 +18,7 @@ import {
   productCheckFixture,
   benchmarkProductFixture,
   type MmvMarketObservation,
+  type MmvGenerationAssessment,
   canonicalVehicleBrand,
 } from '@compra-car/core/agents';
 import {
@@ -39,6 +40,7 @@ export function parseAgentArguments(args: readonly string[]) {
   let persistFindings = false;
   let discoveryOnly = false;
   let marketReconcile = false;
+  let generationEvidencePath: string | null = null;
   let shadowConnectorRunId: string | null = null;
   for (let index = 0; index < values.length; index += 1) {
     const name = values[index];
@@ -63,6 +65,12 @@ export function parseAgentArguments(args: readonly string[]) {
       continue;
     }
     const value = values[++index];
+    if (name === '--generation-evidence') {
+      if (!value || value.startsWith('--') || generationEvidencePath !== null)
+        throw new Error('INVALID_AGENT_ARGUMENTS');
+      generationEvidencePath = value;
+      continue;
+    }
     if (
       !['--brand', '--provider', '--market-model'].includes(name ?? '') ||
       !value ||
@@ -79,6 +87,7 @@ export function parseAgentArguments(args: readonly string[]) {
     !brand ||
     (provider !== 'fixture' && provider !== 'openai') ||
     (discoveryOnly && persistFindings) ||
+    (discoveryOnly && generationEvidencePath !== null) ||
     (marketReconcile && provider !== 'openai') ||
     (marketModel !== null && !marketReconcile) ||
     (shadowConnectorRunId !== null && !/^[0-9a-f-]{36}$/iu.test(shadowConnectorRunId)) ||
@@ -93,6 +102,7 @@ export function parseAgentArguments(args: readonly string[]) {
     marketReconcile,
     marketModel,
     shadowConnectorRunId,
+    generationEvidencePath,
   };
 }
 
@@ -104,7 +114,7 @@ export async function runNewProductCheckCli(
   persistence?: Pick<AgentPlatformRepository, 'persistRunBundle'>,
 ): Promise<number> {
   try {
-    const { scope, provider, persistFindings, discoveryOnly, marketReconcile, marketModel, shadowConnectorRunId } =
+    const { scope, provider, persistFindings, discoveryOnly, marketReconcile, marketModel, shadowConnectorRunId, generationEvidencePath } =
       parseAgentArguments(args);
     env = await loadAgentEnvironment(repositoryRoot, env);
     if (provider === 'openai') {
@@ -256,6 +266,18 @@ export async function runNewProductCheckCli(
                 status: 'ACTIVE',
               });
           })();
+    // Historical generation evidence is explicitly supplied, independently sourced,
+    // and validated by the discovery review projector. No additional model spend.
+    const generationAssessmentProvider = generationEvidencePath === null ? undefined : {
+      assess: async () => {
+        const raw = JSON.parse(await readFile(
+          resolve(repositoryRoot, generationEvidencePath), 'utf8'
+        )) as unknown;
+        if (!Array.isArray(raw) || raw.length > 50)
+          throw new Error('MMV_GENERATION_EVIDENCE_INPUT_INVALID');
+        return raw as readonly MmvGenerationAssessment[];
+      },
+    };
     const result = await new NewProductCheckAgent({
       research,
       catalog,
@@ -263,6 +285,7 @@ export async function runNewProductCheckCli(
       connectorResolver: effectiveResolver,
       canonicalMmvs,
       ambiguityAdjudicator,
+      generationAssessmentProvider,
     }).run(scope, runId);
     log(
       'Provider: ' +
