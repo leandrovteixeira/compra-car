@@ -45,7 +45,7 @@ function stagedMmvIdentity(
   reasonCode: string | null | undefined,
 ): AgentObject | null {
   const officialVersionLabel = candidate.officialVersionLabel ?? candidate.trim;
-  if (!officialVersionLabel?.trim() && candidate.evidence.length === 0) return null;
+  if (!officialVersionLabel?.trim()) return null;
   return {
     identityKey: mmvDiscoveryIdentityKey(candidate, {
       includeCommercialPowertrain: reasonCode === 'SAME_LABEL_DISTINCT_POWERTRAIN',
@@ -236,12 +236,6 @@ export function mapMmvRunToPlatform(
           associatedProductRows: observation.matchedProducts as unknown as AgentObject[],
           structuredCandidate: candidateDetails(candidate),
           resolvedVariants: observation.variants.map(candidateDetails),
-          unnamedCommercialVersions: observation.variants
-            .filter((variant) =>
-              !variant.officialVersionLabel?.trim() && !variant.trim?.trim() &&
-              variant.evidence.length > 0,
-            )
-            .map(candidateDetails),
           marketReconciliation: marketReconciliation as unknown as AgentObject[],
         },
         createdAt: result.completedAt,

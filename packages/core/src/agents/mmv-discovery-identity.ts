@@ -30,7 +30,7 @@ export function projectMmvDiscoveryIdentity(
   candidate: OfficialProductCandidate,
 ): MmvDiscoveryIdentity {
   const officialVersionLabel = candidate.officialVersionLabel ?? candidate.trim;
-  // Missing commercial version is an explicit base identity, not an invented label.
+  if (!officialVersionLabel?.trim()) throw new Error('MMV_RESOLVED_VARIANT_REQUIRED');
 
   return {
     brand: candidate.brand,
@@ -63,7 +63,7 @@ export function mmvDiscoveryIdentityKey(
     'mmv-current:v2',
     vehicleBrandComparisonKey(identity.brand),
     key(identity.model),
-    identity.officialVersionLabel ? key(identity.officialVersionLabel) : null,
+    key(identity.officialVersionLabel),
     commercialDiscriminator,
   ]);
 }

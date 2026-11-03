@@ -12,8 +12,6 @@ import {
   FixtureProductResearchProvider,
   BuiltInBrandConnectorResolver,
   OperationalBrandConnectorResolver,
-  validateConnectorDefinition,
-  connectorOfficialSource,
   connectorText,
   productCheckFixture,
   benchmarkProductFixture,
@@ -27,7 +25,6 @@ import {
   productResearchMaxWaitMs,
 } from '@compra-car/adapter-openai';
 import { LocalProductReportWriter, redactSecrets } from './report-writer';
-import { requireAgentOpenAiApiKey,agentOpenAiSecrets } from './agent-openai-credentials';
 import { LocalCurrentDiscoveryReportWriter } from './current-discovery-report-writer';
 import { loadAgentEnvironment } from './agent-environment';
 import { safeAgentFailure } from './agent-diagnostics';
@@ -39,7 +36,6 @@ export function parseAgentArguments(args: readonly string[]) {
   let persistFindings = false;
   let discoveryOnly = false;
   let marketReconcile = false;
-  let shadowConnectorRunId: string | null = null;
   for (let index = 0; index < values.length; index += 1) {
     const name = values[index];
     if (name === '--discovery-only') {
@@ -50,11 +46,6 @@ export function parseAgentArguments(args: readonly string[]) {
     if (name === '--persist-findings') {
       if (persistFindings) throw new Error('INVALID_AGENT_ARGUMENTS');
       persistFindings = true;
-      continue;
-    }
-    if (name === '--shadow-connector-run-id') {
-      if (shadowConnectorRunId) throw new Error('INVALID_AGENT_ARGUMENTS');
-      shadowConnectorRunId = values[++index] ?? null;
       continue;
     }
     if (name === '--market-reconcile') {
@@ -80,9 +71,7 @@ export function parseAgentArguments(args: readonly string[]) {
     (provider !== 'fixture' && provider !== 'openai') ||
     (discoveryOnly && persistFindings) ||
     (marketReconcile && provider !== 'openai') ||
-    (marketModel !== null && !marketReconcile) ||
-    (shadowConnectorRunId !== null && !/^[0-9a-f-]{36}$/iu.test(shadowConnectorRunId)) ||
-    (shadowConnectorRunId !== null && provider !== 'openai')
+    (marketModel !== null && !marketReconcile)
   )
     throw new Error('INVALID_AGENT_ARGUMENTS');
   return {
@@ -92,7 +81,6 @@ export function parseAgentArguments(args: readonly string[]) {
     discoveryOnly,
     marketReconcile,
     marketModel,
-    shadowConnectorRunId,
   };
 }
 
@@ -104,12 +92,11 @@ export async function runNewProductCheckCli(
   persistence?: Pick<AgentPlatformRepository, 'persistRunBundle'>,
 ): Promise<number> {
   try {
-    const { scope, provider, persistFindings, discoveryOnly, marketReconcile, marketModel, shadowConnectorRunId } =
+    const { scope, provider, persistFindings, discoveryOnly, marketReconcile, marketModel } =
       parseAgentArguments(args);
     env = await loadAgentEnvironment(repositoryRoot, env);
-    if (provider === 'openai') {
-      requireAgentOpenAiApiKey(env,'MMV_DISCOVERY');
-      if (!env.OPENAI_AGENT_MODEL?.trim()) throw new Error('OPENAI_AGENT_MODEL_REQUIRED');
+    if (provider === 'openai' && (!env.OPENAI_API_KEY?.trim() || !env.OPENAI_AGENT_MODEL?.trim())) {
+      throw new Error('OPENAI_AGENT_CONFIG_REQUIRED');
     }
     if (
       (provider === 'openai' || (persistFindings && !persistence)) &&
@@ -117,30 +104,8 @@ export async function runNewProductCheckCli(
     ) {
       throw new Error('SUPABASE_AGENT_CONFIG_REQUIRED');
     }
-    const secrets = [...agentOpenAiSecrets(env), env.SUPABASE_SERVER_KEY ?? ''];
+    const secrets = [env.OPENAI_API_KEY ?? '', env.SUPABASE_SERVER_KEY ?? ''];
     const reports = new LocalProductReportWriter(repositoryRoot, secrets);
-    const shadowConnector = shadowConnectorRunId
-      ? await (async () => {
-          if (env.APP_ENV !== 'qa') throw new Error('MMV_SHADOW_QA_ONLY');
-          const { createLegacySupabaseClient } = await import('@compra-car/adapter-supabase');
-          const db=createLegacySupabaseClient({
-            url:env.SUPABASE_URL!,serverKey:env.SUPABASE_SERVER_KEY!,
-          });
-          const {data:run,error:runError}=await db.from('agent_runs')
-            .select('brand,market,agent_type,status').eq('id',shadowConnectorRunId).single();
-          const {data:findings,error:findingError}=await db.from('agent_findings')
-            .select('finding_type,proposal').eq('run_id',shadowConnectorRunId).limit(2);
-          if(runError || findingError || !run || run.agent_type !== 'BRAND_CONNECTOR' ||
-             run.status !== 'COMPLETED' || run.brand !== scope.brand ||
-             run.market !== scope.country || findings?.length !== 1 ||
-             !['NEW_BRAND_CONNECTOR','CONNECTOR_DRIFT'].includes(findings[0]!.finding_type))
-            throw new Error('MMV_SHADOW_PARENT_INVALID');
-          const proposal=validateConnectorDefinition(findings[0]!.proposal);
-          if(proposal.brand !== scope.brand || proposal.market !== scope.country)
-            throw new Error('MMV_SHADOW_SCOPE_MISMATCH');
-          return connectorOfficialSource(proposal);
-        })()
-      : null;
     const connectorResolver =
       provider === 'fixture'
         ? new BuiltInBrandConnectorResolver()
@@ -158,16 +123,11 @@ export async function runNewProductCheckCli(
               new BuiltInBrandConnectorResolver(),
             );
           })();
-    const effectiveResolver = shadowConnector
-      ? {
-          resolve: async () => shadowConnector,
-          resolveAlternates: async () => [shadowConnector],
-        } : connectorResolver;
     const research =
       provider === 'fixture'
         ? new FixtureProductResearchProvider()
         : new OpenAIProductResearchProvider({
-            apiKey: requireAgentOpenAiApiKey(env,'MMV_DISCOVERY'),
+            apiKey: env.OPENAI_API_KEY!,
             model: env.OPENAI_AGENT_MODEL!,
             maxWaitMs: productResearchMaxWaitMs(env.OPENAI_AGENT_MAX_WAIT_MS),
             prompt: await readFile(
@@ -185,7 +145,7 @@ export async function runNewProductCheckCli(
     const ambiguityAdjudicator =
       provider === 'openai'
         ? new OpenAIMmvAmbiguityAdjudicator({
-            apiKey: requireAgentOpenAiApiKey(env,'MMV_DISCOVERY'),
+            apiKey: env.OPENAI_API_KEY!,
             model: env.OPENAI_ADJUDICATION_MODEL?.trim() || 'gpt-5.6',
             onUsage: (usage) => adjudicationUsage.push(usage),
           })
@@ -197,7 +157,7 @@ export async function runNewProductCheckCli(
     if (discoveryOnly) {
       const result = await new CurrentMmvDiscoveryAgent({
         research,
-        connectorResolver: effectiveResolver,
+        connectorResolver,
       }).run(scope, runId);
       await new LocalCurrentDiscoveryReportWriter(repositoryRoot, secrets).write(result);
       log(
@@ -260,7 +220,7 @@ export async function runNewProductCheckCli(
       research,
       catalog,
       reports,
-      connectorResolver: effectiveResolver,
+      connectorResolver,
       canonicalMmvs,
       ambiguityAdjudicator,
     }).run(scope, runId);
@@ -305,7 +265,7 @@ export async function runNewProductCheckCli(
       | undefined;
     if (marketReconcile) {
       const lookup = new OpenAIMmvMarketLookupProvider({
-        apiKey: requireAgentOpenAiApiKey(env,'MMV_DISCOVERY'),
+        apiKey: env.OPENAI_API_KEY!,
         model: env.OPENAI_AGENT_MODEL!,
         prompt: await readFile(
           resolve(repositoryRoot, 'docs/agents/prompts/mmv-market-reconciliation-v1.md'),

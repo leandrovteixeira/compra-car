@@ -34,17 +34,13 @@ function exactMmvMatches(
     );
   }
   const version = versionLabel(candidate);
-  if (!version) {
-    return mmvs.filter((mmv) => mmv.status === 'ACTIVE' &&
-      vehicleBrandComparisonKey(mmv.brand) === vehicleBrandComparisonKey(candidate.brand) &&
-      key(mmv.model) === key(candidate.model) && mmv.officialVersionLabel === null);
-  }
+  if (!version) return [];
   return mmvs.filter(
     (mmv) =>
       mmv.status === 'ACTIVE' &&
       vehicleBrandComparisonKey(mmv.brand) === vehicleBrandComparisonKey(candidate.brand) &&
       key(mmv.model) === key(candidate.model) &&
-      mmv.officialVersionLabel !== null && key(mmv.officialVersionLabel) === key(version),
+      key(mmv.officialVersionLabel) === key(version),
   );
 }
 
@@ -115,7 +111,7 @@ export class ModelYearAgent {
           mmvId: mmv.id,
           brand: mmv.brand,
           model: mmv.model,
-          officialVersionLabel: mmv.officialVersionLabel ?? '',
+          officialVersionLabel: mmv.officialVersionLabel,
           productionYear: null,
           modelYear: candidate.modelYear,
           confidence: candidate.confidence,
@@ -131,7 +127,7 @@ export class ModelYearAgent {
           findingType: 'NEW_PRODUCT_YEAR',
           reasonCode: isNew ? 'NEW_MODEL_YEAR' : 'CONFIRMED_MODEL_YEAR',
           mmvId: mmv.id,
-          title: `${mmv.brand} ${mmv.model} ${mmv.officialVersionLabel ?? ''} — MY${candidate.modelYear}`,
+          title: `${mmv.brand} ${mmv.model} ${mmv.officialVersionLabel} — MY${candidate.modelYear}`,
           summary: isNew
             ? `Novo MY${candidate.modelYear} encontrado. O ano de fabricação ainda não foi confirmado e permanecerá vazio.`
             : `MY${candidate.modelYear} confirmado novamente; o PY continua sem inferência.`,
@@ -141,7 +137,7 @@ export class ModelYearAgent {
             mmvId: mmv.id,
             brand: mmv.brand,
             model: mmv.model,
-            officialVersionLabel: mmv.officialVersionLabel ?? '',
+            officialVersionLabel: mmv.officialVersionLabel,
             productionYear: null,
             modelYear: candidate.modelYear,
           },
@@ -234,7 +230,7 @@ export class ModelYearAgent {
         mmvId: mmv.id,
         brand: mmv.brand,
         model: mmv.model,
-        officialVersionLabel: mmv.officialVersionLabel ?? '',
+        officialVersionLabel: mmv.officialVersionLabel,
         productionYear,
         modelYear: candidate.modelYear,
         confidence: candidate.confidence,
@@ -248,7 +244,7 @@ export class ModelYearAgent {
         findingType: 'NEW_PRODUCT_YEAR',
         reasonCode: isNew ? 'NEW_MODEL_YEAR' : 'CONFIRMED_MODEL_YEAR',
         mmvId: mmv.id,
-        title: `${mmv.brand} ${mmv.model} ${mmv.officialVersionLabel ?? ''} — MY${candidate.modelYear}`,
+        title: `${mmv.brand} ${mmv.model} ${mmv.officialVersionLabel} — MY${candidate.modelYear}`,
         summary: isNew
           ? `Novo par fabricação/modelo ${productionYear}/${candidate.modelYear} encontrado para um MMV já conhecido.`
           : `O par ${productionYear}/${candidate.modelYear} foi confirmado novamente nas fontes atuais.`,
@@ -258,7 +254,7 @@ export class ModelYearAgent {
           mmvId: mmv.id,
           brand: mmv.brand,
           model: mmv.model,
-          officialVersionLabel: mmv.officialVersionLabel ?? '',
+          officialVersionLabel: mmv.officialVersionLabel,
           productionYear,
           modelYear: candidate.modelYear,
         },
@@ -281,32 +277,6 @@ export class ModelYearAgent {
       });
     }
 
-    // Rank only evidence-backed MY observations for each resolved MMV.
-    // A maximum observed MY is not proof that it is currently on sale.
-    const latestByMmv = new Map<string, number>();
-    for (const observation of observations) {
-      const previous = latestByMmv.get(observation.mmvId);
-      if (previous === undefined || observation.modelYear > previous)
-        latestByMmv.set(observation.mmvId, observation.modelYear);
-    }
-    const annotated = findings.map((finding) => {
-      const mmvId = finding.mmvId;
-      const year = typeof finding.subject.modelYear === 'number'
-        ? finding.subject.modelYear : null;
-      const latest = mmvId ? latestByMmv.get(mmvId) : undefined;
-      if (latest === undefined || year === null) return finding;
-      return {
-        ...finding,
-        payload: {
-          ...finding.payload,
-          latestObservedModelYear: latest,
-          isLatestObservedModelYear: year === latest,
-          commercialAvailability: 'UNVERIFIED',
-          commercialAvailabilityReason:
-            'O maior MY confirmado neste run não comprova disponibilidade comercial atual.',
-        },
-      };
-    });
-    return { observations, findings: annotated };
+    return { observations, findings };
   }
 }

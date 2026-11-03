@@ -28,14 +28,7 @@ export function aggregateProductFindings(
     const variants = deduplicateOfficialCandidates(
       scope,
       all.filter(
-        (c) =>
-          c.taxonomy === 'VARIANT' ||
-          (c.taxonomy === 'MODEL' &&
-            (c.officialVersionLabel !== null ||
-              c.trim !== null ||
-              // A versionless model is a real commercial identity when it has
-              // explicit manufacturer evidence and no named version substitute.
-              c.evidence.length > 0)),
+        (c) => c.taxonomy !== 'MODEL' || c.officialVersionLabel !== null || c.trim !== null,
       ),
     );
     const evidence = deduplicateProductEvidence(all.flatMap((c) => c.evidence));

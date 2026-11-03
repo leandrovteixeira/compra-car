@@ -1,19 +1,11 @@
 import { resolve } from 'node:path';
-import { randomUUID } from 'node:crypto';
 import { createLegacySupabaseClient } from '@compra-car/adapter-supabase';
 import { runNewProductCheckCli } from './run-new-product-check';
 import { runBrandConnectorCli } from './run-brand-connector';
-import { replayBrandProductSourceExpansion } from './brand-source-expansion-replay';
-import { refreshGwmBrandPriceSources } from './gwm-brand-price-source-refresh';
-import { runLaunchMyJob } from './run-launch-my';
-import { runMyLaunchBenchmark } from './my-launch-benchmark';
-import { runFipePilot } from './fipe-agent-pilot';
+import { runModelYearCli } from './run-model-year';
 import { runPriceCli } from './run-price';
-import { runOra5PriceProbe } from './price-ora5-direct-probe';
 import { monitorBrandSources } from './source-monitor';
-import { runMmvLaunchWatch } from './mmv-launch-watch';
 import { journalWorkerJob } from './engineering-worker-telemetry';
-import { needsAgentBudget, reserveAgentPilotBudget, finishAgentPilotBudget, type AgentBudgetClient } from './agent-pilot-budget';
 
 type JobRow = {
   id: string;
@@ -29,19 +21,6 @@ type JobRow = {
     marketModel?: string | null;
     mode?: 'discover' | 'health-check';
     parentRunId?: string;
-    noFipe?: boolean;
-    mmvId?: string;
-    allowMyFallback?: boolean;
-    launchWatchId?: string;
-    launchWatchAuditMmvId?: string;
-    benchmarkModel?: string;
-    benchmarkVersion?: string;
-    shadowConnectorRunId?: string;
-    brandPriceSourceRefresh?: boolean;
-    brandSourceExpandRunId?: string;
-    priceAuditOnly?: boolean;
-    priceDirectProbe?: boolean;
-    priceProbeModel?: 'ORA5' | 'WEY07';
   };
 };
 
@@ -51,8 +30,8 @@ const stagingUrl = 'https://shfsjyjxmgwnlexmdkcs.supabase.co';
 if (env.APP_ENV !== 'qa') throw new Error('AGENT_WORKER_QA_ONLY');
 if (env.SUPABASE_URL !== stagingUrl) throw new Error('AGENT_WORKER_STAGING_REQUIRED');
 if (!env.SUPABASE_SERVER_KEY?.trim()) throw new Error('SUPABASE_AGENT_CONFIG_REQUIRED');
-// Individual agent CLIs validate only their own credential at dispatch.
-// PRICE in deterministic mode and MY reusing an MMV run require no OpenAI key.
+if (!env.OPENAI_API_KEY?.trim() || !env.OPENAI_AGENT_MODEL?.trim())
+  throw new Error('OPENAI_AGENT_CONFIG_REQUIRED');
 
 const client = createLegacySupabaseClient({
   url: env.SUPABASE_URL,
@@ -104,68 +83,7 @@ async function execute(job: JobRow) {
     console.log('[agent-job]', job.id, line);
   };
 
-  // Reject redundant paid launch research before reserving a budget.
-  if(job.job_type==='PRODUCT_YEAR'&&!job.input.parentRunId&&!job.input.benchmarkModel){
-    let query=client.from('agent_my_launch_eligibility').select('mmv_id').eq('brand',job.brand).eq('eligibility','ELIGIBLE').limit(1);
-    if(job.input.mmvId)query=query.eq('mmv_id',job.input.mmvId);
-    const {data,error}=await query;
-    if(error)throw new Error('MY_LAUNCH_PREFLIGHT_FAILED');
-    if(!data?.length){
-      log('MY launch preflight: no eligible MMV; zero AI calls and no budget reserved');
-      await completeWithoutRun(job.id);
-      return;
-    }
-  }
-
-  // Deterministic Brand Connector source verification: only official GWM BR,
-  // no AI invocation and no billing reservation. Generates review proposal,
-  // never activates or mutates the currently approved connector.
-  if (job.job_type === 'BRAND_CONNECTOR' && job.input.brandPriceSourceRefresh === true) {
-    if (job.brand !== 'GWM' || job.market !== 'BR')
-      throw new Error('BRAND_PRICE_REFRESH_SCOPE_INVALID');
-    const result = await refreshGwmBrandPriceSources(client, log);
-    await complete(job.id, result.runId);
-    await journal('SUCCESS',result.runId);
-    return;
-  }
-
-  // Reuse an existing Brand research result and crawl its official model
-  // index. Deterministic only: no OpenAI key, no paid reservation.
-  if (job.job_type === 'BRAND_CONNECTOR' && job.input.brandSourceExpandRunId) {
-    if (job.market !== 'BR') throw new Error('BRAND_REPLAY_MARKET_UNSUPPORTED');
-    const replay = await replayBrandProductSourceExpansion(
-      client, job.input.brandSourceExpandRunId, job.brand, log,
-    );
-    await complete(job.id, replay.runId);
-    await journal('SUCCESS', replay.runId);
-    return;
-  }
-
-  // An approved canonical MMV can be checked against official dedicated
-  // Brand Connector pages with zero AI. This must not trigger the brand-wide
-  // discovery or the MY Agent before commercial approval.
-  if (job.job_type === 'MMV_DISCOVERY' &&
-      (job.input.launchWatchId || job.input.launchWatchAuditMmvId)){
-    if (job.market !== 'BR') throw new Error('LAUNCH_WATCH_QA_BR_ONLY');
-    const runId=await runMmvLaunchWatch(client,{
-      brand:job.brand,market:job.market,watchId:job.input.launchWatchId,
-      mmvId:job.input.launchWatchAuditMmvId,
-      auditOnly:Boolean(job.input.launchWatchAuditMmvId),
-    },log);
-    await complete(job.id,runId);
-    await journal('SUCCESS',runId);
-    return;
-  }
-
-  // A non-reserved paid job never reaches any OpenAI CLI. The entire USD 2
-  // reservation is held until independent reconciliation of real provider usage.
-  const paid=needsAgentBudget(job,env);
-  const reservation=paid
-    ?await reserveAgentPilotBudget(client as unknown as AgentBudgetClient,job)
-    :null;
-  let completedRunId: string | null = null;
-  try {
-  let code: number = 1;
+  let code: number;
   if (job.job_type === 'MMV_DISCOVERY') {
     code = await runNewProductCheckCli(
       [
@@ -176,93 +94,27 @@ async function execute(job: JobRow) {
         '--persist-findings',
         ...(job.input.marketReconcile ? ['--market-reconcile'] : []),
         ...(job.input.marketModel ? ['--market-model', job.input.marketModel] : []),
-        ...(job.input.shadowConnectorRunId ? ['--shadow-connector-run-id',job.input.shadowConnectorRunId] : []),
       ],
       env,
       log,
       repositoryRoot,
     );
-  } else if (job.job_type === 'FIPE_DISCOVERY') {
-    const fipeStarted=new Date().toISOString();
-    const fipeRunId=randomUUID();
-    const fipe=await runFipePilot(env,log,{
-      brand:job.brand,mmvId:job.input.mmvId,
-    });
-    const {error:fipeRunErr}=await client.from('agent_runs').insert({
-      id:fipeRunId,agent_type:'FIPE_DISCOVERY',status:'COMPLETED',
-      brand:job.brand,market:job.market,provider:'parallelum-v2',
-      run_mode:'CANONICAL_FIPE_MAPPING',schema_version:'FIPE-1',
-      started_at:fipeStarted,completed_at:new Date().toISOString(),
-      input:{jobId:job.id,mmvId:job.input.mmvId??null},
-      summary:{requests:fipe.requests,candidatesObserved:fipe.candidateCount,
-        valuationsObserved:fipe.valuationCount,targets:fipe.targets,
-        aiCalls:0,estimatedCostUsd:0},
-    });
-    if(fipeRunErr)throw new Error('FIPE_AGENT_RUN_PERSIST_FAILED');
-    const {data:reviewRun,error:stageErr}=await client.rpc(
-      'qa_stage_fipe_review_findings',{p_brand:job.brand});
-    if(stageErr)throw new Error('FIPE_REVIEW_STAGING_FAILED');
-    await complete(job.id,fipeRunId);
-    await journal('SUCCESS',fipeRunId);
-    log('FIPE: '+JSON.stringify({runId:fipeRunId,reviewRun, ...fipe}));
-    // Semiautonomous QA: paid MY is permitted only when both the explicit
-    // job flag AND operator-controlled environment gate are enabled.
-    // The DB dispatcher independently rechecks all FIPE/MY blockers.
-    if(job.input.allowMyFallback===true &&
-       env.QA_SEMIAUTONOMOUS_MY_ENABLED==='1'){
-      const {data:dispatch,error:dispatchError}=await client.rpc(
-        'qa_dispatch_fipe_my',{
-          p_brand:job.brand,p_mmv_id:job.input.mmvId??null,
-          p_allow_paid_my:true,
-        });
-      if(dispatchError){
-        console.error('[agent-worker] FIPE-MY eligible dispatch failed',job.id);
-      }else log('FIPE-MY eligible dispatch: '+JSON.stringify(dispatch));
-    }
-    return;
-  } else if (job.job_type === 'PRODUCT_YEAR' && job.input.benchmarkModel) {
-    if(!job.input.benchmarkVersion)throw new Error('MY_BENCHMARK_VERSION_REQUIRED');
-    await runMyLaunchBenchmark({
-      id:job.id,brand:job.brand,model:job.input.benchmarkModel,
-      version:job.input.benchmarkVersion,
-    },env,log);
-    await completeWithoutRun(job.id);
-    return;
   } else if (job.job_type === 'PRODUCT_YEAR') {
-    const runId=await runLaunchMyJob({jobId:job.id,brand:job.brand,mmvId:job.input.mmvId},env,log);
-    if(!runId){await completeWithoutRun(job.id);return;}
-    await complete(job.id,runId);
-    await journal('SUCCESS',runId);
-    return;
+    code = await runModelYearCli(
+      [
+        '--brand',
+        job.brand,
+        '--provider',
+        'openai',
+        '--persist-findings',
+        ...(job.input.parentRunId ? ['--parent-run-id', job.input.parentRunId] : []),
+      ],
+      env,
+      log,
+      repositoryRoot,
+    );
   } else if (job.job_type === 'PRICE_INTELLIGENCE') {
-    if (job.input.priceDirectProbe === true) {
-      if (job.brand !== 'GWM' || job.market !== 'BR') throw new Error('PRICE_PROBE_SCOPE_INVALID');
-      const probe = await runOra5PriceProbe(log,job.input.priceProbeModel === 'WEY07' ? 'WEY07' : 'ORA5');
-      const {error: probeError} = await client.from('agent_jobs')
-        .update({input:{...job.input,priceDirectProbeResult:probe}}).eq('id',job.id);
-      if (probeError) throw new Error('PRICE_PROBE_RESULT_PERSIST_FAILED');
-      await completeWithoutRun(job.id);
-      return;
-    }
-    // The Price CLI persists an immutable run/finding bundle, consumed by the
-    // shared Reviews inbox. Never run against an unexpected market.
-    if (job.market !== 'BR') throw new Error('PRICE_MARKET_UNSUPPORTED');
-    const compactRequested = job.input.provider === 'compact-match';
-    const priceAiRequested = job.input.provider === 'openai' || compactRequested;
-    // An explicit paid Price job cannot silently downgrade to deterministic
-    // or borrow a generic/other-agent key.
-    const priceEnv = compactRequested
-      ? { ...env, PRICE_AGENT_LLM_ENABLED: '0',
-          PRICE_AGENT_COMPACT_MATCH_ENABLED: '1',
-          PRICE_AGENT_HARD_COST_CAP_USD: '0.03' }
-      : priceAiRequested
-        ? { ...env, PRICE_AGENT_COMPACT_MATCH_ENABLED: '0',
-            PRICE_AGENT_LLM_ENABLED: '1', PRICE_AGENT_HARD_COST_CAP_USD: '2' }
-        : { ...env, PRICE_AGENT_COMPACT_MATCH_ENABLED: '0',
-            PRICE_AGENT_LLM_ENABLED: '0', PRICE_AGENT_HARD_COST_CAP_USD: '2' };
-    code = await runPriceCli(['--brand',job.brand,
-      job.input.priceAuditOnly === true ? '--audit-only' : '--persist-findings',
-      ...(job.input.shadowConnectorRunId ? ['--shadow-connector-run-id',job.input.shadowConnectorRunId] : [])],priceEnv,log,repositoryRoot);
+    code = await runPriceCli(['--brand',job.brand,'--persist-findings'],env,log,repositoryRoot);
   } else if (job.job_type === 'SOURCE_MONITOR') {
     const result = await monitorBrandSources(client, job.brand, job.market);
     console.log('[source-monitor]', job.id, JSON.stringify(result));
@@ -308,8 +160,7 @@ async function execute(job: JobRow) {
     const code=logs.find(
         (line) => line.startsWith('NEW_PRODUCT_CHECK_FAILED:') ||
           line.startsWith('BRAND_CONNECTOR_FAILED:') ||
-          line.startsWith('Model Year run failed:') ||
-          line.startsWith('PRICE_AGENT_FAILED'),
+          line.startsWith('Model Year run failed:'),
       ) ?? 'AGENT_JOB_EXECUTION_FAILED';
     await fail(
       job.id,
@@ -317,69 +168,23 @@ async function execute(job: JobRow) {
         (line) =>
           line.startsWith('NEW_PRODUCT_CHECK_FAILED:') ||
           line.startsWith('BRAND_CONNECTOR_FAILED:') ||
-          line.startsWith('Model Year run failed:') ||
-          line.startsWith('PRICE_AGENT_FAILED'),
+          line.startsWith('Model Year run failed:'),
       ) ?? 'AGENT_JOB_EXECUTION_FAILED',
     );
     await journal('FAILED',job.id,code);
     return;
   }
   await complete(job.id, runId);
-  completedRunId = runId;
   await journal('SUCCESS',runId);
 
-  if (job.job_type === 'MMV_DISCOVERY' && !job.input.shadowConnectorRunId) {
-    // A completed brand-wide discovery only makes *approved canonical* MMVs
-    // eligible for FIPE-first dispatch. Never queue paid MY directly.
-    const {data:dispatch,error:dispatchError}=await client.rpc('qa_dispatch_fipe_my',{
-      p_brand:job.brand,p_mmv_id:null,p_allow_paid_my:false,
+  if (job.job_type === 'MMV_DISCOVERY') {
+    const { error } = await client.rpc('enqueue_product_year_job', {
+      p_brand: job.brand,
+      p_created_by: job.created_by,
+      p_parent_run_id: runId,
     });
-    if(dispatchError){
-      console.error('[agent-worker] QA FIPE-first dispatch failed',job.id);
-    }else log('FIPE-first dispatch: '+JSON.stringify(dispatch));
-  }
-  } finally {
-    if(reservation){
-      try{
-        // Complete as UNKNOWN first; release unused reserve only after both
-        // provider usage and run summary agree on the number of API calls.
-        await finishAgentPilotBudget(client as unknown as AgentBudgetClient,reservation);
-        if(job.job_type==='PRICE_INTELLIGENCE' &&
-           job.input.provider==='compact-match' && completedRunId){
-          const {data:run,error:runErr}=await client.from('agent_runs')
-            .select('summary').eq('id',completedRunId).single();
-          const {data:receipts,error:receiptErr}=await client
-            .from('agent_ai_usage_events')
-            .select('model,reason,estimated_cost_usd,input_tokens,output_tokens,web_search_count')
-            .eq('intended_run_id',completedRunId).eq('reason','PRICE_COMPACT_IDENTITY_ONLY');
-          const measured=Number(run?.summary?.llmCalls);
-          const listed=receipts??[];
-          const valid=!runErr&&!receiptErr&&Number.isInteger(measured)&&
-            measured>=0&&measured<=1&&listed.length===measured&&
-            listed.every(r=>r.model==='gpt-5.6-luna' &&
-              Number(r.web_search_count)===0 &&
-              Number.isFinite(Number(r.estimated_cost_usd)) &&
-              Number(r.estimated_cost_usd)>=0 &&
-              Number(r.input_tokens)>0&&Number(r.output_tokens)>=0);
-          if(valid){
-            const actual=listed.reduce((v,r)=>v+Number(r.estimated_cost_usd),0);
-            if(actual<=reservation.reservedUsd){
-              const {error:reconcileErr}=await client.rpc('agent_spend_reconcile',{
-                p_reservation_id:reservation.id,
-                p_actual_usd:actual,
-                p_source:'PROVIDER_USAGE',
-              });
-              if(reconcileErr)throw new Error('PRICE_COMPACT_RESERVATION_RECONCILE_FAILED');
-              console.log('[price-budget] compact',job.id,
-                'provider-metered tokens, estimated USD',actual.toFixed(6));
-            }
-          }
-        }
-      }catch{
-        // Retain UNKNOWN whenever usage is incomplete; never release a reserve
-        // using a guess or an unrelated agent's token receipt.
-        console.error('[agent-worker] budget reservation requires reconciliation',job.id);
-      }
+    if (error) {
+      console.error('[agent-worker] could not enqueue PRODUCT_YEAR', job.id, error);
     }
   }
 }
@@ -397,15 +202,9 @@ for (;;) {
     try {
       await execute(job);
     } catch (error) {
-      const budgetError = error instanceof Error &&
-        ['COST_BUDGET_NOT_CONFIGURED','COST_BUDGET_EXHAUSTED',
-          'COST_INVALID_SCOPE','COST_INVALID_RESERVATION',
-          'COST_ADMISSION_FAILED'].includes(error.message)
-          ? error.message : null;
-      console.error('[agent-worker] execution failed', job.id,
-        budgetError ?? 'AGENT_JOB_EXECUTION_FAILED');
+      console.error('[agent-worker] execution failed', job.id, error);
       try {
-        await fail(job.id, budgetError ?? 'AGENT_JOB_EXECUTION_FAILED');
+        await fail(job.id, 'AGENT_JOB_EXECUTION_FAILED');
         try {await journalWorkerJob(client,{runId:job.id,jobType:job.job_type,brand:job.brand,
           startedAtMs:Date.now(),status:'FAILED',failureCode:'AGENT_JOB_EXECUTION_FAILED'});}
         catch {console.error('[engineering] QA central failure logging unavailable',job.id);}

@@ -1,5 +1,4 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -15,11 +14,9 @@ import {
 import type { AgentPlatformRepository } from '@compra-car/core/agent-platform';
 import { OpenAIBrandConnectorResearchProvider } from '@compra-car/adapter-openai';
 import { redactSecrets } from './report-writer';
-import { requireAgentOpenAiApiKey, agentOpenAiSecrets } from './agent-openai-credentials';
 import { loadAgentEnvironment } from './agent-environment';
 import { safeAgentFailure } from './agent-diagnostics';
-import { recordAiUsage, estimateAiCostUsd } from './ai-usage';
-import { withProductSourceExpansion } from './brand-product-source-expansion';
+import { recordAiUsage } from './ai-usage';
 export function parseBrandConnectorArguments(args: readonly string[]) {
   const values = args[0] === '--' ? args.slice(1) : args,
     options = new Map<string, string>();
@@ -65,18 +62,15 @@ export async function runBrandConnectorCli(
     research?: BrandConnectorResearchProvider;
   } = {},
 ): Promise<number> {
-  const openAiUsage = { current: null as null | { model: string; inputTokens: number; outputTokens: number; totalTokens: number; webSearchCount: number } };
-  let usageScope: { brand: string; market: string } | null = null;
-  let usageRecorded = false;
-  const attemptId = randomUUID();
   try {
     const options = parseBrandConnectorArguments(args);
     env = await loadAgentEnvironment(root, env);
-    usageScope = { brand: options.brand, market: options.market };
-    if (options.provider === 'openai' && !dependencies.research) {
-      requireAgentOpenAiApiKey(env, 'BRAND_CONNECTOR');
-      if (!env.OPENAI_AGENT_MODEL?.trim()) throw new Error('OPENAI_AGENT_MODEL_REQUIRED');
-    }
+    if (
+      options.provider === 'openai' &&
+      !dependencies.research &&
+      (!env.OPENAI_API_KEY?.trim() || !env.OPENAI_AGENT_MODEL?.trim())
+    )
+      throw new Error('OPENAI_AGENT_CONFIG_REQUIRED');
     let repository = dependencies.repository,
       persistence = dependencies.persistence;
     if (
@@ -110,12 +104,13 @@ export async function runBrandConnectorCli(
       options.provider === 'openai' && repository
         ? await repository.resolveBrandIdentity(options.brand, options.market)
         : null;
+    const openAiUsage = { current: null as null | { model: string; inputTokens: number; outputTokens: number; totalTokens: number; webSearchCount: number } };
     const research =
       dependencies.research ??
       (options.provider === 'fixture'
         ? new FixtureBrandConnectorResearchProvider(options.fixtureState === 'drift')
         : new OpenAIBrandConnectorResearchProvider({
-            apiKey: requireAgentOpenAiApiKey(env, 'BRAND_CONNECTOR'),
+            apiKey: env.OPENAI_API_KEY ?? '',
             model: env.OPENAI_AGENT_MODEL ?? '',
             prompt: await readFile(
               resolve(root, 'docs/agents/prompts/brand-connector-agent-v1.md'),
@@ -125,11 +120,7 @@ export async function runBrandConnectorCli(
               openAiUsage.current = usage;
             },
           }));
-    // The paid research discovers official domains/indexes. A bounded, free
-    // traversal then expands concrete product pages before the review proposal.
-    const enrichedResearch = options.provider === 'openai'
-      ? withProductSourceExpansion(research) : research;
-    const baseBundle = await new BrandConnectorAgent(enrichedResearch).run(
+    const bundle = await new BrandConnectorAgent(research).run(
       {
         brand: options.brand,
         market: options.market,
@@ -140,28 +131,30 @@ export async function runBrandConnectorCli(
       undefined,
       options.provider,
     );
-    const metered = openAiUsage.current;
-    const estimated = metered ? estimateAiCostUsd(metered, env) : null;
-    const bundle = {
-      ...baseBundle,
-      run: {
-        ...baseBundle.run,
-        summary: {
-          ...baseBundle.run.summary,
-          aiCalls: metered ? 1 : 0,
-          aiInputTokens: metered?.inputTokens ?? 0,
-          aiOutputTokens: metered?.outputTokens ?? 0,
-          aiWebSearches: metered?.webSearchCount ?? 0,
-          aiModel: metered?.model ?? null,
-          aiEstimatedCostUsd: estimated?.priced ? estimated.cost : null,
-          aiCostEstimatePriced: estimated?.priced ?? !metered,
-          // HTTP traversal uses ordinary requests. This does not claim
-          // its network/compute cost is included in OpenAI token costs.
-          aiCostScope: 'OpenAI API only; HTTP/network compute excluded',
+    if (options.provider === 'openai' && openAiUsage.current) {
+      const { createLegacySupabaseClient } = await import('@compra-car/adapter-supabase');
+      await recordAiUsage(
+        createLegacySupabaseClient({
+          url: env.SUPABASE_URL!,
+          serverKey: env.SUPABASE_SERVER_KEY!,
+        }),
+        {
+          runId: bundle.run.id,
+          agentType: 'BRAND_CONNECTOR',
+          market: options.market,
+          brand: options.brand,
+          provider: 'openai',
+          model: openAiUsage.current.model,
+          inputTokens: openAiUsage.current.inputTokens,
+          outputTokens: openAiUsage.current.outputTokens,
+          totalTokens: openAiUsage.current.totalTokens,
+          webSearchCount: openAiUsage.current.webSearchCount,
+          reason: 'BRAND_CONNECTOR_RESEARCH',
         },
-      },
-    };
-    const secrets = [...agentOpenAiSecrets(env),env.SUPABASE_SERVER_KEY ?? ''];
+        env,
+      );
+    }
+    const secrets = [env.OPENAI_API_KEY ?? '', env.SUPABASE_SERVER_KEY ?? ''];
     const clean = JSON.parse(redactSecrets(JSON.stringify(bundle), secrets)) as typeof bundle;
     const finding = clean.findings[0]!.finding;
     const directory = resolve(root, '.local-reports/agents/brand-connector');
@@ -188,18 +181,10 @@ export async function runBrandConnectorCli(
         '',
         'Candidate domains: ' + cell(finding.payload.candidateDomains),
         'Sources: ' + cell(finding.payload.sourceCoverage),
-        'Source inventory: ' + cell(finding.payload.sourceInventory),
-        'AI calls: ' + cell(clean.run.summary.aiCalls),
-        'AI token input/output: ' + cell(clean.run.summary.aiInputTokens) +
-          ' / ' + cell(clean.run.summary.aiOutputTokens),
-        'AI web search calls: ' + cell(clean.run.summary.aiWebSearches),
-        'AI estimated cost USD: ' + cell(clean.run.summary.aiEstimatedCostUsd),
-        'HTTP source crawl: ' + cell(finding.payload.sourceCrawlTelemetry),
-
         '',
         ...(finding.payload.sourceEntries
-          ? (finding.payload.sourceEntries as unknown as { type: string; url: string; notes?: string }[]).map(
-              (e) => '- ' + cell(e.type) + ': ' + cell(e.url) + (e.notes ? ' — ' + cell(e.notes) : ''),
+          ? (finding.payload.sourceEntries as unknown as { type: string; url: string }[]).map(
+              (e) => '- ' + cell(e.type) + ': ' + cell(e.url),
             )
           : []),
         '',
@@ -211,32 +196,6 @@ export async function runBrandConnectorCli(
       ].join('\n'),
     );
     if (options.persistFindings) await persistence!.persistRunBundle(clean);
-    if (options.provider === 'openai' && openAiUsage.current) {
-      const { createLegacySupabaseClient } = await import('@compra-car/adapter-supabase');
-      await recordAiUsage(
-        createLegacySupabaseClient({
-          url: env.SUPABASE_URL!,
-          serverKey: env.SUPABASE_SERVER_KEY!,
-        }),
-        {
-          // Link a persisted run only after the persistence transaction commits.
-          runId: options.persistFindings ? bundle.run.id : null,
-          intendedRunId: bundle.run.id,
-          agentType: 'BRAND_CONNECTOR',
-          market: options.market,
-          brand: options.brand,
-          provider: 'openai',
-          model: openAiUsage.current.model,
-          inputTokens: openAiUsage.current.inputTokens,
-          outputTokens: openAiUsage.current.outputTokens,
-          totalTokens: openAiUsage.current.totalTokens,
-          webSearchCount: openAiUsage.current.webSearchCount,
-          reason: 'BRAND_CONNECTOR_RESEARCH',
-        },
-        env,
-      );
-      usageRecorded = true;
-    }
     log(
       'Run: ' +
         bundle.run.id +
@@ -248,32 +207,6 @@ export async function runBrandConnectorCli(
     );
     return 0;
   } catch (error) {
-    // Record incomplete OpenAI attempts as orphan-safe usage receipts.
-    // No agent run exists yet and the provider may still have billed tokens.
-    if (usageScope && openAiUsage.current && !usageRecorded &&
-        env.SUPABASE_URL?.trim() && env.SUPABASE_SERVER_KEY?.trim()) {
-      try {
-        const { createLegacySupabaseClient } = await import('@compra-car/adapter-supabase');
-        await recordAiUsage(
-          createLegacySupabaseClient({url:env.SUPABASE_URL,serverKey:env.SUPABASE_SERVER_KEY}),
-          {
-            runId:null,
-            intendedRunId:attemptId,
-            agentType:'BRAND_CONNECTOR',
-            market:usageScope.market,
-            brand:usageScope.brand,
-            provider:'openai',
-            model:openAiUsage.current.model,
-            inputTokens:openAiUsage.current.inputTokens,
-            outputTokens:openAiUsage.current.outputTokens,
-            totalTokens:openAiUsage.current.totalTokens,
-            webSearchCount:openAiUsage.current.webSearchCount,
-            reason:'BRAND_CONNECTOR_FAILED_ATTEMPT',
-          },
-          env,
-        );
-      } catch { /* never replace the original failure with telemetry errors */ }
-    }
     log(safeAgentFailure('BRAND_CONNECTOR_FAILED', error));
     return 1;
   }

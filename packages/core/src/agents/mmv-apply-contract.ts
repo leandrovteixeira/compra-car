@@ -101,8 +101,7 @@ export interface CanonicalMmv {
   readonly identityKey: string;
   readonly brand: string;
   readonly model: string;
-  /** Null means the manufacturer markets this vehicle without a separate version name. */
-  readonly officialVersionLabel: string | null;
+  readonly officialVersionLabel: string;
   readonly bodyStyle: string | null;
   readonly powertrainLabel: string | null;
   readonly propulsion: string | null;

@@ -98,11 +98,11 @@ export async function manageBrandConnector(
       default:
         throw new Error('INVALID_INPUT');
     }
-  } catch (error) {
-    const code = error instanceof Error && /^[A-Z0-9_]{3,80}$/u.test(error.message) ? error.message : 'CONNECTOR_ACTIVATION_FAILED';
+  } catch {
     return {
       status: 'error',
-      message: 'Não foi possível concluir a operação (' + code + ').',
+      message:
+        'Não foi possível concluir. Confira os dados e, para ativação, a revisão ACCEPT, a proposta e a versão ativa. Recarregue antes de tentar novamente.',
     };
   }
   try {

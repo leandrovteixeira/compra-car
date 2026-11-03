@@ -20,17 +20,13 @@ import {
   productResearchMaxWaitMs,
 } from '@compra-car/adapter-openai';
 import { loadAgentEnvironment } from './agent-environment';
-import { recordAiUsage } from './ai-usage';
-import { requireAgentOpenAiApiKey } from './agent-openai-credentials';
 
 export function parseModelYearArguments(args: readonly string[]) {
   const values = args.filter((value) => value !== '--');
   const options = new Map<string, string>();
   let persistFindings = false;
-  let noFipe = false;
   for (let index = 0; index < values.length; index += 1) {
     const name = values[index];
-    if (name === '--no-fipe') { noFipe = true; continue; }
     if (name === '--persist-findings') {
       if (persistFindings) throw new Error('INVALID_AGENT_ARGUMENTS');
       persistFindings = true;
@@ -38,7 +34,7 @@ export function parseModelYearArguments(args: readonly string[]) {
     }
     const value = values[++index];
     if (
-      !['--brand', '--provider', '--parent-run-id', '--mmv-id'].includes(name ?? '') ||
+      !['--brand', '--provider', '--parent-run-id'].includes(name ?? '') ||
       !value ||
       value.startsWith('--') ||
       options.has(name!)
@@ -49,7 +45,6 @@ export function parseModelYearArguments(args: readonly string[]) {
   const brand = options.get('--brand');
   const provider = options.get('--provider');
   const parentRunId = options.get('--parent-run-id') ?? null;
-  const mmvId = options.get('--mmv-id') ?? null;
   if (
     !brand ||
     (provider !== 'fixture' && provider !== 'openai') ||
@@ -61,8 +56,6 @@ export function parseModelYearArguments(args: readonly string[]) {
     provider,
     persistFindings,
     parentRunId,
-    noFipe,
-    mmvId,
   };
 }
 
@@ -222,12 +215,10 @@ export async function runModelYearCli(
   repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..'),
 ): Promise<number> {
   try {
-    const { scope, provider, persistFindings, parentRunId, noFipe, mmvId } = parseModelYearArguments(args);
+    const { scope, provider, persistFindings, parentRunId } = parseModelYearArguments(args);
     env = await loadAgentEnvironment(repositoryRoot, env);
-    if (provider === 'openai' && !parentRunId) {
-      requireAgentOpenAiApiKey(env, 'MODEL_YEAR');
-      if (!env.OPENAI_AGENT_MODEL?.trim()) throw new Error('OPENAI_AGENT_MODEL_REQUIRED');
-    }
+    if (provider === 'openai' && !parentRunId && (!env.OPENAI_API_KEY?.trim() || !env.OPENAI_AGENT_MODEL?.trim()))
+      throw new Error('OPENAI_AGENT_CONFIG_REQUIRED');
     if (
       (provider === 'openai' || persistFindings) &&
       (!env.SUPABASE_URL?.trim() || !env.SUPABASE_SERVER_KEY?.trim())
@@ -252,122 +243,19 @@ export async function runModelYearCli(
             );
           })();
 
-    // For independent MY runs, guide research toward approved canonical MMVs.
-    // A previous MMV run is not a sufficient source for MY/PY discovery.
-    let canonicalYearTargets: readonly CanonicalMmv[] = [];
-    if (provider === 'openai' && !parentRunId) {
-      const {CanonicalMmvSupabaseAdapter,createLegacySupabaseClient} =
-        await import('@compra-car/adapter-supabase');
-      canonicalYearTargets=await new CanonicalMmvSupabaseAdapter(
-        createLegacySupabaseClient({url:env.SUPABASE_URL!,serverKey:env.SUPABASE_SERVER_KEY!}),
-      ).listCanonicalMmvs({market:'BR',brand:scope.brand,status:'ACTIVE'});
-      const db=createLegacySupabaseClient({url:env.SUPABASE_URL!,serverKey:env.SUPABASE_SERVER_KEY!});
-      const {data:eligibility,error:eligibilityError}=await db.from('agent_my_launch_eligibility')
-        .select('mmv_id,eligibility').eq('brand',scope.brand);
-      if(eligibilityError)throw new Error('MY_LAUNCH_ELIGIBILITY_READ_FAILED');
-      const eligible=new Set((eligibility??[]).filter(x=>x.eligibility==='ELIGIBLE').map(x=>x.mmv_id));
-      canonicalYearTargets=canonicalYearTargets.filter(m=>eligible.has(m.id) && (!mmvId||m.id===mmvId));
-      if(canonicalYearTargets.length>1 && !mmvId)
-        canonicalYearTargets=[[...canonicalYearTargets].sort((a,b)=>a.id.localeCompare(b.id))[0]!];
-      if(!canonicalYearTargets.length){
-        log('NO_MY_RESEARCH_REQUIRED: no launch MMV without canonical MY or pending FIPE coverage. OpenAI calls: 0');
-        return 0;
-      }
-      if (!canonicalYearTargets.length) throw new Error('MODEL_YEAR_CANONICAL_MMVS_REQUIRED');
-    }
-    // FIPE preflight is read-only. Only confirmed mappings can constrain MY
-    // research: a candidate mapping must never become an automatic identity.
-    const fipePreflight: string[] = [];
-    const fipeCoveredMmvs = new Set<string>();
-    if (provider === 'openai' && !parentRunId && !noFipe) {
-      const {createLegacySupabaseClient}=await import('@compra-car/adapter-supabase');
-      const db=createLegacySupabaseClient({url:env.SUPABASE_URL!,serverKey:env.SUPABASE_SERVER_KEY!});
-      for (const mmv of canonicalYearTargets) {
-        const {data:mappings,error:mapError}=await db.from('catalog_mmv_fipe_mappings')
-          .select('fipe_code,status,reference_period,model_year_hint')
-          .eq('mmv_id',mmv.id).eq('status','CONFIRMED').limit(10);
-        if(mapError)throw new Error('MY_FIPE_MAPPING_READ_FAILED');
-        for(const mapping of mappings??[]) {
-          const {data:values,error:valueError}=await db.from('agent_fipe_valuation_history')
-            .select('model_year,reference_year,reference_month')
-            .eq('fipe_code',mapping.fipe_code)
-            .order('reference_year',{ascending:false})
-            .order('reference_month',{ascending:false}).limit(150);
-          if(valueError)throw new Error('MY_FIPE_VALUES_READ_FAILED');
-          const years=new Set<number>();
-          let zeroKm=false;
-          const latest=values?.[0];
-          for(const row of values??[]) {
-            const parsed=Number(row.model_year);
-            const latestReference=latest&&row.reference_year===latest.reference_year&&
-              row.reference_month===latest.reference_month;
-            if(parsed===32000){if(latestReference)zeroKm=true;continue;}
-            if(Number.isInteger(parsed)&&parsed>=2001&&parsed<=2100)years.add(parsed);
-          }
-          // A current zero-km FIPE entry plus the highest actual MY for the
-          // same code is a deterministic coverage signal, not sales proof.
-          // Missing MY must first be proposed through the FIPE-to-MY flow.
-          const now=new Date();
-          const currentReference=!!latest && latest.reference_year===now.getUTCFullYear() &&
-            latest.reference_month>=now.getUTCMonth()+1-1;
-          const newestYear=years.size?Math.max(...years):null;
-          if(currentReference&&zeroKm&&newestYear!==null)
-            fipeCoveredMmvs.add(mmv.id);
-          fipePreflight.push([
-            mmv.id,mapping.fipe_code,
-            'FIPE_MY='+([...years].sort((a,b)=>a-b).join(',')||'none'),
-            'FIPE_ZERO_KM='+zeroKm,
-            'FIPE_REFERENCE='+String(latest?latest.reference_month+'/'+latest.reference_year:(mapping.reference_period??'unspecified')),
-          ].join(' | '));
-        }
-      }
-    }
-    if (provider==='openai'&&!parentRunId&&!noFipe) {
-      const covered=canonicalYearTargets.filter(m=>fipeCoveredMmvs.has(m.id));
-      for(const mmv of covered)
-        log('MY FIPE-first: skip redundant source research for '+mmv.id+
-          ' (latest FIPE MY with current zero-km reference; canonical MY approval handled separately).');
-      canonicalYearTargets=canonicalYearTargets.filter(m=>!fipeCoveredMmvs.has(m.id));
-      if(!canonicalYearTargets.length) {
-        log('NO_MY_RESEARCH_REQUIRED: FIPE coverage complete. OpenAI calls: 0');
-        return 0;
-      }
-    }
-    const modelYearResearchInstructions = [
-      'FIRST MODEL YEAR AT LAUNCH — determine only the initial commercial MY of the single listed canonical MMV in Brazil:',
-      'Confirmed FIPE references (none means no verified mapping; never infer an absent MY):',
-      ...(noFipe?['ISOLATED TEST: FIPE input deliberately disabled. Do not consult or rely on FIPE data.']:fipePreflight.length?fipePreflight:['No confirmed FIPE mappings available for these canonical identities.']),
-      'FIPE year 32000 means zero-km valuation, not MY 32000. Only treat a current reference 0-km record and the maximum real MY of the SAME confirmed FIPE code as a lead for current sales, never proof.',
-      ...canonicalYearTargets.map(m=>`- ${m.brand} ${m.model} | official version: ${m.officialVersionLabel ?? '(commercial version unspecified)'} | canonical ID: ${m.id}`),
-      'Find the MY currently advertised for this new launch. Do not waste effort reconstructing earlier launches or tracking future MY rollovers.',
-      'Search beyond Brand Connector domains. Independently investigate the official Brazilian manufacturer website, build-and-price configurator, official commercial conditions, authorized dealer 0-km inventory, and specialist automotive news.',
-      'Prioritize search phrases: brand + exact model + exact version + 0km + 2026/2027, ano modelo, condições comerciais, estoque concessionária and ofertas.',
-      'Search at least one authorized dealer and official commercial conditions if available; do not stop on a launch news article that omits the MY.',
-      'Commercial inventory marked 2026/2027 is evidence of MY 2027 for that exact vehicle. Ignore the fabrication year; the result needs MY only.',
-      'Find and cite the exact URL and excerpt stating MY, exact version, Brazilian market and offer date. Do not extrapolate across trims. Production year is out of scope.',
-      'If dealer offers disagree, preserve the conflict and distinguish older inventory from recent sales. Prefer explicit currently valid offer from brand over an undated third-party listing.',
-      'One well-grounded result is preferable to multiple speculative MYs. Unknown is acceptable if none is explicitly supported.',
-      'Do not guess a year from the current calendar, a web publication date, or an unrelated variant. Missing year must remain null.',
-      'Preserve precisely the canonical brand, model and commercial version; versionless vehicles must keep a null version.',
-      'Only attach resolvedMmvId when the evidence uniquely identifies the matching canonical MMV.',
-      'Do not use owners manuals or repair manuals as supporting sources.',
-      'Return independent per-MMV candidates with year evidence; do not invent a commercial version.',
-    ].join('\\n');
-
     const research =
       provider === 'fixture'
         ? new FixtureProductResearchProvider()
         : parentRunId
           ? new FixtureProductResearchProvider()
           : new OpenAIProductResearchProvider({
-              apiKey: requireAgentOpenAiApiKey(env,'MODEL_YEAR'),
+              apiKey: env.OPENAI_API_KEY!,
               model: env.OPENAI_AGENT_MODEL!,
-              allowExternalSources: true,
               maxWaitMs: productResearchMaxWaitMs(env.OPENAI_AGENT_MAX_WAIT_MS),
-              prompt: (await readFile(
+              prompt: await readFile(
                 resolve(repositoryRoot, 'docs/agents/prompts/new-product-check-agent-v1.md'),
                 'utf8',
-              )) + '\\n\\n' + modelYearResearchInstructions,
+              ),
             });
 
     const discovery = parentRunId
@@ -394,12 +282,11 @@ export async function runModelYearCli(
             });
             const mmvRepository = new CanonicalMmvSupabaseAdapter(client);
             const yearRepository = new CanonicalModelYearSupabaseAdapter(client);
-            const allMmvs = await mmvRepository.listCanonicalMmvs({
+            const mmvs = await mmvRepository.listCanonicalMmvs({
               market: 'BR',
               brand: scope.brand,
               status: 'ACTIVE',
             });
-            const mmvs = provider==='openai'&&!parentRunId ? allMmvs.filter(m=>canonicalYearTargets.some(t=>t.id===m.id)) : allMmvs;
             const years = (
               await Promise.all(mmvs.map((mmv) => yearRepository.listModelYears({ mmvId: mmv.id })))
             ).flat();
@@ -419,23 +306,6 @@ export async function runModelYearCli(
         }),
       );
       await platform.persistRunBundle(bundle);
-      if (provider === 'openai' && !parentRunId) {
-        const meta=discovery.researchMetadata;
-        if (!meta.model || !Number.isFinite(meta.totalTokens) || !meta.totalTokens)
-          throw new Error('MODEL_YEAR_PROVIDER_USAGE_MISSING');
-        await recordAiUsage(
-          createLegacySupabaseClient({
-            url:env.SUPABASE_URL!,serverKey:env.SUPABASE_SERVER_KEY!,
-          }),{
-            runId:discovery.runId,agentType:'PRODUCT_YEAR',
-            market:scope.country,brand:scope.brand,provider:meta.provider,
-            model:meta.model,inputTokens:meta.inputTokens,
-            outputTokens:meta.outputTokens,totalTokens:meta.totalTokens,
-            webSearchCount:meta.webSearchCount,reason:'MODEL_YEAR_RESEARCH',
-          },env,
-        );
-        log('Model Year provider token usage persisted.');
-      }
       log('Operational Model Year findings persisted. Catalog unchanged.');
     }
 

@@ -21,21 +21,6 @@ import {
   type BrandConnectorResearchProvider,
 } from './brand-connector-types';
 
-/** Verified canonical GWM Brasil paths. Do not infer source URLs from page labels. */
-const verifiedGwmPaths: Readonly<Record<string, string>> = {
-  '/pt/mediacenter': '/pt/media-center',
-  '/pt/etiquetas': '/pt/saiba-mais/etiquetas-carros',
-  '/pt/condicoes-comerciais': '/pt/saiba-mais/condicoes-comerciais',
-};
-function canonicalKnownOfficialSource(url: string, brand: string, market: string): string {
-  if (brandKey(brand) !== brandKey('GWM') || market !== 'BR') return url;
-  const parsed = new URL(url);
-  if (parsed.hostname !== 'www.gwmmotors.com.br' && parsed.hostname !== 'gwmmotors.com.br') return url;
-  const replacement = verifiedGwmPaths[parsed.pathname];
-  if (replacement) parsed.pathname = replacement;
-  return parsed.href;
-}
-
 export class BrandConnectorAgent {
   constructor(private readonly research: BrandConnectorResearchProvider) {}
   async run(
@@ -118,10 +103,7 @@ export function mapBrandConnectorRun(
           brand,
           market,
           allowedDomains: result.candidateDomains,
-          sourceEntries: result.sourceEntries.map((entry) => ({
-            ...entry,
-            url: canonicalKnownOfficialSource(entry.url, brand, market),
-          })),
+          sourceEntries: result.sourceEntries,
           searchHints: result.searchHints,
           terminologyHints: result.terminologyHints,
         },
@@ -171,30 +153,6 @@ export function mapBrandConnectorRun(
     )
   )
     throw new Error('CONNECTOR_DOMAIN_EVIDENCE_REQUIRED');
-  const sourceCounts = Object.fromEntries(
-    [...new Set(proposal.sourceEntries.map(e => e.type))]
-      .sort().map(type => [type, proposal.sourceEntries.filter(e => e.type === type).length]),
-  );
-  const sourceInventory = {
-    total: proposal.sourceEntries.length,
-    byType: sourceCounts,
-    productPages: proposal.sourceEntries.filter(e => e.type === 'MODEL_PAGE').length,
-    // A commercial keyword is not an extracted amount nor a verified MSRP.
-    productPagesWithPriceSignals: proposal.sourceEntries.filter(e =>
-      e.type === 'MODEL_PAGE' &&
-      /\b(?:BRL_AMOUNT_VISIBLE|PRICE_TERMS_ONLY|PRICE)\b/u.test(e.notes ?? ''),
-    ).length,
-    productPagesWithBrlAmount: proposal.sourceEntries.filter(e =>
-      e.type === 'MODEL_PAGE' && /\bBRL_AMOUNT_VISIBLE\b/u.test(e.notes ?? ''),
-    ).length,
-    productPagesWithPriceTermsOnly: proposal.sourceEntries.filter(e =>
-      e.type === 'MODEL_PAGE' && /\bPRICE_TERMS_ONLY\b/u.test(e.notes ?? ''),
-    ).length,
-    productPagesVerifiedFromIndex: proposal.sourceEntries.filter(e =>
-      e.type === 'MODEL_PAGE' && (e.notes ?? '').includes('verified from official index'),
-    ).length,
-  };
-  const sourceCrawlTelemetry = result.sourceCrawlTelemetry ?? null;
   const fingerprint = connectorFingerprint(proposal);
   const proposedAliasKeys = [...new Set(aliases.map((alias) => brandKey(alias.alias)))].sort();
   const activeAliasKeys = [...new Set((input.activeIdentity?.aliases ?? []).map(brandKey))].sort();
@@ -232,8 +190,6 @@ export function mapBrandConnectorRun(
     candidateDomains: noReplacement ? [] : proposal.allowedDomains,
     sourceEntries: proposal.sourceEntries as unknown as AgentObject[],
     sourceCoverage: [...new Set(proposal.sourceEntries.map((e) => e.type))],
-    sourceInventory,
-    ...(sourceCrawlTelemetry ? { sourceCrawlTelemetry: { ...sourceCrawlTelemetry } } : {}),
     checksPerformed,
     connectorFingerprint: fingerprint,
     ...(input.activeConnector
@@ -249,35 +205,11 @@ export function mapBrandConnectorRun(
       market: proposal.market,
       provider,
       runMode: input.mode,
-      schemaVersion: sourceCrawlTelemetry ? '19C.4' : '19C.3',
+      schemaVersion: '19C.3',
       startedAt,
       completedAt,
       input: { brand: proposal.brand, market: proposal.market, mode: input.mode },
-      summary: {
-        findingType, confidence: result.confidence, canonicalBrand,
-        aliasCount: aliases.length,
-        sourceUrls: sourceInventory.total,
-        modelPages: sourceInventory.productPages,
-        modelPagesVerifiedFromIndex: sourceInventory.productPagesVerifiedFromIndex,
-        modelPagesWithPriceSignals: sourceInventory.productPagesWithPriceSignals,
-        modelPagesWithBrlAmount: sourceInventory.productPagesWithBrlAmount,
-        modelPagesWithPriceTermsOnly: sourceInventory.productPagesWithPriceTermsOnly,
-        sourcesByType: sourceCounts,
-        ...(sourceCrawlTelemetry ? {
-          httpRequests: sourceCrawlTelemetry.httpRequests,
-          httpFailedRequests: sourceCrawlTelemetry.httpFailedRequests,
-          httpRedirects: sourceCrawlTelemetry.httpRedirects,
-          htmlBytesDownloaded: sourceCrawlTelemetry.htmlBytesDownloaded,
-          crawlElapsedMs: sourceCrawlTelemetry.elapsedMs,
-          crawlIndexPhaseMs: sourceCrawlTelemetry.indexPhaseMs,
-          crawlProductPhaseMs: sourceCrawlTelemetry.productPhaseMs,
-          productLinksFound: sourceCrawlTelemetry.productLinksFound,
-          productPagesVerified: sourceCrawlTelemetry.productPagesVerified,
-          productPagesWithBrlAmount: sourceCrawlTelemetry.productPagesWithBrlAmount,
-          productPagesWithPriceTermsOnly: sourceCrawlTelemetry.productPagesWithPriceTermsOnly,
-          productPagesFailed: sourceCrawlTelemetry.failedProductPages.length,
-        } : {}),
-      },
+      summary: { findingType, confidence: result.confidence, canonicalBrand, aliasCount: aliases.length },
       configSnapshot: {
         connectorVersion: input.activeConnector?.version ?? null,
         brandIdentityId: input.activeIdentity?.id ?? null,

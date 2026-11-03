@@ -64,11 +64,9 @@ export function AdminSidebar(props: SidebarProps) {
         onBlurCapture={(event) => {
           if (!event.currentTarget.contains(event.relatedTarget)) setHovered(false);
         }}
-        className={`sticky top-0 z-30 hidden h-dvh shrink-0 overflow-visible transition-[width] duration-200 lg:block ${hovered ? 'w-[264px]' : 'w-[76px]'}`}
+        className={`sticky top-0 hidden h-dvh shrink-0 flex-col overflow-visible bg-[#1A1D21] text-white shadow-[6px_0_18px_rgba(26,29,33,0.16)] transition-[width] duration-200 lg:flex ${hovered ? 'w-[264px]' : 'w-[76px]'}`}
       >
-        <div className="absolute inset-y-0 left-0 z-40 flex h-dvh w-full flex-col overflow-hidden bg-[#1A1D21] text-white shadow-[6px_0_18px_rgba(26,29,33,0.16)]">
-          <SidebarContent {...props} expanded={hovered} onExpand={() => setHovered(true)} />
-        </div>
+        <SidebarContent {...props} expanded={hovered} onExpand={() => setHovered(true)} />
       </aside>
       <MobileNavigation>
         <SidebarContent {...props} expanded mobile />
@@ -94,22 +92,30 @@ function SidebarContent({
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const groups = getSidebarNavigation(tier);
   useEffect(() => {
-    // Selecting a submenu destination closes it, as in the other application sections.
     setOpenGroup(null);
   }, [expanded, pathname]);
   return (
     <>
       <div className="flex min-h-[88px] items-center gap-0 overflow-hidden px-[14px]">
         <img
-          alt=""
-          aria-hidden="true"
+          alt="Carboot"
           src="/carboot/icon_logo_official.svg"
           className="size-12 shrink-0 object-contain"
         />
+        <div
+          aria-hidden="true"
+          className={`h-12 shrink-0 overflow-hidden transition-[width,opacity] duration-200 ${expanded ? 'w-[180px] opacity-100' : 'w-0 opacity-0'}`}
+        >
+          <img
+            alt=""
+            src="/carboot/name_logo_official.svg"
+            className="h-12 w-[180px] max-w-none object-contain"
+          />
+        </div>
       </div>
       <div className="mx-3 h-px bg-white/20" />
       <nav
-        aria-label="Navegação principal"
+        aria-label="Navegação Carboot"
         onClickCapture={(event) => {
           if (event.target instanceof Element && event.target.closest('a[href]'))
             setOpenGroup(null);
@@ -121,7 +127,7 @@ function SidebarContent({
             const children = item.children ?? [];
             const open = openGroup === item.label;
             const itemClass =
-              'flex h-11 w-full min-w-0 items-center gap-3 overflow-hidden whitespace-nowrap rounded-md px-4 text-left text-sm text-white/85 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-[#9ABCC8]';
+              'flex h-11 w-full items-center gap-3 rounded-md px-4 text-left text-sm text-white/85 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-[#9ABCC8]';
             return (
               <li key={item.label}>
                 {children.length ? (
@@ -183,7 +189,7 @@ function SidebarContent({
                           <Link
                             href={child.href}
                             aria-current={pathname === child.href ? 'page' : undefined}
-                            className={`${mobile ? 'flex min-h-11 items-center' : 'block'} min-w-0 truncate whitespace-nowrap rounded-md px-2 py-2 text-xs text-white/80 hover:bg-white/10 hover:text-white`}
+                            className={`${mobile ? 'flex min-h-11 items-center' : 'block'} rounded-md px-2 py-2 text-xs text-white/80 hover:bg-white/10 hover:text-white`}
                           >
                             {child.label}
                           </Link>
