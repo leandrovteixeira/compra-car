@@ -21,9 +21,31 @@ async function main(){
   const transport=createWatcherFeedTransport(nodeWatcherFeedNetwork(),{
    allowedHosts:['motor1.uol.com.br'],maxConcurrencyPerHost:1,timeoutMs:15000,
   });
+  // Nonblocking metadata diagnostic on the same RSS response already fetched.
+  const observedTransport = {
+    fetchFeed: async (...args: Parameters<typeof transport.fetchFeed>) => {
+      const response = await transport.fetchFeed(...args);
+      if(response.status === 'OK') {
+        const xml=response.xml;
+        const count=(re:RegExp)=>(xml.match(re)??[]).length;
+        console.log(JSON.stringify({
+          stage:'WATCHER_RSS_MEDIA_PROBE',
+          mediaContent:count(/<media:content\\b/gi),
+          mediaThumbnail:count(/<media:thumbnail\\b/gi),
+          enclosure:count(/<enclosure\\b/gi),
+          imageElement:count(/<img\\b/gi),
+          escapedImage:count(/&lt;img\\b/gi),
+          xmlImageUrlHints:count(/https?:[^\\s"'<>]+\\.(?:jpg|jpeg|png|webp)/gi),
+        }));
+      } else {
+        console.log(JSON.stringify({stage:'WATCHER_RSS_MEDIA_PROBE',feedStatus:response.status}));
+      }
+      return response;
+    },
+  };
   const qa=createWatcherQaExecutor(()=>env);
   const result=await qa.run(repository=>runWatcherIncremental({
-   repository,transport,now:new Date().toISOString(),
+   repository,transport:observedTransport,now:new Date().toISOString(),
   }));
   success=result.status==='PASS';
   if(success) await enrichWatcherImages(client).catch(()=>console.warn('WATCHER_IMAGES_NONBLOCKING_FAILURE'));
