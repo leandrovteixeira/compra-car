@@ -173,7 +173,7 @@ export function reconcileSpecDocuments27(input: {
       if (!prior || !sameValue(prior, candidate) || !prior.confirmed) changes.push({ specCode: code, previous: prior, next: candidate, reason: !prior ? 'NEW' : sameValue(prior, candidate) ? 'RECONFIRMED' : 'UPDATED' });
     }
   }
-  if (completeDocs.length) {
+  if (completeDocs.length && unmatched === 0 && !findings.some(f => f.code === 'AMBIGUOUS_ALIAS' || f.code === 'VALUE_CONFLICT' || f.code === 'SOURCE_CONFLICT')) {
     // The complete inventory replaces absent binary equipment only; numeric data remains provisional.
     for (const code of input.binaryCatalog) {
       if (seen.has(code)) continue;
@@ -190,6 +190,6 @@ export function reconcileSpecDocuments27(input: {
   }
   const specs = [...next.values()];
   const provisional = specs.some((s) => !s.confirmed);
-  const status: SpecCoverageStatus = !documents.length ? 'AWAITING_SOURCE' : provisional || findings.length ? 'PENDING_REVIEW' : 'CONFIRMED';
+  const status: SpecCoverageStatus = !documents.length ? 'AWAITING_SOURCE' : provisional || findings.length || !completeDocs.length ? 'PENDING_REVIEW' : 'CONFIRMED';
   return { target, status, specs, changes, findings, telemetry: { observations: documents.reduce((n,d)=>n+d.observations.length,0), deterministicMatches: matched, unmatched, inherited: specs.filter(s=>!s.confirmed).length, changes: changes.length, estimatedCostUsd: cost } };
 }
