@@ -1,7 +1,5 @@
 -- Self-service users are not sellers and may not inherit seller/admin access.
 -- Invitation/admin flows still explicitly assign their approved legacy role.
-alter type public.app_role add value if not exists 'public';
-
 create or replace function public.handle_new_auth_user()
 returns trigger
 language plpgsql
