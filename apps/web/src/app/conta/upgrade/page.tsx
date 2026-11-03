@@ -3,6 +3,7 @@ import { getAccountTier } from '@/auth/account-tier-server';
 import { requireActiveProfile } from '@/auth/authorization';
 import { createReadOnlyServerClient } from '@/auth/server-client';
 import { requestCorporateUpgrade } from '../actions';
+import { PendingSubmitButton } from '@/components/pending-submit-button';
 
 export default async function UpgradeAccountPage() {
   const tier = await getAccountTier();
@@ -22,7 +23,7 @@ export default async function UpgradeAccountPage() {
       <label className="block text-sm">Cargo / Função *<input required minLength={2} maxLength={120} className="ui-field mt-2 w-full" name="jobTitle" defaultValue={profile?.job_title ?? ''} /></label>
       <label className="block text-sm">Telefone / WhatsApp *<input required minLength={6} maxLength={40} className="ui-field mt-2 w-full" name="phone" type="tel" defaultValue={profile?.phone ?? ''} /></label>
       <label className="block text-sm">Como pretende utilizar a plataforma?<textarea maxLength={1500} rows={3} className="ui-field mt-2 w-full" name="message" /></label>
-      <button type="submit" className="rounded-lg bg-[#EF7732] px-6 py-3 text-white">Solicitar acesso Corporate</button>
+      <PendingSubmitButton idleLabel="Solicitar acesso Corporate" pendingLabel="Enviando solicitação…" className="min-h-11 rounded-lg bg-[#EF7732] px-6 py-3 text-white disabled:cursor-wait disabled:opacity-65" />
     </form>}
   </main>;
 }
