@@ -9,10 +9,10 @@
 import {readFileSync} from 'node:fs';
 import {
   extractGwmEquipmentClaims27,
-  normalizeAliasLabel,
   suggestCanonicalSpecs27,
   type SpecCatalogDisplay27,
 } from '@compra-car/core/agents';
+import {normalizeAliasLabel} from '@compra-car/core/agent-platform';
 
 const [flag,filename]=process.argv.slice(2);
 if(flag!=='--text'||!filename){
