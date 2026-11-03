@@ -4,6 +4,8 @@ on:
     paths:
       - 'packages/core/src/agents/spec-agent-*.ts'
       - 'packages/core/test/spec-agent-*.test.ts'
+      - 'packages/core/test/price-agent.test.ts'
+      - 'packages/core/test/price-check-classification-26.test.ts'
       - 'packages/core/src/agents/index.ts'
       - 'scripts/agents/spec-agent-*.ts'
       - '.github/workflows/spec-agent-s27.yml'
