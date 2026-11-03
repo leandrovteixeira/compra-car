@@ -8,6 +8,8 @@ on:
       - 'packages/core/src/agents/new-product-check-types.ts'
       - 'packages/core/src/agents/mmv-platform-mapper.ts'
       - 'packages/core/test/mmv-generation-integration.test.ts'
+      - 'scripts/agents/run-new-product-check.ts'
+      - 'scripts/agents/test/mmv-generation-cli.test.ts'
       - 'packages/core/test/mmv-generation-change-classifier.test.ts test/mmv-generation-integration.test.ts'
       - 'packages/core/src/agents/index.ts'
       - '.github/workflows/mmv-generation-classifier.yml'
