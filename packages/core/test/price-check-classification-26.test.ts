@@ -30,7 +30,7 @@ describe('Sprint 26C price check classification', () => {
   it('distinguishes unchanged published MSRP from new prices', () => {
     const withPrice = {...target, currentPrice: {id:'price-1',
       money:{amount:'194990.00',currencyCode:'BRL'},
-      startsOn:'2026-11-01',status:'PUBLISHED'}} as PriceTarget;
+      startsOn:'2026-11-01',status:'published'}} satisfies PriceTarget;
     expect(classifyPriceCheck(withPrice, {...observation('194990.00'),target:withPrice}))
       .toBe('unchanged');
     expect(classifyPriceCheck(withPrice, {...observation('199990.00'),target:withPrice}))

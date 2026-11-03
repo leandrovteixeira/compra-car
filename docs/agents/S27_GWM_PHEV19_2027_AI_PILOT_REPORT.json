@@ -1,0 +1,1097 @@
+{
+  "title": "S27 GWM Haval H6 PHEV19 Flex MY2027 - AI Semantic Pilot",
+  "source": "Railway Compra Car QA isolated one-shot deployment",
+  "deploymentId": "1788b0ba-1328-4932-8c2a-62f1faed5545",
+  "qaRunId": "f049fb52-63f4-4b14-aea1-f43b0714f851",
+  "observedAt": "2026-11-03",
+  "scope": "79 manufacturer equipment claims vs 171 QA canonical specs; 121 eligible binary/scale codes",
+  "reviewPolicy": "Every proposal is pending operator review; nothing approved or written to product_specs",
+  "telemetry": {
+    "status": "COMPLETED_REVIEW_ONLY",
+    "runScope": "GWM_PHEV19_MY2027",
+    "writesApplied": false,
+    "aliasesApproved": 0,
+    "costAvailable": true,
+    "budgetHardCapUsd": 2,
+    "model": "gpt-5.4-mini",
+    "inputFingerprint": "4cbfb06ecdbdab789dfa1f9e00a5bd196563dbcc885150f01053953917965775",
+    "promptBytes": 24556,
+    "reservation": {
+      "reservedMaximumUsd": 0.090417,
+      "hardCapUsd": 2,
+      "maxOutputTokens": 16000
+    },
+    "claims": 79,
+    "catalogSpecs": 121,
+    "usage": {
+      "model": "gpt-5.4-mini",
+      "inputTokens": 5826,
+      "cachedInputTokens": 2176,
+      "outputTokens": 4479,
+      "reasoningTokens": 0,
+      "webSearchCount": 0,
+      "actualEstimatedCostUsd": 0.0230562
+    },
+    "elapsedMs": 19330,
+    "responseId": "resp_0d68e3039489c6f0016aea398f8c6487d082014d05a73c5a5c",
+    "providerReturnedModel": "gpt-5.4-mini-2026-03-17",
+    "providerStatus": "completed",
+    "tokenCostPerClaimUsd": 0.00029185063291139237,
+    "extrapolatedCostPer1000ClaimsUsd": 0.29185063291139235,
+    "rawDecisionCount": 79,
+    "proposalCount": 79,
+    "componentProposals": 70,
+    "totalCanonicalSpecs": 171,
+    "eligibleCatalogSpecs": 121,
+    "matchedClaims": 54,
+    "noMatchClaims": 25,
+    "decomposedClaims": 12
+  },
+  "manualWatchlist": [
+    {
+      "ordinal": 12,
+      "issue": "Porta-copos frontais foram aproximados a porta-objetos; possível falso positivo"
+    },
+    {
+      "ordinal": 26,
+      "issue": "Cintos de 3 pontos não implicam limitadores de força; candidato impreciso"
+    },
+    {
+      "ordinal": 65,
+      "issue": "Follow Me Home não é necessariamente Welcome; semântica distinta"
+    },
+    {
+      "ordinal": 66,
+      "issue": "Pisca-alerta na frenagem de emergência não equivale a luz de freio LED"
+    }
+  ],
+  "proposals": [
+    {
+      "ordinal": 1,
+      "sourceLabel": "Bancos revestidos em couro ecológico",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Bancos revestidos em couro ecológico",
+          "specCode": "IN_0003",
+          "explanation": "Material dos bancos em couro/ecológico é compatível com o código de material dos bancos.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta com material dos bancos."
+    },
+    {
+      "ordinal": 2,
+      "sourceLabel": "Abertura do porta-malas com sistema “hands-free”",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Abertura do porta-malas",
+          "specCode": "EX_0041",
+          "explanation": "Tampa do porta-malas com acionamento elétrico e abertura programável cobre a abertura do porta-malas.",
+          "reviewStatus": "PENDING_REVIEW"
+        },
+        {
+          "sourceFragment": "hands-free",
+          "specCode": "EX_0042",
+          "explanation": "Sensor de presença inteligente é a melhor correspondência para abertura mãos-livres.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta com abertura sem contato e tampa elétrica/programável."
+    },
+    {
+      "ordinal": 3,
+      "sourceLabel": "Bancos dianteiros com ajuste elétrico e ventilação e ajuste de lombar para o motorista",
+      "status": "DECOMPOSE",
+      "components": [
+        {
+          "sourceFragment": "Bancos dianteiros com ajuste elétrico",
+          "specCode": "IN_0008",
+          "explanation": "Ajuste elétrico do banco do motorista.",
+          "reviewStatus": "PENDING_REVIEW"
+        },
+        {
+          "sourceFragment": "ventilação",
+          "specCode": "IN_0028",
+          "explanation": "Ventilação no banco do motorista.",
+          "reviewStatus": "PENDING_REVIEW"
+        },
+        {
+          "sourceFragment": "ajuste de lombar para o motorista",
+          "specCode": "IN_0012",
+          "explanation": "Ajuste elétrico de lombar do banco do motorista.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Claim composto por três equipamentos distintos."
+    },
+    {
+      "ordinal": 4,
+      "sourceLabel": "Sensor de chuva",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Sensor de chuva",
+          "specCode": "SF_0043",
+          "explanation": "Sensor de chuva com acionamento automático do limpador de para-brisa.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 5,
+      "sourceLabel": "Rack de teto em “black piano”",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Rack de teto em “black piano”",
+          "specCode": "EX_0038",
+          "explanation": "Rack de teto com barras longitudinais é a correspondência disponível; o acabamento black piano não possui código específico no catálogo.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta por acabamento de rack de teto."
+    },
+    {
+      "ordinal": 6,
+      "sourceLabel": "Volante multifuncional revestido em couro ecológico e com ajuste de altura e profundidade",
+      "status": "DECOMPOSE",
+      "components": [
+        {
+          "sourceFragment": "Volante multifuncional",
+          "specCode": "IN_0039",
+          "explanation": "Volante multifuncional com controles para áudio, telefonia e assistência à condução.",
+          "reviewStatus": "PENDING_REVIEW"
+        },
+        {
+          "sourceFragment": "revestido em couro ecológico",
+          "specCode": "IN_0037",
+          "explanation": "Volante revestido em couro é a correspondência de material mais próxima disponível.",
+          "reviewStatus": "PENDING_REVIEW"
+        },
+        {
+          "sourceFragment": "com ajuste de altura e profundidade",
+          "specCode": "IN_0035",
+          "explanation": "Ajuste do volante cobre ajuste de altura e profundidade.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Claim composto por volante multifuncional e ajuste do volante."
+    },
+    {
+      "ordinal": 7,
+      "sourceLabel": "Carregamento de celular por indução de 50W",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Carregamento de celular por indução de 50W",
+          "specCode": "CO_0014",
+          "explanation": "Carregador de celular por indução corresponde ao equipamento descrito; a potência 50W não tem código específico aqui.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 8,
+      "sourceLabel": "Molduras das janelas em “black piano”",
+      "status": "NO_MATCH",
+      "components": [],
+      "note": "Acabamento black piano das molduras das janelas não possui código correspondente no catálogo."
+    },
+    {
+      "ordinal": 9,
+      "sourceLabel": "Apoia-braço frontal revestido em couro ecológico",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Apoia-braço frontal",
+          "specCode": "IN_0054",
+          "explanation": "Console central com descansa-braço é a correspondência mais próxima para apoia-braço frontal.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta por apoio de braço central dianteiro."
+    },
+    {
+      "ordinal": 10,
+      "sourceLabel": "Antena tipo “shark”",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Antena tipo “shark”",
+          "specCode": "EX_0040",
+          "explanation": "Antena Shark.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 11,
+      "sourceLabel": "Teto solar panorâmico elétrico",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Teto solar panorâmico elétrico",
+          "specCode": "EX_0037",
+          "explanation": "Teto solar; o termo panorâmico/elétrico não está discriminado no código disponível.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 12,
+      "sourceLabel": "Porta-copos na parte frontal e no banco traseiro (quando o encosto do banco do meio é abaixado)",
+      "status": "DECOMPOSE",
+      "components": [
+        {
+          "sourceFragment": "Porta-copos na parte frontal",
+          "specCode": "IN_0056",
+          "explanation": "Porta-objetos no console central é a correspondência mais próxima para compartimento frontal/cupholder no console.",
+          "reviewStatus": "PENDING_REVIEW"
+        },
+        {
+          "sourceFragment": "no banco traseiro (quando o encosto do banco do meio é abaixado)",
+          "specCode": "IN_0055",
+          "explanation": "Apoia braço retrátil no banco traseiro é o item mais próximo para a configuração traseira mencionada.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Claim composto por dois porta-copos/frontais e traseiros."
+    },
+    {
+      "ordinal": 13,
+      "sourceLabel": "Emblemas traseiros em preto fosco",
+      "status": "NO_MATCH",
+      "components": [],
+      "note": "Emblemas traseiros em preto fosco não têm código específico no catálogo."
+    },
+    {
+      "ordinal": 14,
+      "sourceLabel": "Retrovisores externos com: setas e rebatimento automático",
+      "status": "DECOMPOSE",
+      "components": [
+        {
+          "sourceFragment": "Retrovisores externos com: setas",
+          "specCode": "EX_0019",
+          "explanation": "Espelhos retrovisores externos com repetidores das setas integrados em LED.",
+          "reviewStatus": "PENDING_REVIEW"
+        },
+        {
+          "sourceFragment": "rebatimento automático",
+          "specCode": "EX_0028",
+          "explanation": "Espelhos retrovisores externos com rebatimento elétrico.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Claim composto por setas e rebatimento automático dos retrovisores externos."
+    },
+    {
+      "ordinal": 15,
+      "sourceLabel": "Bancos traseiros rebatíveis (60/40)",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Bancos traseiros rebatíveis (60/40)",
+          "specCode": "IN_0022",
+          "explanation": "Banco traseiro bi-partidos 60/40.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 16,
+      "sourceLabel": "6 airbags ( 2 frontais + 2 frontais laterais + cortinas que cobrem os bancos dianteiros e traseiros)",
+      "status": "DECOMPOSE",
+      "components": [
+        {
+          "sourceFragment": "2 frontais",
+          "specCode": "SF_0011",
+          "explanation": "Airbags frontais duplos.",
+          "reviewStatus": "PENDING_REVIEW"
+        },
+        {
+          "sourceFragment": "2 frontais laterais",
+          "specCode": "SF_0012",
+          "explanation": "Airbags laterais dianteiros.",
+          "reviewStatus": "PENDING_REVIEW"
+        },
+        {
+          "sourceFragment": "cortinas que cobrem os bancos dianteiros e traseiros",
+          "specCode": "SF_0015",
+          "explanation": "Airbags de cortina.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Claim composto por três tipos de airbags."
+    },
+    {
+      "ordinal": 17,
+      "sourceLabel": "Aviso de obrigatoriedade do uso de cinto de segurança para todos os ocupantes do carro",
+      "status": "DECOMPOSE",
+      "components": [
+        {
+          "sourceFragment": "Aviso de obrigatoriedade do uso de cinto de segurança",
+          "specCode": "SF_0009",
+          "explanation": "Alerta de afivelamento do cinto de segurança nos bancos dianteiros.",
+          "reviewStatus": "PENDING_REVIEW"
+        },
+        {
+          "sourceFragment": "para todos os ocupantes do carro",
+          "specCode": "SF_0010",
+          "explanation": "Alerta de afivelamento do cinto de segurança nos bancos traseiros.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Claim composto por alerta de cinto dianteiro e traseiro."
+    },
+    {
+      "ordinal": 18,
+      "sourceLabel": "Sistema de fixação de cadeira infantil – ISOFIX (2 pontos de fixação)",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Sistema de fixação de cadeira infantil – ISOFIX (2 pontos de fixação)",
+          "specCode": "SF_0008",
+          "explanation": "Sistema de fixação de cadeira infantil padrão Isofix no banco traseiro.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 19,
+      "sourceLabel": "ABS + EBD (distribuição eletrônica de frenagem)",
+      "status": "DECOMPOSE",
+      "components": [
+        {
+          "sourceFragment": "ABS",
+          "specCode": "SF_0018",
+          "explanation": "Freios ABS.",
+          "reviewStatus": "PENDING_REVIEW"
+        },
+        {
+          "sourceFragment": "EBD",
+          "specCode": "SF_0019",
+          "explanation": "Distribuição eletrônica de frenagem.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Claim composto por ABS e EBD."
+    },
+    {
+      "ordinal": 20,
+      "sourceLabel": "TCS ( sistema de controle de tração)",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "TCS ( sistema de controle de tração)",
+          "specCode": "SF_0017",
+          "explanation": "Controle eletrônico de tração (TCS).",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 21,
+      "sourceLabel": "SCM (second collision mitigation – em caso de colisão traseira, o carro aciona os freios para evitar engavetamento)",
+      "status": "NO_MATCH",
+      "components": [],
+      "note": "SCM / second collision mitigation não possui correspondência exata no catálogo fornecido."
+    },
+    {
+      "ordinal": 22,
+      "sourceLabel": "Smart cornering (com o ACC ligado, o carro adapta a velocidade de acordo com as curvas)",
+      "status": "NO_MATCH",
+      "components": [],
+      "note": "Smart cornering não possui código correspondente no catálogo."
+    },
+    {
+      "ordinal": 23,
+      "sourceLabel": "Brake assist – regula a pressão no pedal do freio",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Brake assist",
+          "specCode": "SF_0020",
+          "explanation": "Assistente de frenagem de emergência (BAS).",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 24,
+      "sourceLabel": "Hill descent control – assistente de descida de declive",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Hill descent control",
+          "specCode": "SF_0024",
+          "explanation": "Assistente de controle de descida (HDC).",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 25,
+      "sourceLabel": "Pré-tensionamento dos cintos de segurança em caso de colisão",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Pré-tensionamento dos cintos de segurança em caso de colisão",
+          "specCode": "SF_0006",
+          "explanation": "Cintos de segurança dianteiros e traseiros com pré-tensionadores.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 26,
+      "sourceLabel": "Bancos traseiros com cintos de segurança de 3 pontos",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Bancos traseiros com cintos de segurança de 3 pontos",
+          "specCode": "SF_0004",
+          "explanation": "Cintos de segurança dianteiros e traseiros com limitadores de força; é a opção catalogada mais próxima para cintos traseiros de 3 pontos, sem forçar precisão não disponível.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 27,
+      "sourceLabel": "Assistente de partida em ladeiras (subidas)",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Assistente de partida em ladeiras",
+          "specCode": "SF_0023",
+          "explanation": "Assistente de partida em rampa (HAC).",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 28,
+      "sourceLabel": "Freios com sistema de prioridade, que permite frenagem, mesmo quando o acelerador esteja pressionado",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Freios com sistema de prioridade",
+          "specCode": "SF_0021",
+          "explanation": "Sistema de prioridade de frenagem (BOS).",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 29,
+      "sourceLabel": "Conexões USB: 1ª fileira 2 tipo A | 2ª fileira 1 tipo A + 1 tipo C",
+      "status": "NO_MATCH",
+      "components": [],
+      "note": "Quantidade/tipo de USB não tem código correspondente no catálogo."
+    },
+    {
+      "ordinal": 30,
+      "sourceLabel": "12 sensores de estacionamento + 5 câmeras + 2 radares constituem toda a parte semiautônoma",
+      "status": "NO_MATCH",
+      "components": [],
+      "note": "Pacote de sensores/câmeras/radares sem correspondência exata nos códigos fornecidos."
+    },
+    {
+      "ordinal": 31,
+      "sourceLabel": "Frenagem autônoma de emergência para baixas velocidades",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Frenagem autônoma de emergência para baixas velocidades",
+          "specCode": "AD_0004",
+          "explanation": "Sistema automático de frenagem de emergência (AEB).",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 32,
+      "sourceLabel": "Câmera 540º com função chassi invisível + 8 visualizações",
+      "status": "NO_MATCH",
+      "components": [],
+      "note": "Câmera 540º / chassi invisível / 8 visualizações não possui código específico no catálogo."
+    },
+    {
+      "ordinal": 33,
+      "sourceLabel": "“Auto reverse assistance” adaptativo –refaz os últimos 50m percorridos e reconhece novos obstáculos",
+      "status": "NO_MATCH",
+      "components": [],
+      "note": "Auto reverse assistance adaptativo não possui código correspondente no catálogo."
+    },
+    {
+      "ordinal": 34,
+      "sourceLabel": "ACC adaptativo (mantém a velocidade configurado ou do carro a frente) com função “Stop & GO”",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "ACC adaptativo",
+          "specCode": "AD_0009",
+          "explanation": "Piloto automático adaptativo (ACC).",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 35,
+      "sourceLabel": "Alerta e frenagem de emergência autônoma (reconhece também pedestres, motos e bicicletas)",
+      "status": "DECOMPOSE",
+      "components": [
+        {
+          "sourceFragment": "Alerta",
+          "specCode": "AD_0003",
+          "explanation": "Alerta de prevenção de colisão frontal com detecção de veículos, pedestres e ciclistas (FCW).",
+          "reviewStatus": "PENDING_REVIEW"
+        },
+        {
+          "sourceFragment": "frenagem de emergência autônoma",
+          "specCode": "AD_0004",
+          "explanation": "Sistema automático de frenagem de emergência (AEB).",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Claim composto por alerta e frenagem com detecção de pedestres, motos e bicicletas."
+    },
+    {
+      "ordinal": 36,
+      "sourceLabel": "Alerta e assistente ativo de manutenção e centralização de faixa",
+      "status": "DECOMPOSE",
+      "components": [
+        {
+          "sourceFragment": "Alerta",
+          "specCode": "AD_0013",
+          "explanation": "Alerta de saída de faixa de rodagem (LDW).",
+          "reviewStatus": "PENDING_REVIEW"
+        },
+        {
+          "sourceFragment": "assistente ativo de manutenção e centralização de faixa",
+          "specCode": "AD_0015",
+          "explanation": "Assistente de centralização na faixa de rodagem (LFA).",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Claim composto por manutenção e centralização de faixa."
+    },
+    {
+      "ordinal": 37,
+      "sourceLabel": "Assistente de ponto-cego com aviso de abertura de portas mesmo após o carro estar desligado",
+      "status": "DECOMPOSE",
+      "components": [
+        {
+          "sourceFragment": "Assistente de ponto-cego",
+          "specCode": "AD_0018",
+          "explanation": "Assistente de monitoramento de ponto cego (BSD).",
+          "reviewStatus": "PENDING_REVIEW"
+        },
+        {
+          "sourceFragment": "aviso de abertura de portas",
+          "specCode": "AD_0021",
+          "explanation": "Alerta de portas abertas (DOW).",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Claim composto por ponto cego e aviso de abertura de portas."
+    },
+    {
+      "ordinal": 38,
+      "sourceLabel": "Alerta e frenagem autônoma de tráfego cruzado enquanto o carro está na marcha à ré",
+      "status": "DECOMPOSE",
+      "components": [
+        {
+          "sourceFragment": "Alerta",
+          "specCode": "AD_0007",
+          "explanation": "Alerta de tráfego cruzado traseiro (RCTA).",
+          "reviewStatus": "PENDING_REVIEW"
+        },
+        {
+          "sourceFragment": "frenagem autônoma de tráfego cruzado",
+          "specCode": "AD_0008",
+          "explanation": "Assistente ativo de prevenção de colisão traseira em tráfego cruzado (RCTB).",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Claim composto por tráfego cruzado traseiro e frenagem assistida."
+    },
+    {
+      "ordinal": 39,
+      "sourceLabel": "Desvio inteligente – afasta o carro durante ultrapassagem de caminhões em até 30cm",
+      "status": "NO_MATCH",
+      "components": [],
+      "note": "Desvio inteligente para ultrapassagem de caminhões não possui código correspondente no catálogo."
+    },
+    {
+      "ordinal": 40,
+      "sourceLabel": "EDR (“event data recording”) grava o comportamento de direção funcionando como caixa-preta” de avião",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "EDR (“event data recording”)",
+          "specCode": "SF_0040",
+          "explanation": "EDR (event data recording).",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 41,
+      "sourceLabel": "Reconhecimento de placas de velocidade com aviso de limite de velocidade",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Reconhecimento de placas de velocidade",
+          "specCode": "AD_0022",
+          "explanation": "Assistente de limite de velocidade (SLA).",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 42,
+      "sourceLabel": "“Smart key” – liga, desliga, abre e fecha o veículo apenas com proximidade da chave",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "“Smart key” – liga, desliga, abre e fecha o veículo apenas com proximidade da chave",
+          "specCode": "CO_0046",
+          "explanation": "Chave inteligênte para comando das portas e tampa traseira.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 43,
+      "sourceLabel": "Alarme antifurto",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Alarme antifurto",
+          "specCode": "SF_0044",
+          "explanation": "Sistema de alarme antifurto.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 44,
+      "sourceLabel": "Fechamento automático das portas programável (15 ou 30km/h)",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Fechamento automático das portas programável",
+          "specCode": "SF_0039",
+          "explanation": "Bloqueio automático das portas em movimento.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 45,
+      "sourceLabel": "Destravamento automático das portas em caso de acidente",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Destravamento automático das portas em caso de acidente",
+          "specCode": "SF_0037",
+          "explanation": "Destravamento automático das portas em caso de colisão.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 46,
+      "sourceLabel": "E-call liga para os bombeiros (193)",
+      "status": "NO_MATCH",
+      "components": [],
+      "note": "E-call com acionamento para bombeiros/193 não possui código correspondente no catálogo."
+    },
+    {
+      "ordinal": 47,
+      "sourceLabel": "B-Call entra em contato com a central GWM para atendimento 24h/7",
+      "status": "NO_MATCH",
+      "components": [],
+      "note": "B-Call não possui código correspondente no catálogo."
+    },
+    {
+      "ordinal": 48,
+      "sourceLabel": "Chave com função pânico (dispara a buzina)",
+      "status": "NO_MATCH",
+      "components": [],
+      "note": "Função pânico na chave não possui código correspondente no catálogo."
+    },
+    {
+      "ordinal": 49,
+      "sourceLabel": "Painel de Instrumentos 10,25”",
+      "status": "NO_MATCH",
+      "components": [],
+      "note": "Painel de instrumentos 10,25” não possui código correspondente no catálogo."
+    },
+    {
+      "ordinal": 50,
+      "sourceLabel": "Atualização de software OTA (Over the Air)",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Atualização de software OTA",
+          "specCode": "CO_0025",
+          "explanation": "Sistema de atualização remota de software (OTA).",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 51,
+      "sourceLabel": "Ajuste de volume do som de acordo com a velocidade do veículo",
+      "status": "NO_MATCH",
+      "components": [],
+      "note": "Ajuste de volume conforme velocidade não possui código correspondente no catálogo."
+    },
+    {
+      "ordinal": 52,
+      "sourceLabel": "300+ Comandos de voz 100% português Brasil para funções “on e off-line”",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Comandos de voz",
+          "specCode": "CO_0005",
+          "explanation": "Sistema de reconhecimento de voz.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 53,
+      "sourceLabel": "App “My GWM” permite diversas funções remotas",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "App “My GWM” permite diversas funções remotas",
+          "specCode": "CO_0008",
+          "explanation": "Sistema de carro conectado.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 54,
+      "sourceLabel": "4 modos de condução (Eco/ Normal / Sport / Neve)",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "4 modos de condução",
+          "specCode": "CO_0004",
+          "explanation": "Seletor de modo de condução.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 55,
+      "sourceLabel": "3 modos de assistente de direção (Conforto/Normal/Esportivo)",
+      "status": "NO_MATCH",
+      "components": [],
+      "note": "Modos de assistente de direção não possuem código correspondente no catálogo."
+    },
+    {
+      "ordinal": 56,
+      "sourceLabel": "Conectividade com Apple CarPlay e Android Auto sem fio",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Apple CarPlay e Android Auto sem fio",
+          "specCode": "CO_0023",
+          "explanation": "Conexão multimídia (Android Auto / Carplay).",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 57,
+      "sourceLabel": "9 alto-falantes (4 alto-falantes + 4 “tweeters” + 1 Subwoofer) + 1 Amplificador total de 216W",
+      "status": "NO_MATCH",
+      "components": [],
+      "note": "Conjunto de alto-falantes/amplificador não possui código correspondente no catálogo."
+    },
+    {
+      "ordinal": 58,
+      "sourceLabel": "Tela de multimídia de 14,6” com sistema Coffee OS 3",
+      "status": "NO_MATCH",
+      "components": [],
+      "note": "Tela multimídia 14,6” com Coffee OS 3 não possui código correspondente no catálogo."
+    },
+    {
+      "ordinal": 59,
+      "sourceLabel": "GPS nativo com “Live Traffic”",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "GPS nativo",
+          "specCode": "CO_0024",
+          "explanation": "Sistema built-in de navegação GPS.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 60,
+      "sourceLabel": "“Head Up Display” projeta no para-brisas informações de chamada, navegação e “Intelligent Drive”",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Head Up Display",
+          "specCode": "CO_0018",
+          "explanation": "Cockpit digital (HUD).",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 61,
+      "sourceLabel": "Faróis FULL-LED de alta performance com ajuste de altura",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Faróis FULL-LED de alta performance",
+          "specCode": "EX_0009",
+          "explanation": "Faróis dianteiros em LED.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 62,
+      "sourceLabel": "Farol alto auto comutativo (High-beam)",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Farol alto auto comutativo",
+          "specCode": "EX_0012",
+          "explanation": "Controle inteligente de farol alto (IHC).",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 63,
+      "sourceLabel": "Faróis com DRL – luz diurna",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Faróis com DRL",
+          "specCode": "EX_0015",
+          "explanation": "Luzes de condução diurna.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 64,
+      "sourceLabel": "Lanternas traseiras FULL-LED",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Lanternas traseiras FULL-LED",
+          "specCode": "EX_0022",
+          "explanation": "Lanternas traseiras em LED.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 65,
+      "sourceLabel": "Faróis com função “Follow Me Home”",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Faróis com função “Follow Me Home”",
+          "specCode": "EX_0010",
+          "explanation": "Faróis dianteiros com função Welcome é a correspondência mais próxima disponível para a função Follow Me Home.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 66,
+      "sourceLabel": "Luzes de emergência em frenagem busca (pisca- alerta)",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Luzes de emergência em frenagem busca (pisca- alerta)",
+          "specCode": "EX_0025",
+          "explanation": "Luz de freio em LED é a correspondência disponível mais próxima para sinalização de frenagem de emergência.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 67,
+      "sourceLabel": "Faróis de milha em LED",
+      "status": "NO_MATCH",
+      "components": [],
+      "note": "Faróis de milha em LED não possuem código correspondente no catálogo."
+    },
+    {
+      "ordinal": 68,
+      "sourceLabel": "Lanterna traseira “smoked” (fumê)",
+      "status": "NO_MATCH",
+      "components": [],
+      "note": "Lanterna traseira smoked/fumê não possui código correspondente no catálogo."
+    },
+    {
+      "ordinal": 69,
+      "sourceLabel": "Função “cornering” – milhas acendem enquanto o carro faz curva",
+      "status": "NO_MATCH",
+      "components": [],
+      "note": "Função cornering para milhas não possui código correspondente no catálogo."
+    },
+    {
+      "ordinal": 70,
+      "sourceLabel": "Luzes do interior do carro em LED",
+      "status": "NO_MATCH",
+      "components": [],
+      "note": "Luzes internas em LED não possuem código correspondente no catálogo."
+    },
+    {
+      "ordinal": 71,
+      "sourceLabel": "Retrovisores com: setas e rebatimento automático",
+      "status": "DECOMPOSE",
+      "components": [
+        {
+          "sourceFragment": "Retrovisores com: setas",
+          "specCode": "EX_0019",
+          "explanation": "Espelhos retrovisores externos com repetidores das setas integrados em LED.",
+          "reviewStatus": "PENDING_REVIEW"
+        },
+        {
+          "sourceFragment": "rebatimento automático",
+          "specCode": "EX_0028",
+          "explanation": "Espelhos retrovisores externos com rebatimento elétrico.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Claim composto por setas e rebatimento automático."
+    },
+    {
+      "ordinal": 72,
+      "sourceLabel": "Retrovisor interno antiofuscante automático",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Retrovisor interno antiofuscante automático",
+          "specCode": "IN_0049",
+          "explanation": "Espelho retrovisor interno eletrocrômico.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 73,
+      "sourceLabel": "Janelas com função “one-touch” e antiesmagamento",
+      "status": "NO_MATCH",
+      "components": [],
+      "note": "Função one-touch e antiesmagamento nas janelas não possui código correspondente no catálogo."
+    },
+    {
+      "ordinal": 74,
+      "sourceLabel": "Fechamento das janelas por meio do controle remoto",
+      "status": "NO_MATCH",
+      "components": [],
+      "note": "Fechamento das janelas por controle remoto não possui código correspondente no catálogo."
+    },
+    {
+      "ordinal": 75,
+      "sourceLabel": "Vidros verdes e vidro traseiro com função de antiembaçamento",
+      "status": "NO_MATCH",
+      "components": [],
+      "note": "Vidros verdes e antiembaçamento traseiro não possuem código correspondente no catálogo."
+    },
+    {
+      "ordinal": 76,
+      "sourceLabel": "AC “dual zone” (motorista e passageiro)",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "AC “dual zone”",
+          "specCode": "CO_0036",
+          "explanation": "Ar-condicionado.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 77,
+      "sourceLabel": "Saídas de AC para os bancos traseiros",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Saídas de AC para os bancos traseiros",
+          "specCode": "CO_0041",
+          "explanation": "Saída de ar para o banco traseiro.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 78,
+      "sourceLabel": "Purificador de ar ionizado integrado",
+      "status": "PROPOSE",
+      "components": [
+        {
+          "sourceFragment": "Purificador de ar ionizado integrado",
+          "specCode": "CO_0040",
+          "explanation": "Ionizador integrado ao ar-condicionado.",
+          "reviewStatus": "PENDING_REVIEW"
+        }
+      ],
+      "note": "Correspondência direta."
+    },
+    {
+      "ordinal": 79,
+      "sourceLabel": "Função de antiembaçamento do para-brisa",
+      "status": "NO_MATCH",
+      "components": [],
+      "note": "Função de antiembaçamento do para-brisa não possui código correspondente no catálogo."
+    }
+  ]
+}

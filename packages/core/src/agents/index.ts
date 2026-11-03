@@ -80,3 +80,18 @@ export * from './watcher-intelligence';
 export * from './watcher-candidate-discovery';
 export * from './watcher-intelligence-ai-gate';
 export * from './watcher-intelligence-persistence';
+
+export * from './spec-agent-reconciliation';
+export * from './spec-agent-baic-matrix';
+export * from './spec-agent-baic-import';
+export * from './spec-agent-review-projection';
+export * from './spec-agent-events';
+export * from './spec-agent-write-plan';
+export * from './spec-agent-pilot';
+export * from './spec-agent-persistence-plan';
+export * from './spec-agent-db-projection';
+export * from './spec-agent-catalog-suggestions';
+export * from './spec-agent-atomic-commit';
+export * from './spec-agent-gwm-technical';
+export * from './spec-agent-gwm-equipment';
+export * from './spec-agent-ai-review';

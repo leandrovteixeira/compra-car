@@ -1,0 +1,80 @@
+name: Sprint 27 Spec Agent checks
+on:
+  pull_request:
+    paths:
+      - 'packages/core/src/agents/spec-agent-*.ts'
+      - 'packages/core/test/spec-agent-*.test.ts'
+      - 'packages/core/test/price-agent.test.ts'
+      - 'packages/core/test/price-check-classification-26.test.ts'
+      - 'packages/core/src/agents/index.ts'
+      - 'scripts/agents/spec-agent-*.ts'
+      - 'packages/adapter-supabase/src/spec-agent-*.ts'
+      - 'packages/adapter-supabase/test/spec-agent-*.test.ts'
+      - '.github/workflows/spec-agent-s27.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  spec-agent:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Activate pinned pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.34.5 --activate
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Typecheck core
+        run: pnpm --filter @compra-car/core typecheck
+      - name: Spec Agent unit and regression suite
+        run: pnpm --filter @compra-car/core exec vitest run test/spec-agent-reconciliation.test.ts test/spec-agent-baic-matrix.test.ts test/spec-agent-baic-import.test.ts test/spec-agent-review-projection.test.ts test/spec-agent-events.test.ts test/spec-agent-arcfox-golden.test.ts test/spec-agent-write-plan.test.ts test/spec-agent-pilot.test.ts test/spec-agent-persistence-plan.test.ts test/spec-agent-db-projection.test.ts test/spec-agent-catalog-suggestions.test.ts test/spec-agent-atomic-commit.test.ts test/spec-agent-gwm-phev19-2027-golden.test.ts test/spec-agent-gwm-technical.test.ts test/spec-agent-gwm-equipment.test.ts test/spec-agent-ai-review.test.ts
+      - name: Typecheck Supabase adapter
+        run: pnpm --filter @compra-car/adapter-supabase typecheck
+      - name: Spec Agent Supabase adapter tests
+        run: pnpm --filter @compra-car/adapter-supabase exec vitest run test/spec-agent-coverage-reader.test.ts test/spec-agent-telemetry.test.ts
+      - name: Verify one-shot fixture identity (no API calls)
+        run: |
+          node -e 'const fs=require("fs"),z=require("zlib");const f="scripts/agents/fixtures/gwm-phev19-2027-claims.zlib.b64";const x=JSON.parse(z.inflateSync(Buffer.from(fs.readFileSync(f,"utf8").trim(),"base64")).toString());console.log("GWM fixture:",x.target,"claims",x.findings?.length);if(x.target?.productId!==1166||x.target?.modelYear!==2027||x.findings?.length!==79)process.exit(1)'
+      - name: Typecheck agents scripts
+        run: pnpm --filter @compra-car/agents typecheck
+      - name: Official GWM PDF deterministic smoke (non-blocking)
+        continue-on-error: true
+        run: |
+          if ! command -v pdftotext >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq poppler-utils
+          fi
+          command -v pdftotext
+          curl --fail --location --silent --show-error --max-time 30 --retry 2 \
+            'https://www.gwmmotors.com.br/content/dam/gwm/pages/br/pt/models/haval-h6-phev19-my25/ficha-tecnica-haval-h6-phev19-flex.pdf' \
+            -o /tmp/gwm-h6-phev19-flex.pdf
+          test "$(head -c 4 /tmp/gwm-h6-phev19-flex.pdf)" = '%PDF'
+          pdftotext -layout /tmp/gwm-h6-phev19-flex.pdf /tmp/gwm-full-layout.txt
+          pdftotext -raw /tmp/gwm-h6-phev19-flex.pdf /tmp/gwm-full-raw.txt
+          pnpm --filter @compra-car/agents exec tsx spec-agent-gwm-dry-run.ts --pdf /tmp/gwm-h6-phev19-flex.pdf > /tmp/gwm-spec-dry-run.json
+          node -e 'const x=require("/tmp/gwm-spec-dry-run.json"); console.log("GWM deterministic smoke:",JSON.stringify({summary:x.summary,chosenTextMode:x.chosenTextMode,unresolved:x.unresolved.length,databaseWrites:x.databaseWrites,llmCalls:x.llmCalls}))'
+          pnpm --filter @compra-car/agents exec tsx spec-agent-gwm-equipment-benchmark.ts --text /tmp/gwm-full-layout.txt > /tmp/gwm-equipment-benchmark.json
+          node -e 'const x=require("/tmp/gwm-equipment-benchmark.json"); console.log("GWM equipment benchmark:",JSON.stringify({extraction:x.extraction,reconciliation:x.reconciliation,telemetry:x.telemetry}))'
+
+      - name: Upload GWM dry-run diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gwm-spec-dry-run
+          path: |
+            /tmp/gwm-spec-dry-run.json
+            /tmp/gwm-full-layout.txt
+            /tmp/gwm-full-raw.txt
+            /tmp/gwm-h6-phev19-flex.pdf
+            docs/agents/S27_GWM_PHEV19_MY2027_171_SPEC_CROSSCHECK.csv
+            docs/agents/S27_GWM_PHEV19_MY2027_171_SPEC_CROSSCHECK.json
+            /tmp/gwm-equipment-benchmark.json
+          if-no-files-found: ignore
+

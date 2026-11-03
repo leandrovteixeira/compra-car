@@ -1,0 +1,68 @@
+name: Sprint 27 - GWM AI semantic pilot (one shot)
+on:
+  push:
+    branches: [sprint-27-spec-agent]
+    paths:
+      - docs/agents/S27_AI_RUN_TRIGGER_20261103.txt
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: spec-agent-gwm-phev19-one-shot-qa
+  cancel-in-progress: false
+
+jobs:
+  pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      SPEC_AGENT_OPENAI_API_KEY: ${{ secrets.OPENAI_SPEC_AGENT_API_KEY }}
+      SPEC_AI_REPORT_PATH: /tmp/gwm-spec-ai-pilot.json
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Activate pinned pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.34.5 --activate
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Retrieve manufacturer source and build deterministic benchmark
+        run: |
+          if ! command -v pdftotext >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq poppler-utils
+          fi
+          curl --fail --location --silent --show-error --max-time 30 --retry 2 \
+            'https://www.gwmmotors.com.br/content/dam/gwm/pages/br/pt/models/haval-h6-phev19-my25/ficha-tecnica-haval-h6-phev19-flex.pdf' \
+            -o /tmp/gwm-phev19-2027.pdf
+          test "$(head -c 4 /tmp/gwm-phev19-2027.pdf)" = '%PDF'
+          pdftotext -layout /tmp/gwm-phev19-2027.pdf /tmp/gwm-phev19-layout.txt
+          pnpm --filter @compra-car/agents exec tsx spec-agent-gwm-equipment-benchmark.ts \
+            --text /tmp/gwm-phev19-layout.txt > /tmp/gwm-spec-benchmark.json
+          node -e 'const x=require("/tmp/gwm-spec-benchmark.json"); if(x.extraction.totalClaims!==79||x.reconciliation.qaExistingSpecs!==171) process.exit(4);'
+      - name: Verify provider key is available to this repository
+        run: |
+          if [ -z "${SPEC_AGENT_OPENAI_API_KEY:-}" ] && [ -z "${OPENAI_API_KEY:-}" ]; then
+            echo "::error::Missing OPENAI_SPEC_AGENT_API_KEY repository Actions secret (or approved environment access). Inference not executed."
+            exit 2
+          fi
+      - name: Single AI call with hard cap and mandatory telemetry
+        run: |
+          pnpm --filter @compra-car/agents exec tsx spec-agent-gwm-ai-pilot.ts \
+            --execute /tmp/gwm-spec-benchmark.json
+          node -e 'const x=require("/tmp/gwm-spec-ai-pilot.json"); console.log("Spec AI pilot:",JSON.stringify({status:x.status,model:x.model,usage:x.usage,reservation:x.reservation,matchedClaims:x.matchedClaims,noMatchClaims:x.noMatchClaims,decomposedClaims:x.decomposedClaims,componentProposals:x.componentProposals}));'
+      - name: Upload cost ledger and review-only proposals
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: s27-gwm-ai-pilot-telemetry
+          path: |
+            /tmp/gwm-spec-ai-pilot.json
+            /tmp/gwm-spec-benchmark.json
+          if-no-files-found: warn
