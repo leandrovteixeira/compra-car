@@ -82,3 +82,4 @@ export * from './watcher-intelligence-ai-gate';
 export * from './watcher-intelligence-persistence';
 
 export * from './mmv-generation-change-classifier';
+export * from './mmv-generation-review';
