@@ -37,6 +37,13 @@ describe('Sprint 27 Spec Agent kernel', () => {
     expect(result.specs).toHaveLength(0);
     expect(result.status).toBe('PENDING_REVIEW');
   });
+  it('rejects invented predecessor model year and type-incompatible matches', () => {
+    const prev: CanonicalSpec27[] = [{specCode:'POWER_KW',kind:'numeric',value:70,unit:'kW',confirmed:true}];
+    expect(()=>reconcileSpecDocuments27({target,documents:[],aliases,binaryCatalog:[],previousModelYearSpecs:prev})).toThrow('SPEC_PREDECESSOR_REQUIRED');
+    const conflicting = reconcileSpecDocuments27({target,documents:[document([{label:'Potência máxima',kind:'binary',value:'STANDARD',evidence}],false)],aliases,binaryCatalog:[],existingCurrentSpecs:prev});
+    expect(conflicting.findings.some(f=>f.code==='VALUE_CONFLICT')).toBe(true);
+    expect(conflicting.specs.find(x=>x.specCode==='POWER_KW')?.value).toBe(70);
+  });
   it('enforces per-run budget', () => {
     expect(() => reconcileSpecDocuments27({target,documents:[],aliases,binaryCatalog:[],estimatedCostUsd:2.01})).toThrow('SPEC_BUDGET_EXCEEDED');
   });
