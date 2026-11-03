@@ -59,7 +59,7 @@ const results=extracted.claims.map((claim,index)=>{
       :candidates.length?'LEXICAL_SUGGESTION_ONLY':'NO_SUGGESTION',
     exactCodes:direct.map(s=>s.code),suggestions:candidates,
     lexicalTier:!candidates.length?'NONE':candidates[0]!.score>=0.6?'HIGH':candidates[0]!.score>=0.35?'MEDIUM':'LOW',
-    compositeNeedsDecomposition:/\\s\\+\\s/u.test(claim.sourceLabel),
+    compositeNeedsDecomposition:claim.sourceLabel.includes(' + '),
   };
 });
 const count=(state:string)=>results.filter(x=>x.matchState===state).length;
