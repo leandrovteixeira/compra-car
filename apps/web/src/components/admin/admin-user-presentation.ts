@@ -25,6 +25,7 @@ const DATE_TIME_FORMATTER = new Intl.DateTimeFormat('pt-BR', {
 const ROLE_LABELS: Readonly<Record<AppRole, string>> = {
   admin: 'Administrador',
   seller: 'Vendedor',
+  public: 'Gratuito',
 };
 
 const STATUS_LABELS: Readonly<Record<UserStatus, string>> = {
