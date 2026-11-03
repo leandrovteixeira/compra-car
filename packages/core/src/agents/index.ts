@@ -93,3 +93,4 @@ export * from './spec-agent-db-projection';
 export * from './spec-agent-catalog-suggestions';
 export * from './spec-agent-atomic-commit';
 export * from './spec-agent-gwm-technical';
+export * from './spec-agent-gwm-equipment';
