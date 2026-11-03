@@ -118,6 +118,8 @@ export function reconcileSpecDocuments27(input: {
   /** Complete canonical binary equipment codes, not every numeric spec. */
   binaryCatalog: readonly string[];
   previousModelYearSpecs?: readonly CanonicalSpec27[];
+  /** Required for nonadjacent MY inheritance: never assume previous year = current - 1. */
+  predecessorModelYear?: number;
   existingCurrentSpecs?: readonly CanonicalSpec27[];
   estimatedCostUsd?: number;
   budgetUsd?: number;
@@ -129,7 +131,9 @@ export function reconcileSpecDocuments27(input: {
   const findings: SpecFinding27[] = [];
   const changes: SpecChange27[] = [];
   const baseline = new Map<string, CanonicalSpec27>();
-  for (const s of input.previousModelYearSpecs ?? []) baseline.set(s.specCode, { ...s, confirmed: false, inheritedFromModelYear: target.modelYear - 1 });
+  if (input.previousModelYearSpecs?.length && (!Number.isInteger(input.predecessorModelYear) || input.predecessorModelYear! >= target.modelYear))
+    throw new Error('SPEC_PREDECESSOR_REQUIRED');
+  for (const s of input.previousModelYearSpecs ?? []) baseline.set(s.specCode, { ...s, confirmed: false, inheritedFromModelYear: input.predecessorModelYear });
   for (const s of input.existingCurrentSpecs ?? []) baseline.set(s.specCode, s);
   const next = new Map(baseline);
   let matched = 0;
