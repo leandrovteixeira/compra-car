@@ -1,0 +1,3 @@
+One-shot authorized S27 GWM H6 PHEV19 MY2027 semantic mapping AI pilot.
+Approved budget: at most USD 2 per run. Human review only; no canonical writes.
+Triggered 2026-11-03. Do not modify this file to avoid unplanned additional runs.
