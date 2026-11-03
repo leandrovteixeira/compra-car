@@ -3,7 +3,12 @@ on:
   pull_request:
     paths:
       - 'packages/core/src/agents/mmv-generation-change-classifier.ts'
-      - 'packages/core/test/mmv-generation-change-classifier.test.ts'
+      - 'packages/core/src/agents/mmv-generation-review.ts'
+      - 'packages/core/src/agents/new-product-check-agent.ts'
+      - 'packages/core/src/agents/new-product-check-types.ts'
+      - 'packages/core/src/agents/mmv-platform-mapper.ts'
+      - 'packages/core/test/mmv-generation-integration.test.ts'
+      - 'packages/core/test/mmv-generation-change-classifier.test.ts test/mmv-generation-integration.test.ts'
       - 'packages/core/src/agents/index.ts'
       - '.github/workflows/mmv-generation-classifier.yml'
   workflow_dispatch:
