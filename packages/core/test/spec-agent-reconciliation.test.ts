@@ -44,6 +44,20 @@ describe('Sprint 27 Spec Agent kernel', () => {
     expect(conflicting.findings.some(f=>f.code==='VALUE_CONFLICT')).toBe(true);
     expect(conflicting.specs.find(x=>x.specCode==='POWER_KW')?.value).toBe(70);
   });
+  it('preserves regulatory provenance when a manufacturer reports the same value', () => {
+    const regulator = {...evidence,sourceId:'inmetro',authority:'REGULATORY' as const};
+    const official: CanonicalSpec27[] = [{
+      specCode:'POWER_KW',kind:'numeric',value:70,unit:'kW',confirmed:true,evidence:regulator,
+    }];
+    const result = reconcileSpecDocuments27({
+      target, documents:[document([{
+        label:'Potência máxima',kind:'numeric',value:70,unit:'kW',evidence,
+      }],false)],
+      aliases,binaryCatalog:[],existingCurrentSpecs:official,
+    });
+    expect(result.specs.find(x=>x.specCode==='POWER_KW')?.evidence?.authority).toBe('REGULATORY');
+    expect(result.changes).toHaveLength(0);
+  });
   it('enforces per-run budget', () => {
     expect(() => reconcileSpecDocuments27({target,documents:[],aliases,binaryCatalog:[],estimatedCostUsd:2.01})).toThrow('SPEC_BUDGET_EXCEEDED');
   });
