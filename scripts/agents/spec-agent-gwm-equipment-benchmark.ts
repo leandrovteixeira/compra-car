@@ -21,10 +21,11 @@ if(flag!=='--text'||!filename){
 }
 const text=readFileSync(filename,'utf8');
 const extracted=extractGwmEquipmentClaims27(text);
+type SnapshotRow={id:string;code:string;type:'binary'|'numeric'|'scale';unit:string|null;label:string;group_name:string;equipment_group:string;spec_set:string};
 const snapshot=JSON.parse(readFileSync(
   new URL('../../packages/core/test/fixtures/gwm-h6-phev19-2027-qa-specs.json',import.meta.url),
   'utf8',
-)) as {productId:number;modelYear:number;rows:SpecCatalogDisplay27[]};
+)) as {productId:number;modelYear:number;rows:SnapshotRow[]};
 if(snapshot.productId!==1166||snapshot.modelYear!==2027||snapshot.rows.length!==171)
   throw new Error('GWM_QA_SNAPSHOT_INCONSISTENT');
 const binary=snapshot.rows.filter(row=>row.type==='binary');
@@ -39,12 +40,10 @@ const observationClaims=extracted.claims.map(claim=>({
 const suggested=suggestCanonicalSpecs27({
   observations:observationClaims,
   catalog:snapshot.rows.map(row=>({
-    ...row,detail:row.label,
-    displayPt:row.label,
-    groupName:row.group_name,
-    equipmentGroup:row.equipment_group,
-    specSet:row.spec_set,
-  })) as SpecCatalogDisplay27[],
+    id:row.id,code:row.code,type:row.type,unit:row.unit,detail:row.label,
+    displayPt:row.label,groupName:row.group_name,
+    equipmentGroup:row.equipment_group,specSet:row.spec_set,
+  })) satisfies SpecCatalogDisplay27[],
   limit:3,
 });
 const results=extracted.claims.map((claim,index)=>{
