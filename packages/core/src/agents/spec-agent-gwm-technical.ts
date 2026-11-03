@@ -20,6 +20,7 @@ export type GwmTechnicalExtraction27 = Readonly<{
 }>;
 
 const FIELDS: readonly [string,string][] = [
+  ['suspension_front','Suspensão dianteira '],['suspension_rear','Suspensão traseira '],
   ['motor','Motor (combustão) '],['valves','Válvulas '],['cylinders','Cilindros '],
   ['electric_motors','Motores elétricos '],['battery','Bateria LFP (Kwh) '],
   ['charge_ac','Carregamento AC – 0 a 100% (6,6 kW) '],
@@ -42,13 +43,38 @@ const SINGLE_NUMERIC = new Set([
   'valves','cylinders','battery','power','acceleration','weight','tank','towing',
   'length','width','wheelbase','height','clearance','approach','departure',
 ]);
-const TEXT_FIELDS = new Set(['motor','transmission','traction','steering','tires','brakes']);
+const TEXT_FIELDS = new Set(['motor','transmission','traction','steering','tires','brakes','suspension_front','suspension_rear']);
 const number = (s: string): number => Number(s.replace(/\.(?=\d{3}(?:\D|$))/gu,'').replace(',','.'));
 
 export function extractGwmH6Technical27(sourceText: string): GwmTechnicalExtraction27 {
   const observations: GwmTechnicalValue27[] = [];
   const unresolved: {line:number;text:string;reason:string}[] = [];
   const lines = sourceText.split(/\r?\n/u);
+  // GWM's PDF-layout extraction separates some left-column headings from
+  // their values. Reassemble ONLY recognizable, bounded patterns.
+  for (let i = 0; i < lines.length - 4; i++) {
+    const parts = lines.slice(i,i+5).map(line => line.trim());
+    if (parts[0]?.startsWith('Dianteira independente') &&
+        parts[2] === 'Suspensão' &&
+        parts[3]?.startsWith('Traseira independente') &&
+        parts[1] && parts[4]) {
+      lines[i] = 'Suspensão dianteira ' + parts[0] + ' ' + parts[1];
+      lines[i+1] = '';
+      lines[i+2] = '';
+      lines[i+3] = 'Suspensão traseira ' + parts[3] + ' ' + parts[4];
+      lines[i+4] = '';
+    }
+  }
+  for (let i = 0; i < lines.length - 2; i++) {
+    const parts = lines.slice(i,i+3).map(line => line.trim());
+    if (parts[0]?.startsWith('Dianteiro:') &&
+        parts[0]?.includes('Traseiro:') &&
+        parts[1] === 'Freios' && parts[2]) {
+      lines[i] = 'Freios ' + parts[0] + ' ' + parts[2];
+      lines[i+1] = '';
+      lines[i+2] = '';
+    }
+  }
   const start = lines.findIndex(line => line.trim() === 'DADOS TÉCNICOS');
   if (start === -1) throw new Error('GWM_TECHNICAL_SECTION_MISSING');
   for (let index = start + 1; index < lines.length; index++) {
