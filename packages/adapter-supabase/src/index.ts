@@ -22,3 +22,5 @@ export * from './canonical-mmv-supabase-adapter';
 export * from './canonical-model-year-supabase-adapter';
 
 export * from './spec-agent-coverage-reader';
+
+export * from './spec-agent-telemetry';
