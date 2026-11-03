@@ -1,0 +1,29 @@
+name: Neutral identity hotfix validation
+on:
+  push:
+    branches: [fix/neutral-public-identity-20261027]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - name: Public identity and PWA tests
+        run: pnpm --filter @compra-car/web exec vitest run test/neutral-public-identity.test.ts test/sprint-14g2-post-invite-install.test.ts test/comparison-pdf-foundation.test.ts src/auth/entitlements-23c.test.ts src/components/admin/sidebar-navigation.test.ts
+      - name: Install menu functionality
+        run: pnpm --filter @compra-car/web exec vitest run test/sprint-14g3-in-app-install.test.ts -t "shares compact|preserves logout"
+      - name: Install icon properties
+        run: pnpm --filter @compra-car/web exec vitest run test/sprint-14g-mobile-pwa.test.ts -t "publishes a centralized|exposes Next|ships valid"
+      - run: pnpm build

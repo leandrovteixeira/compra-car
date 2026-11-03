@@ -10,12 +10,15 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@compra-car/core": "workspace:*",
     "@compra-car/adapter-openai": "workspace:*",
-    "@compra-car/adapter-supabase": "workspace:*"
+    "@compra-car/adapter-supabase": "workspace:*",
+    "@compra-car/core": "workspace:*",
+    "ipaddr.js": "2.5.0",
+    "sax": "1.6.1"
   },
   "devDependencies": {
     "@types/node": "24.13.3",
+    "@types/sax": "1.2.7",
     "tsx": "4.20.6",
     "vitest": "4.1.10"
   },

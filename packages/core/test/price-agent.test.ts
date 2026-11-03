@@ -365,3 +365,27 @@ describe('Price Agent', () => {
     expect(unchanged.run.summary.unchangedPrices).toBe(1);
   });
 });
+
+
+describe('Sprint 26C invalid MSRP AI handoff', () => {
+  it('routes a promotional bonus mistaken for MSRP to reconciliation under cap', async () => {
+    const n: PriceTarget = { ...target, brand: 'Kia', model: 'Niro',
+      version: 'EX', modelYear: 2027, currentPrice: null };
+    const reconcile = vi.fn(async () => ({ observations: [], mappings: [], usage: [] }));
+    const research = new DeterministicFirstPriceResearch({
+      fetch: async () => [makePriceSnapshot({
+        target: n,
+        sourceUrl: 'https://www.kia.com.br/niro',
+        sourceKind: 'OFFICIAL_MODEL_PAGE',
+        body: 'Kia Niro EX 2027 Bônus promocional de R$ 20.000,00 por tempo limitado',
+      })],
+      reconciliation: { reconcile },
+      hardCostCapUsd: 2,
+    });
+    await research.researchPrices([n], { ...connector, brand: 'Kia',
+      allowedDomains: ['kia.com.br'], sourceEntries: [] });
+    expect(reconcile).toHaveBeenCalledTimes(1);
+    expect(reconcile.mock.calls[0]?.[0]).toEqual([n]);
+    expect(reconcile.mock.calls[0]?.[2]).toBe(2);
+  });
+});

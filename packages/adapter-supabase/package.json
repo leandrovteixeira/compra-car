@@ -7,7 +7,11 @@
   "exports": {
     ".": "./src/index.ts",
     "./brand-connectors": "./src/brand-connector-supabase-adapter.ts",
-    "./price-agent-context": "./src/price-agent-context.ts"
+    "./price-agent-context": "./src/price-agent-context.ts",
+    "./watcher": "./src/watcher-supabase-adapter.ts",
+    "./watcher-qa": "./src/watcher-qa-safety.ts",
+    "./watcher-qa-management": "./src/watcher-qa-management.ts",
+    "./watcher-intelligence-context": "./src/watcher-intelligence-context-reader.ts"
   },
   "types": "./src/index.ts",
   "scripts": {

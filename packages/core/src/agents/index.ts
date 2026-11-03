@@ -53,6 +53,10 @@ export * from './model-year-apply-contract';
 export * from './model-year-platform-mapper';
 
 export * from './price-agent-types';
+export * from './raw-commercial-price';
+export * from './universal-price-extractor';
+export * from './raw-price-matching';
+export * from './source-first-price-reconciliation';
 export * from './price-source-policy';
 export * from './price-target-binding';
 export * from './deterministic-price-research';
@@ -67,3 +71,12 @@ export * from './engineering-brand-replay';
 export * from './engineering-brand-accepted-replay';
 export * from './engineering-cost-governance-audit';
 export * from './engineering-cost-policy';
+
+export * from './watcher-foundation';
+export * from './watcher-ingestion-contract';
+export * from './watcher-incremental';
+export * from './watcher-persistence';
+export * from './watcher-intelligence';
+export * from './watcher-candidate-discovery';
+export * from './watcher-intelligence-ai-gate';
+export * from './watcher-intelligence-persistence';

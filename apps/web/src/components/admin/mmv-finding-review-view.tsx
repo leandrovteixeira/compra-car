@@ -35,10 +35,14 @@ export function MmvFindingReviewView({ detail }: { readonly detail: AgentFinding
   const { finding } = detail;
   const proposal = object(finding.proposal ?? undefined);
   const identities = proposal ? objects(proposal.identities) : [];
+  const namedPending = proposal ? objects(proposal.namedIdentities) : [];
+  const unnamedPending = proposal ? objects(proposal.unnamedCandidates) : [];
   const canonical = objects(finding.subject.canonicalMmv);
   const structured = object(finding.payload.structuredCandidate);
   const resolved = objects(finding.payload.resolvedVariants);
-  const proposed = identities.length ? identities : resolved;
+  const proposed = proposal?.action === 'REVIEW_UNNAMED_MMV'
+    ? [...namedPending, ...unnamedPending]
+    : identities.length ? identities : resolved;
   const marketReconciliation = objects(finding.payload.marketReconciliation);
   const model = text(finding.subject.model) ?? text(structured?.model) ?? 'Modelo';
   const brand = text(finding.subject.brand) ?? text(structured?.brand) ?? '';
@@ -86,6 +90,13 @@ export function MmvFindingReviewView({ detail }: { readonly detail: AgentFinding
         </div>
       </div>
 
+      {proposal?.action === 'REVIEW_UNNAMED_MMV' ? (
+        <p className="text-sm text-text-secondary">
+          Este finding contém veículo sem denominação de versão. Revise as identidades abaixo separadamente;
+          a aplicação canônica permanece bloqueada até confirmar a identidade-base.
+        </p>
+      ) : null}
+
       {proposed.length ? (
         <div>
           <h3 className="font-semibold">
@@ -96,8 +107,7 @@ export function MmvFindingReviewView({ detail }: { readonly detail: AgentFinding
               const label =
                 text(identity.officialVersionLabel) ??
                 text(identity.trim) ??
-                text(identity.model) ??
-                'Identidade sem rótulo';
+                'Sem denominação comercial de versão';
               const technical = technicalLine(identity);
               return (
                 <div key={index} className="ui-surface p-3">

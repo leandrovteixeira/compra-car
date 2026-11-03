@@ -1,0 +1,12 @@
+ALTER FUNCTION public.s26_decide_mmv_identity(uuid,text,text,text,uuid) SECURITY DEFINER;
+ALTER FUNCTION public.s26_apply_approved_mmv_identity(uuid,text) SECURITY DEFINER;
+ALTER FUNCTION public.s26_decide_connector(uuid,text,text,uuid) SECURITY DEFINER;
+ALTER FUNCTION public.s26_decide_model_year(uuid,text,text,uuid) SECURITY DEFINER;
+REVOKE ALL ON FUNCTION public.s26_decide_mmv_identity(uuid,text,text,text,uuid) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.s26_apply_approved_mmv_identity(uuid,text) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.s26_decide_connector(uuid,text,text,uuid) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.s26_decide_model_year(uuid,text,text,uuid) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.s26_decide_mmv_identity(uuid,text,text,text,uuid) TO service_role;
+GRANT EXECUTE ON FUNCTION public.s26_apply_approved_mmv_identity(uuid,text) TO service_role;
+GRANT EXECUTE ON FUNCTION public.s26_decide_connector(uuid,text,text,uuid) TO service_role;
+GRANT EXECUTE ON FUNCTION public.s26_decide_model_year(uuid,text,text,uuid) TO service_role;

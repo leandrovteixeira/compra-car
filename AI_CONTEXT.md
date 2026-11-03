@@ -1,5 +1,210 @@
 # Contexto para agentes de IA
 
+## 2026-10-26 - Sprint 24B.4A atomic intelligence persistence (local only)
+
+Owner approved the additive transactional architecture and disposable PostgreSQL
+tests, superseding the historical local schema-design blocker below. The nine
+pending 24B files remain preserved. New migration adds four intelligence tables,
+commit/review/query RPCs and validation helpers; reuses 24A leases, fencing,
+immutable revisions, candidate identities and receipt-first replay. Existing 24A
+SQLs, manifest, QA loader/guard and operational RPC allowlist remain unchanged.
+Core prepares bounded versioned commits; existing Supabase adapter adds injected
+RPC methods only. No intelligence runtime writer is enabled. Complete source
+journals/current pointers, scope source pinning and CAS protect evidence/reviews;
+automatic replay cannot overwrite human history or RSS checkpoints. No commercial
+table writes/grants were added. Actor identity relies on the trusted server.
+See docs/agents/WATCHER_ATOMIC_INTELLIGENCE_24B4A.md for final tests, SQL hash,
+contracts, bounded-journal limitations, rollback and proposed 24B.4B preflight.
+Final local validation: 436 Watcher tests PASS, 49 real PostgreSQL 17.6 scenario
+groups PASS, typecheck/build and scoped lint/format/diff PASS. Global lint retains
+51 Web warnings; format reports 777 files. Global tests retain six known functional
+failures plus five commercial 5-second timeouts; default serial rerun had three
+timeouts. Explicit 30-second serial timing diagnostic: 1300 PASS, exactly the six
+baseline failures, no timeouts. No tests/configuration were changed to raise budgets.
+Stop before remote operations: QA application/activation/analysis of the twenty
+articles requires separate authorization. No staging/production credentials loaded,
+remote access, RSS, AI, scheduler, handoff, Legacy change, commit/push or deploy.
+
+## 2026-10-26 - Sprint 24B local deterministic intelligence foundation
+
+New owner request authorizes local 24B implementation after published 24A base
+8f31a447ed4ad0716a5af3bc0d5d10a4aeb53fc2 on sprint-24-watcher-local. It supersedes
+the historical instruction not to start 24B, but does not authorize remote operations,
+new migrations, commit/push, AI or another RSS collection.
+Added pure Core intelligence, incremental revision journal/candidate projection,
+literal evidence quality, optimistic review and a disabled AI admission plan.
+Reuse BrandIdentityResolution, CanonicalMmv, Watcher revisions/validators, discovery/
+Model Year/Price categories, AgentReviewDecision and existing cost policy/usage shape.
+No provider/client/writer or catalog apply exists in this engine. 51 new tests pass;
+400 targeted Watcher tests pass, as do typecheck, build and Core/scoped lint.
+Global lint retains 51 Web warnings; format reports 779 existing files; global
+test had six known functional failures plus one old commercial-domain timeout.
+Final serialized Core rerun reproduced only the six baseline failures with 1284
+passes (1290 total); no new functional regression identified. Scoped formatting and
+git diff --check pass; SQL hashes and protected paths remain unchanged.
+See docs/agents/WATCHER_INTELLIGENCE_24B.md and WATCHER_QA_INTELLIGENCE_24B.md.
+Full 24B is NOT complete: the twenty real QA articles were not read/reprocessed.
+24A candidate identity/lifecycle and separate CAS RPCs cannot atomically persist
+event intelligence/evidence with analysis lease/fencing/receipt. No schema/guard
+was changed or bypassed. Gate: review persistence design before any migration/writer;
+separate QA read-only authorization and canonical context snapshots before real analysis.
+No production, Legacy, scheduler, handoff, remote operation, commit, push or deploy.
+
+## 2026-10-26 - Sprint 24A final commit consolidation
+
+Final publication is explicitly authorized only for sprint-24-watcher-local.
+The existing QA pilot is complete; do not run another RSS collection or start 24B.
+Final rerun: 349 Watcher tests, global typecheck/build, changed-file lint/format
+and diff checks pass. Global lint retains 51 Web warnings; format retains 780 files.
+Global tests initially had six known Core failures plus four 5-second timeouts.
+Serialized Core rerun (--maxWorkers=1) reproduced exactly the six documented
+baseline failures and 1233 passes, with no timeout. Core/Web sources are identical
+to published db9021c2e44438ad4c0857b93da144553eb13110; no new functional regression
+was identified. Both approved SQL hashes and all migration/history artifacts remain
+unchanged. Only the twelve reviewed Sprint 24A files are included; no env files,
+secrets or ignored local evidence. No remote data operation or deployment occurred
+during final consolidation. SQL history reconciliation and global debt remain pending.
+
+## 2026-10-26 - Sprint 24A.5B first live QA pilot PASS
+
+See docs/agents/WATCHER_QA_PILOT_24A5.md. The single authorized Motor1 ingestion
+was executed once at 18:25:36.975Z: one HTTP 200 RSS request, 20 valid items,
+20 articles/feed items/initial revisions, zero rejects/duplicates/content updates.
+QA batch 9579c635-4397-44f2-8050-a3ce12bcdbc0 is COMMITTED, stateVersion 1,
+checkpoint advanced and lease released. Independent HTTPS RPC readback passed.
+No further collection is authorized. Preserve the exclusive local attempt marker
+in .local-reports/watcher-24a5/attempt.json; never remove it to retry the pilot.
+Review removed the double-fetch CLI procedure, strengthened structural/checkpoint
+comparison and added failure tests and sanitized diagnostics. Use existing pipeline
+and adapter only. 349 targeted tests, global typecheck/build, scoped lint/format
+and diff checks pass; global Web lint (51 warnings), Core tests (8 failures this
+run) and formatting (780 files) remain pending outside Watcher. GO for planning
+24B only, with no next-stage execution. Zero AI, production access, schema/Legacy
+changes, commit, push or deploy. The previous blocked preparation below is history.
+
+## 2026-10-26 - Sprint 24A.5 pilot blocked before collection
+
+See docs/agents/WATCHER_QA_PILOT_24A5.md. The authorized Motor1 URL is now exclusively
+https://motor1.uol.com.br/rss/news/all/. No feed request or remote write was executed:
+the repository had only a callable ingestion service, with no manual collection/persist
+entrypoint, and the owner explicitly required preparation then a stop in that case.
+Prepared a minimal watcher:qa:pilot CLI and glue using existing transport/parser/Core/RPC
+components, with separate check-feed/run-once modes, fresh validation, local exclusive
+attempt marker and readback-only handling of uncertain outcomes. It was tested with
+mocks/fixtures and --help only; do not invoke live modes without the next instruction.
+Only parser format/count telemetry was added; no SQL/permission/Legacy changes.
+QA identity was verified locally through the safe loader. There is no real batch ID,
+sample or checkpoint update for this sprint. FAIL for the real-pilot goal; NO-GO for
+24B until the first real QA batch is persisted and checked. No commit or push.
+Validation: 346 targeted tests, global typecheck/build, scoped lint/format and diff
+checks pass. Global Web lint, six Core failures and formatting debt (780 files) remain.
+
+## 2026-10-26 - Sprint 24A.4 postflight HTTPS and runtime validation
+
+See docs/agents/WATCHER_QA_POSTFLIGHT_24A4.md. The owner reports both approved
+migrations were applied in QA under remote versions 20261026172631 (Storage) and
+20261026172646 (Transactions), with SQL postflight passed. Do not reapply them.
+This sprint actually verified 19 read-only HTTPS requests: ten empty tables, the
+watcher_query RPC, seven adapter read methods and OpenAPI signatures for eight RPCs.
+All returned HTTP 200; no remote writes or collection occurred. Nonempty decoding,
+mutations, optimistic versions and source isolation are tested with deterministic mocks.
+334 targeted tests, global typecheck/build and scoped lint/format pass. Global gates
+retain Web's 51 warnings, six Core failures and formatting debt in 782 files.
+GO for one QA manual pilot only, waiting for explicit authorization; no collection started.
+Added 12 runtime contract tests; no runtime/SQL/permission
+changes. The report proposes history reconciliation and a single manual Motor1 Brasil
+pilot; neither was executed. RSS endpoint and pilot execution need specific approval.
+No new migration, RLS/grant change, OpenAI, deployment, Legacy change, commit or push.
+
+## 2026-10-26 - Watcher API operations (current architecture)
+
+Consolidation: the project owner reports that the integrated QA administrative
+connection confirmed PostgreSQL 17.6, no Watcher tables and neither approved migration
+registered. No remote query or migration is executed during the commit/push consolidation;
+this baseline does not replace the remaining deployment review and authorization gates.
+Consolidation validation rerun: 76 targeted tests and global typecheck/build pass; both
+migration files match approved raw hashes and HEAD. Global lint remains failing in Web;
+this global test run has eight Core failures and global format reports 782 files.
+No Core or lockfile changes are included. See the API deployment report for details.
+
+Use docs/architecture/decisions/ADR-022-WATCHER-SUPABASE-API-OPERATIONS.md and
+docs/agents/WATCHER_QA_API_DEPLOYMENT.md. They supersede the direct SQL requirements
+in the historical entries below. Runtime uses the standard SUPABASE_URL and
+SUPABASE_SERVER_KEY from the approved staging.env, existing supabase-js/RPC adapter,
+and QA identity/credential checks before every operation. No PostgreSQL URL/password
+is required; no SQL connector or new dependency was added.
+Management reads live exclusively in adapter-supabase and require a separate
+SUPABASE_ACCESS_TOKEN from the approved file. Only read-only query and history
+capabilities exist. The token is currently absent, so remote API preflight is pending.
+pnpm watcher:qa:plan prepares offline ordered API descriptors with exact pinned hashes.
+pnpm watcher:qa:preflight performs remote reads only. Application still requires a
+separately authorized writer and reconciliation of API-generated migration versions.
+No migrations, collection, OpenAI, deployment, Legacy changes or push in this increment.
+Validation: 56 targeted tests, global typecheck/build, scoped lint/format and diff checks
+pass. Global lint remains failing in Web, global tests stop at six Core failures and
+global format reports 783 files. API preflight blocks before HTTP for missing token.
+
+## 2026-10-26 - Watcher migration integrity unblocked
+
+An explicit supabase/migrations/*.sql text eol=lf rule now enforces LF regardless
+of core.autocrlf. Only the two approved Watcher migration working copies were
+normalized; their bytes now match the existing approved SHA-256 hashes exactly.
+The safe Staging loader and QA guards are unchanged. Offline QA plan and all
+46 targeted loader/deployment/guard tests pass; git diff --check passes.
+No remote connection, migration execution, collection, deployment, commit or push.
+
+## 2026-10-26 - Watcher QA password configuration
+
+The offline Watcher CLI now uses scripts/agents/watcher-qa-environment.ts to read only
+C:/Dev/.secrets/compra-car/staging.env and construct the direct QA SQL URI in memory
+from SUPABASE_POSTGRES_PASSWORD. The staging file must identify the authorized QA
+project; staging labels are normalized to qa only after identity verification.
+Inherited conflicts fail closed; REST keys from the file are not imported.
+The existing target guard and migration byte-hash checks remain mandatory.
+
+## 2026-10-25 - Sprint 24A.3b-Fix QA safety and readiness
+
+Implemented mandatory QA-only target/configuration guards, guarded operational executor,
+exact HTTP request URL preservation, explicit migration function ACLs, SHA-256 allowlist,
+offline deployment plan and catalog-only read-only pre/postflight artifacts. No remote
+connector is bundled in the CLI. 306 targeted tests and 23 disposable PostgreSQL scenario
+groups pass; global baseline debt is preserved. See [QA safety report](docs/agents/WATCHER_QA_SAFETY_24A_3B_FIX.md).
+Zero remote Supabase connections/writes, feed collection, OpenAI, deploy, Legacy changes,
+commits or push. 24A.3b-2 remains unstarted pending approval and reviewed read-only preflight.
+
+## 2026-10-25 - Sprint 24A.3a Watcher persistence foundation
+
+Local-only PostgreSQL schema (seven operational tables plus revisions, batch receipts and
+observation journal), pure Core repository port and injected Supabase RPC adapter implemented.
+Atomic leased commits, fencing, replay receipts, revision history, source/candidate snapshots,
+RLS and minimal grants are covered by 262 targeted TypeScript tests and 21 disposable PostgreSQL
+scenario groups. No remote migration or operational integration was enabled. Full validation,
+baseline failures and residual risks: [Watcher 24A.3a](docs/agents/WATCHER_PERSISTENCE_24A_3A.md).
+Zero remote writes, feed collection, AI, UX, deploy, Legacy changes, commits or push.
+Sprint 24A.3b is not started; remote activation awaits review.
+
+## 2026-10-25 - Sprint 24A.2 RSS/Atom ingestion
+
+Local opt-in RSS/Atom parsing, pinned HTTPS transport and incremental in-memory processing
+implemented; no real feeds fetched. Fixed sax/ipaddr.js dependencies and injected offline
+network tests cover XML/DTD limits, SSRF, compression, timeout, conditional requests and replay.
+History/current state preserve revisions and origins; failures/truncation freeze checkpoints.
+226 targeted tests pass (119 Core + 107 scripts), including all 109 from 24A.1. Global baseline
+failures and six separately reproduced legacy script-test failures are documented in
+[Watcher 24A.2](docs/agents/WATCHER_INGESTION_24A_2.md).
+No remote writes, AI, migrations, deploy, UX, operational Brand Connector integration or commits.
+Sprint 24A.3 is not started.
+
+## 2026-10-25 - Sprint 24A.1 Watcher foundation hardening
+
+Local deterministic Watcher hardening and pure incremental ingestion contracts implemented.
+Editorial market is separate from Brazil applicability; GUID identity is source-scoped with
+canonical URL fallback. Versioned SHA-256 evidence, bounded runtime validators, strict dates,
+normalized URL errors and deterministic representatives are covered by 109 targeted tests.
+No other agent contracts, dependencies, database, migration, remote writes, deploy or UX changes.
+Sprint 24A.2 is not started. Global gate limitations and baseline reproduction are recorded in
+[Watcher 24A.1](docs/agents/WATCHER_FOUNDATION_24A_1.md).
+
 ## 2026-10-25 — Sprint 23 production promotion completed
 
 Production runtime is pinned to `0ea47383d94be55f4273c48ff3687126eaa285a2` on `release/sprint-23-production-2026-10-25`; Railway deployment `fabe508e-9f1d-42e2-8650-1ef3caafc871` reached SUCCESS. Production URL: https://compra-carweb-production.up.railway.app . Nine allowlisted schema migrations applied; existing owner explicitly registered as Master; no QA data copied, no agent worker/scheduler enabled and no secrets rotated. All five production business-data counts/fingerprints remained identical before/after. Public home, 60 model cards, MMVY/spec comparison, unique advantage checks, radar for currently priced models, protected admin redirect and /api/health were verified. Corporate price-list access and public signup/SMTP remain known scope limitations; authenticated owner browser verification is the first real session. Details and rollback baseline are recorded in docs/releases/2026-10-25-sprint-23-production.md.
@@ -43,6 +248,7 @@ Staging tables: agent_source_snapshots, agent_source_change_events, agent_ai_usa
 Brand identity is now first-class: brand_identities + brand_aliases, evidence-backed alias discovery in Brand Connector, identity drift review, and operational alias resolution. Volkswagen/VW in QA points to one canonical Volkswagen identity; legacy target history is preserved.
 
 Roadmap after Sprint 20:
+
 - Sprint 21 — Model Year Agent
 - Sprint 22 — Price Agent
 - Sprint 23 — UX / Public Read Access: remove mandatory account/password friction for basic read-only consultation; keep administrative/mutating actions authenticated and authorized.
@@ -50,7 +256,6 @@ Roadmap after Sprint 20:
 - Sprint 25 — Operations / Automation
 
 MY, Price and Spec agents MUST reuse SOURCE_MONITOR/change events and must not introduce unconditional daily LLM polling.
-
 
 ## Sprint 20F.1 — local fixes for first validation run
 
@@ -215,7 +420,6 @@ writes remotos/canônicos/specs/preços, scheduler ou mudanças em Legacy.
 Health check é capability manual/programática; scheduling somente na Sprint 23.
 Detalhes e limites: [Brand Connector 19C](docs/agents/BRAND_CONNECTOR_AGENT_19C.md).
 Gates e comparação com baseline: [validação 19C](docs/agents/SPRINT_19C_VALIDATION.md).
-
 
 ## Sprint 19B.1 — versão alinhada ao Staging
 
@@ -1707,6 +1911,7 @@ O hardening adicionou validação JSON Schema real, ownership server-side, lease
   layer aceitam até 60 MiB de arquivos por request, preservando margem multipart e 32 MiB por PDF.
 - **PENDENTE:** repetir o teste manual da UI com dois PDFs. Não declarar a Sprint 10B validada antes
   disso.
+
 ## Marco — fundação do Import Engine (Sprint 10B, 2026-08-02)
 
 - O Import Engine é módulo oficial e segue o ADR-013: batch é dossiê, documento é arquivo físico e
@@ -2340,6 +2545,7 @@ opt-in informa unit, ordinal, fase, paths, keywords, categorias, total e truncat
 Persistência de sibling succeeded e contabilização de usage/providerRunId antes de uma falha continuam
 **PENDENTE** para retry granular. Gate local: **READY FOR UNIT EXTRACTION DIAGNOSTIC RETRY**; não houve
 retry, OpenAI, escrita no Staging, migration, acesso a Production ou alteração em `Legacy`.
+
 # Marco 2026-07-30 — Sprint 9E
 
 - Homologação de Pricing estabilizada no código: DTOs RSC são plain objects, numeric do PostgREST é
@@ -2348,9 +2554,11 @@ retry, OpenAI, escrita no Staging, migration, acesso a Production ou alteração
   autorização read-only é deduplicada por renderização, mantendo revalidação nas Server Actions.
 - Staging autorizado: `shfsjyjxmgwnlexmdkcs`. Não houve migration, acesso a Produção ou alteração em
   `Legacy`. Smoke autenticado ainda depende de credencial/sessão administrativa fornecida externamente.
+
 ## Marco — combinação de políticas (Sprint 9F, 2026-07-31)
 
 O Offer Builder opera em lote por `create_commercial_offer_batch`. MSRP, `valid_from=max(starts_on)` e `valid_to=min(ends_on não nulo de Policies/MSRP)` são autoritativos no servidor. Neste marco histórico, tudo aberto ainda era erro; a Sprint 9G.4 posteriormente tornou `valid_to` nullable para drafts. Qualquer erro desfaz o lote. `loyalty_bonus` é um tipo corrente fixo distinto.
+
 ## Marco — refinamento da combinação (Sprint 9F.1, 2026-07-31)
 
 O trigger terminal compartilhado separa estruturalmente o branch exclusivo de
@@ -2383,6 +2591,7 @@ O Staging confirmado `shfsjyjxmgwnlexmdkcs` possui agora 10 Products. Os IDs 610
 veículos reais originados de `Legacy/products.csv`, carregados de forma idempotente por
 `scripts/staging/07-expand-admin-dataset.sql`, com 6 preços, 8 Policies, 1 Offer e 2 memberships.
 Nenhum dado anterior foi apagado ou arquivado; Produção não foi alterada.
+
 ## Sprint 9G.2 — rollover de preço publicado
 
 `publish_product_public_price` serializa por `product_id` e, ao publicar em D, encerra o único
@@ -2391,6 +2600,7 @@ gera auditoria `update` correlacionada e incrementa o lock. Publicação retroat
 preço publicado em D ou depois é rejeitada; múltiplos predecessores sobrepostos não são escolhidos
 automaticamente. A RPC `rollover_product_public_price` é o caminho administrativo controlado para
 reparar um par predecessor/sucessor já publicado.
+
 ## Sprint 9G.3 — UX administrativa estabilizada
 
 A lista de preços ordena no banco por `updated_at DESC` por padrão e aceita sort/direção na URL.
@@ -2398,6 +2608,7 @@ Server Actions de batch retornam somente DTO JSON simples. O workspace comercial
 selecionado após refresh, mostra sucesso explícito e mantém N combinações preenchidas mais uma linha
 vazia trailing. Publicação múltipla e exclusão física de Policy continuam **PENDENTE**: ambas exigem
 RPCs administrativas novas antes de qualquer frontend.
+
 ## Sprint 9G.4 — vigência aberta de Offers
 
 Offers `draft` podem ter `validTo = null`. A derivação usa o maior início das Policies e o menor fim
@@ -2408,6 +2619,7 @@ revalida o agregado e bloqueia Offers abertas com erro funcional até nova decis
 O checkpoint das Sprints 9G–9G.4 encerra o workflow atual após validação manual. As migrations foram
 aplicadas somente ao Staging; Produção e `Legacy` permanecem intocados. Refinamentos posteriores de
 UX para a operação mensal de Prices, Policies e Offers continuam pendentes e fora deste checkpoint.
+
 ## Marco — operação mensal de Policies (Sprint 9H, 2026-08-01)
 
 O workspace comercial opera por Product, competência em `YYYY-MM` e data-base. Competência é apenas
@@ -2469,7 +2681,6 @@ verifica versão, formatos, chaves e referências Product/Policy/Offer. Product 
 valuation, Apply, UI, persistência, Supabase e migrations permanecem **PENDENTES** e fora do boundary.
 `Legacy` e o banco não foram alterados. A decisão está documentada em
 `docs/import/SPRINT_15C1_COMMERCIAL_XLSX_INGESTION.md`.
-
 
 ## Environment policy — online QA + Production (2026-10-05)
 

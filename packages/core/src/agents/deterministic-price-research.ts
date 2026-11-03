@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { BrandConnector } from './brand-connector-types';
+import { reconcileSourceFirstPrices } from './source-first-price-reconciliation';
 import {
   priceContexts,
   priceSourceAppliesToModel,
@@ -15,6 +16,7 @@ import type {
   PriceAiUsage,
   PriceIdentityMapping,
   PriceReconciliationProvider,
+  PriceCompactMatchProvider,
   PriceObservation,
   PriceResearchProvider,
   PriceResearchResult,
@@ -358,6 +360,7 @@ export class DeterministicFirstPriceResearch implements PriceResearchProvider {
         ): Promise<PriceObservation | null>;
       };
       reconciliation?: PriceReconciliationProvider;
+      compactMatcher?: PriceCompactMatchProvider;
       hardCostCapUsd?: number;
     },
   ) {}
@@ -452,7 +455,43 @@ export class DeterministicFirstPriceResearch implements PriceResearchProvider {
       }
     }
 
-    const initiallyResolved = new Set(observations.map((o) => o.target.productId));
+    // Source-first extraction is independent of the legacy per-target parser.
+    // Only explicitly verified model, trim and MY can generate an observation.
+    // All other extracted prices remain evidence candidates, never MSRP findings.
+    const sourceFirst = reconcileSourceFirstPrices([...this.snapshots.values()], targets);
+    observations.push(...sourceFirst.observations);
+    let compactMatchDecisions: PriceResearchResult['compactMatchDecisions'] = [];
+    if (this.ports.compactMatcher && sourceFirst.candidates.length) {
+      const indices = sourceFirst.candidates.flatMap((candidate, index) =>
+        candidate.kind !== 'PROMOTIONAL_PRICE' &&
+        candidate.candidateProductIds.length > 0 &&
+        candidate.status !== 'MATCHED'
+          ? [index] : [],
+      );
+      if (indices.length) {
+        const compactResult = await this.ports.compactMatcher.match(
+          indices.map(index => sourceFirst.candidates[index]!),
+          targets, connector, this.ports.hardCostCapUsd ?? 0.03,
+        );
+        compactMatchDecisions = compactResult.decisions.map(decision => ({
+          ...decision,
+          candidateIndex: indices[decision.candidateIndex]!,
+        }));
+        usage.push(...compactResult.usage);
+      }
+      // Identity results are evidence telemetry only: no AI MSRP or MY mutation.
+    }
+
+    // A syntactically extracted amount is not necessarily a valid MSRP.
+    // In particular, automotive pages often show retail bonuses beside price
+    // labels. Such candidates must remain eligible for AI reconciliation.
+    const hasValidPrice = (o: PriceObservation) =>
+      o.msrpAmount !== null &&
+      /^\\d+(?:\\.\\d{2})$/u.test(o.msrpAmount) &&
+      o.evidence.length > 0 &&
+      o.ambiguityReasons.length === 0 &&
+      (o.retailBonusAmount === null || o.retailBonusAmount !== o.msrpAmount);
+    const initiallyResolved = new Set(observations.filter(hasValidPrice).map((o) => o.target.productId));
     for (const target of targets) {
       if (initiallyResolved.has(target.productId)) continue;
       const relevantSnapshots = [...this.snapshots.values()].filter(
@@ -465,7 +504,7 @@ export class DeterministicFirstPriceResearch implements PriceResearchProvider {
       }
     }
 
-    const resolved = new Set(observations.map((o) => o.target.productId));
+    const resolved = new Set(observations.filter(hasValidPrice).map((o) => o.target.productId));
     const unresolved = targets.filter((target) => !resolved.has(target.productId));
     const unresolvedEligibleForAi = unresolved.filter((target) => {
       const relevantSnapshots = [...this.snapshots.values()].filter(
@@ -494,6 +533,8 @@ export class DeterministicFirstPriceResearch implements PriceResearchProvider {
 
     return {
       observations,
+      sourceFirstCandidates: sourceFirst.candidates,
+      compactMatchDecisions,
       snapshots: [...this.snapshots.values()],
       mappings,
       usage,

@@ -1,5 +1,14 @@
 # Compra Car — Cronograma Mestre do Projeto
 
+> 2026-10-25: 24A.3b-Fix QA guards, request URL and deployment/read-only readiness artifacts implemented locally.
+> No remote connections or writes. 24A.3b-2 awaits approval.
+> [QA safety report](docs/agents/WATCHER_QA_SAFETY_24A_3B_FIX.md).
+
+> 2026-10-25: Sprint 24A.3a persistence foundation implemented locally only.
+> 262 targeted tests and 21 disposable PostgreSQL scenario groups pass. No remote writes.
+> 24A.3b not started; review required before remote activation.
+> Details: [Watcher 24A.3a](docs/agents/WATCHER_PERSISTENCE_24A_3A.md).
+
 > Atualização 2026-08-23: **Sprint 10C PAUSED AFTER EXPERIMENTAL SEGMENTED PIPELINE VALIDATION**. O
 > benchmark real alcançou Unit Extraction, mas não concluiu o import segmentado E2E. O runtime
 > permanece preservado por opt-in e o default continua `one_shot`. Uma retomada exige decisão

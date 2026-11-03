@@ -25,7 +25,7 @@ export type Feature23C =
 export type FeatureAvailability = 'enabled' | 'disabled' | 'hidden';
 
 const comingSoon = new Set<Feature23C>([
-  'tpva', 'chat', 'news', 'education', 'current-policies',
+  'tpva', 'chat', 'news', 'education',
 ]);
 
 const rights: Record<AccountTier, ReadonlySet<Feature23C>> = {

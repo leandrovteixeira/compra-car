@@ -92,6 +92,7 @@ export class OpenAIProductResearchProvider implements ProductResearchProvider {
       readonly apiKey: string;
       readonly model: string;
       readonly prompt: string;
+      readonly allowExternalSources?: boolean;
       readonly transport?: ProductResearchTransport | ProductResearchBackgroundTransport;
       readonly maxWaitMs?: number;
       readonly clock?: { now(): number; sleep(ms: number): Promise<void> };
@@ -176,9 +177,9 @@ export class OpenAIProductResearchProvider implements ProductResearchProvider {
             input: JSON.stringify({
               country: source.country,
               brand: source.brand,
-              allowedDomains: source.allowedDomains,
-              allowedHosts: source.allowedHosts,
-              allowedSubdomainRoots: source.allowedSubdomainRoots ?? [],
+              allowedDomains: this.options.allowExternalSources ? [] : source.allowedDomains,
+              allowedHosts: this.options.allowExternalSources ? [] : source.allowedHosts,
+              allowedSubdomainRoots: this.options.allowExternalSources ? [] : (source.allowedSubdomainRoots ?? []),
               researchStages: ['MODEL_DISCOVERY', 'VARIANT_RESOLUTION'],
               searchHints: source.searchHints,
               researchedAt: new Date().toISOString(),
@@ -186,7 +187,7 @@ export class OpenAIProductResearchProvider implements ProductResearchProvider {
             tools: [
               {
                 type: 'web_search',
-                filters: { allowed_domains: [...source.allowedDomains] },
+                ...(this.options.allowExternalSources ? {} : {filters: { allowed_domains: [...source.allowedDomains] }}),
                 user_location: { type: 'approximate', country: source.country },
               },
             ],

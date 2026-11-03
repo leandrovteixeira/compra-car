@@ -106,6 +106,27 @@ export class PriceAgentSupabaseCatalogReader implements PriceCatalogReader {
       ]);
     }
 
+    // Historic findings are URL discovery hints, NOT proof of current price.
+    const {data:historical,error:historicalError} = await this.client
+      .from('agent_findings').select('id,subject_key,created_at')
+      .in('subject_key',ids.map(String)).in('finding_type',['NEW_PRICE','PRICE_CHANGE'])
+      .order('created_at',{ascending:false}).limit(1500);
+    if (historicalError) throw new Error('PRICE_EVIDENCE_HISTORY_READ_FAILED');
+    const findingProduct = new Map((historical ?? []).map(item => [item.id,String(item.subject_key)]));
+    const officialUrls = new Map<string,Set<string>>();
+    if(findingProduct.size){
+      const {data:evidences,error:evidenceError} = await this.client.from('agent_evidence')
+        .select('finding_id,source_url').in('finding_id',[...findingProduct.keys()]).limit(3000);
+      if(evidenceError) throw new Error('PRICE_EVIDENCE_URL_READ_FAILED');
+      for(const evidence of evidences ?? []){
+        const productId=findingProduct.get(evidence.finding_id);
+        if(!productId)continue;
+        const urls=officialUrls.get(productId) ?? new Set<string>();
+        if(urls.size<8) urls.add(evidence.source_url);
+        officialUrls.set(productId,urls);
+      }
+    }
+
     return products.map((row) => {
       const price = current.get(row.id);
       return {
@@ -116,6 +137,7 @@ export class PriceAgentSupabaseCatalogReader implements PriceCatalogReader {
         version: row.version,
         modelYear: row.model_year,
         knownPriceAliases: aliases.get(row.id) ?? [],
+        knownOfficialPriceUrls: [...(officialUrls.get(String(row.id)) ?? [])],
         knownPriceReconciliations: reconciliations.get(row.id) ?? [],
         currentPrice:
           price && price.currency_code === 'BRL'
@@ -193,6 +215,65 @@ export class PriceAgentSupabaseTelemetry {
     }
   }
 
+
+  /** Append observed results without changing published MSRP or approvals. */
+  async persistPriceObservations(input: {
+    runId: string;
+    targets: readonly PriceTarget[];
+    observations: readonly import('@compra-car/core/agents').PriceObservation[];
+  }): Promise<void> {
+    const accepted = new Map<string, import('@compra-car/core/agents').PriceObservation>();
+    for (const item of input.observations) {
+      const amount = Number(item.msrpAmount);
+      if (!item.msrpAmount || !Number.isFinite(amount) || amount < 20000 ||
+          amount > 5000000 || item.ambiguityReasons.length ||
+          !item.evidence.length || item.retailBonusAmount === item.msrpAmount) continue;
+      if (!accepted.has(item.target.productId)) accepted.set(item.target.productId, item);
+    }
+    const productIds = input.targets.map(t => Number(t.productId)).filter(Number.isSafeInteger);
+    const previous = new Map<string, number>();
+    if (productIds.length) {
+      const {data,error} = await this.client.from('agent_price_observations')
+        .select('product_id,source_url,amount_brl,state,observed_at')
+        .in('product_id',productIds)
+        .neq('state','not_found')
+        .order('observed_at',{ascending:false}).limit(3000);
+      if (error) throw new Error('PRICE_OBSERVATION_HISTORY_READ_FAILED');
+      for (const item of data ?? []) {
+        const key = String(item.product_id) + '|' + item.source_url;
+        if (!previous.has(key) && item.amount_brl !== null)
+          previous.set(key, Number(item.amount_brl));
+      }
+    }
+    const rows = input.targets.map((target) => {
+      const observation = accepted.get(target.productId);
+      const evidence = observation?.evidence[0];
+      const baseline = previous.get(target.productId + '|' + (evidence?.sourceUrl ?? ''));
+      const published = target.currentPrice?.money.amount;
+      const state = !observation ? 'not_found'
+        : (baseline !== undefined && baseline === Number(observation.msrpAmount)) ||
+          (published !== undefined && Number(published) === Number(observation.msrpAmount))
+          ? 'unchanged' : 'new_price';
+      return {
+        run_id: input.runId,
+        product_id: Number(target.productId),
+        market: 'BR',
+        brand: target.brand,
+        model_year: target.modelYear,
+        source_url: evidence?.sourceUrl ?? 'urn:price:no-official-evidence',
+        source_fingerprint: evidence?.contentHash ?? 'not_found',
+        amount_brl: observation?.msrpAmount ?? null,
+        state,
+        evidence_excerpt: evidence?.excerpt ?? null,
+        confidence: observation?.confidence ?? null,
+      };
+    });
+    if (!rows.length) return;
+    const {error} = await this.client.from('agent_price_observations')
+      .upsert(rows,{onConflict:'run_id,product_id,source_url'});
+    if (error) throw new Error('PRICE_OBSERVATION_JOURNAL_WRITE_FAILED');
+  }
+
   async persistUsage(input: {
     runId: string;
     market: string;
@@ -214,7 +295,7 @@ export class PriceAgentSupabaseTelemetry {
         total_tokens: item.inputTokens + item.outputTokens,
         web_search_count: item.webSearchCount,
         estimated_cost_usd: item.estimatedCostUsd,
-        reason: 'PRICE_CANONICAL_RECONCILIATION',
+        reason: item.reason ?? 'PRICE_CANONICAL_RECONCILIATION',
       })),
     );
     if (error) throw new Error('PRICE_USAGE_WRITE_FAILED');

@@ -213,7 +213,8 @@ export class BrandConnectorSupabaseAdapter implements BrandConnectorRepository {
       p_proposal: detail.finding.proposal,
       p_fingerprint: connectorFingerprint(proposal),
     });
-    if (error || !data) throw new Error('CONNECTOR_ACTIVATION_FAILED');
+    if (error) throw new Error('CONNECTOR_ACTIVATION_RPC_ERROR');
+    if (!data) throw new Error('CONNECTOR_ACTIVATION_EMPTY_RESULT');
     return { ...fromRow<BrandConnector>(data as Row), ...proposal };
   }
 }

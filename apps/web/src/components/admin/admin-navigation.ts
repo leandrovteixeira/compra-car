@@ -18,7 +18,7 @@ export const adminNavigationItems: readonly AdminNavigationItem[] = [
     { href: '/admin/prices/list', label: 'Lista de Preços', status: 'active' },
     { href: '/admin/prices/input', label: 'Cadastrar Preços', status: 'active' },
     { href: '/admin/prices/policies/input', label: 'Cadastrar Políticas', status: 'active' },
-    { href: '/admin/prices/policies/current', label: 'Políticas Vigentes', status: 'planned' },
+    { href: '/admin/prices/policies/current', label: 'Políticas Vigentes', status: 'active' },
   ] },
   { label: 'Inteligência', status: 'active', children: [
     { label: 'Análise de TPVA', status: 'planned' },
@@ -27,7 +27,8 @@ export const adminNavigationItems: readonly AdminNavigationItem[] = [
   { href: '/admin/news', label: 'News', status: 'active' },
   { href: '/admin/chat', label: 'Chat', status: 'planned' },
   { label: 'Agentes', status: 'active', children: [
-    { href: '/admin/agents', label: 'Agentes', status: 'active' },
+    { href: '/admin/agents', label: 'Revisões', status: 'active' },
+    { href: '/admin/agents/flight-control', label: 'Flight Control', status: 'active' },
   ] },
   { label: 'Configurações', status: 'active', children: [
     { href: '/admin/users', label: 'Gestão de Usuários', status: 'active' },

@@ -129,7 +129,11 @@ describe('Shared native agent environment', () => {
     async (kind) => {
       const root = await temporaryRoot(),
         log = vi.fn();
-      await environmentFile(root, 'OPENAI_API_KEY=synthetic-key\nOPENAI_AGENT_MODEL=mock-model');
+      await environmentFile(root, [
+        'OPENAI_BRAND_CONNECTOR_API_KEY=synthetic-brand-key',
+        'OPENAI_MMV_DISCOVERY_API_KEY=synthetic-mmv-key',
+        'OPENAI_AGENT_MODEL=mock-model',
+      ].join('\n'));
       const code =
         kind === 'brand'
           ? await runBrandConnectorCli(
@@ -159,7 +163,12 @@ describe('Shared native agent environment', () => {
         log = vi.fn(),
         apiSecret = 'opaque-api-19c2',
         dbSecret = 'opaque-server-19c2';
-      await environmentFile(root, `OPENAI_API_KEY=${apiSecret}\nSUPABASE_SERVER_KEY=${dbSecret}`);
+      await environmentFile(root, [
+        `OPENAI_API_KEY=${apiSecret}`,
+        `OPENAI_BRAND_CONNECTOR_API_KEY=${apiSecret}-brand`,
+        `OPENAI_MMV_DISCOVERY_API_KEY=${apiSecret}-mmv`,
+        `SUPABASE_SERVER_KEY=${dbSecret}`,
+      ].join('\n'));
       let directory: string;
       if (kind === 'brand') {
         const fixture = await new FixtureBrandConnectorResearchProvider().researchConnector({
@@ -255,7 +264,7 @@ describe('Safe stable diagnostics', () => {
         root,
       ),
     ).toBe(1);
-    expect(log).toHaveBeenLastCalledWith('BRAND_CONNECTOR_FAILED: OPENAI_AGENT_CONFIG_REQUIRED');
+    expect(log).toHaveBeenLastCalledWith('BRAND_CONNECTOR_FAILED: AGENT_OPENAI_KEY_MISSING');
     expect(await runBrandConnectorCli([...brandArgs, '--persist-findings'], {}, log, root)).toBe(1);
     expect(log).toHaveBeenLastCalledWith('BRAND_CONNECTOR_FAILED: SUPABASE_AGENT_CONFIG_REQUIRED');
     expect(fetch).not.toHaveBeenCalled();

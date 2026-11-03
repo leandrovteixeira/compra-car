@@ -121,7 +121,7 @@ export function ComparisonTable({ vehicles, categories, mode }: ComparisonTableP
                           scope="row"
                         >
                           <span
-                            className="line-clamp-2 block text-xs font-medium leading-4 text-text-primary min-[769px]:text-[0.8125rem] min-[769px]:leading-4"
+                            className={`${row.values.some((value) => value.type === 'scale') ? 'block' : 'line-clamp-2 block'} text-xs font-medium leading-4 text-text-primary min-[769px]:text-[0.8125rem] min-[769px]:leading-4`}
                             title={row.label}
                           >
                             {row.label}

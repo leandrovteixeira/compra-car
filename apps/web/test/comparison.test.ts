@@ -101,7 +101,7 @@ describe('estrutura acessivel dos modos da comparacao', () => {
     const css = source('../src/app/globals.css');
 
     expect(toolbar).toContain('comparison-mode-option');
-    expect(toolbar).toContain('px-2 py-2');
+    expect(toolbar).toContain('px-2 py-1.5');
     expect(toolbar).toContain('sm:px-3');
     expect(toolbar).not.toContain('min-h-11 grid-cols-3');
     expect(page).toContain('ui-button ui-button--secondary ui-button--compact');
@@ -191,7 +191,7 @@ describe('formatação numérica da comparação', () => {
   });
 
   it.each([
-    ['PW_0012', 40, 'Nm', '40,0 Nm'],
+    ['PW_0012', 40, 'Nm', '4,1 kgfm'],
     ['PW_0035', 118.666, 'kg/cv', '118,7 kg/cv'],
     ['PW_0036', 20.24, 'kg/Nm', '20,2 kg/Nm'],
   ] as const)('usa uma casa decimal em %s', (code, value, unit, expected) => {
@@ -199,8 +199,8 @@ describe('formatação numérica da comparação', () => {
   });
 
   it.each([
-    ['CO_0017', 5, '5,00 inch'],
-    ['CO_0019', 12.3, '12,30 inch'],
+    ['CO_0017', 5, '5,00 pol'],
+    ['CO_0019', 12.3, '12,30 pol'],
   ] as const)('usa duas casas para %s', (code, value, expected) => {
     expect(formatComparisonNumber(value, 'inch', { code })).toBe(expected);
   });
@@ -420,5 +420,22 @@ describe('filtro e erros públicos', () => {
     expect(toPublicComparisonError(new VehicleNotFoundError('99'))).toMatchObject({
       code: 'VEHICLES_UNAVAILABLE',
     });
+  });
+});
+
+describe('unidades públicas em português sem alterar valores canônicos', () => {
+  it.each([
+    ['PW_0005', 1.5, 'L', '1.500 cc'],
+    ['PW_0005', 1498, 'cc', '1.498 cc'],
+    ['PW_0012', 300, 'Nm', '30,6 kgfm'],
+    ['PW_0023', 324, 'Nm', '33,0 kgfm'],
+    ['PW_0026', 310, 'Nm', '31,6 kgfm'],
+    ['PW_0033', 900, 'Nm', '91,8 kgfm'],
+    ['PW_0012', 30.6, 'kgfm', '30,6 kgfm'],
+    ['OW_0009', 6, 'years', '6 anos'],
+    ['EX_0002', 18, 'inch', '18 pol'],
+    ['DM_0006', 455, 'L', '455 L'],
+  ] as const)('%s: %s %s → %s', (code, value, unit, expected) => {
+    expect(formatComparisonNumber(value, unit, { code })).toBe(expected);
   });
 });

@@ -55,7 +55,7 @@ export interface MmvCommercialVariantDiscriminator {
 export interface MmvDiscoveryIdentity {
   readonly brand: string;
   readonly model: string;
-  readonly officialVersionLabel: string;
+  readonly officialVersionLabel: string | null;
   readonly bodyStyle: string | null;
   readonly discriminator: MmvCommercialVariantDiscriminator;
 }

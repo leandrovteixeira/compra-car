@@ -19,7 +19,7 @@ export default async function PublicModelRadar({ searchParams }: Props) {
   const validIds = ids.filter(id => allowed.has(id));
   const scores = malformed ? [] : await Promise.all(validIds.map(id => loadSellerModelScore(id, 5)));
   const vehicles = scores.flatMap(result => result.selected ? [{
-    id: result.selected.id, label: result.selected.label, price: result.selected.price,
+    id: result.selected.id, label: result.selected.label,
     overallScore: result.overallScore, categories: result.categories,
   }] : []);
   return <main className="flex min-h-0 min-w-0 flex-col bg-background px-5 py-5 text-text-primary">

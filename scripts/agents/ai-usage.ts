@@ -1,4 +1,5 @@
 import type { LegacySupabaseClient } from '@compra-car/adapter-supabase';
+import { priceAiCost } from '@compra-car/adapter-openai';
 
 function nonNegativeNumber(value: string | undefined): number | null {
   if (!value?.trim()) return null;
@@ -15,6 +16,21 @@ export function estimateAiCostUsd(
   },
   env: Readonly<Record<string, string | undefined>>,
 ): { readonly cost: number; readonly priced: boolean } {
+  // Runtime model labels must determine their prices, not the unrelated
+  // adjudication-model environment setting. Shared Price rates are the
+  // canonical calibrated estimate for these three deployed models.
+  if (usage.model && ['gpt-5.6-luna','gpt-5.6-terra','gpt-5.6-sol']
+      .includes(usage.model)) {
+    return {
+      cost: priceAiCost(usage.model, {
+        inputTokens: usage.inputTokens ?? 0,
+        cachedInputTokens: 0,
+        outputTokens: usage.outputTokens ?? 0,
+        webSearchCount: usage.webSearchCount ?? 0,
+      }),
+      priced: true,
+    };
+  }
   const isSol = usage.model === (env.OPENAI_ADJUDICATION_MODEL?.trim() || 'gpt-5.6');
   const inputRate = nonNegativeNumber(
     isSol ? env.OPENAI_SOL_INPUT_USD_PER_1M : env.OPENAI_INPUT_USD_PER_1M,
@@ -36,7 +52,8 @@ export function estimateAiCostUsd(
 export async function recordAiUsage(
   client: LegacySupabaseClient,
   input: {
-    readonly runId: string;
+    readonly runId: string | null;
+    readonly intendedRunId?: string | null;
     readonly agentType: string;
     readonly market: string;
     readonly brand: string;
@@ -53,6 +70,7 @@ export async function recordAiUsage(
   const estimate = estimateAiCostUsd({ ...input, model: input.model }, env);
   const { error } = await client.from('agent_ai_usage_events').insert({
     run_id: input.runId,
+    ...(input.intendedRunId ? { intended_run_id: input.intendedRunId } : {}),
     agent_type: input.agentType,
     market: input.market,
     brand: input.brand,
@@ -65,5 +83,5 @@ export async function recordAiUsage(
     estimated_cost_usd: estimate.cost,
     reason: estimate.priced ? input.reason : input.reason + ':UNPRICED',
   });
-  if (error) return;
+  if (error) throw new Error('AGENT_AI_USAGE_PERSIST_FAILED');
 }

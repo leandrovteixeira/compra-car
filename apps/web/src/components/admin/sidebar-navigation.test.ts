@@ -23,12 +23,34 @@ describe('shared desktop and mobile navigation by account tier', () => {
     expect(links('corporate')).toEqual([...links('public'), '/admin/prices/list']);
   });
 
-  it('keeps user management and agents exclusive to Master', () => {
+  it('keeps both Agents destinations exclusive to Master', () => {
     expect(links('admin')).toContain('/admin/products');
     expect(links('admin')).not.toContain('/admin/users');
     expect(links('admin')).not.toContain('/admin/agents');
+    expect(links('admin')).not.toContain('/admin/agents/flight-control');
     expect(links('master')).toEqual(
-      expect.arrayContaining(['/admin/users', '/admin/agents', '/admin/products']),
+      expect.arrayContaining([
+        '/admin/users',
+        '/admin/agents',
+        '/admin/agents/flight-control',
+        '/admin/products',
+      ]),
     );
+    const agents = getSidebarNavigation('master').find((item) => item.label === 'Agentes');
+    expect(agents?.children?.map(({ label, href }) => ({ label, href }))).toEqual([
+      { label: 'Revisões', href: '/admin/agents' },
+      { label: 'Flight Control', href: '/admin/agents/flight-control' },
+    ]);
+  });
+  it('keeps operational Master navigation destinations active after QA branch merges', () => {
+    const nav = getSidebarNavigation('master');
+    const prices = nav.find((item) => item.label === 'Preços');
+    const policies = prices?.children?.find((child) => child.href === '/admin/prices/policies/current');
+    expect(policies).toMatchObject({ label: 'Políticas Vigentes', status: 'active' });
+    const agents = nav.find((item) => item.label === 'Agentes');
+    expect(agents?.children).toEqual(expect.arrayContaining([
+      expect.objectContaining({ href: '/admin/agents', label: 'Revisões', status: 'active' }),
+      expect.objectContaining({ href: '/admin/agents/flight-control', label: 'Flight Control', status: 'active' }),
+    ]));
   });
 });

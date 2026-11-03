@@ -89,7 +89,25 @@ export interface ConnectorEvidence {
   readonly title: string;
   readonly excerpt: string;
 }
+export interface BrandSourceCrawlTelemetry {
+  readonly indexPagesChecked: number;
+  readonly productLinksFound: number;
+  readonly productPagesVerified: number;
+  readonly addedProductPages: number;
+  readonly productPagesWithBrlAmount: number;
+  readonly productPagesWithPriceTermsOnly: number;
+  readonly failedProductPages: readonly string[];
+  readonly httpRequests: number;
+  readonly httpFailedRequests: number;
+  readonly httpRedirects: number;
+  readonly htmlBytesDownloaded: number;
+  readonly elapsedMs: number;
+  readonly indexPhaseMs: number;
+  readonly productPhaseMs: number;
+}
+
 export interface BrandConnectorResearch {
+  readonly sourceCrawlTelemetry?: BrandSourceCrawlTelemetry;
   /** Manufacturer-facing label observed on official sources. */
   readonly observedBrandLabel: string;
   /** Proposed canonical manufacturer identity. Human review still controls activation. */

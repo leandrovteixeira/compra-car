@@ -50,18 +50,23 @@ export function priceVersionAliases(target: PriceTarget): readonly string[] {
   ].sort((a, b) => b.length - a.length);
 }
 
+function compactIdentity(text: string): string {
+  return comparisonText(text).replace(/ /gu, '');
+}
+
 export function priceSourceAppliesToModel(
   snapshot: PriceSourceSnapshot,
   target: PriceTarget,
 ): boolean {
-  const model = comparisonText(target.model);
+  const model = compactIdentity(target.model);
+  if (!model || model.length < 3) return false;
   try {
-    const path = comparisonText(decodeURIComponent(new URL(snapshot.finalUrl).pathname));
-    if (path.split(' ').includes(model)) return true;
+    const path = decodeURIComponent(new URL(snapshot.finalUrl).pathname);
+    if (compactIdentity(path).includes(model)) return true;
   } catch {
     return false;
   }
-  return comparisonText(sourceText(snapshot.body)).includes(model);
+  return compactIdentity(sourceText(snapshot.body)).includes(model);
 }
 
 export function priceTargetBinding(text: string, target: PriceTarget): boolean {
