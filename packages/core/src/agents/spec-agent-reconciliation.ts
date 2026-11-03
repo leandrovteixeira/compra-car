@@ -166,6 +166,13 @@ export function reconcileSpecDocuments27(input: {
         findings.push({ code: 'SOURCE_CONFLICT', label: observation.label, specCode: code, message: 'Different measurement methodologies need distinct canonical specifications', evidence: observation.evidence });
         continue;
       }
+      // A lower-authority source may corroborate the value, but must never
+      // replace regulatory/manufacturer provenance, even when values agree.
+      if (prior?.confirmed && sameValue(prior, candidate) &&
+          rank(prior.evidence) > rank(candidate.evidence)) {
+        seen.add(code);
+        continue;
+      }
       if (prior && prior.confirmed && !sameValue(prior, candidate)) {
         if (rank(prior.evidence) >= rank(candidate.evidence)) {
           findings.push({ code: 'VALUE_CONFLICT', label: observation.label, specCode: code, message: 'Conflicting confirmed value; manual review required', evidence: observation.evidence });
