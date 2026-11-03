@@ -25,7 +25,7 @@ import {
 } from '@compra-car/core';
 import { monthlyCompetenceOptions } from '@/application/admin/monthly-pricing-context';
 import { buildInitialManualPolicyRows } from '@/application/admin/manual-policy-batch';
-import { buttonClassName, fieldClassName, labelClassName } from '@compra-car/ui';
+import { fieldClassName, labelClassName } from '@compra-car/ui';
 
 const POLICY_STATUS_LABELS = {
   draft: 'Rascunho',
@@ -34,11 +34,18 @@ const POLICY_STATUS_LABELS = {
   needs_review: 'Em revisão',
   rejected: 'Rejeitado',
 } as const;
-const badge = 'inline-flex h-6 items-center justify-center rounded-full border px-2.5 text-xs font-medium';
+const badge =
+  'inline-flex h-6 items-center justify-center rounded-full border px-2.5 text-xs font-medium';
 
 function formatDateBR(date: string): string {
   const parts = date.slice(0, 10).split('-');
-  if (parts.length !== 3 || parts[0]?.length !== 4 || parts[1]?.length !== 2 || parts[2]?.length !== 2) return date;
+  if (
+    parts.length !== 3 ||
+    parts[0]?.length !== 4 ||
+    parts[1]?.length !== 2 ||
+    parts[2]?.length !== 2
+  )
+    return date;
   return `${parts[2]}/${parts[1]}/${parts[0]}`;
 }
 function previousDay(date: string): string {
@@ -90,6 +97,7 @@ export function CommercialPolicyWorkspace(props: {
   const router = useRouter();
   const [productId, setProductId] = useState(props.initialProductId);
   const [dirty, setDirty] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [specialDialogOpen, setSpecialDialogOpen] = useState(false);
   const [priceDialogOpen, setPriceDialogOpen] = useState(false);
   const [specialStart, setSpecialStart] = useState(props.commercialPeriod.start);
@@ -436,7 +444,8 @@ export function CommercialPolicyWorkspace(props: {
                               </span>
                             </td>
                             <td className="p-3">
-                              {formatDateBR(policy.startsOn)} — {policy.endsOn ? formatDateBR(policy.endsOn) : 'aberta'}
+                              {formatDateBR(policy.startsOn)} —{' '}
+                              {policy.endsOn ? formatDateBR(policy.endsOn) : 'aberta'}
                             </td>
                             <td className="p-3">
                               R${' '}
@@ -555,27 +564,35 @@ export function CommercialPolicyWorkspace(props: {
               }}
             />
           </section>
-          <details className="rounded-2xl border border-slate-800 p-4">
-            <summary className="cursor-pointer font-bold">
+          <details
+            open={historyOpen}
+            onToggle={(event) => setHistoryOpen(event.currentTarget.open)}
+            className="rounded-xl border border-border"
+          >
+            <summary className="cursor-pointer p-4 font-bold">
               Histórico ({historicalPolicies.length + historicalOffers.length})
             </summary>
-            <div className="mt-4 space-y-3 text-sm text-slate-300">
-              {historicalPolicies.map((policy) => (
-                <p key={`policy-${policy.id}`}>
-                  Policy #{policy.id} ·{' '}
-                  {MANUAL_POLICY_DISPLAY_LABELS[policy.policyType] ?? policy.policyType} ·{' '}
-                  {formatDateBR(policy.startsOn)} — {policy.endsOn ? formatDateBR(policy.endsOn) : "aberta"}
-                </p>
-              ))}
-              {historicalOffers.map((offer) => (
-                <p key={`offer-${offer.id}`}>
-                  Oferta #{offer.id} · {formatDateBR(offer.validFrom)} — {offer.validTo ? formatDateBR(offer.validTo) : 'aberta'} · {offer.status}
-                </p>
-              ))}
-              {!historicalPolicies.length && !historicalOffers.length ? (
-                <p>Nenhum item anterior carregado.</p>
-              ) : null}
-            </div>
+            {historyOpen && (
+              <div className="space-y-3 px-4 pb-4 text-sm text-text-secondary">
+                {historicalPolicies.map((policy) => (
+                  <p key={`policy-${policy.id}`}>
+                    Policy #{policy.id} ·{' '}
+                    {MANUAL_POLICY_DISPLAY_LABELS[policy.policyType] ?? policy.policyType} ·{' '}
+                    {formatDateBR(policy.startsOn)} —{' '}
+                    {policy.endsOn ? formatDateBR(policy.endsOn) : 'aberta'}
+                  </p>
+                ))}
+                {historicalOffers.map((offer) => (
+                  <p key={`offer-${offer.id}`}>
+                    Oferta #{offer.id} · {formatDateBR(offer.validFrom)} —{' '}
+                    {offer.validTo ? formatDateBR(offer.validTo) : 'aberta'} · {offer.status}
+                  </p>
+                ))}
+                {!historicalPolicies.length && !historicalOffers.length ? (
+                  <p>Nenhum item anterior carregado.</p>
+                ) : null}
+              </div>
+            )}
           </details>
         </>
       )}

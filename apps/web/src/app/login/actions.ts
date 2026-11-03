@@ -34,7 +34,7 @@ export async function login(formData: FormData): Promise<never> {
     redirect(loginErrorDestination(nextValue));
   }
 
-  const roleDestination = profile.role === 'admin' ? '/admin' : '/';
+  const roleDestination = '/';
   const requestedDestination =
     typeof nextValue === 'string'
       ? getSafeInternalDestination(nextValue, roleDestination)

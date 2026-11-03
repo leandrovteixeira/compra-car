@@ -2,7 +2,7 @@ import type { CatalogVehicleDto } from '@compra-car/contracts';
 
 import { matchesVehicleSearch } from './vehicle-search';
 
-export const MAX_SELECTED_VEHICLES = 4;
+export const MAX_SELECTED_VEHICLES = 3;
 
 export interface VehicleSelectionState {
   readonly selectedVehicles: readonly CatalogVehicleDto[];
@@ -15,9 +15,10 @@ export const EMPTY_VEHICLE_SELECTION: VehicleSelectionState = Object.freeze({
 export function canAddSelectedVehicle(
   state: VehicleSelectionState,
   vehicle: CatalogVehicleDto,
+  limit = MAX_SELECTED_VEHICLES,
 ): boolean {
   return (
-    state.selectedVehicles.length < MAX_SELECTED_VEHICLES &&
+    state.selectedVehicles.length < limit &&
     !state.selectedVehicles.some((selected) => selected.id === vehicle.id)
   );
 }
@@ -25,8 +26,9 @@ export function canAddSelectedVehicle(
 export function addSelectedVehicle(
   state: VehicleSelectionState,
   vehicle: CatalogVehicleDto,
+  limit = MAX_SELECTED_VEHICLES,
 ): VehicleSelectionState {
-  if (!canAddSelectedVehicle(state, vehicle)) return state;
+  if (!canAddSelectedVehicle(state, vehicle, limit)) return state;
 
   return {
     selectedVehicles: [...state.selectedVehicles, vehicle],

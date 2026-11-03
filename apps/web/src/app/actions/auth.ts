@@ -21,5 +21,5 @@ export async function logout(): Promise<never> {
     throw new LogoutError();
   }
 
-  redirect('/login');
+  redirect('/');
 }

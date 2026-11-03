@@ -2,10 +2,21 @@
 
 import type { ProductPublicPriceListPageDto, PricingWorkflowStatus } from '@compra-car/contracts';
 import { isProductPublicPriceEditable } from '@compra-car/core';
-import Link from 'next/link';
-import { useState, useTransition } from 'react';
+import { useMemo, useState, useTransition } from 'react';
+import { PriceMobileList, PriceSortButton } from './price-mobile-list';
+import {
+  defaultAdminPriceSort,
+  nextPriceSort,
+  readPriceSort,
+  sortPriceRows,
+  type PriceSort,
+  type PriceSortField,
+} from './price-list-sorting';
 import { useRouter } from 'next/navigation';
-import { correctPublishedProductPublicPriceAction, updateProductPublicPriceAction } from '@/app/admin/prices/actions';
+import {
+  correctPublishedProductPublicPriceAction,
+  updateProductPublicPriceAction,
+} from '@/app/admin/prices/actions';
 import { amountToPtBrInput } from '@/application/admin/product-public-price-form';
 import { ComparisonLoadingOverlay } from '@/components/admin/comparison-loading-overlay';
 import { useSearchParams } from 'next/navigation';
@@ -38,7 +49,10 @@ function statusClass(status: PricingWorkflowStatus, expired: boolean): string {
       : 'border-[#D6DEE3] bg-[#F1F3F5] text-[#697786]';
 }
 
-function hrefWithParams(currentParams: URLSearchParams, changes: Readonly<Record<string, string | null>>): string {
+function hrefWithParams(
+  currentParams: URLSearchParams,
+  changes: Readonly<Record<string, string | null>>,
+): string {
   const params = new URLSearchParams(currentParams.toString());
   for (const [name, value] of Object.entries(changes)) {
     if (value === null || value === '') params.delete(name);
@@ -49,169 +63,339 @@ function hrefWithParams(currentParams: URLSearchParams, changes: Readonly<Record
 }
 
 function SortHeader({
-  page,
+  sort,
+  onSort,
   field,
   children,
 }: {
-  readonly page: ProductPublicPriceListPageDto;
-  readonly field: ProductPublicPriceListPageDto['sort'] | 'endsOn';
+  readonly sort: PriceSort | null;
+  readonly onSort: (field: PriceSortField) => void;
+  readonly field: PriceSortField;
   readonly children: React.ReactNode;
 }) {
-  const currentParams = useSearchParams();
-  const active = (currentParams.get('sort') ?? page.sort) === field;
-  const direction = active && page.direction === 'asc' ? 'desc' : 'asc';
+  const active = sort?.field === field;
   return (
     <th
-      className={`font-semibold bg-[#DCE8ED] ${field === "vehicle" ? "text-left" : "text-center"}`}
+      className={`font-semibold bg-[#DCE8ED] ${field === 'vehicle' ? 'text-left' : 'text-center'}`}
       scope="col"
-      aria-sort={active ? (page.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
+      aria-sort={active ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
     >
-      <Link
-        className={`inline-flex items-center gap-1 rounded hover:text-text-primary focus-visible:outline-2 focus-visible:outline-focus ${field === "vehicle" ? "" : "justify-center"}`}
-        href={hrefWithParams(currentParams, {
-          page: null,
-          sort: field,
-          direction,
-        })}
-      >
-        {children}
-        <img src={active ? '/carboot/sort_back.svg' : '/carboot/order2.svg'} alt="" aria-hidden="true" className={`size-3.5 object-contain ${active && page.direction === 'desc' ? '-rotate-90' : active ? 'rotate-90' : ''}`} />
-      </Link>
+      <PriceSortButton sort={sort} onSort={onSort} field={field} label={children} />
     </th>
   );
 }
 
-export function AdminPriceList({ page, onEdit, onCorrect, publishAction, onPublished }: AdminPriceListProps) {
+export function AdminPriceList({ page, publishAction, onPublished }: AdminPriceListProps) {
   const router = useRouter();
-  const [editingId,setEditingId] = useState<string | null>(null);
-  const [draft,setDraft] = useState({ amount:'', startsOn:'',endsOn:'' });
-  const [feedback,setFeedback] = useState('');
-  const [pending,startTransition] = useTransition();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState({ amount: '', startsOn: '', endsOn: '' });
+  const [feedback, setFeedback] = useState('');
+  const [pending, startTransition] = useTransition();
   const operationalDate = operationalDateInSaoPaulo();
   function openEditor(price: ProductPublicPriceListPageDto['items'][number]) {
     setEditingId(price.id);
     setFeedback('');
-    setDraft({ amount:amountToPtBrInput(price.money.amount),startsOn:price.startsOn,endsOn:price.endsOn ?? '' });
+    setDraft({
+      amount: amountToPtBrInput(price.money.amount),
+      startsOn: price.startsOn,
+      endsOn: price.endsOn ?? '',
+    });
   }
   function save(price: ProductPublicPriceListPageDto['items'][number]) {
-    if(pending) return;
-    const parsedAmount = Number(draft.amount.trim().replace(/\./g,'').replace(',','.'));
-    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) { setFeedback('Informe um preço válido maior que zero.'); return; }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(draft.startsOn)) { setFeedback('Informe a data inicial da vigência.'); return; }
-    if (draft.endsOn && draft.endsOn < draft.startsOn) { setFeedback('A vigência final não pode anteceder a inicial.'); return; }
+    if (pending) return;
+    const parsedAmount = Number(draft.amount.trim().replace(/\./g, '').replace(',', '.'));
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      setFeedback('Informe um preço válido maior que zero.');
+      return;
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(draft.startsOn)) {
+      setFeedback('Informe a data inicial da vigência.');
+      return;
+    }
+    if (draft.endsOn && draft.endsOn < draft.startsOn) {
+      setFeedback('A vigência final não pode anteceder a inicial.');
+      return;
+    }
     const data = new FormData();
     data.set('id', price.id);
     data.set('lockVersion', String(price.lockVersion));
-    data.set('productId',String(price.product.id));
-    data.set('amount',draft.amount);
-    data.set('startsOn',draft.startsOn);
-    data.set('endsOn',draft.endsOn);
+    data.set('productId', String(price.product.id));
+    data.set('amount', draft.amount);
+    data.set('startsOn', draft.startsOn);
+    data.set('endsOn', draft.endsOn);
     startTransition(async () => {
       try {
-        const state = {status:'idle' as const,values:{id:'',productId:String(price.product.id),amount:'',startsOn:'',endsOn:'',lockVersion:''},fieldErrors:{}};
+        const state = {
+          status: 'idle' as const,
+          values: {
+            id: '',
+            productId: String(price.product.id),
+            amount: '',
+            startsOn: '',
+            endsOn: '',
+            lockVersion: '',
+          },
+          fieldErrors: {},
+        };
         const result = isProductPublicPriceEditable(price.status)
-          ? await updateProductPublicPriceAction(state,data)
-          : await correctPublishedProductPublicPriceAction(state,data);
-        if(result.status === 'success') {
+          ? await updateProductPublicPriceAction(state, data)
+          : await correctPublishedProductPublicPriceAction(state, data);
+        if (result.status === 'success') {
           setEditingId(null);
           const editable = isProductPublicPriceEditable(price.status);
-          setFeedback(editable ? 'Preço atualizado.' : 'Preço corrigido, com histórico preservado na auditoria.');
+          setFeedback(
+            editable
+              ? 'Preço atualizado.'
+              : 'Preço corrigido, com histórico preservado na auditoria.',
+          );
           router.refresh();
         } else {
-          const errors = 'fieldErrors' in result && result.fieldErrors
-            ? Object.values(result.fieldErrors).flat().filter(Boolean).join(' ')
-            : '';
-          setFeedback(errors || ('message' in result ? result.message : '') || 'Revise os campos de preço e vigência.');
+          const errors =
+            'fieldErrors' in result && result.fieldErrors
+              ? Object.values(result.fieldErrors).flat().filter(Boolean).join(' ')
+              : '';
+          setFeedback(
+            errors ||
+              ('message' in result ? result.message : '') ||
+              'Revise os campos de preço e vigência.',
+          );
         }
-      } catch {setFeedback('Não foi possível salvar. Nenhuma alteração foi confirmada.');}
+      } catch {
+        setFeedback('Não foi possível salvar. Nenhuma alteração foi confirmada.');
+      }
     });
   }
   const currentParams = useSearchParams();
+  const sorting = useMemo(() => readPriceSort(currentParams), [currentParams]);
+  const rows = useMemo(
+    () => sortPriceRows(page.items, sorting ?? defaultAdminPriceSort, operationalDate),
+    [page.items, sorting, operationalDate],
+  );
+  function onSort(field: PriceSortField) {
+    const next = nextPriceSort(sorting, field);
+    // Next's native History integration updates search params without refetching the server list.
+    window.history.replaceState(
+      null,
+      '',
+      hrefWithParams(currentParams, {
+        page: null,
+        sort: next?.field ?? null,
+        direction: next?.direction ?? null,
+      }),
+    );
+  }
+  function renderActions(price: ProductPublicPriceListPageDto['items'][number]) {
+    return (
+      <div className="flex items-center justify-center gap-2 flex-wrap">
+        {editingId === price.id ? (
+          <>
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => save(price)}
+              className="cc-btn cc-btn--p cc-btn--primary"
+            >
+              Salvar
+            </button>
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => {
+                setEditingId(null);
+                setFeedback('');
+              }}
+              className="cc-btn cc-btn--p cc-btn--secondary"
+            >
+              Cancelar
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            disabled={pending || editingId !== null}
+            onClick={() => openEditor(price)}
+            className="cc-btn cc-btn--p cc-btn--secondary admin-catalog-action group-hover:!bg-[#1A1D21] group-hover:!text-white"
+          >
+            {isProductPublicPriceEditable(price.status) ? 'Editar' : 'Corrigir'}
+          </button>
+        )}
+        {editingId !== price.id && (price.status === 'draft' || price.status === 'needs_review') ? (
+          <form
+            action={async (data) => {
+              if (
+                !window.confirm(
+                  'Publicar preço? Este preço passará a ser utilizado pelas regras comerciais aplicáveis.',
+                )
+              )
+                return;
+              const result = await publishAction(data);
+              onPublished(result.message);
+            }}
+          >
+            <input type="hidden" name="id" value={price.id} />
+            <input type="hidden" name="lockVersion" value={price.lockVersion} />
+            <button
+              className={buttonClassName({ size: 'commit', variant: 'interactive' })}
+              type="submit"
+            >
+              Publicar
+            </button>
+          </form>
+        ) : null}
+      </div>
+    );
+  }
+  function renderMobileEditor(price: ProductPublicPriceListPageDto['items'][number]) {
+    if (editingId !== price.id) return null;
+    return (
+      <div className="cc-mobile-price-editor mt-4 grid gap-3 text-xs">
+        <label>
+          Preço público
+          <input
+            aria-label="Preço público"
+            inputMode="decimal"
+            className="ui-field mt-1 w-full"
+            value={draft.amount}
+            onChange={(e) => setDraft((d) => ({ ...d, amount: e.target.value }))}
+          />
+        </label>
+        <label>
+          Vigência De
+          <input
+            type="date"
+            aria-label="Vigência De"
+            className="ui-field mt-1 w-full"
+            value={draft.startsOn}
+            onChange={(e) => setDraft((d) => ({ ...d, startsOn: e.target.value }))}
+          />
+        </label>
+        <label>
+          Vigência Até
+          <input
+            type="date"
+            aria-label="Vigência Até"
+            className="ui-field mt-1 w-full"
+            value={draft.endsOn}
+            onChange={(e) => setDraft((d) => ({ ...d, endsOn: e.target.value }))}
+          />
+        </label>
+      </div>
+    );
+  }
   return (
-    <div className={`${tableFrameClassName} admin-pricing-table-frame`}>
+    <div className={`${tableFrameClassName} admin-pricing-table-frame cc-price-frame`}>
       {pending && <ComparisonLoadingOverlay />}
-      {feedback && <p role="status" className="px-3 py-1 text-xs text-[#526670]">{feedback}</p>}
-      <div className="admin-pricing-table-scroll overflow-auto">
+      {feedback && (
+        <p role="status" className="px-3 py-1 text-xs text-[#526670]">
+          {feedback}
+        </p>
+      )}
+      <PriceMobileList
+        items={rows}
+        today={operationalDate}
+        sort={sorting}
+        onSort={onSort}
+        renderActions={renderActions}
+        renderEditor={renderMobileEditor}
+      />
+      <div className="admin-pricing-table-scroll hidden overflow-auto lg:block">
         <table className={`${tableClassName} min-w-[56rem]`}>
           <caption className="sr-only">Preços públicos cadastrados</caption>
           <thead className="admin-pricing-table-header bg-[#DCE8ED]">
             <tr>
-              <SortHeader page={page} field="vehicle">
+              <SortHeader sort={sorting} onSort={onSort} field="vehicle">
                 Veículo
               </SortHeader>
-              <SortHeader page={page} field="amount">
+              <SortHeader sort={sorting} onSort={onSort} field="amount">
                 Preço público
               </SortHeader>
-              <SortHeader page={page} field="startsOn">
+              <SortHeader sort={sorting} onSort={onSort} field="startsOn">
                 Vigência De
               </SortHeader>
-              <SortHeader page={page} field="endsOn">Vigência Até</SortHeader>
-              <SortHeader page={page} field="status">
+              <SortHeader sort={sorting} onSort={onSort} field="endsOn">
+                Vigência Até
+              </SortHeader>
+              <SortHeader sort={sorting} onSort={onSort} field="status">
                 Status
               </SortHeader>
-              <SortHeader page={page} field="updatedAt">
+              <SortHeader sort={sorting} onSort={onSort} field="updatedAt">
                 Atualizado em
               </SortHeader>
-              <th className="bg-[#DCE8ED] text-center font-semibold" scope="col">Editar</th>
+              <th className="bg-[#DCE8ED] text-center font-semibold" scope="col">
+                Editar
+              </th>
             </tr>
           </thead>
           <tbody>
-            {page.items.map((price) => (
-              <tr className="group align-middle transition-colors hover:!bg-[#EAF1F4]" key={price.id}>
+            {rows.map((price) => (
+              <tr
+                className="group align-middle transition-colors hover:!bg-[#EAF1F4]"
+                key={price.id}
+              >
                 <td className="whitespace-nowrap">
-                  <span className="cc-type-data !font-semibold text-[#1A1D21]">{price.product.brand} {price.product.model} {price.product.version} {price.product.modelYear}</span>
+                  <span className="cc-type-data !font-semibold text-[#1A1D21]">
+                    {price.product.brand} {price.product.model} {price.product.version}{' '}
+                    {price.product.modelYear}
+                  </span>
                 </td>
                 <td className="whitespace-nowrap text-center font-semibold text-text-primary">
-                  {editingId === price.id ? <input aria-label="Preço público" className="ui-field !h-8 w-32 text-center text-xs" value={draft.amount} onChange={event=>setDraft(d=>({...d,amount:event.target.value}))} /> : <p>{formatAdminPrice(price.money.amount, price.money.currencyCode)}</p>}
+                  {editingId === price.id ? (
+                    <input
+                      aria-label="Preço público"
+                      className="ui-field !h-8 w-32 text-center text-xs"
+                      value={draft.amount}
+                      onChange={(event) => setDraft((d) => ({ ...d, amount: event.target.value }))}
+                    />
+                  ) : (
+                    <p>{formatAdminPrice(price.money.amount, price.money.currencyCode)}</p>
+                  )}
                 </td>
                 <td className="whitespace-nowrap text-center text-text-secondary">
-                  {editingId === price.id ? <input type="date" aria-label="Vigência De" className="ui-field !h-8 w-36 text-xs" value={draft.startsOn} onChange={event=>setDraft(d=>({...d,startsOn:event.target.value}))}/> : <p>{formatAdminDate(price.startsOn)}</p>}
-
+                  {editingId === price.id ? (
+                    <input
+                      type="date"
+                      aria-label="Vigência De"
+                      className="ui-field !h-8 w-36 text-xs"
+                      value={draft.startsOn}
+                      onChange={(event) =>
+                        setDraft((d) => ({ ...d, startsOn: event.target.value }))
+                      }
+                    />
+                  ) : (
+                    <p>{formatAdminDate(price.startsOn)}</p>
+                  )}
                 </td>
-                <td className="whitespace-nowrap text-center text-text-secondary">{editingId === price.id ? <input type="date" aria-label="Vigência Até" className="ui-field !h-8 w-36 text-xs" value={draft.endsOn} onChange={event=>setDraft(d=>({...d,endsOn:event.target.value}))} /> : price.endsOn ? formatAdminDate(price.endsOn) : "—"}</td>
+                <td className="whitespace-nowrap text-center text-text-secondary">
+                  {editingId === price.id ? (
+                    <input
+                      type="date"
+                      aria-label="Vigência Até"
+                      className="ui-field !h-8 w-36 text-xs"
+                      value={draft.endsOn}
+                      onChange={(event) => setDraft((d) => ({ ...d, endsOn: event.target.value }))}
+                    />
+                  ) : price.endsOn ? (
+                    formatAdminDate(price.endsOn)
+                  ) : (
+                    '—'
+                  )}
+                </td>
                 <td className="text-center">
                   <span
                     className={`inline-flex items-center justify-center rounded-full border px-2.5 py-1 text-xs font-medium ${statusClass(price.status, isAdminPriceExpired(price.status, price.endsOn, operationalDate))}`}
                   >
-                    {adminPriceVisualStatusLabel(price.status, price.startsOn, price.endsOn, operationalDate)}
+                    {adminPriceVisualStatusLabel(
+                      price.status,
+                      price.startsOn,
+                      price.endsOn,
+                      operationalDate,
+                    )}
                   </span>
                 </td>
                 <td className="whitespace-nowrap text-center text-text-secondary">
                   <p>{formatAdminDate(price.updatedAt)}</p>
                 </td>
-                <td className="text-center">
-                  <div className="flex items-center justify-center gap-2">
-                    {editingId === price.id ? (
-                      <>
-                        <button type="button" disabled={pending} onClick={()=>save(price)} className="cc-btn cc-btn--p cc-btn--primary">Salvar</button>
-                        <button type="button" disabled={pending} onClick={()=>{setEditingId(null);setFeedback('');}} className="cc-btn cc-btn--p cc-btn--secondary">Cancelar</button>
-                      </>
-                    ) : <button type="button" disabled={pending || editingId !== null} onClick={()=>openEditor(price)} className="cc-btn cc-btn--p cc-btn--secondary admin-catalog-action group-hover:!bg-[#1A1D21] group-hover:!text-white">{isProductPublicPriceEditable(price.status)?'Editar':'Corrigir'}</button>}
-                    {editingId !== price.id && (price.status === 'draft' || price.status === 'needs_review') ? (
-                      <form
-                        action={async (data) => {
-                          if (
-                            !window.confirm(
-                              'Publicar preço? Este preço passará a ser utilizado pelas regras comerciais aplicáveis.',
-                            )
-                          )
-                            return;
-                          const result = await publishAction(data);
-                          onPublished(result.message);
-                        }}
-                      >
-                        <input type="hidden" name="id" value={price.id} />
-                        <input type="hidden" name="lockVersion" value={price.lockVersion} />
-                        <button
-                          className={buttonClassName({ size: 'commit', variant: 'interactive' })}
-                          type="submit"
-                        >
-                          Publicar
-                        </button>
-                      </form>
-                    ) : null}
-                  </div>
-                </td>
+                <td className="text-center">{renderActions(price)}</td>
               </tr>
             ))}
           </tbody>
@@ -221,7 +405,6 @@ export function AdminPriceList({ page, onEdit, onCorrect, publishAction, onPubli
         <p>
           {page.total} {page.total === 1 ? 'preço encontrado' : 'preços encontrados'}
         </p>
-
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { getAccountTier } from '@/auth/account-tier-server';
 
 import { filterComparisonCategories } from '@/application/comparison/comparison-filter';
 import { parseComparisonMode } from '@/application/comparison/comparison-view-model';
@@ -20,7 +21,7 @@ function BackToSelection() {
   return (
     <Link
       className="ui-button ui-button--secondary ui-button--compact gap-1.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
-      href="/"
+      href="/escolher-veiculos"
     >
       <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 16 16">
         <path
@@ -38,6 +39,7 @@ function BackToSelection() {
 
 export default async function ComparisonPage({ searchParams }: ComparisonPageProps) {
   const params = await searchParams;
+  const authenticated = (await getAccountTier()) !== 'visitor';
   const result = await loadComparisonPage(params.vehicles);
 
   if (!result.ok) {
@@ -77,7 +79,7 @@ export default async function ComparisonPage({ searchParams }: ComparisonPagePro
         </div>
 
         <div className="mt-5">
-          <ComparisonToolbar mode={mode} />
+          <ComparisonToolbar mode={mode} authenticated={authenticated} />
         </div>
         <div className="mt-4">
           <ComparisonTable categories={categories} mode={mode} vehicles={result.data.vehicles} />

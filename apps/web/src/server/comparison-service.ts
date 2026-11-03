@@ -6,6 +6,8 @@ import { toComparisonPageData } from '@/application/comparison/comparison-mapper
 import { parseComparisonRequest } from '@/application/comparison/comparison-request';
 import type { ComparisonPageViewModel } from '@/application/comparison/comparison-view-model';
 
+import { getAccountTier } from '@/auth/account-tier-server';
+import { comparisonLimit } from '@/auth/entitlements-23c';
 import { CATALOG_CACHE_TAGS } from './catalog-cache';
 import { getCatalogCompositionRoot } from './composition-root';
 
@@ -45,6 +47,7 @@ export async function loadComparisonPage(
 ): Promise<ComparisonPageViewResult> {
   const parsed = parseComparisonRequest(rawVehicles);
   if (!parsed.ok) return parsed;
+  if (parsed.vehicleIds.length > comparisonLimit(await getAccountTier())) return { ok: false, error: { code: 'INVALID_VEHICLE_IDS', message: 'Quantidade de veículos acima do limite do perfil.' } };
 
   try {
     return { ok: true, data: await getCachedComparison(parsed.vehicleIds) };

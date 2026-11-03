@@ -6,6 +6,7 @@ import type { CurrentModelCard } from '@/server/public-model-catalog';
 
 interface Props {
   readonly cards: readonly CurrentModelCard[];
+  readonly basePath?: string;
 }
 
 const imageByModel: Readonly<Record<string, string>> = {
@@ -22,7 +23,7 @@ function normalize(value: string): string {
   return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').trim();
 }
 
-export function CurrentModelCards({ cards }: Props) {
+export function CurrentModelCards({ cards, basePath = '/admin/ver-ficha-tecnica/modelo' }: Props) {
   const [search, setSearch] = useState('');
   const visible = useMemo(() => {
     const query = normalize(search);
@@ -48,7 +49,7 @@ export function CurrentModelCards({ cards }: Props) {
           const photo = imageByModel[key];
           return (
             <Link key={card.brand + '|' + card.model}
-              href={`/admin/ver-ficha-tecnica/modelo?brand=${encodeURIComponent(card.brand)}&model=${encodeURIComponent(card.model)}`}
+              href={`${basePath}?brand=${encodeURIComponent(card.brand)}&model=${encodeURIComponent(card.model)}`}
               className="group relative flex aspect-[1.85] flex-col justify-end overflow-hidden rounded-xl border border-[#D6DEE3] bg-[#1A1D21] p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl">
               {photo && <img src={photo} alt={card.brand + ' ' + card.model}
                 className="absolute inset-0 h-full w-full object-cover" />}

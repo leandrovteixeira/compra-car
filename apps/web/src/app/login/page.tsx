@@ -18,7 +18,7 @@ interface LoginPageProps {
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;
   const profile = await getActiveProfile();
-  if (profile) redirect(profile.role === 'admin' ? '/admin' : '/');
+  if (profile) redirect('/');
 
   const rawNext = typeof params.next === 'string' ? params.next : undefined;
   const next = getSafeInternalDestination(rawNext, '');

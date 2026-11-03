@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 
 import {
   COMPARISON_PDF_FILENAME,
@@ -9,6 +10,8 @@ import {
 
 interface ComparisonPdfActionsProps {
   readonly pdfUrl: string;
+  readonly authenticated?: boolean;
+  readonly returnTo?: string;
 }
 
 const actionClassName = 'cc-outline-icon-action';
@@ -26,7 +29,7 @@ export function triggerComparisonPdfDownload(pdfUrl: string): void {
 function DownloadIcon() { return <img src="/carboot/download.svg" alt="" aria-hidden="true" className="size-4 object-contain" />; }
 function ShareIcon() { return <img src="/carboot/share.svg" alt="" aria-hidden="true" className="size-4 object-contain" />; }
 
-export function ComparisonPdfActions({ pdfUrl }: ComparisonPdfActionsProps) {
+export function ComparisonPdfActions({ pdfUrl, authenticated = true, returnTo = '/comparar' }: ComparisonPdfActionsProps) {
   const [isSharing, setIsSharing] = useState(false);
 
   async function sharePdf() {
@@ -42,6 +45,10 @@ export function ComparisonPdfActions({ pdfUrl }: ComparisonPdfActionsProps) {
     }
   }
 
+  if (!authenticated) {
+    const url = returnTo + (returnTo.includes('?') ? '&' : '?') + 'auth=login';
+    return <div className="flex gap-2"><Link href={url} className={actionClassName}><DownloadIcon /> Baixar PDF</Link><Link href={url} className={actionClassName}><ShareIcon /> Compartilhar</Link></div>;
+  }
   return (
     <div className="flex w-full min-w-0 flex-wrap gap-2 sm:w-auto">
       <a className={actionClassName} download={COMPARISON_PDF_FILENAME} href={pdfUrl}>

@@ -21,14 +21,23 @@ interface ComparisonPageProps {
 export default async function ComparisonPage({ searchParams }: ComparisonPageProps) {
   const params = await searchParams;
   const cards = await loadCurrentModelCards();
-  const options = cards.flatMap(card => card.versions.map(version => ({
-    id: version.id, label: `${card.brand} ${card.model} ${version.version} ${version.model_year}`,
-  })));
+  const options = cards.flatMap((card) =>
+    card.versions.map((version) => ({
+      id: version.id,
+      label: `${card.brand} ${card.model} ${version.version} ${version.model_year}`,
+    })),
+  );
   const initialIds = typeof params.vehicles === 'string' ? params.vehicles.split(',') : [];
-  if (!params.vehicles) return <main className="min-w-0 text-text-primary">
-    <CatalogPageHeading title="Comparar Especificações" description="Compare versões lado a lado." />
-    <ComparisonVehicleSelector options={options} />
-  </main>;
+  if (!params.vehicles)
+    return (
+      <main className="min-w-0 text-text-primary">
+        <CatalogPageHeading
+          title="Comparar Especificações"
+          description="Compare versões lado a lado."
+        />
+        <ComparisonVehicleSelector options={options} />
+      </main>
+    );
   const result = await loadComparisonPage(params.vehicles);
 
   if (!result.ok) {
@@ -36,7 +45,9 @@ export default async function ComparisonPage({ searchParams }: ComparisonPagePro
       <main className="flex min-h-[30rem] items-center justify-center bg-background px-4 py-8 text-text-primary">
         <div className="w-full max-w-xl">
           <ComparisonState
-            action={<CarbootBackLink href="/admin/comparar-especificacoes" label="Voltar aos modelos" />}
+            action={
+              <CarbootBackLink href="/admin/comparar-especificacoes" label="Voltar aos modelos" />
+            }
             description={result.error.message}
             kind="error"
             title="Não foi possível comparar"
@@ -50,9 +61,12 @@ export default async function ComparisonPage({ searchParams }: ComparisonPagePro
   const categories = filterComparisonCategories(result.data.categories, mode);
 
   return (
-    <main className="flex min-h-0 min-w-0 flex-col overflow-hidden bg-background text-text-primary lg:h-[calc(100dvh-4.5rem)]">
+    <main className="flex min-h-0 min-w-0 flex-col bg-background text-text-primary">
       <div className="mx-auto flex min-h-0 w-full max-w-[100rem] flex-1 flex-col">
-        <CatalogPageHeading title="Comparar Especificações" description="Compare versões lado a lado." />
+        <CatalogPageHeading
+          title="Comparar Especificações"
+          description="Compare versões lado a lado."
+        />
         <ComparisonVehicleSelector options={options} initialIds={initialIds} compact />
         <div className="mt-1 shrink-0">
           <ComparisonToolbar mode={mode} />

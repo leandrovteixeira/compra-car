@@ -1,0 +1,1 @@
+grant update(phone, company, job_title) on public.profiles to authenticated;
