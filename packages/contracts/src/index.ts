@@ -509,7 +509,7 @@ export type CatalogActionResultDto<T> =
   | { readonly ok: true; readonly data: T }
   | { readonly ok: false; readonly error: CatalogActionErrorDto };
 
-export const APP_ROLES = ['seller', 'admin'] as const;
+export const APP_ROLES = ['public', 'seller', 'admin'] as const;
 export const USER_STATUSES = ['pending', 'active', 'disabled'] as const;
 
 export type AppRole = (typeof APP_ROLES)[number];
