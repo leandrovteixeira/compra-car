@@ -181,6 +181,8 @@ export interface NewProductCheckResult {
   readonly matchedCandidates: readonly MatchedProductCandidate[];
   readonly findings: readonly NewProductFinding[];
   readonly bodyModelProposals: readonly MmvBodyModelResolutionProposal[];
+  /** Proposed generation transitions; always review-only. */
+  readonly generationChangeProposals?: readonly MmvGenerationReviewProposal[];
   readonly rejectedCandidates: readonly RejectedProductCandidate[];
   readonly rejectedExternalSources: number;
   readonly researchMetadata: ResearchMetadata;
