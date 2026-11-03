@@ -28,12 +28,6 @@ const report:Record<string,unknown>={
 };
 const persist=()=>writeFileSync(output,JSON.stringify(report,null,2)+'\n');
 persist();
-const key=process.env.OPENAI_API_KEY;
-if(!key){
-  report.status='SKIPPED_NO_OPENAI_API_KEY';persist();
-  process.stdout.write('SPEC_AI: skipped - no OPENAI_API_KEY configured\n');
-  process.exit(0);
-}
 const benchmark=JSON.parse(readFileSync(path,'utf8')) as Benchmark;
 const snapshot=JSON.parse(readFileSync(
  new URL('../../packages/core/test/fixtures/gwm-h6-phev19-2027-qa-specs.json',import.meta.url),
@@ -104,6 +98,12 @@ const inputFingerprint=createHash('sha256').update(JSON.stringify({claims,catalo
 Object.assign(report,{status:'REQUEST_PREPARED',model:SPEC_AI_MODEL_27,
  inputFingerprint,promptBytes,reservation,claims:claims.length,catalogSpecs:catalog.length});
 persist();
+const key=process.env.SPEC_AGENT_OPENAI_API_KEY||process.env.OPENAI_API_KEY;
+if(!key){
+  report.status='SKIPPED_NO_PROVIDER_CREDENTIAL';persist();
+  process.stdout.write('SPEC_AI: skipped - no provider credential; preflight cost ceiling recorded\n');
+  process.exit(0);
+}
 const started=Date.now();
 let raw:unknown;
 try{
