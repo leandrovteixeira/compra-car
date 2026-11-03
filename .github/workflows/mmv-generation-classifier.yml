@@ -1,0 +1,30 @@
+name: MMV Generation Classifier
+on:
+  pull_request:
+    paths:
+      - 'packages/core/src/agents/mmv-generation-change-classifier.ts'
+      - 'packages/core/test/mmv-generation-change-classifier.test.ts'
+      - 'packages/core/src/agents/index.ts'
+      - '.github/workflows/mmv-generation-classifier.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  classify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Activate pinned pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.34.5 --activate
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Typecheck core
+        run: pnpm --filter @compra-car/core typecheck
+      - name: MMV generation unit tests
+        run: pnpm --filter @compra-car/core exec vitest run test/mmv-generation-change-classifier.test.ts
