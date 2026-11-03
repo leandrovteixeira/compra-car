@@ -83,3 +83,4 @@ export * from './watcher-intelligence-persistence';
 
 export * from './spec-agent-reconciliation';
 export * from './spec-agent-baic-matrix';
+export * from './spec-agent-baic-import';
