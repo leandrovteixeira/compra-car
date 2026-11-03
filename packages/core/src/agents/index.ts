@@ -87,3 +87,4 @@ export * from './spec-agent-baic-import';
 export * from './spec-agent-review-projection';
 export * from './spec-agent-events';
 export * from './spec-agent-write-plan';
+export * from './spec-agent-pilot';
