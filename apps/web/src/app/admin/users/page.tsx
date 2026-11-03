@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { requireFeature23C } from '@/auth/account-tier-server';
 import { loadAdminUsers } from '@/application/admin/load-admin-users';
 import { AdminUserAdapterError } from '@compra-car/adapter-supabase';
-import { AdminUserInvite } from '@/components/admin/admin-user-invite';
 import { AdminUserError } from '@/components/admin/admin-user-error';
 import { AdminUserList } from '@/components/admin/admin-user-list';
 import { newestAdminUsersFirst } from '@/components/admin/admin-user-presentation';
@@ -43,7 +42,7 @@ export default async function AdminUsersPage({ searchParams }: {
   return (
     <>
       <PageHeader
-        actions={tab === 'users' ? <AdminUserInvite /> : null}
+        actions={null}
         description={`Gerencie os acessos ao ${APP_NAME}.`}
         title="Gestão de Usuários"
       />
@@ -63,6 +62,7 @@ export default async function AdminUsersPage({ searchParams }: {
           </Link>
         ))}
       </nav>
+      {tab === 'users' ? <p className="mt-4 text-sm text-text-secondary">Contas Public são criadas pelo próprio usuário. O acesso Corporate deve ser solicitado em Upgrade ou concedido pelo Master mediante convite organizacional. O convite legado de Vendedor foi desativado.</p> : null}
       <div className="mt-7">
         {tab === 'users' ? (
           users === null ? <AdminUserError /> :
