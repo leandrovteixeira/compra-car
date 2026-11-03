@@ -10,7 +10,7 @@ on:
       - 'packages/core/test/mmv-generation-integration.test.ts'
       - 'scripts/agents/run-new-product-check.ts'
       - 'scripts/agents/test/mmv-generation-cli.test.ts'
-      - 'packages/core/test/mmv-generation-change-classifier.test.ts test/mmv-generation-integration.test.ts'
+      - 'packages/core/test/mmv-generation-change-classifier.test.ts'
       - 'packages/core/src/agents/index.ts'
       - '.github/workflows/mmv-generation-classifier.yml'
   workflow_dispatch:
@@ -35,4 +35,8 @@ jobs:
         continue-on-error: true
         run: pnpm --filter @compra-car/core typecheck
       - name: MMV generation unit tests
-        run: pnpm --filter @compra-car/core exec vitest run test/mmv-generation-change-classifier.test.ts
+        run: pnpm --filter @compra-car/core exec vitest run test/mmv-generation-change-classifier.test.ts test/mmv-generation-integration.test.ts
+      - name: Typecheck operational agent scripts
+        run: pnpm --filter @compra-car/agents typecheck
+      - name: MMV generation CLI regression
+        run: pnpm --filter @compra-car/agents exec vitest run test/mmv-generation-cli.test.ts
