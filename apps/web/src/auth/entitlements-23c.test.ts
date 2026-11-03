@@ -26,7 +26,9 @@ describe('Sprint 23C account entitlements', () => {
     expect(featureAvailability('public', 'tpva')).toBe('hidden');
     expect(featureAvailability('corporate', 'tpva')).toBe('disabled');
     expect(featureAvailability('corporate', 'news')).toBe('hidden');
-    expect(featureAvailability('admin', 'current-policies')).toBe('disabled');
+    expect(featureAvailability('admin', 'current-policies')).toBe('enabled');
+    expect(featureAvailability('master', 'current-policies')).toBe('enabled');
+    expect(featureAvailability('corporate', 'current-policies')).toBe('hidden');
     expect(featureAvailability('master', 'chat')).toBe('disabled');
     expect(canExecuteFeature('master', 'tpva')).toBe(false);
   });
