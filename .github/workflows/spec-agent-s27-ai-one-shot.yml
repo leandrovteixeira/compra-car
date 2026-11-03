@@ -46,6 +46,12 @@ jobs:
           pnpm --filter @compra-car/agents exec tsx spec-agent-gwm-equipment-benchmark.ts \
             --text /tmp/gwm-phev19-layout.txt > /tmp/gwm-spec-benchmark.json
           node -e 'const x=require("/tmp/gwm-spec-benchmark.json"); if(x.extraction.totalClaims!==79||x.reconciliation.qaExistingSpecs!==171) process.exit(4);'
+      - name: Verify provider key is available to this repository
+        run: |
+          if [ -z "${SPEC_AGENT_OPENAI_API_KEY:-}" ] && [ -z "${OPENAI_API_KEY:-}" ]; then
+            echo "::error::Missing OPENAI_SPEC_AGENT_API_KEY repository Actions secret (or approved environment access). Inference not executed."
+            exit 2
+          fi
       - name: Single AI call with hard cap and mandatory telemetry
         run: |
           pnpm --filter @compra-car/agents exec tsx spec-agent-gwm-ai-pilot.ts \
