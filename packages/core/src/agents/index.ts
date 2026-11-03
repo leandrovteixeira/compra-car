@@ -90,3 +90,4 @@ export * from './spec-agent-write-plan';
 export * from './spec-agent-pilot';
 export * from './spec-agent-persistence-plan';
 export * from './spec-agent-db-projection';
+export * from './spec-agent-catalog-suggestions';
