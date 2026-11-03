@@ -39,6 +39,9 @@ jobs:
         run: pnpm --filter @compra-car/adapter-supabase typecheck
       - name: Spec Agent Supabase adapter tests
         run: pnpm --filter @compra-car/adapter-supabase exec vitest run test/spec-agent-coverage-reader.test.ts test/spec-agent-telemetry.test.ts
+      - name: Verify one-shot fixture identity (no API calls)
+        run: |
+          node -e 'const fs=require("fs"),z=require("zlib");const f="scripts/agents/fixtures/gwm-phev19-2027-claims.zlib.b64";const x=JSON.parse(z.inflateSync(Buffer.from(fs.readFileSync(f,"utf8").trim(),"base64")).toString());console.log("GWM fixture:",x.target,"claims",x.findings?.length);if(x.target?.productId!==1166||x.target?.modelYear!==2027||x.findings?.length!==79)process.exit(1)'
       - name: Typecheck agents scripts
         run: pnpm --filter @compra-car/agents typecheck
       - name: Official GWM PDF deterministic smoke (non-blocking)
