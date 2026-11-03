@@ -28,12 +28,11 @@ try {
 const reportPath='/tmp/gwm-spec-ai-pilot.json';
 if(existsSync(reportPath)){
  const report=JSON.parse(readFileSync(reportPath,'utf8')) as Record<string,unknown>;
- const {proposals,...telemetry}=report;
+ const {proposals,rawDecisions,...telemetry}=report;
  console.log('SPEC_PILOT_TELEMETRY',JSON.stringify(telemetry));
- if(Array.isArray(proposals)){
-  for(let i=0;i<proposals.length;i+=10)
-   console.log('SPEC_PILOT_PROPOSALS',i,JSON.stringify(proposals.slice(i,i+10)));
- }
+ const review=Array.isArray(proposals)?proposals:(Array.isArray(rawDecisions)?rawDecisions:[]);
+ for(let i=0;i<review.length;i+=10)
+  console.log('SPEC_PILOT_PROPOSALS',i,JSON.stringify(review.slice(i,i+10)));
  if(report.status!=='COMPLETED_REVIEW_ONLY')failed=true;
 }else{
  console.error('SPEC_PILOT_REPORT_MISSING');
