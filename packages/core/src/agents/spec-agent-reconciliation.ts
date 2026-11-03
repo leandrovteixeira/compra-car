@@ -39,6 +39,7 @@ export interface SpecObservation27 {
   unit?: string;
   /** Regulatory autonomy/consumption values must carry their cycle/standard. */
   methodology?: string;
+  comparisonOperator?: '=' | '>=' | '<=';
   feature?: string;
   evidence: SpecEvidence27;
 }
@@ -48,6 +49,7 @@ export interface CanonicalSpec27 {
   value: string | number | SpecAvailability;
   unit?: string;
   methodology?: string;
+  comparisonOperator?: '=' | '>=' | '<=';
   evidence?: SpecEvidence27;
   inheritedFromModelYear?: number;
   confirmed: boolean;
@@ -105,7 +107,7 @@ function resolveAlias(label: string, target: SpecTarget27, aliases: readonly Spe
   return codes.length === 1 ? { code: codes[0], ambiguous: false } : { ambiguous: true };
 }
 function sameValue(a: CanonicalSpec27, b: CanonicalSpec27): boolean {
-  return a.kind === b.kind && a.value === b.value && (a.unit ?? '') === (b.unit ?? '') && (a.methodology ?? '') === (b.methodology ?? '');
+  return a.kind === b.kind && a.value === b.value && (a.unit ?? '') === (b.unit ?? '') && (a.methodology ?? '') === (b.methodology ?? '') && (a.comparisonOperator ?? '=') === (b.comparisonOperator ?? '=');
 }
 const rank = (s?: SpecEvidence27): number =>
   s?.authority === 'REGULATORY' ? 3 : s?.authority === 'MANUFACTURER' ? 2 : s?.authority === 'DEALER' ? 1 : 0;
@@ -149,7 +151,7 @@ export function reconcileSpecDocuments27(input: {
         findings.push({ code: 'VALUE_CONFLICT', label: observation.label, specCode: code, message: 'Invalid binary availability', evidence: observation.evidence });
         continue;
       }
-      const candidate: CanonicalSpec27 = { specCode: code, kind: observation.kind, value: observation.value, unit: observation.unit, methodology: observation.methodology, evidence: observation.evidence, confirmed: true };
+      const candidate: CanonicalSpec27 = { specCode: code, kind: observation.kind, value: observation.value, unit: observation.unit, methodology: observation.methodology, comparisonOperator: observation.comparisonOperator, evidence: observation.evidence, confirmed: true };
       const prior = next.get(code);
       // Never collapse WLTP, NEDC, WLTC and PBEV into a single metric.
       if (prior && prior.methodology && candidate.methodology && normalize(prior.methodology) !== normalize(candidate.methodology)) {
