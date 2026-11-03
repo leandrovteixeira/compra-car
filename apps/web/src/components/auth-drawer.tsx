@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 
 import { login } from '@/app/login/actions';
+import { signUp, type SignUpState } from '@/app/signup/actions';
 
 type DrawerMode = 'login' | 'signup';
 
@@ -12,6 +13,7 @@ export function AuthDrawer() {
   const searchParams = useSearchParams();
   const [mode, setMode] = useState<DrawerMode>('login');
   const [showPassword, setShowPassword] = useState(false);
+  const [signupState, signupAction, signupPending] = useActionState<SignUpState, FormData>(signUp, { status: 'idle' });
   const open = searchParams.get('auth') === 'login';
 
   const returnTo =
@@ -164,19 +166,34 @@ export function AuthDrawer() {
             </button>
           </form>
         ) : (
-          <div className="mt-9">
-            <p className="text-sm leading-6 text-[#64707A]">
-              O cadastro gratuito será liberado após configurarmos a confirmação por email. Enquanto
-              isso, você pode consultar fichas técnicas e comparar veículos sem entrar.
-            </p>
-            <button
-              type="button"
-              onClick={close}
-              className="mt-7 min-h-12 w-full rounded-lg bg-[#EF7732] text-center font-semibold text-white"
-            >
-              Continuar explorando
+          <form action={signupAction} className="mt-9 flex flex-col gap-5">
+            <label className="flex flex-col gap-2 text-sm font-medium">Nome
+              <input className="ui-field min-h-11" name="name" autoComplete="name" minLength={2} maxLength={120} required />
+            </label>
+            <label className="flex flex-col gap-2 text-sm font-medium">E-mail
+              <input className="ui-field min-h-11" name="email" type="email" autoComplete="email" required />
+            </label>
+            <label className="flex flex-col gap-2 text-sm font-medium">Senha
+              <input className="ui-field min-h-11" name="password" type={showPassword ? 'text' : 'password'} autoComplete="new-password" minLength={8} required />
+            </label>
+            <label className="flex flex-col gap-2 text-sm font-medium">Confirmar senha
+              <input className="ui-field min-h-11" name="confirmPassword" type={showPassword ? 'text' : 'password'} autoComplete="new-password" minLength={8} required />
+            </label>
+            <label className="flex items-center gap-2 text-sm text-[#64707A]">
+              <input type="checkbox" checked={showPassword} onChange={(event) => setShowPassword(event.target.checked)} />
+              Mostrar senhas
+            </label>
+            {signupState.status !== 'idle' && (
+              <p role={signupState.status === 'error' ? 'alert' : 'status'} className={signupState.status === 'error' ? 'text-sm text-red-700' : 'text-sm text-emerald-700'}>
+                {signupState.message}
+              </p>
+            )}
+            <button type="submit" disabled={signupPending || signupState.status === 'success'}
+              className="mt-2 min-h-12 rounded-lg bg-[#EF7732] text-center font-semibold text-white disabled:opacity-60">
+              {signupPending ? 'Criando conta…' : 'Criar conta gratuita'}
             </button>
-          </div>
+            <p className="text-xs leading-5 text-[#64707A]">Você receberá um e-mail para confirmar sua conta. A promoção para acesso corporativo depende de aprovação.</p>
+          </form>
         )}
       </section>
     </div>
