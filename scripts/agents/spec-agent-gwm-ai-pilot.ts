@@ -38,9 +38,9 @@ if(benchmark.target.productId!==1166||benchmark.target.modelYear!==2027||
 const claims:SpecAiClaim27[]=benchmark.findings.map(x=>({
  ordinal:x.ordinal,page:x.page,sourceLabel:x.sourceLabel
 }));
-const catalog:SpecAiCatalog27[]=snapshot.rows.map(x=>({
- code:x.code,label:x.label,type:x.type
-}));
+const catalog:SpecAiCatalog27[]=snapshot.rows
+ .filter(x=>x.type!=='numeric')
+ .map(x=>({code:x.code,label:x.label,type:x.type}));
 const instructions=[
  'Você é especialista em fichas técnicas automotivas brasileiras.',
  'Sua tarefa é propor CONCILIAÇÃO para REVISÃO HUMANA, sem aprovar nada.',
@@ -159,10 +159,13 @@ const rawText=result.output?.flatMap(x=>x.content??[])
 let decisions:SpecAiDecision27[];
 try{
  decisions=(JSON.parse(rawText) as {decisions:SpecAiDecision27[]}).decisions;
+ Object.assign(report,{rawDecisionCount:decisions.length,rawDecisions:decisions});
+ persist();
  const proposed=validateSpecAiProposals27({claims,catalog,decisions});
  Object.assign(report,{
   status:'COMPLETED_REVIEW_ONLY',proposalCount:proposed.length,
   componentProposals:proposed.reduce((sum,x)=>sum+x.components.length,0),
+  totalCanonicalSpecs:snapshot.rows.length,eligibleCatalogSpecs:catalog.length,
   matchedClaims:proposed.filter(x=>x.components.length>0).length,
   noMatchClaims:proposed.filter(x=>x.status==='NO_MATCH').length,
   decomposedClaims:proposed.filter(x=>x.status==='DECOMPOSE').length,
