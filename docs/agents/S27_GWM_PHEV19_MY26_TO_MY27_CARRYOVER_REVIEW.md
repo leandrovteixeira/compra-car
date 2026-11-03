@@ -31,3 +31,15 @@
 | Wi-Fi hotspot / Full Parking Assist / neblina traseira | Mencionados | Não explicitamente identificados |
 
 **Próxima etapa recomendada:** localizar manual específico do PHEV19 Flex 2026/2027 e página oficial de produto; mapear evidência positiva por código, URL, página, MY, hash; submeter diferenças de equipamento à revisão antes de aplicar. Para powertrain e consumo exigir confirmação específica da versão Flex, não herança cega.
+
+## Evidência adicional do cadastro — comparação completa de 169 vs 171 specs
+
+Consulta somente leitura aos produtos QA 1024 (MY2026) e 1166 (MY2027):
+
+- **168 códigos em comum**; **162 valores/presenças idênticos** e **6 alterados**.
+- **3 códigos exclusivos MY2027:** `CO_0049` Contactless Power-On, `OW_0004` consumo etanol urbano, `OW_0005` consumo etanol rodoviário.
+- **1 código exclusivo MY2026:** `CO_0048` partida do motor por botão.
+- **6 valores alterados:** `DM_0005` 200→201 mm; `OW_0002` 13,5→14,7 km/L gasolina urbano; `OW_0003` 11,9→12,9 km/L rodoviário; `OW_0007` 73→77 km Inmetro; `PW_0033` 540→535 Nm; `PW_0037` 7,6→7,4 s.
+- **44/44** códigos sem evidência MY2027 já estavam no MY2026 com o mesmo `value` e `is_present`. O padrão é fortemente compatível com um catálogo MY2026 reutilizado e pontualmente revisado para Flex MY2027, mas **não demonstra a proveniência original** nem constitui confirmação automática de equipamento.
+
+Fonte: tabela `product_specs` do Supabase Compra Car Staging, join `specs`. A opção específica de specs tipo `scale` não é armazenada separadamente em `product_specs`; a igualdade aqui é de presença/valor, não do conteúdo completo de uma escala.
