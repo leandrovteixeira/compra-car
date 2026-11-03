@@ -73,6 +73,8 @@ jobs:
             /tmp/gwm-full-layout.txt
             /tmp/gwm-full-raw.txt
             /tmp/gwm-h6-phev19-flex.pdf
+            docs/agents/S27_GWM_PHEV19_MY2027_171_SPEC_CROSSCHECK.csv
+            docs/agents/S27_GWM_PHEV19_MY2027_171_SPEC_CROSSCHECK.json
             /tmp/gwm-equipment-benchmark.json
           if-no-files-found: ignore
 
