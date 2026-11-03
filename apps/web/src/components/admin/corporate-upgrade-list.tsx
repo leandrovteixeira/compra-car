@@ -1,5 +1,5 @@
 'use client';
-import { useActionState, useState } from 'react';
+import { useActionState } from 'react';
 import { PendingSubmitButton } from '@/components/pending-submit-button';
 import { reviewCorporateRequest, type CorporateReviewState } from '@/app/admin/users/corporate-actions';
 const initial: CorporateReviewState = { status: 'idle' };
@@ -36,7 +36,6 @@ export function CorporateUpgradeList({ requests, organizations }: { readonly req
 
 function CorporateRequestRow({ request, organizations }: { readonly request: UpgradeRequest; readonly organizations: readonly Organization[] }) {
  const [state, action, pending] = useActionState(reviewCorporateRequest, initial);
- const [decision, setDecision] = useState<'approved' | 'rejected' | null>(null);
  return <article className="rounded-xl border border-border bg-surface p-5">
                <div className="flex flex-wrap items-center justify-between gap-2">
                 <h3 className="font-semibold">{request.company}</h3>
@@ -59,9 +58,9 @@ function CorporateRequestRow({ request, organizations }: { readonly request: Upg
  <option value="" disabled>Organização</option>
  {organizations.filter(org => org.status === 'active').map(org => <option key={org.id} value={org.id}>{org.name}</option>)}
  </select>
- <span onClick={() => setDecision("approved")}><PendingSubmitButton idleLabel="Aprovar" pendingLabel="Aprovando…" className="min-h-10 rounded-lg bg-[#EF7732] px-4 py-2 font-semibold text-white disabled:opacity-60" disabled={pending} name="decision" value="approved" /></span>
- <span onClick={() => setDecision("rejected")}><PendingSubmitButton idleLabel="Rejeitar" pendingLabel="Rejeitando…" className="min-h-10 rounded-lg border border-border px-4 py-2 disabled:opacity-60" disabled={pending} name="decision" value="rejected" formNoValidate /></span>
- {pending && <p role="status" aria-live="polite" className="w-full text-sm text-text-secondary">{decision === "approved" ? "Aplicando aprovação…" : "Processando solicitação…"}</p>}
+ <PendingSubmitButton idleLabel="Aprovar" pendingLabel="Aprovando…" className="min-h-10 rounded-lg bg-[#EF7732] px-4 py-2 font-semibold text-white disabled:opacity-60" disabled={pending} name="decision" value="approved" />
+ <PendingSubmitButton idleLabel="Rejeitar" pendingLabel="Rejeitando…" className="min-h-10 rounded-lg border border-border px-4 py-2 disabled:opacity-60" disabled={pending} name="decision" value="rejected" formNoValidate />
+ {pending && <p role="status" aria-live="polite" className="w-full text-sm text-text-secondary">Processando solicitação…</p>}
  </form> : null}
  {state.message ? <p role={state.status === 'error' ? 'alert' : 'status'} className="mt-3 text-sm">{state.message}</p> : null}
  </article>;
