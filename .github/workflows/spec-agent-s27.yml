@@ -44,6 +44,10 @@ jobs:
       - name: Official GWM PDF deterministic smoke (non-blocking)
         continue-on-error: true
         run: |
+          if ! command -v pdftotext >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq poppler-utils
+          fi
           command -v pdftotext
           curl --fail --location --silent --show-error --max-time 30 --retry 2 \
             'https://www.gwmmotors.com.br/content/dam/gwm/pages/br/pt/models/haval-h6-phev19-my25/ficha-tecnica-haval-h6-phev19-flex.pdf' \
