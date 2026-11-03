@@ -50,7 +50,7 @@ describe('GWM H6 technical deterministic parser',()=>{
     'ventilados',
     'DIMENSÕES',
     'Comprimento (mm) 4.703',
-  ].join('\\n');
+  ].join('\n');
   const x=extractGwmH6Technical27(source);
   expect(x.unresolved).toHaveLength(0);
   expect(x.summary).toMatchObject({recognizedFields:4,numeric:1,text:3,llmCalls:0});
