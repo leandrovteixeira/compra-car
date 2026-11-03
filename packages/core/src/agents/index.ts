@@ -88,3 +88,4 @@ export * from './spec-agent-review-projection';
 export * from './spec-agent-events';
 export * from './spec-agent-write-plan';
 export * from './spec-agent-pilot';
+export * from './spec-agent-persistence-plan';
