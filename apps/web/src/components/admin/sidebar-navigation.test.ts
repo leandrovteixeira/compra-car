@@ -23,6 +23,16 @@ describe('shared desktop and mobile navigation by account tier', () => {
     expect(links('corporate')).toEqual([...links('public'), '/admin/prices/list']);
   });
 
+  it('keeps current commercial policies visible to Admin and Master only', () => {
+    for (const tier of ['admin', 'master'] as const) {
+      const priceGroup = getSidebarNavigation(tier).find((item) => item.label === 'Preços');
+      const policies = priceGroup?.children?.find((child) => child.href === '/admin/prices/policies/current');
+      expect(policies?.status).toBe('active');
+    }
+    expect(links('corporate')).not.toContain('/admin/prices/policies/current');
+    expect(links('public')).not.toContain('/admin/prices/policies/current');
+  });
+
   it('keeps both Agents destinations exclusive to Master', () => {
     expect(links('admin')).toContain('/admin/products');
     expect(links('admin')).not.toContain('/admin/users');
