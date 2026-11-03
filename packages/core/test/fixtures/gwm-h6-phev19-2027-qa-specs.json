@@ -1,0 +1,1718 @@
+{
+  "snapshot": "QA_product_1166_2026-11-03",
+  "purpose": "Read-only regression catalogue snapshot; not authoritative provenance; do not use for production",
+  "productId": 1166,
+  "modelYear": 2027,
+  "rows": [
+    {
+      "id": "292",
+      "code": "AD_0001",
+      "type": "binary",
+      "unit": null,
+      "label": "Alerta de ocupantes no banco traseiro (ROA)",
+      "group_name": "Safety",
+      "equipment_group": "ADAS",
+      "spec_set": "ROA (Rear Occupant Alert)"
+    },
+    {
+      "id": "294",
+      "code": "AD_0003",
+      "type": "binary",
+      "unit": null,
+      "label": "Alerta de prevenção de colisão frontal com detecção de veículos, pedestres e ciclistas (FCW)",
+      "group_name": "Safety",
+      "equipment_group": "ADAS",
+      "spec_set": "FCW Advanced (Front Collision Warning)"
+    },
+    {
+      "id": "295",
+      "code": "AD_0004",
+      "type": "binary",
+      "unit": null,
+      "label": "Sistema automático de frenagem de emergência (AEB)",
+      "group_name": "Safety",
+      "equipment_group": "ADAS",
+      "spec_set": "AEB (Autonomous Emergency Braking)"
+    },
+    {
+      "id": "298",
+      "code": "AD_0007",
+      "type": "binary",
+      "unit": null,
+      "label": "Alerta de tráfego cruzado traseiro (RCTA)",
+      "group_name": "Safety",
+      "equipment_group": "ADAS",
+      "spec_set": "RCTA (Rear Cross Traffic Alert)"
+    },
+    {
+      "id": "642",
+      "code": "AD_0008",
+      "type": "binary",
+      "unit": null,
+      "label": "Assistente ativo de prevenção de colisão traseira em tráfego cruzado (RCTB)",
+      "group_name": "Safety",
+      "equipment_group": "ADAS",
+      "spec_set": "RCTB (Rear Cross Traffic Braking)"
+    },
+    {
+      "id": "300",
+      "code": "AD_0009",
+      "type": "binary",
+      "unit": null,
+      "label": "Piloto automático adaptativo (ACC)",
+      "group_name": "Safety",
+      "equipment_group": "ADAS",
+      "spec_set": "ACC (Adaptative Cruise Control)"
+    },
+    {
+      "id": "646",
+      "code": "AD_0012",
+      "type": "binary",
+      "unit": null,
+      "label": "Assistente de velocidade em curva (CSA)",
+      "group_name": "Safety",
+      "equipment_group": "ADAS",
+      "spec_set": "CSA (Curve Speed-control Assist)"
+    },
+    {
+      "id": "304",
+      "code": "AD_0013",
+      "type": "binary",
+      "unit": null,
+      "label": "Alerta de saída de faixa de rodagem (LDW)",
+      "group_name": "Safety",
+      "equipment_group": "ADAS",
+      "spec_set": "LDW  (Lane Departure Warning System)"
+    },
+    {
+      "id": "305",
+      "code": "AD_0014",
+      "type": "binary",
+      "unit": null,
+      "label": "Sistema de prevenção de saída de faixa (LDP)",
+      "group_name": "Safety",
+      "equipment_group": "ADAS",
+      "spec_set": "LKA  (Lane Keep Assistance)"
+    },
+    {
+      "id": "306",
+      "code": "AD_0015",
+      "type": "binary",
+      "unit": null,
+      "label": "Assistente de centralização na faixa de rodagem (LFA)",
+      "group_name": "Safety",
+      "equipment_group": "ADAS",
+      "spec_set": "LFA (Lane Following Assistance)"
+    },
+    {
+      "id": "309",
+      "code": "AD_0018",
+      "type": "binary",
+      "unit": null,
+      "label": "Assistente de monitoramento de ponto cego (BSD)",
+      "group_name": "Safety",
+      "equipment_group": "ADAS",
+      "spec_set": "BSD (BSD blind spot monitoring)"
+    },
+    {
+      "id": "312",
+      "code": "AD_0021",
+      "type": "binary",
+      "unit": null,
+      "label": "Alerta de portas abertas (DOW)",
+      "group_name": "Safety",
+      "equipment_group": "ADAS",
+      "spec_set": "DOW (Door Open Warning)"
+    },
+    {
+      "id": "313",
+      "code": "AD_0022",
+      "type": "binary",
+      "unit": null,
+      "label": "Assistente de limite de velocidade (SLA)",
+      "group_name": "Safety",
+      "equipment_group": "ADAS",
+      "spec_set": "SLA (Speed Limit Assist)"
+    },
+    {
+      "id": "659",
+      "code": "CO_0002",
+      "type": "scale",
+      "unit": null,
+      "label": "Seletor de marcha",
+      "group_name": "Convenience",
+      "equipment_group": "TGS Knob",
+      "spec_set": "TGS Knob"
+    },
+    {
+      "id": "190",
+      "code": "CO_0004",
+      "type": "binary",
+      "unit": null,
+      "label": "Seletor de modo de condução",
+      "group_name": "Convenience",
+      "equipment_group": "Drive mode select",
+      "spec_set": "Drive mode select"
+    },
+    {
+      "id": "191",
+      "code": "CO_0005",
+      "type": "scale",
+      "unit": null,
+      "label": "Sistema de reconhecimento de voz",
+      "group_name": "Convenience",
+      "equipment_group": "Conectivity",
+      "spec_set": "Voice recognition control"
+    },
+    {
+      "id": "193",
+      "code": "CO_0007",
+      "type": "binary",
+      "unit": null,
+      "label": "Conexão bluetooth para dispositívos móveis, telefonia sem fio e transmissão de áudio",
+      "group_name": "Convenience",
+      "equipment_group": "Conectivity",
+      "spec_set": "Bluetooth"
+    },
+    {
+      "id": "194",
+      "code": "CO_0008",
+      "type": "binary",
+      "unit": null,
+      "label": "Sistema de carro conectado",
+      "group_name": "Convenience",
+      "equipment_group": "Conectivity",
+      "spec_set": "Telematics"
+    },
+    {
+      "id": "195",
+      "code": "CO_0009",
+      "type": "binary",
+      "unit": null,
+      "label": "Conectividade Wi-Fi integrada",
+      "group_name": "Convenience",
+      "equipment_group": "Conectivity",
+      "spec_set": "Wi-Fi"
+    },
+    {
+      "id": "196",
+      "code": "CO_0010",
+      "type": "numeric",
+      "unit": "unit",
+      "label": "Portas USB tipo A dianteiras",
+      "group_name": "Convenience",
+      "equipment_group": "USB port (Type A)",
+      "spec_set": "FR"
+    },
+    {
+      "id": "197",
+      "code": "CO_0011",
+      "type": "numeric",
+      "unit": "unit",
+      "label": "Portas USB tipo A traseiras",
+      "group_name": "Convenience",
+      "equipment_group": "USB port (Type A)",
+      "spec_set": "RR"
+    },
+    {
+      "id": "200",
+      "code": "CO_0012",
+      "type": "numeric",
+      "unit": "unit",
+      "label": "Tomada auxiliar de energia 12V no console central",
+      "group_name": "Convenience",
+      "equipment_group": "Power Outlet 12V",
+      "spec_set": "Central console"
+    },
+    {
+      "id": "201",
+      "code": "CO_0013",
+      "type": "numeric",
+      "unit": "unit",
+      "label": "Tomada auxiliar de energia 12V no porta-malas",
+      "group_name": "Convenience",
+      "equipment_group": "Power Outlet 12V",
+      "spec_set": "Luggage "
+    },
+    {
+      "id": "671",
+      "code": "CO_0014",
+      "type": "scale",
+      "unit": null,
+      "label": "Carregador de celular por indução",
+      "group_name": "Convenience",
+      "equipment_group": "Wireless Charging Pad",
+      "spec_set": "Wireless Charger"
+    },
+    {
+      "id": "206",
+      "code": "CO_0017",
+      "type": "numeric",
+      "unit": "inch",
+      "label": "Painel de instrumentos digital",
+      "group_name": "Convenience",
+      "equipment_group": "Cluster",
+      "spec_set": "Cluster Size"
+    },
+    {
+      "id": "207",
+      "code": "CO_0018",
+      "type": "binary",
+      "unit": null,
+      "label": "Cockpit digital (HUD)",
+      "group_name": "Convenience",
+      "equipment_group": "Cluster",
+      "spec_set": "HUD"
+    },
+    {
+      "id": "208",
+      "code": "CO_0019",
+      "type": "numeric",
+      "unit": "inch",
+      "label": "Central multimídia com tela touchscreen de alta resolução",
+      "group_name": "Convenience",
+      "equipment_group": "Touch screen display",
+      "spec_set": "Display Screen size"
+    },
+    {
+      "id": "213",
+      "code": "CO_0023",
+      "type": "scale",
+      "unit": null,
+      "label": "Conexão multimídia (Android Auto / Carplay)",
+      "group_name": "Convenience",
+      "equipment_group": "Touch screen display",
+      "spec_set": "Multimedia connection"
+    },
+    {
+      "id": "214",
+      "code": "CO_0024",
+      "type": "binary",
+      "unit": null,
+      "label": "Sistema built-in de navegação GPS",
+      "group_name": "Convenience",
+      "equipment_group": "Touch screen display",
+      "spec_set": "Built-In Navigation (GPS)"
+    },
+    {
+      "id": "215",
+      "code": "CO_0025",
+      "type": "binary",
+      "unit": null,
+      "label": "Sistema de atualização remota de software (OTA)",
+      "group_name": "Convenience",
+      "equipment_group": "Touch screen display",
+      "spec_set": "OTA (Over-the-Air)"
+    },
+    {
+      "id": "217",
+      "code": "CO_0027",
+      "type": "numeric",
+      "unit": "unit",
+      "label": "Alto-falantes",
+      "group_name": "Convenience",
+      "equipment_group": "Sound system",
+      "spec_set": "Speakers"
+    },
+    {
+      "id": "687",
+      "code": "CO_0030",
+      "type": "numeric",
+      "unit": "unit",
+      "label": "Amplificador",
+      "group_name": "Convenience",
+      "equipment_group": "Sound system",
+      "spec_set": "Exterior amplifier"
+    },
+    {
+      "id": "228",
+      "code": "CO_0036",
+      "type": "scale",
+      "unit": null,
+      "label": "Ar-condicionado",
+      "group_name": "Convenience",
+      "equipment_group": "Air Conditioner",
+      "spec_set": "A/C Type"
+    },
+    {
+      "id": "231",
+      "code": "CO_0039",
+      "type": "binary",
+      "unit": null,
+      "label": "Ar-condicionado com filtro antipólen",
+      "group_name": "Convenience",
+      "equipment_group": "Air Conditioner",
+      "spec_set": "Cabin air filter"
+    },
+    {
+      "id": "232",
+      "code": "CO_0040",
+      "type": "binary",
+      "unit": null,
+      "label": "Ionizador integrado ao ar-condicionado",
+      "group_name": "Convenience",
+      "equipment_group": "Air Conditioner",
+      "spec_set": "Air ionizer"
+    },
+    {
+      "id": "234",
+      "code": "CO_0041",
+      "type": "binary",
+      "unit": null,
+      "label": "Saída de ar para o banco traseiro",
+      "group_name": "Convenience",
+      "equipment_group": "Air Conditioner",
+      "spec_set": "Rear air vent"
+    },
+    {
+      "id": "236",
+      "code": "CO_0043",
+      "type": "numeric",
+      "unit": null,
+      "label": "Vidros com acionamento elétrico",
+      "group_name": "Convenience",
+      "equipment_group": "Power windows",
+      "spec_set": "Power"
+    },
+    {
+      "id": "238",
+      "code": "CO_0045",
+      "type": "numeric",
+      "unit": "unit",
+      "label": "Vidros elétricos com funções one touch (descida e subida) e antiesmagamento",
+      "group_name": "Convenience",
+      "equipment_group": "Power windows",
+      "spec_set": "One-touch up & down"
+    },
+    {
+      "id": "239",
+      "code": "CO_0046",
+      "type": "binary",
+      "unit": null,
+      "label": "Chave inteligênte para comando das portas e tampa traseira",
+      "group_name": "Convenience",
+      "equipment_group": "Keyless entry",
+      "spec_set": "Smart Key"
+    },
+    {
+      "id": "242",
+      "code": "CO_0049",
+      "type": "binary",
+      "unit": null,
+      "label": "Contactless Power-On (partida sem botão)",
+      "group_name": "Convenience",
+      "equipment_group": "Keyless entry",
+      "spec_set": "Contactless Power-On"
+    },
+    {
+      "id": "243",
+      "code": "CO_0050",
+      "type": "binary",
+      "unit": null,
+      "label": "Sistema de partida do motor à distância",
+      "group_name": "Convenience",
+      "equipment_group": "Keyless entry",
+      "spec_set": "E/G Remote Control"
+    },
+    {
+      "id": "244",
+      "code": "CO_0051",
+      "type": "binary",
+      "unit": null,
+      "label": "Abertura elétrica da tampa de combustível",
+      "group_name": "Convenience",
+      "equipment_group": "Fuel Filler Power Release",
+      "spec_set": "Fuel Filler Power Release"
+    },
+    {
+      "id": "245",
+      "code": "CO_0052",
+      "type": "binary",
+      "unit": null,
+      "label": "Cobertura dobrável do porta-malas",
+      "group_name": "Convenience",
+      "equipment_group": "Retractable trunk cover",
+      "spec_set": "Retractable trunk cover"
+    },
+    {
+      "id": "711",
+      "code": "CO_0054",
+      "type": "numeric",
+      "unit": "unit",
+      "label": "Portas USB tipo C traseiras",
+      "group_name": "Convenience",
+      "equipment_group": "USB port (Type C)",
+      "spec_set": "RR"
+    },
+    {
+      "id": "1",
+      "code": "DM_0001",
+      "type": "numeric",
+      "unit": "mm",
+      "label": "Comprimento (mm)",
+      "group_name": "Dimensions",
+      "equipment_group": "Length (mm)",
+      "spec_set": "Length"
+    },
+    {
+      "id": "2",
+      "code": "DM_0002",
+      "type": "numeric",
+      "unit": "mm",
+      "label": "Largura (mm)",
+      "group_name": "Dimensions",
+      "equipment_group": "Width (mm)",
+      "spec_set": "Width"
+    },
+    {
+      "id": "3",
+      "code": "DM_0003",
+      "type": "numeric",
+      "unit": "mm",
+      "label": "Altura (mm)",
+      "group_name": "Dimensions",
+      "equipment_group": "Height (mm)",
+      "spec_set": "Height"
+    },
+    {
+      "id": "4",
+      "code": "DM_0004",
+      "type": "numeric",
+      "unit": "mm",
+      "label": "Distância entre eixos (mm)",
+      "group_name": "Dimensions",
+      "equipment_group": "Wheelbase (mm)",
+      "spec_set": "Wheelbase"
+    },
+    {
+      "id": "5",
+      "code": "DM_0005",
+      "type": "numeric",
+      "unit": "mm",
+      "label": "Altura livre do solo (mm)",
+      "group_name": "Dimensions",
+      "equipment_group": "Ground clearance (mm)",
+      "spec_set": "Ground clearance"
+    },
+    {
+      "id": "6",
+      "code": "DM_0006",
+      "type": "numeric",
+      "unit": "L",
+      "label": "Volume do porta-malas (L)",
+      "group_name": "Dimensions",
+      "equipment_group": "Cargo space",
+      "spec_set": "Trunk"
+    },
+    {
+      "id": "724",
+      "code": "DM_0007",
+      "type": "numeric",
+      "unit": "L",
+      "label": "Volume total do porta-malas com assentos traseiros rebatidos (L)",
+      "group_name": "Dimensions",
+      "equipment_group": "Cargo space",
+      "spec_set": "Total"
+    },
+    {
+      "id": "8",
+      "code": "DM_0008",
+      "type": "numeric",
+      "unit": "kg",
+      "label": "Peso em ordem de marcha (kg)",
+      "group_name": "Dimensions",
+      "equipment_group": "Weight",
+      "spec_set": "Curb weight"
+    },
+    {
+      "id": "728",
+      "code": "DM_0011",
+      "type": "numeric",
+      "unit": "kg",
+      "label": "Capacidade máxima de tração (kg)",
+      "group_name": "Dimensions",
+      "equipment_group": "Weight",
+      "spec_set": "Maximum towing capacity"
+    },
+    {
+      "id": "65",
+      "code": "EX_0001",
+      "type": "binary",
+      "unit": null,
+      "label": "Rodas de liga leve",
+      "group_name": "Exterior",
+      "equipment_group": "Rims",
+      "spec_set": "Alloy Wheels"
+    },
+    {
+      "id": "66",
+      "code": "EX_0002",
+      "type": "numeric",
+      "unit": "inch",
+      "label": "Diâmetro das rodas",
+      "group_name": "Exterior",
+      "equipment_group": "Rims",
+      "spec_set": "Wheels diameter"
+    },
+    {
+      "id": "67",
+      "code": "EX_0003",
+      "type": "numeric",
+      "unit": "mm",
+      "label": "Largura (mm)",
+      "group_name": "Exterior",
+      "equipment_group": "Tires",
+      "spec_set": "Tires width"
+    },
+    {
+      "id": "732",
+      "code": "EX_0004",
+      "type": "numeric",
+      "unit": "mm",
+      "label": "Pneus",
+      "group_name": "Exterior",
+      "equipment_group": "Tires",
+      "spec_set": "Ratio"
+    },
+    {
+      "id": "75",
+      "code": "EX_0009",
+      "type": "scale",
+      "unit": null,
+      "label": "Faróis dianteiros em LED",
+      "group_name": "Exterior",
+      "equipment_group": "Front illumination",
+      "spec_set": "LED headlamps"
+    },
+    {
+      "id": "76",
+      "code": "EX_0010",
+      "type": "binary",
+      "unit": null,
+      "label": "Faróis dianteiros fom função Welcome",
+      "group_name": "Exterior",
+      "equipment_group": "Front illumination",
+      "spec_set": "Welcome function"
+    },
+    {
+      "id": "77",
+      "code": "EX_0011",
+      "type": "binary",
+      "unit": null,
+      "label": "Acendimento automático dos faróis",
+      "group_name": "Exterior",
+      "equipment_group": "Front illumination",
+      "spec_set": "Auto Light Control"
+    },
+    {
+      "id": "78",
+      "code": "EX_0012",
+      "type": "binary",
+      "unit": null,
+      "label": "Controle inteligente de farol alto (IHC)",
+      "group_name": "Exterior",
+      "equipment_group": "Front illumination",
+      "spec_set": "IHC (Intelligent high beam control)"
+    },
+    {
+      "id": "82",
+      "code": "EX_0015",
+      "type": "scale",
+      "unit": null,
+      "label": "Luzes de condução diurna",
+      "group_name": "Exterior",
+      "equipment_group": "Front illumination",
+      "spec_set": "DRL"
+    },
+    {
+      "id": "87",
+      "code": "EX_0019",
+      "type": "binary",
+      "unit": null,
+      "label": "Espelhos retrovisores externos com repetidores das setas integrados em LED",
+      "group_name": "Exterior",
+      "equipment_group": "Front illumination",
+      "spec_set": "LED side turn signal lamp"
+    },
+    {
+      "id": "90",
+      "code": "EX_0022",
+      "type": "binary",
+      "unit": null,
+      "label": "Lanternas traseiras em LED",
+      "group_name": "Exterior",
+      "equipment_group": "Rear illumination",
+      "spec_set": "LED rear lamps"
+    },
+    {
+      "id": "93",
+      "code": "EX_0024",
+      "type": "scale",
+      "unit": null,
+      "label": "Faróis de neblina traseiros",
+      "group_name": "Exterior",
+      "equipment_group": "Rear illumination",
+      "spec_set": "Fog lamps"
+    },
+    {
+      "id": "94",
+      "code": "EX_0025",
+      "type": "binary",
+      "unit": null,
+      "label": "Luz de freio em LED",
+      "group_name": "Exterior",
+      "equipment_group": "Rear illumination",
+      "spec_set": "LED brake light"
+    },
+    {
+      "id": "97",
+      "code": "EX_0027",
+      "type": "binary",
+      "unit": null,
+      "label": "Espelhos retrovisores externos com ajustes elétricos",
+      "group_name": "Exterior",
+      "equipment_group": "O/S mirror",
+      "spec_set": "Power mirrors"
+    },
+    {
+      "id": "98",
+      "code": "EX_0028",
+      "type": "binary",
+      "unit": null,
+      "label": "Espelhos retrovisores externos com rebatimento elétrico",
+      "group_name": "Exterior",
+      "equipment_group": "O/S mirror",
+      "spec_set": "Electric folding"
+    },
+    {
+      "id": "110",
+      "code": "EX_0037",
+      "type": "scale",
+      "unit": null,
+      "label": "Teto solar",
+      "group_name": "Exterior",
+      "equipment_group": "Sunroof",
+      "spec_set": "Sunroof"
+    },
+    {
+      "id": "111",
+      "code": "EX_0038",
+      "type": "binary",
+      "unit": null,
+      "label": "Rack de teto com barras longitudinais",
+      "group_name": "Exterior",
+      "equipment_group": "Roof rack",
+      "spec_set": "Roof rack"
+    },
+    {
+      "id": "112",
+      "code": "EX_0039",
+      "type": "binary",
+      "unit": null,
+      "label": "Spoiler traseiro",
+      "group_name": "Exterior",
+      "equipment_group": "Rear spoiler",
+      "spec_set": "Rear spoiler"
+    },
+    {
+      "id": "113",
+      "code": "EX_0040",
+      "type": "binary",
+      "unit": null,
+      "label": "Antena Shark",
+      "group_name": "Exterior",
+      "equipment_group": "Shark antenna",
+      "spec_set": "Shark antenna"
+    },
+    {
+      "id": "114",
+      "code": "EX_0041",
+      "type": "binary",
+      "unit": null,
+      "label": "Tampa do porta-malas com acionamento elétrico e abertura programável",
+      "group_name": "Exterior",
+      "equipment_group": "Tailgate",
+      "spec_set": "Power"
+    },
+    {
+      "id": "115",
+      "code": "EX_0042",
+      "type": "binary",
+      "unit": null,
+      "label": "Tampa do porta-malas com sensor de presença inteligente",
+      "group_name": "Exterior",
+      "equipment_group": "Tailgate",
+      "spec_set": "Hands Free"
+    },
+    {
+      "id": "119",
+      "code": "IN_0003",
+      "type": "scale",
+      "unit": null,
+      "label": "Material dos bancos",
+      "group_name": "Interior",
+      "equipment_group": "Seat Material",
+      "spec_set": "Seat Material"
+    },
+    {
+      "id": "121",
+      "code": "IN_0005",
+      "type": "binary",
+      "unit": null,
+      "label": "Revestimento das portas dianteiras em soft-touch",
+      "group_name": "Interior",
+      "equipment_group": "Door panel finish",
+      "spec_set": "Soft-touch (FR)"
+    },
+    {
+      "id": "122",
+      "code": "IN_0006",
+      "type": "binary",
+      "unit": null,
+      "label": "Revestimento das portas traseiras em soft-touch",
+      "group_name": "Interior",
+      "equipment_group": "Door panel finish",
+      "spec_set": "Soft-touch (RR)"
+    },
+    {
+      "id": "123",
+      "code": "IN_0007",
+      "type": "binary",
+      "unit": null,
+      "label": "Painel central com acabamento premium soft-touch",
+      "group_name": "Interior",
+      "equipment_group": "Dashboard finish",
+      "spec_set": "Soft-Touch"
+    },
+    {
+      "id": "124",
+      "code": "IN_0008",
+      "type": "binary",
+      "unit": null,
+      "label": "Banco do motorista com ajustes elétricos",
+      "group_name": "Interior",
+      "equipment_group": "FR seat adjustament",
+      "spec_set": "Power seat (Driver)"
+    },
+    {
+      "id": "125",
+      "code": "IN_0009",
+      "type": "binary",
+      "unit": null,
+      "label": "Banco do passageiro com ajustes elétricos",
+      "group_name": "Interior",
+      "equipment_group": "FR seat adjustament",
+      "spec_set": "Power seat (Passenger)"
+    },
+    {
+      "id": "792",
+      "code": "IN_0012",
+      "type": "binary",
+      "unit": null,
+      "label": "Banco do motorista com ajuste elétrico de lombar",
+      "group_name": "Interior",
+      "equipment_group": "FR seat adjustament",
+      "spec_set": "Electric lumbar adjusment (Driver)"
+    },
+    {
+      "id": "138",
+      "code": "IN_0019",
+      "type": "binary",
+      "unit": null,
+      "label": "Encostos de cabeça dianteiros com ajuste manual",
+      "group_name": "Interior",
+      "equipment_group": "Headrest adjustment",
+      "spec_set": "Front row headrest adjustment"
+    },
+    {
+      "id": "139",
+      "code": "IN_0020",
+      "type": "binary",
+      "unit": null,
+      "label": "Encostos de cabeça traseiros com ajuste manual",
+      "group_name": "Interior",
+      "equipment_group": "Headrest adjustment",
+      "spec_set": "Second row headrest adjustment"
+    },
+    {
+      "id": "141",
+      "code": "IN_0022",
+      "type": "binary",
+      "unit": null,
+      "label": "Banco traseiro bi-partidos 60/40",
+      "group_name": "Interior",
+      "equipment_group": "RR seat adjustment",
+      "spec_set": "Split bench (60/40)"
+    },
+    {
+      "id": "147",
+      "code": "IN_0028",
+      "type": "binary",
+      "unit": null,
+      "label": "Banco do motorista com ventilação",
+      "group_name": "Interior",
+      "equipment_group": "Seat ventilation",
+      "spec_set": "Ventilated (Driver)"
+    },
+    {
+      "id": "148",
+      "code": "IN_0029",
+      "type": "binary",
+      "unit": null,
+      "label": "Banco do passageiro com ventilação",
+      "group_name": "Interior",
+      "equipment_group": "Seat ventilation",
+      "spec_set": "Ventilated (Passenger)"
+    },
+    {
+      "id": "154",
+      "code": "IN_0033",
+      "type": "binary",
+      "unit": null,
+      "label": "Direção com assistência elétrica",
+      "group_name": "Interior",
+      "equipment_group": "Steering Wheel",
+      "spec_set": "Power Steering (EPS)"
+    },
+    {
+      "id": "157",
+      "code": "IN_0035",
+      "type": "scale",
+      "unit": null,
+      "label": "Ajuste do volante",
+      "group_name": "Interior",
+      "equipment_group": "Steering Wheel",
+      "spec_set": "Steering Wheel"
+    },
+    {
+      "id": "159",
+      "code": "IN_0037",
+      "type": "binary",
+      "unit": null,
+      "label": "Volante revestido em couro",
+      "group_name": "Interior",
+      "equipment_group": "Steering Wheel",
+      "spec_set": "Leather steering wheel"
+    },
+    {
+      "id": "161",
+      "code": "IN_0039",
+      "type": "binary",
+      "unit": null,
+      "label": "Volante multifuncional com controles para áudio, telefonia e assistência à condução",
+      "group_name": "Interior",
+      "equipment_group": "Steering Wheel",
+      "spec_set": "Audio remote control"
+    },
+    {
+      "id": "165",
+      "code": "IN_0042",
+      "type": "scale",
+      "unit": null,
+      "label": "Luzes de leitura",
+      "group_name": "Interior",
+      "equipment_group": "Interior lighting",
+      "spec_set": "Reading lamps"
+    },
+    {
+      "id": "168",
+      "code": "IN_0044",
+      "type": "scale",
+      "unit": null,
+      "label": "Iluminação no porta malas",
+      "group_name": "Interior",
+      "equipment_group": "Interior lighting",
+      "spec_set": "Luggage lamp"
+    },
+    {
+      "id": "171",
+      "code": "IN_0046",
+      "type": "scale",
+      "unit": null,
+      "label": "Para sol com Iluminação",
+      "group_name": "Interior",
+      "equipment_group": "Sunvisor",
+      "spec_set": "Illumination"
+    },
+    {
+      "id": "172",
+      "code": "IN_0047",
+      "type": "binary",
+      "unit": null,
+      "label": "Pára-sóis dianteiros com espelho",
+      "group_name": "Interior",
+      "equipment_group": "Sunvisor",
+      "spec_set": "Vanity mirror"
+    },
+    {
+      "id": "176",
+      "code": "IN_0049",
+      "type": "binary",
+      "unit": null,
+      "label": "Espelho retrovisor interno eletrocrômico",
+      "group_name": "Interior",
+      "equipment_group": "Inside Mirror",
+      "spec_set": "I/S electrochromic mirror (ECM)"
+    },
+    {
+      "id": "179",
+      "code": "IN_0052",
+      "type": "binary",
+      "unit": null,
+      "label": "Porta-luvas com iluminação",
+      "group_name": "Interior",
+      "equipment_group": "Glove box",
+      "spec_set": "Illuminated"
+    },
+    {
+      "id": "181",
+      "code": "IN_0054",
+      "type": "binary",
+      "unit": null,
+      "label": "Console central com descansa-braço",
+      "group_name": "Interior",
+      "equipment_group": "Front armrest",
+      "spec_set": "FR armrest"
+    },
+    {
+      "id": "182",
+      "code": "IN_0055",
+      "type": "binary",
+      "unit": null,
+      "label": "Apoia braço retrátil no banco traseiro",
+      "group_name": "Interior",
+      "equipment_group": "Front armrest",
+      "spec_set": "RR armrest"
+    },
+    {
+      "id": "183",
+      "code": "IN_0056",
+      "type": "binary",
+      "unit": null,
+      "label": "Porta-objetos no console central",
+      "group_name": "Interior",
+      "equipment_group": "Storage box",
+      "spec_set": "Storage box"
+    },
+    {
+      "id": "838",
+      "code": "IN_0058",
+      "type": "binary",
+      "unit": null,
+      "label": "Porta-objetos no console central climatizado",
+      "group_name": "Interior",
+      "equipment_group": "Storage box",
+      "spec_set": "Cooling"
+    },
+    {
+      "id": "55",
+      "code": "OW_0001",
+      "type": "numeric",
+      "unit": "MJ/Km",
+      "label": "Eficiência energética (MJ/Km)",
+      "group_name": "Ownership",
+      "equipment_group": "Inmetro",
+      "spec_set": "FE"
+    },
+    {
+      "id": "56",
+      "code": "OW_0002",
+      "type": "numeric",
+      "unit": "km/L",
+      "label": "Consumo urbano na gasolina (Km/L)",
+      "group_name": "Ownership",
+      "equipment_group": "Inmetro",
+      "spec_set": "Urban (gasoline)"
+    },
+    {
+      "id": "57",
+      "code": "OW_0003",
+      "type": "numeric",
+      "unit": "km/L",
+      "label": "Consumo rodoviário na gasolina (Km/L)",
+      "group_name": "Ownership",
+      "equipment_group": "Inmetro",
+      "spec_set": "Road (gasoline)"
+    },
+    {
+      "id": "853",
+      "code": "OW_0004",
+      "type": "numeric",
+      "unit": "km/L",
+      "label": "Consumo urbano no etanol (Km/L)",
+      "group_name": "Ownership",
+      "equipment_group": "Inmetro",
+      "spec_set": "Urban (ethanol)"
+    },
+    {
+      "id": "854",
+      "code": "OW_0005",
+      "type": "numeric",
+      "unit": "km/L",
+      "label": "Consumo rodoviário no etanol (Km/L)",
+      "group_name": "Ownership",
+      "equipment_group": "Inmetro",
+      "spec_set": "Road (ethanol)"
+    },
+    {
+      "id": "60",
+      "code": "OW_0006",
+      "type": "numeric",
+      "unit": "L",
+      "label": "Tanque de combustível (L)",
+      "group_name": "Ownership",
+      "equipment_group": "Fuel tank",
+      "spec_set": "Fuel tank"
+    },
+    {
+      "id": "61",
+      "code": "OW_0007",
+      "type": "numeric",
+      "unit": "km",
+      "label": "E-Range Inmetro (km)",
+      "group_name": "Ownership",
+      "equipment_group": "Autonomy",
+      "spec_set": "E-Range"
+    },
+    {
+      "id": "63",
+      "code": "OW_0009",
+      "type": "numeric",
+      "unit": "years",
+      "label": "Garantia total (anos)",
+      "group_name": "Ownership",
+      "equipment_group": "Total warranty",
+      "spec_set": "Total warranty"
+    },
+    {
+      "id": "64",
+      "code": "OW_0010",
+      "type": "numeric",
+      "unit": "years",
+      "label": "Garantia do sistema elétrico (anos)",
+      "group_name": "Ownership",
+      "equipment_group": "Electric system warranty",
+      "spec_set": "Electric system warranty"
+    },
+    {
+      "id": "15",
+      "code": "PW_0003",
+      "type": "scale",
+      "unit": null,
+      "label": "Tecnologia de propulsão",
+      "group_name": "Powertrain",
+      "equipment_group": "Engine type",
+      "spec_set": "Engine tech"
+    },
+    {
+      "id": "17",
+      "code": "PW_0005",
+      "type": "numeric",
+      "unit": "L",
+      "label": "Motor à combustão",
+      "group_name": "Powertrain",
+      "equipment_group": "Combustion engine",
+      "spec_set": "Displacement"
+    },
+    {
+      "id": "20",
+      "code": "PW_0007",
+      "type": "scale",
+      "unit": null,
+      "label": "Turbo",
+      "group_name": "Powertrain",
+      "equipment_group": "Combustion engine",
+      "spec_set": "Turbocharger"
+    },
+    {
+      "id": "21",
+      "code": "PW_0008",
+      "type": "numeric",
+      "unit": "unit",
+      "label": "Número de cilindros",
+      "group_name": "Powertrain",
+      "equipment_group": "Combustion engine",
+      "spec_set": "Cylinders"
+    },
+    {
+      "id": "22",
+      "code": "PW_0009",
+      "type": "scale",
+      "unit": null,
+      "label": "Tipo do motor à combustão",
+      "group_name": "Powertrain",
+      "equipment_group": "Combustion engine",
+      "spec_set": "Engine type"
+    },
+    {
+      "id": "24",
+      "code": "PW_0011",
+      "type": "numeric",
+      "unit": "cv",
+      "label": "Potência máxima (cv)",
+      "group_name": "Powertrain",
+      "equipment_group": "Combustion engine",
+      "spec_set": "Max power"
+    },
+    {
+      "id": "25",
+      "code": "PW_0012",
+      "type": "numeric",
+      "unit": "Nm",
+      "label": "Torque máximo (kgfm)",
+      "group_name": "Powertrain",
+      "equipment_group": "Combustion engine",
+      "spec_set": "Max torque"
+    },
+    {
+      "id": "26",
+      "code": "PW_0014",
+      "type": "numeric",
+      "unit": "RPM",
+      "label": "Regime potência máxima (RPM)",
+      "group_name": "Powertrain",
+      "equipment_group": "Combustion engine",
+      "spec_set": "Rotation max power"
+    },
+    {
+      "id": "27",
+      "code": "PW_0015",
+      "type": "numeric",
+      "unit": "RPM",
+      "label": "Regime torque máxima (RPM)",
+      "group_name": "Powertrain",
+      "equipment_group": "Combustion engine",
+      "spec_set": "Rotation max torque"
+    },
+    {
+      "id": "32",
+      "code": "PW_0019",
+      "type": "scale",
+      "unit": null,
+      "label": "Transmissão",
+      "group_name": "Powertrain",
+      "equipment_group": "Transmission",
+      "spec_set": "Transmission type"
+    },
+    {
+      "id": "33",
+      "code": "PW_0020",
+      "type": "numeric",
+      "unit": "unit",
+      "label": "Número de velocidades",
+      "group_name": "Powertrain",
+      "equipment_group": "Transmission",
+      "spec_set": "# of Speed"
+    },
+    {
+      "id": "34",
+      "code": "PW_0021",
+      "type": "binary",
+      "unit": null,
+      "label": "Motor elétrico síncrono de ímã permanente",
+      "group_name": "Powertrain",
+      "equipment_group": "Electric engine",
+      "spec_set": "Permanent Magnet Synchronous Motor (PMSM)"
+    },
+    {
+      "id": "35",
+      "code": "PW_0022",
+      "type": "numeric",
+      "unit": "cv",
+      "label": "Potência máxima do motor elétrico dianteiro (cv)",
+      "group_name": "Powertrain",
+      "equipment_group": "Electric engine",
+      "spec_set": "FR Max power"
+    },
+    {
+      "id": "36",
+      "code": "PW_0023",
+      "type": "numeric",
+      "unit": "Nm",
+      "label": "Torque máximo do motor elétrico dianteiro (kgfm)",
+      "group_name": "Powertrain",
+      "equipment_group": "Electric engine",
+      "spec_set": "FR Max torque"
+    },
+    {
+      "id": "39",
+      "code": "PW_0028",
+      "type": "numeric",
+      "unit": "kWh",
+      "label": "Capacidade da bateria (kW/h)",
+      "group_name": "Powertrain",
+      "equipment_group": "Battery",
+      "spec_set": "Battery capacity"
+    },
+    {
+      "id": "40",
+      "code": "PW_0029",
+      "type": "numeric",
+      "unit": "kW",
+      "label": "Potência máxima de recarga AC (kW)",
+      "group_name": "Powertrain",
+      "equipment_group": "Battery",
+      "spec_set": "Max charger AC"
+    },
+    {
+      "id": "41",
+      "code": "PW_0030",
+      "type": "numeric",
+      "unit": "kW",
+      "label": "Potência máxima de recarga DC (kW)",
+      "group_name": "Powertrain",
+      "equipment_group": "Battery",
+      "spec_set": "Max charger DC"
+    },
+    {
+      "id": "43",
+      "code": "PW_0032",
+      "type": "numeric",
+      "unit": "cv",
+      "label": "Potência combinada (cv)",
+      "group_name": "Powertrain",
+      "equipment_group": "Combined performance",
+      "spec_set": "Total max power"
+    },
+    {
+      "id": "44",
+      "code": "PW_0033",
+      "type": "numeric",
+      "unit": "Nm",
+      "label": "Torque combinado (kgfm)",
+      "group_name": "Powertrain",
+      "equipment_group": "Combined performance",
+      "spec_set": "Total max torque"
+    },
+    {
+      "id": "45",
+      "code": "PW_0035",
+      "type": "numeric",
+      "unit": "kg/cv",
+      "label": "Relação peso x potência",
+      "group_name": "Powertrain",
+      "equipment_group": "Combined performance",
+      "spec_set": "Power x weight"
+    },
+    {
+      "id": "46",
+      "code": "PW_0036",
+      "type": "numeric",
+      "unit": "kg/Nm",
+      "label": "Relação peso-torque",
+      "group_name": "Powertrain",
+      "equipment_group": "Combined performance",
+      "spec_set": "Torque x weight"
+    },
+    {
+      "id": "47",
+      "code": "PW_0037",
+      "type": "numeric",
+      "unit": "s",
+      "label": "Aceleração 0-100 km/h (s)",
+      "group_name": "Powertrain",
+      "equipment_group": "Combined performance",
+      "spec_set": "0-100 km/h acceleration"
+    },
+    {
+      "id": "48",
+      "code": "PW_0038",
+      "type": "numeric",
+      "unit": "km/h",
+      "label": "Velocidade máxima (km/h)",
+      "group_name": "Powertrain",
+      "equipment_group": "Combined performance",
+      "spec_set": "Max speed"
+    },
+    {
+      "id": "49",
+      "code": "PW_0039",
+      "type": "scale",
+      "unit": null,
+      "label": "Tração",
+      "group_name": "Powertrain",
+      "equipment_group": "Traction",
+      "spec_set": "Traction"
+    },
+    {
+      "id": "52",
+      "code": "PW_0042",
+      "type": "scale",
+      "unit": null,
+      "label": "Suspensão dianteira",
+      "group_name": "Powertrain",
+      "equipment_group": "Suspension",
+      "spec_set": "FR Suspension"
+    },
+    {
+      "id": "54",
+      "code": "PW_0044",
+      "type": "scale",
+      "unit": null,
+      "label": "Suspensão traseira",
+      "group_name": "Powertrain",
+      "equipment_group": "Suspension",
+      "spec_set": "RR Suspension"
+    },
+    {
+      "id": "247",
+      "code": "SF_0002",
+      "type": "scale",
+      "unit": null,
+      "label": "Trava de segurança infantil",
+      "group_name": "Safety",
+      "equipment_group": "Child safety lock",
+      "spec_set": "Child Lock"
+    },
+    {
+      "id": "249",
+      "code": "SF_0004",
+      "type": "binary",
+      "unit": null,
+      "label": "Cintos de segurança dianteiros e traseiros com limitadores de força",
+      "group_name": "Safety",
+      "equipment_group": "Seat belt",
+      "spec_set": "Front Row Load-Limiting"
+    },
+    {
+      "id": "250",
+      "code": "SF_0005",
+      "type": "binary",
+      "unit": null,
+      "label": "Cintos de segurança traseiros com limitadores de força",
+      "group_name": "Safety",
+      "equipment_group": "Seat belt",
+      "spec_set": "Second Row Load-Limiting"
+    },
+    {
+      "id": "251",
+      "code": "SF_0006",
+      "type": "binary",
+      "unit": null,
+      "label": "Cintos de segurança dianteiros e traseiros com pré-tensionadores",
+      "group_name": "Safety",
+      "equipment_group": "Seat belt",
+      "spec_set": "Front Row Pretensioner "
+    },
+    {
+      "id": "252",
+      "code": "SF_0007",
+      "type": "binary",
+      "unit": null,
+      "label": "Cintos de segurança traseiros com pré-tensionadores",
+      "group_name": "Safety",
+      "equipment_group": "Seat belt",
+      "spec_set": "Second Row Pretensioner"
+    },
+    {
+      "id": "253",
+      "code": "SF_0008",
+      "type": "binary",
+      "unit": null,
+      "label": "Sistema de fixação de cadeira infantil padrão Isofix no banco traseiro",
+      "group_name": "Safety",
+      "equipment_group": "Seat belt",
+      "spec_set": "ISOFIX Interface"
+    },
+    {
+      "id": "254",
+      "code": "SF_0009",
+      "type": "binary",
+      "unit": null,
+      "label": "Alerta de afivelamento do cinto de segurança nos bancos dianteiros",
+      "group_name": "Safety",
+      "equipment_group": "Seat belt",
+      "spec_set": "Front row seat belt reminder"
+    },
+    {
+      "id": "255",
+      "code": "SF_0010",
+      "type": "binary",
+      "unit": null,
+      "label": "Alerta de afivelamento do cinto de segurança nos bancos traseiros",
+      "group_name": "Safety",
+      "equipment_group": "Seat belt",
+      "spec_set": "Second row seat belt reminder"
+    },
+    {
+      "id": "256",
+      "code": "SF_0011",
+      "type": "binary",
+      "unit": null,
+      "label": "Airbags frontais duplos",
+      "group_name": "Safety",
+      "equipment_group": "Airbags",
+      "spec_set": "Front airbags"
+    },
+    {
+      "id": "257",
+      "code": "SF_0012",
+      "type": "binary",
+      "unit": null,
+      "label": "Airbags laterais dianteiros",
+      "group_name": "Safety",
+      "equipment_group": "Airbags",
+      "spec_set": "Side airbags (FR)"
+    },
+    {
+      "id": "260",
+      "code": "SF_0015",
+      "type": "binary",
+      "unit": null,
+      "label": "Airbags de cortina",
+      "group_name": "Safety",
+      "equipment_group": "Airbags",
+      "spec_set": "Curtain airbags"
+    },
+    {
+      "id": "262",
+      "code": "SF_0017",
+      "type": "binary",
+      "unit": null,
+      "label": "Controle eletrônico de tração (TCS)",
+      "group_name": "Safety",
+      "equipment_group": "TCS (Traction Control System)",
+      "spec_set": "TCS (Traction Control System)"
+    },
+    {
+      "id": "263",
+      "code": "SF_0018",
+      "type": "binary",
+      "unit": null,
+      "label": "Freios ABS",
+      "group_name": "Safety",
+      "equipment_group": "Brakes",
+      "spec_set": "ABS (Anti-lock Braking System)"
+    },
+    {
+      "id": "264",
+      "code": "SF_0019",
+      "type": "binary",
+      "unit": null,
+      "label": "Distribuição eletrônica de frenagem (EBD)",
+      "group_name": "Safety",
+      "equipment_group": "Brakes",
+      "spec_set": "EBD (Electronic Brakeforce Distribution)"
+    },
+    {
+      "id": "265",
+      "code": "SF_0020",
+      "type": "binary",
+      "unit": null,
+      "label": "Assistente de frenagem de emergência (BAS)",
+      "group_name": "Safety",
+      "equipment_group": "Brakes",
+      "spec_set": "BAS (Brake Assist System)"
+    },
+    {
+      "id": "266",
+      "code": "SF_0021",
+      "type": "binary",
+      "unit": null,
+      "label": "Sistema de prioridade de frenagem (BOS)",
+      "group_name": "Safety",
+      "equipment_group": "Brakes",
+      "spec_set": "BOS (Brake Override System)"
+    },
+    {
+      "id": "267",
+      "code": "SF_0022",
+      "type": "binary",
+      "unit": null,
+      "label": "Controle eletrônico de estabilidade (ESC)",
+      "group_name": "Safety",
+      "equipment_group": "Brakes",
+      "spec_set": "VSC (Vehicle Stability Control)"
+    },
+    {
+      "id": "268",
+      "code": "SF_0023",
+      "type": "binary",
+      "unit": null,
+      "label": "Assistente de partida em rampa (HAC)",
+      "group_name": "Safety",
+      "equipment_group": "Brakes",
+      "spec_set": "Hill Assist Control (HAC)"
+    },
+    {
+      "id": "269",
+      "code": "SF_0024",
+      "type": "binary",
+      "unit": null,
+      "label": "Assistente de controle de descida (HDC)",
+      "group_name": "Safety",
+      "equipment_group": "Brakes",
+      "spec_set": "Hill Descent Control (HDC)"
+    },
+    {
+      "id": "270",
+      "code": "SF_0025",
+      "type": "binary",
+      "unit": null,
+      "label": "Freios a disco nas 4 rodas",
+      "group_name": "Safety",
+      "equipment_group": "Brakes",
+      "spec_set": "Rear Disc Brake"
+    },
+    {
+      "id": "271",
+      "code": "SF_0026",
+      "type": "binary",
+      "unit": null,
+      "label": "Freios dianteiros com discos ventilados",
+      "group_name": "Safety",
+      "equipment_group": "Brakes",
+      "spec_set": "Front ventilated disc brakes"
+    },
+    {
+      "id": "272",
+      "code": "SF_0027",
+      "type": "binary",
+      "unit": null,
+      "label": "Freios traseiros com discos sólidos",
+      "group_name": "Safety",
+      "equipment_group": "Brakes",
+      "spec_set": "Rear solid disc brakes"
+    },
+    {
+      "id": "274",
+      "code": "SF_0029",
+      "type": "binary",
+      "unit": null,
+      "label": "Freio de estacionamento com acionamento eletrônico",
+      "group_name": "Safety",
+      "equipment_group": "Brakes",
+      "spec_set": "Eletronic Parking Brake"
+    },
+    {
+      "id": "275",
+      "code": "SF_0030",
+      "type": "binary",
+      "unit": null,
+      "label": "Função Auto Hold",
+      "group_name": "Safety",
+      "equipment_group": "Brakes",
+      "spec_set": "Auto hold"
+    },
+    {
+      "id": "276",
+      "code": "SF_0031",
+      "type": "binary",
+      "unit": null,
+      "label": "Sensores de estacionamento dianteiros",
+      "group_name": "Safety",
+      "equipment_group": "Parking assist",
+      "spec_set": "Front Warning System"
+    },
+    {
+      "id": "277",
+      "code": "SF_0032",
+      "type": "binary",
+      "unit": null,
+      "label": "Sensores de estacionamento traseiros",
+      "group_name": "Safety",
+      "equipment_group": "Parking assist",
+      "spec_set": "Back Warning System"
+    },
+    {
+      "id": "942",
+      "code": "SF_0033",
+      "type": "binary",
+      "unit": null,
+      "label": "Assistente inteligente de estacionamento (Park Assist)",
+      "group_name": "Safety",
+      "equipment_group": "Parking assist",
+      "spec_set": "Auto Parking"
+    },
+    {
+      "id": "945",
+      "code": "SF_0036",
+      "type": "scale",
+      "unit": null,
+      "label": "Câmera (RVM)",
+      "group_name": "Safety",
+      "equipment_group": "Parking assist",
+      "spec_set": "Camera"
+    },
+    {
+      "id": "283",
+      "code": "SF_0037",
+      "type": "binary",
+      "unit": null,
+      "label": "Destravamento automático das portas em caso de colisão",
+      "group_name": "Safety",
+      "equipment_group": "Crash-Activated Door Unlock",
+      "spec_set": "Crash-Activated Door Unlock"
+    },
+    {
+      "id": "284",
+      "code": "SF_0038",
+      "type": "binary",
+      "unit": null,
+      "label": "Travamento central das portas",
+      "group_name": "Safety",
+      "equipment_group": "Central Door Lock",
+      "spec_set": "Central Door Lock"
+    },
+    {
+      "id": "285",
+      "code": "SF_0039",
+      "type": "binary",
+      "unit": null,
+      "label": "Bloqueio automático das portas em movimento",
+      "group_name": "Safety",
+      "equipment_group": "Automatic Door Lock",
+      "spec_set": "Automatic Door Lock"
+    },
+    {
+      "id": "949",
+      "code": "SF_0040",
+      "type": "binary",
+      "unit": null,
+      "label": "EDR (event data recording)",
+      "group_name": "Safety",
+      "equipment_group": "EDR (Event data recorder)",
+      "spec_set": "EDR (Event data recorder)"
+    },
+    {
+      "id": "288",
+      "code": "SF_0042",
+      "type": "binary",
+      "unit": null,
+      "label": "Sistema de monitoramento de pressão dos pneus (TPMS)",
+      "group_name": "Safety",
+      "equipment_group": "TPMS (Tire Pressure Monitor System)",
+      "spec_set": "TPMS (Tire Pressure Monitor System)"
+    },
+    {
+      "id": "289",
+      "code": "SF_0043",
+      "type": "binary",
+      "unit": null,
+      "label": "Sensor de chuva com acionamento automático do limpador de para-brisa",
+      "group_name": "Safety",
+      "equipment_group": "Rain Sensor",
+      "spec_set": "Rain Sensor"
+    },
+    {
+      "id": "290",
+      "code": "SF_0044",
+      "type": "binary",
+      "unit": null,
+      "label": "Sistema de alarme antifurto",
+      "group_name": "Safety",
+      "equipment_group": "Anti Theft Alarm",
+      "spec_set": "Anti Theft Alarm"
+    },
+    {
+      "id": "291",
+      "code": "SF_0045",
+      "type": "binary",
+      "unit": null,
+      "label": "Imobilizador eletrônico",
+      "group_name": "Safety",
+      "equipment_group": "Immobilizer",
+      "spec_set": "Immobilizer"
+    }
+  ]
+}
