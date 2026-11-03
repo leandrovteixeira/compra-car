@@ -10,7 +10,7 @@ describe('BAIC version-scoped import adapter', () => {
      ' 1.7   Velocidade máxima (km/h)           ≥140                ≥140',
      ' 9.8   Controle de cruzeiro adaptativo    —                   ●',
    ].join('\n'));
-   const result = buildBaicSpecDocument27({matrix:parsed,target,version:'MAX',evidence});
+   const result = buildBaicSpecDocument27({matrix:parsed,target,version:'MAX',evidence,validatedInventoryComplete:true});
    expect(result.document.observations[0]).toMatchObject({kind:'numeric',value:140,comparisonOperator:'>='});
    expect(result.document.observations[1]).toMatchObject({kind:'binary',value:'STANDARD'});
    expect(result.document.completeEquipmentInventory).toBe(true);
