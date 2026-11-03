@@ -3,6 +3,7 @@ import type { AppRole, AuthProfile } from '@compra-car/adapter-supabase';
 export type ProtectedArea = 'seller' | 'admin';
 
 export function hasRole(profile: AuthProfile, requiredRole: AppRole): boolean {
+  if (requiredRole === 'public') return true;
   if (requiredRole === 'seller') {
     return profile.role === 'seller' || profile.role === 'admin';
   }
