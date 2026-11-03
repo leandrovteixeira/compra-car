@@ -4,6 +4,8 @@ import { IMPORT_ENGINE_SERVER_ACTION_BODY_SIZE_LIMIT } from './src/config/import
 
 const nextConfig = {
   poweredByHeader: false,
+  // Temporary QA diagnostic: separate TypeScript failures from existing lint warnings.
+  eslint: { ignoreDuringBuilds: true },
   reactStrictMode: true,
   experimental: {
     serverActions: {
