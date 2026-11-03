@@ -32,6 +32,6 @@ jobs:
       - name: Typecheck core
         run: pnpm --filter @compra-car/core typecheck
       - name: Spec Agent unit and regression suite
-        run: pnpm --filter @compra-car/core exec vitest run test/spec-agent-reconciliation.test.ts test/spec-agent-baic-matrix.test.ts test/spec-agent-baic-import.test.ts test/spec-agent-review-projection.test.ts test/spec-agent-events.test.ts test/spec-agent-arcfox-golden.test.ts test/spec-agent-write-plan.test.ts test/spec-agent-pilot.test.ts
+        run: pnpm --filter @compra-car/core exec vitest run test/spec-agent-reconciliation.test.ts test/spec-agent-baic-matrix.test.ts test/spec-agent-baic-import.test.ts test/spec-agent-review-projection.test.ts test/spec-agent-events.test.ts test/spec-agent-arcfox-golden.test.ts test/spec-agent-write-plan.test.ts test/spec-agent-pilot.test.ts test/spec-agent-persistence-plan.test.ts
       - name: Typecheck agents scripts
         run: pnpm --filter @compra-car/agents typecheck
