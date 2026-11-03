@@ -147,3 +147,35 @@ export function classifyMmvGenerationChange(
     revalidateSubsystems:[...new Set(revalidate)],
   };
 }
+
+/** Assess dimensional change from measurements. This is only a severity
+ * suggestion; official evidence must be attached separately. */
+export interface MmvGenerationMeasurements {
+  readonly lengthMm:number;
+  readonly widthMm:number;
+  readonly heightMm:number;
+  readonly wheelbaseMm:number;
+}
+export function suggestMmvDimensionSeverity(
+  previous:MmvGenerationMeasurements,
+  current:MmvGenerationMeasurements,
+):{severity:MmvGenerationSeverity;deltas:Readonly<Record<keyof MmvGenerationMeasurements,number>>;reason:string}{
+  const keys=['lengthMm','widthMm','heightMm','wheelbaseMm'] as const;
+  const deltas={} as Record<(typeof keys)[number],number>;
+  for(const k of keys){
+    if(!Number.isFinite(previous[k])||!Number.isFinite(current[k])||
+       previous[k]<=0||current[k]<=0)
+      throw new Error('MMV_GENERATION_DIMENSIONS_INVALID');
+    deltas[k]=round(Math.abs(current[k]-previous[k])/previous[k]*100);
+  }
+  const wheel=deltas.wheelbaseMm;
+  const majorCount=keys.filter(k=>deltas[k]>=4).length;
+  const severity:MmvGenerationSeverity=
+    wheel>=5||majorCount>=2?3:
+    wheel>=2||deltas.lengthMm>=5||deltas.widthMm>=4?2:
+    wheel>=0.5||keys.some(k=>deltas[k]>=1)?1:0;
+  return {severity,deltas,reason:
+    'Observed dimension deltas (percent): length '+deltas.lengthMm+
+    ', width '+deltas.widthMm+', height '+deltas.heightMm+
+    ', wheelbase '+wheel+'. Thresholds are provisional and require validation.'};
+}
