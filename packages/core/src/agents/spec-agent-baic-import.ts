@@ -12,6 +12,8 @@ export function buildBaicSpecDocument27(input: {
   matrix: SpecMatrixParse27;
   target: SpecTarget27;
   version: 'PRO' | 'MAX';
+  /** Explicit human/validator attestation: parsed rows represent full equipment inventory. */
+  validatedInventoryComplete?: boolean;
   evidence: SpecEvidence27;
 }): { document: SpecDocument27; reviewRows: readonly { rowId:string; reason:string; raw:string }[] } {
   const {matrix,target,evidence,version} = input;
@@ -46,7 +48,7 @@ export function buildBaicSpecDocument27(input: {
   }
   const document: SpecDocument27 = {
     target,evidence,observations,
-    completeEquipmentInventory:matrix.complete && reviewRows.length === 0,
+    completeEquipmentInventory:input.validatedInventoryComplete === true && matrix.complete && reviewRows.length === 0,
   };
   return {document,reviewRows};
 }
