@@ -1,6 +1,7 @@
 'use server';
 
 import { createMutableServerClient } from '@/auth/server-client';
+import { getAdminRecoveryRedirectUrl } from '@/auth/admin-user-redirects';
 
 export type SignUpState =
   | { readonly status: 'idle' }
@@ -21,11 +22,12 @@ export async function signUp(_: SignUpState, form: FormData): Promise<SignUpStat
   }
 
   try {
+    const emailRedirectTo = new URL('/auth/callback', getAdminRecoveryRedirectUrl()).toString();
     const client = await createMutableServerClient();
     const { error } = await client.auth.signUp({
       email,
       password,
-      options: { data: { full_name: name } },
+      options: { data: { full_name: name }, emailRedirectTo },
     });
     if (error) {
       console.error('Public signup failed', { code: error.code });
