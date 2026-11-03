@@ -58,6 +58,8 @@ const results=extracted.claims.map((claim,index)=>{
       :direct.length>1?'EXACT_LABEL_AMBIGUOUS'
       :candidates.length?'LEXICAL_SUGGESTION_ONLY':'NO_SUGGESTION',
     exactCodes:direct.map(s=>s.code),suggestions:candidates,
+    lexicalTier:!candidates.length?'NONE':candidates[0]!.score>=0.6?'HIGH':candidates[0]!.score>=0.35?'MEDIUM':'LOW',
+    compositeNeedsDecomposition:/\\s\\+\\s/u.test(claim.sourceLabel),
   };
 });
 const count=(state:string)=>results.filter(x=>x.matchState===state).length;
@@ -73,6 +75,10 @@ const report={
     ambiguousExactLabelCandidates:count('EXACT_LABEL_AMBIGUOUS'),
     lexicalSuggestionOnly:count('LEXICAL_SUGGESTION_ONLY'),
     withoutCandidate:count('NO_SUGGESTION'),
+    strongLexicalReviewCandidates:results.filter(x=>x.lexicalTier==='HIGH').length,
+    mediumLexicalReviewCandidates:results.filter(x=>x.lexicalTier==='MEDIUM').length,
+    weakLexicalReviewCandidates:results.filter(x=>x.lexicalTier==='LOW').length,
+    claimsWithExplicitPlusComposition:results.filter(x=>x.compositeNeedsDecomposition).length,
     approvedContextualAliasesApplied:0,
     canonicalUpdatesApplied:0,
     candidatesAwaitingHumanValidation:results.length,
