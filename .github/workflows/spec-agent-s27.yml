@@ -38,7 +38,7 @@ jobs:
       - name: Typecheck Supabase adapter
         run: pnpm --filter @compra-car/adapter-supabase typecheck
       - name: Spec Agent Supabase adapter tests
-        run: pnpm --filter @compra-car/adapter-supabase exec vitest run test/spec-agent-coverage-reader.test.ts
+        run: pnpm --filter @compra-car/adapter-supabase exec vitest run test/spec-agent-coverage-reader.test.ts test/spec-agent-telemetry.test.ts
       - name: Typecheck agents scripts
         run: pnpm --filter @compra-car/agents typecheck
       - name: Official GWM PDF deterministic smoke (non-blocking)
