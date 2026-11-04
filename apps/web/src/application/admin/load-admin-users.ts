@@ -4,7 +4,7 @@ import { AdminUserSupabaseAdapter } from '@compra-car/adapter-supabase';
 import type { AdminUserDto } from '@compra-car/contracts';
 
 import { createPrivilegedAdminClient } from '@/auth/admin-client';
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureIdentity23C } from '@/auth/account-tier-server';
 
 export interface AdminUserReader {
   listAdminUsers(): Promise<readonly AdminUserDto[]>;
@@ -16,7 +16,7 @@ interface LoadAdminUsersDependencies {
 }
 
 const DEFAULT_DEPENDENCIES: LoadAdminUsersDependencies = {
-  authorize: () => requireRole('admin'),
+  authorize: () => requireFeatureIdentity23C('settings', 'write'),
   createReader: () => new AdminUserSupabaseAdapter(createPrivilegedAdminClient()),
 };
 
