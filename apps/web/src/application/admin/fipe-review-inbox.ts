@@ -1,5 +1,5 @@
 import 'server-only';
-import {requireRole} from '@/auth/authorization';
+import { requireFeatureIdentity23C } from '@/auth/account-tier-server';
 import {createPrivilegedAdminClient} from '@/auth/admin-client';
 
 export type FipeReviewItem={
