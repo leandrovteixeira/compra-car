@@ -62,7 +62,7 @@ export async function runGenerationPilot(
   requireSource(snapshot.powertrainSource,snapshot.modelYear);
  }
  let design=null;
- let usage:GenerationVisionUsage|null=null;
+ const usageRef:{current:GenerationVisionUsage|null}={current:null};
  let client:ReturnType<typeof createLegacySupabaseClient>|null=null;
  const runId=randomUUID();
  if(mode==='--live-qa'){
@@ -93,7 +93,7 @@ export async function runGenerationPilot(
       apiKey:env.OPENAI_GENERATION_CLASSIFIER_API_KEY,model,
       pricing:boundedPricing(model),maxRunCostUsd:2,
       onUsage:async event=>{
-        usage=event;
+        usageRef.current=event;
         const {error}=await client!.from('agent_ai_usage_events').insert({
           run_id:runId,agent_type:'MMV_DISCOVERY',market:'BR',brand:manifest.brand,
           provider:'openai',model:event.providerModel,
@@ -118,7 +118,7 @@ export async function runGenerationPilot(
     await client.from('agent_runs').update({
       status:'FAILED',completed_at:new Date().toISOString(),
       error:{code:e instanceof Error?e.message:'GENERATION_UNKNOWN_FAILURE'},
-      summary:{usageRecorded:usage!==null,stage:'FAILED'},
+      summary:{usageRecorded:usageRef.current!==null,stage:'FAILED'},
     }).eq('id',runId);
     throw e;
   }
@@ -133,8 +133,8 @@ export async function runGenerationPilot(
   const {error}=await client.from('agent_runs').update({
     status:'COMPLETED',completed_at:new Date().toISOString(),
     summary:{changeType:classification.changeType,weightedScore:classification.weightedScore,
-      usageRecorded:usage!==null,estimatedCostUsd:usage?.estimatedCostUsd??0,
-      cachedInputTokens:usage?.cachedInputTokens??0,requiresReview:true,
+      usageRecorded:usageRef.current!==null,estimatedCostUsd:usageRef.current?.estimatedCostUsd??0,
+      cachedInputTokens:usageRef.current?.cachedInputTokens??0,requiresReview:true,
       appliedToCatalog:false},
   }).eq('id',runId);
   if(error)throw new Error('GENERATION_QA_RUN_FINALIZE_FAILED');
@@ -142,9 +142,9 @@ export async function runGenerationPilot(
  out(JSON.stringify({runId:client?runId:null,mode,
   classification:classification.changeType,score:classification.weightedScore,
   signals:assessment.signals.map(x=>({dimension:x.dimension,severity:x.severity,
-    evidenceCount:x.evidence.length})),usage:usage?{
-      inputTokens:usage.inputTokens,cachedInputTokens:usage.cachedInputTokens,
-      outputTokens:usage.outputTokens,estimatedCostUsd:usage.estimatedCostUsd,
+    evidenceCount:x.evidence.length})),usage:usageRef.current?{
+      inputTokens:usageRef.current.inputTokens,cachedInputTokens:usageRef.current.cachedInputTokens,
+      outputTokens:usageRef.current.outputTokens,estimatedCostUsd:usageRef.current.estimatedCostUsd,
     }:null,reviewOnly:true,canonicalWrites:false}));
  return 0;
 }
