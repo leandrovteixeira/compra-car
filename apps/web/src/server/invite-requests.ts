@@ -10,7 +10,8 @@ import {
   rejectInviteRequest,
   type InviteRequestDependencies,
 } from '@/application/invite-requests';
-import { requireActiveProfile, requireRole } from '@/auth/authorization';
+import { requireActiveProfile } from '@/auth/authorization';
+import { requireFeatureIdentity23C } from '@/auth/account-tier-server';
 import { createReadOnlyServerClient } from '@/auth/server-client';
 import { createPrivilegedAdminClient } from '@/auth/admin-client';
 import {
