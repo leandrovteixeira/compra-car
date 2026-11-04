@@ -209,7 +209,18 @@ export function buildReviewProjection(
           discovery='Modelo sem versão comercial identificada';
           recommendation='Validar identidade-base';
         }else if(f.finding_type==='AMBIGUOUS_MMV'){
-          if(reason==='POSSIBLE_BODY_SPLIT'){
+          if(reason==='GENERATION_CHANGE_REVIEW' &&
+              obj(f.proposal)?.action==='REVIEW_GENERATION_CHANGE'){
+            const p=obj(f.proposal);
+            const previous=f.subject.previousModelYear;
+            const current=f.subject.currentModelYear;
+            const mmv=value(f.subject.currentMmvId);
+            if(!mmv || typeof previous!=='number'||typeof current!=='number')continue;
+            kind='MMV_GENERATION';
+            businessKey=JSON.stringify(['GENERATION',market,mmv,previous,current]);
+            discovery='Classificação geracional · MY '+previous+' → '+current;
+            recommendation='Validar '+value(p?.changeType)+' e política de carry-over';
+          }else if(reason==='POSSIBLE_BODY_SPLIT'){
             const body=value(f.subject.bodyStyle);
             const proposed=value(obj(f.proposal)?.proposedModel);
             if(GENERIC_BODY_TYPES.has(key(body))&&key(proposed)===key(model+' '+body)){

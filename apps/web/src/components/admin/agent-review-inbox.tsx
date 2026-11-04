@@ -5,6 +5,7 @@ import { reviewMmvIdentityAction } from '@/app/admin/agents/identity-actions';
 import { reviewConnectorAction } from '@/app/admin/agents/connector-decisions';
 import { reviewModelYearAction } from '@/app/admin/agents/model-year-decisions';
 import { reviewFipeCandidateAction } from '@/app/admin/agents/fipe-decisions';
+import { reviewGenerationDecisionAction } from '@/app/admin/agents/generation-decisions';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { ReviewStatus } from '@compra-car/core/agent-platform';
 import type { ReviewInboxRow, ReviewSort, ReviewDirection } from '@/application/admin/agent-review-inbox';
@@ -53,7 +54,8 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
   const [reviewState, reviewAction, reviewPending] = useActionState(reviewMmvIdentityAction, {status:'idle' as const,message:''});
   const [connectorState, connectorAction, connectorPending]=useActionState(reviewConnectorAction,{status:'idle' as const,message:''});
   const [yearState,yearAction,yearPending]=useActionState(reviewModelYearAction,{status:'idle' as const,message:''});
-  useEffect(()=>{if(reviewState.status==='success'||connectorState.status==='success'||yearState.status==='success')router.refresh();},[reviewState.status,connectorState.status,yearState.status,router]);
+  const [generationState,generationAction,generationPending]=useActionState(reviewGenerationDecisionAction,{status:'idle' as const,message:''});
+  useEffect(()=>{if(reviewState.status==='success'||connectorState.status==='success'||yearState.status==='success'||generationState.status==='success')router.refresh();},[reviewState.status,connectorState.status,yearState.status,generationState.status,router]);
   const subject = detail.subject ?? {};
   const get = (key:string) => {
     const val=subject[key];
@@ -76,6 +78,21 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
   const data = detail.evidenceAssessment as Record<string,unknown>|null;
   const readiness = data && typeof data==='object' && typeof data.readiness==='string'
     ? data.readiness : null;
+  const generation=detail.technicalPayload.generationAssessment;
+  const generationData = generation && typeof generation==='object' && !Array.isArray(generation)
+    ? generation as Record<string,unknown> : null;
+  const signals=Array.isArray(generationData?.signals)
+    ? generationData.signals.filter((x):x is Record<string,unknown>=>
+        x!==null&&typeof x==='object'&&!Array.isArray(x)):[];
+  const generationLabels:Record<string,string>={
+    design:'Design',powertrain:'Motorização',dimensions:'Dimensões',
+  };
+  const generationWeights:Record<string,string>={
+    design:'35%',powertrain:'35%',dimensions:'30%',
+  };
+  const currentGenerationMY=get('currentModelYear');
+  const previousGenerationMY=get('previousModelYear');
+  const isQaGenerationFixture=detail.technicalPayload.qaFixture===true;
   return (
     <div className="rounded-b-lg border border-t-0 border-[#D6DEE3] bg-[#F6F7F8] p-3 sm:p-4">
       <div className="grid gap-3 xl:grid-cols-[1fr_1fr_1.1fr]">
@@ -85,6 +102,14 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
           {row.version?<p className="mt-1 text-xs font-medium text-[#526670]">
             Versão selecionada: {row.version}
           </p>:null}
+          {row.caseKind==='MMV_GENERATION' && previousGenerationMY && currentGenerationMY?
+            <p className="mt-1 text-xs font-medium text-[#526670]">
+              Comparação: MY {previousGenerationMY} → MY {currentGenerationMY}
+            </p>:null}
+          {isQaGenerationFixture?
+            <p className="mt-2 text-xs font-semibold text-[#A9541B]">
+              QA: teste de aprovação, não é confirmação técnica do veículo.
+            </p>:null}
           {technical.length?<p className="mt-1 text-xs text-[#526670]">
             {technical.map(([k,v])=>k+': '+String(v)).join(' · ')}
           </p>:null}
@@ -106,11 +131,45 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
               informações comerciais ou preços próprios. A escolha exigirá confirmação do destino.
             </p>:null}
           <p className="mt-1 text-xs text-[#526670]">Confiança {percent(row.confidence)}{readiness?` · Evidência: ${readiness}`:''}</p>
+          {row.caseKind==='MMV_GENERATION' && signals.length?
+            <div className="mt-3 space-y-1.5 rounded-md border border-[#D6DEE3] p-2 text-xs">
+              <p className="font-semibold">Classificação: {String(detail.proposal?.changeType??'—')}</p>
+              {signals.map((signal,i)=>(
+                <p key={i} className="flex justify-between gap-3">
+                  <span>{generationLabels[String(signal.dimension)]??String(signal.dimension)} ({generationWeights[String(signal.dimension)]??'—'})</span>
+                  <strong>{typeof signal.severity==='number'?`${signal.severity}/3`:'Sem evidência'}</strong>
+                </p>
+              ))}
+              <p className="border-t border-[#EAF1F4] pt-1 text-[#526670]">
+                Índice ponderado: {typeof detail.proposal?.weightedScore==='number'
+                  ?Number(detail.proposal.weightedScore).toLocaleString('pt-BR',{maximumFractionDigits:2})
+                  :'não calculado'}
+              </p>
+            </div>:null}
           <p className="mt-2 text-xs leading-5 text-[#526670]">
             {row.legacyAccepted
               ? 'Existe uma revisão ACCEPT legada. Ela não comprova alteração canônica.'
               : 'As ações gerais desta fila continuam em preparação. Connectors podem ser revisados no fluxo administrativo existente.'}
           </p>
+          {row.caseKind==='MMV_GENERATION'?(
+            <form action={generationAction} className="mt-3 flex flex-wrap gap-2"
+              onClick={event=>event.stopPropagation()}>
+              <input type="hidden" name="findingId" value={detail.findingId}/>
+              <input type="hidden" name="fingerprint" value={row.snapshotFingerprint}/>
+              <button type="submit" name="decision" value="ACCEPT" disabled={generationPending||detail.proposal?.changeType==='UNKNOWN'}
+                className="ui-button ui-button--primary ui-button--action">Aprovar</button>
+              <button type="submit" name="decision" value="REJECT" disabled={generationPending}
+                className="ui-button ui-button--destructive ui-button--action">Rejeitar</button>
+              <button type="submit" name="decision" value="DEFER" disabled={generationPending}
+                className="ui-button ui-button--secondary ui-button--action">Adiar</button>
+              {generationState.message?<p className="w-full text-xs"
+                role={generationState.status==='error'?'alert':'status'}>{generationState.message}</p>:null}
+              <p className="w-full text-xs text-[#526670]">
+                Aprovar registra a classificação para uso futuro; não modifica MMVs,
+                specs ou carry-over. Sem evidência suficiente, a aprovação fica indisponível.
+              </p>
+            </form>
+          ):null}
           {row.caseKind==='MODEL_YEAR_NEW'?(
             <form action={yearAction} className="mt-3 flex flex-wrap gap-2"
               onClick={event=>event.stopPropagation()}>
@@ -156,7 +215,7 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
               {reviewState.message?<p className="w-full text-xs" role={reviewState.status==='error'?'alert':'status'}>{reviewState.message}</p>:null}
               <p className="w-full text-xs text-[#526670]">Aprovar aplica a identidade ao catálogo automaticamente; Rejeitar e Adiar não alteram o catálogo.</p>
             </form>
-          ):(row.caseKind==='CONNECTOR_NEW'||row.caseKind==='CONNECTOR_UPDATE'||row.caseKind==='MODEL_YEAR_NEW')?null:(
+          ):(row.caseKind==='CONNECTOR_NEW'||row.caseKind==='CONNECTOR_UPDATE'||row.caseKind==='MODEL_YEAR_NEW'||row.caseKind==='MMV_GENERATION')?null:(
             <div className="mt-2">
               <p className="text-xs text-[#526670]">Ações por identidade indisponíveis neste caso; o finding de origem pode conter múltiplas versões.</p>
               <a className="mt-2 inline-block text-xs text-[#A9541B] underline"
@@ -216,10 +275,14 @@ function FipeReviewDetail({row}:{row:ReviewInboxRow}){
     <section className="rounded-md bg-white p-3">
       <h3 className="text-xs font-semibold uppercase text-[#526670]">Proposta e decisão</h3>
       <p className="mt-2 text-xs text-[#526670]">Correspondência sugerida · Confiança {percent(row.confidence)}</p>
-      <p className="mt-1 text-xs text-[#526670]">{candidate.dependencyState==='READY'?'Pronto para decisão':'Dependência pendente'}</p>
+      <p className="mt-1 text-xs text-[#526670]">
+        {candidate.dependencyState==='READY'||candidate.dependencyState==='APPLIED'
+          ?'Pronto para decisão'
+          :'Dependência não liberada: não há nó READY para este candidato FIPE. Use um candidato READY correspondente ou resolva a dependência.'}
+      </p>
       <form action={action} onClick={e=>e.stopPropagation()} className="mt-3 flex flex-wrap gap-2">
         <input type="hidden" name="candidateId" value={candidate.id}/>
-        <button type="submit" name="decision" value="ACCEPT" disabled={pending||candidate.dependencyState!=='READY'} className="ui-button ui-button--primary ui-button--action">Aprovar</button>
+        <button type="submit" name="decision" value="ACCEPT" disabled={pending||!['READY','APPLIED'].includes(candidate.dependencyState)} className="ui-button ui-button--primary ui-button--action">Aprovar</button>
         <button type="submit" name="decision" value="REJECT" disabled={pending} className="ui-button ui-button--destructive ui-button--action">Rejeitar</button>
         <button type="submit" name="decision" value="DEFER" disabled={pending} className="ui-button ui-button--secondary ui-button--action">Adiar</button>
         {state.message?<p role={state.status==='error'?'alert':'status'} className="w-full text-xs">{state.message}</p>:null}

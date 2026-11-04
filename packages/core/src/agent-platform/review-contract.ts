@@ -9,6 +9,7 @@ export const REVIEW_CASE_KINDS = [
   'MMV_NEW',
   'MMV_AMBIGUOUS',
   'MMV_MATCHED',
+  'MMV_GENERATION',
   'MODEL_YEAR_NEW',
   'MODEL_YEAR_MATCHED',
   'PRICE_NEW',
@@ -76,6 +77,8 @@ export const REVIEW_CASE_POLICIES: Readonly<Record<ReviewCaseKind, ReviewCasePol
   MMV_NEW: base('MMV', 'CREATE_MMV'),
   MMV_AMBIGUOUS: mergeable('MMV', 'CREATE_MMV', 'MMV', true),
   MMV_MATCHED: info('MMV'),
+  /** Generation approval is a classified decision, never a new MMV or spec mutation. */
+  MMV_GENERATION: base('MMV', 'NONE'),
   MODEL_YEAR_NEW: base('MODEL_YEAR', 'CREATE_MODEL_YEAR'),
   MODEL_YEAR_MATCHED: info('MODEL_YEAR'),
   PRICE_NEW: base('PRICE', 'WRITE_PRICE_HISTORY'),

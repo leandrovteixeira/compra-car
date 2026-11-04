@@ -1,3 +1,5 @@
+import { projectMmvGenerationReviewProposals } from './mmv-generation-review';
+import type { MmvGenerationAssessmentProvider } from './mmv-generation-review';
 import { projectCatalogMmvIdentities, projectCanonicalMmvIdentities } from './catalog-mmv-identity';
 import type { BrandConnectorResolver } from './brand-connector-resolver';
 import { CurrentMmvDiscoveryAgent } from './current-mmv-discovery-agent';
@@ -26,6 +28,7 @@ export class NewProductCheckAgent {
       readonly connectorResolver?: BrandConnectorResolver;
       readonly canonicalMmvs?: () => Promise<readonly CanonicalMmv[]>;
       readonly ambiguityAdjudicator?: MmvAmbiguityAdjudicator;
+      readonly generationAssessmentProvider?: MmvGenerationAssessmentProvider;
     },
   ) {}
 
@@ -89,6 +92,16 @@ export class NewProductCheckAgent {
       matches.push(match);
     }
 
+    const matchedCandidates = matches.flatMap((match) => ('matched' in match ? [match.matched] : []));
+    const generationChangeProposals = this.dependencies.generationAssessmentProvider
+      ? projectMmvGenerationReviewProposals({
+          matches: matchedCandidates,
+          assessments: await this.dependencies.generationAssessmentProvider.assess({
+            scope: normalizedScope,
+            matchedCandidates,
+          }),
+        })
+      : [];
     const completedAt = (this.dependencies.now ?? (() => new Date()))().toISOString();
     const result: NewProductCheckResult = {
       schemaVersion: '20E.1',
@@ -104,13 +117,14 @@ export class NewProductCheckAgent {
       knownProducts: catalog.length,
       canonicalProductRows: catalog.length,
       knownMmvIdentities: identities.length,
-      matchedCandidates: matches.flatMap((match) => ('matched' in match ? [match.matched] : [])),
+      matchedCandidates,
       findings: aggregateProductFindings(
         normalizedScope,
         matches.flatMap((match) => ('finding' in match ? [match.finding] : [])),
         discovery.observations,
       ),
       bodyModelProposals: discovery.bodyModelProposals,
+      generationChangeProposals,
       rejectedCandidates: discovery.rejectedCandidates,
       rejectedExternalSources: discovery.rejectedExternalSources,
       researchMetadata: discovery.researchMetadata,

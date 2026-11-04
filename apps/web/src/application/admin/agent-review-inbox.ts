@@ -127,7 +127,7 @@ export async function loadReviewInbox(options:Readonly<{
       findingType:g.finding.finding_type,
       sourceFindingType:g.finding.finding_type,
       sourceAgent:g.run.agent_type,
-      agentLabel:labels[g.run.agent_type]??g.run.agent_type,
+      agentLabel:g.kind==='MMV_GENERATION'?'New Generation':labels[g.run.agent_type]??g.run.agent_type,
       reasonCode:typeof g.finding.payload?.reasonCode==='string'
         ?g.finding.payload.reasonCode:null,
       businessKey:g.businessKey,
@@ -144,7 +144,8 @@ export async function loadReviewInbox(options:Readonly<{
       evidencePreview:null,
       primaryEvidenceUrl:null,
       observedAt:g.finding.created_at,
-      status:reviewState(g.reviewedSameFingerprint),
+      status:g.kind==='MMV_GENERATION' && g.reviewedSameFingerprint==='ACCEPT'
+        ?'APPROVED':reviewState(g.reviewedSameFingerprint),
       snapshotFingerprint:g.finding.fingerprint,
       caseVersion:0,
       legacyAccepted:g.reviewedSameFingerprint==='ACCEPT',
@@ -206,7 +207,11 @@ export async function loadReviewInbox(options:Readonly<{
     (!options.agent||(
       options.agent==='YEAR'
         ?['MODEL_YEAR','PRODUCT_YEAR'].includes(row.sourceAgent)
-        :row.sourceAgent===options.agent))&&
+        :options.agent==='GENERATION_CLASSIFIER'
+          ?row.caseKind==='MMV_GENERATION'
+          :options.agent==='MMV_DISCOVERY'
+            ?row.sourceAgent==='MMV_DISCOVERY'&&row.caseKind!=='MMV_GENERATION'
+            :row.sourceAgent===options.agent))&&
     (!term||[row.brand+' '+row.model+' '+row.version,row.brand+' '+row.model,
       row.brand,row.model,row.version,row.title,row.shortDescription,
       row.recommendation,row.agentLabel,row.reasonCode]

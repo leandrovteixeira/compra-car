@@ -24,14 +24,31 @@ export async function loadFipeReviewItems():Promise<FipeReviewItem[]>{
    throw new Error('FIPE_REVIEW_DEPENDENCIES_UNAVAILABLE');
  const byMmv=new Map(mmvs.data.map(m=>[m.id,m]));
  const byDependency=new Map(deps.data.map(n=>[n.node_key,n.state]));
- return data.flatMap(item=>{
+ // The worker may re-discover the same MMV/FIPE pair across runs.
+ // Prefer a ready/approved candidate over a newer orphaned candidate; this
+ // is a read-only inbox projection. Different FIPE codes remain separate.
+ const projected=data.flatMap(item=>{
   const mmv=byMmv.get(item.mmv_id);
   if(!mmv)return [];
   return [{
+   mmvId:item.mmv_id,
    id:item.id,brand:mmv.brand,model:mmv.model,version:mmv.official_version_label,
    fipeCode:item.fipe_code,fipeLabel:item.fipe_model_label,
    confidence:Number(item.match_confidence),decision:item.decision,
-   sourceUrl:item.source_url,createdAt:item.created_at,dependencyState:byDependency.get('fipe-candidate:'+item.id)??'BLOCKED',
+   sourceUrl:item.source_url,createdAt:item.created_at,
+   dependencyState:byDependency.get('fipe-candidate:'+item.id)??'BLOCKED',
   }];
  });
+ const rank=(state:string)=>state==='READY'||state==='APPLIED'?2:state==='BLOCKED'?1:0;
+ const unique=new Map<string,(typeof projected)[number]>();
+ for(const item of projected){
+  const key=JSON.stringify([item.mmvId,item.fipeCode]);
+  const existing=unique.get(key);
+  if(!existing || rank(item.dependencyState)>rank(existing.dependencyState) ||
+    (rank(item.dependencyState)===rank(existing.dependencyState) &&
+      (item.confidence>existing.confidence ||
+       (item.confidence===existing.confidence && item.createdAt>existing.createdAt))))
+    unique.set(key,item);
+ }
+ return [...unique.values()].map(({mmvId:_mmvId,...item})=>item);
 }

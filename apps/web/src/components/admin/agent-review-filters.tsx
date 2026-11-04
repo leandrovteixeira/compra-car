@@ -6,7 +6,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import type { ReviewDirection, ReviewSort } from '@/application/admin/agent-review-inbox';
 import type { ReviewStatus } from '@compra-car/core/agent-platform';
 
-export type AgentFilter = ''|'BRAND_CONNECTOR'|'MMV_DISCOVERY'|'YEAR'|
+export type AgentFilter = ''|'BRAND_CONNECTOR'|'MMV_DISCOVERY'|'GENERATION_CLASSIFIER'|'YEAR'|
   'PRICE_INTELLIGENCE'|'SPEC_INTELLIGENCE'|'FIPE_DISCOVERY';
 
 export function AgentReviewFilters(props:{
@@ -64,6 +64,7 @@ export function AgentReviewFilters(props:{
         <option value="">Todos os agentes</option>
         <option value="BRAND_CONNECTOR">Brand Connector</option>
         <option value="MMV_DISCOVERY">MMV Discovery</option>
+        <option value="GENERATION_CLASSIFIER">New Generation</option>
         <option value="FIPE_DISCOVERY">FIPE Agent</option>
         <option value="YEAR">Ano-modelo</option>
         <option value="SPEC_INTELLIGENCE">Specs</option>
