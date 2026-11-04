@@ -1,12 +1,12 @@
 import Link from 'next/link';
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureWrite23C } from '@/auth/account-tier-server';
 import { CommercialOfferBuilder } from '@/components/admin/commercial-offer-builder';
 import { PageHeader } from '@/components/admin/page-header';
 import { loadCommercialOfferBuilder } from '@/server/commercial-offer-builder-service';
 import { withDevTiming } from '@/server/dev-timing';
 import { createCommercialOfferDraftAction } from './actions';
 export default async function CommercialOffersPage() {
-  await requireRole('admin');
+  await requireFeatureWrite23C('price-administration');
   const data = await withDevTiming('pricing.page.offers', loadCommercialOfferBuilder);
   return (
     <>
