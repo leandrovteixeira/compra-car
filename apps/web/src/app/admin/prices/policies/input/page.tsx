@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureWrite23C } from '@/auth/account-tier-server';
 import { CommercialPolicyWorkspace } from '@/components/admin/commercial-policy-workspace';
 import { CatalogPageHeading } from '@/components/admin/catalog-page-heading';
 import { loadManualPolicyBatchOptions } from '@/server/manual-policy-batch-service';
@@ -30,7 +30,7 @@ interface AdminPolicyInputPageProps {
 }
 
 export default async function AdminPolicyInputPage({ searchParams }: AdminPolicyInputPageProps) {
-  await requireRole('admin');
+  await requireFeatureWrite23C('price-administration');
   const query = await searchParams;
   const competence = normalizeMonthlyCompetence(query.competence);
   const monthlyPeriod = monthlyPricingPeriod(competence);
