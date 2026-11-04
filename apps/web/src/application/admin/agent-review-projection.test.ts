@@ -202,3 +202,43 @@ describe('Sprint 26 human review inbox projection',()=>{
     expect(p.cases[0]?.reviewedSameFingerprint).toBe('ACCEPT');
   });
 });
+
+describe('Generation review uses shared Sprint 26 operator queue',()=>{
+ const gen=(id:string,year:number):LegacyDiscovery=>finding({
+   id,run_id:'r1',
+   finding_type:'AMBIGUOUS_MMV',
+   fingerprint:id+'-sha',
+   subject:{brand:'VW',model:'ID.4',currentMmvId:'mmv-id4',
+     previousModelYear:year-1,currentModelYear:year},
+   proposal:{action:'REVIEW_GENERATION_CHANGE',changeType:'MINOR_CHANGE',
+     specCarryOverPolicy:'CANDIDATE_HIGH'},
+   payload:{reasonCode:'GENERATION_CHANGE_REVIEW'},
+ });
+ it('projects one standard review case per MY pair, not a new MMV',()=>{
+   const c=buildReviewProjection([gen('g26',2026),gen('g27',2027)],runs,new Map()).cases;
+   expect(c).toHaveLength(2);
+   expect(c.every(x=>x.kind==='MMV_GENERATION')).toBe(true);
+   expect(c.map(x=>x.businessKey)).toHaveLength(2);
+   expect(c[0]!.recommendation).toContain('MINOR_CHANGE');
+   expect(isResolvedMmvCase(c[0]!,[{
+     id:'mmv-id4',brand:'VW',model:'ID.4',market:'BR',
+     official_version_label:'Pro',powertrain_label:'BEV',
+     propulsion:'BEV',status:'ACTIVE',
+   }])).toBe(false);
+ });
+ it('groups repeat generation findings only within same MMV and MY',()=>{
+   const old=gen('older',2027);
+   const next={...gen('newer',2027),created_at:'2026-10-08T10:00:00Z'};
+   const c=buildReviewProjection([old,next],runs,new Map()).cases;
+   expect(c).toHaveLength(1);
+   expect(c[0]!.finding.id).toBe('newer');
+   expect(c[0]!.priorRuns).toBe(2);
+ });
+ it('does not confuse a generation finding with a generic ambiguous identity',()=>{
+   const generic=finding({id:'ambiguous',run_id:'r1',finding_type:'AMBIGUOUS_MMV',
+     payload:{reasonCode:'AMBIGUOUS_IDENTITY'},proposal:{action:'REVIEW_MMV'}});
+   const c=buildReviewProjection([generic,gen('generation',2027)],runs,new Map()).cases;
+   expect(c.some(x=>x.kind==='MMV_GENERATION')).toBe(true);
+   expect(c.some(x=>x.kind==='MMV_AMBIGUOUS')).toBe(true);
+ });
+});

@@ -144,7 +144,8 @@ export async function loadReviewInbox(options:Readonly<{
       evidencePreview:null,
       primaryEvidenceUrl:null,
       observedAt:g.finding.created_at,
-      status:reviewState(g.reviewedSameFingerprint),
+      status:g.kind==='MMV_GENERATION' && g.reviewedSameFingerprint==='ACCEPT'
+        ?'APPROVED':reviewState(g.reviewedSameFingerprint),
       snapshotFingerprint:g.finding.fingerprint,
       caseVersion:0,
       legacyAccepted:g.reviewedSameFingerprint==='ACCEPT',
