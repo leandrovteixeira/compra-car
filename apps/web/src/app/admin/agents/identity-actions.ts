@@ -1,13 +1,13 @@
 'use server';
 import { revalidatePath } from 'next/cache';
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureIdentity23C } from '@/auth/account-tier-server';
 import { createPrivilegedAdminClient } from '@/auth/admin-client';
 
 export type IdentityDecisionState = { status: 'idle'|'success'|'error'; message: string };
 export async function reviewMmvIdentityAction(
   _state: IdentityDecisionState, data: FormData,
 ): Promise<IdentityDecisionState> {
-  const { profile } = await requireRole('admin');
+  const { profile } = await requireFeatureIdentity23C('agents', 'write');
   const findingId = data.get('findingId');
   const identityKey = data.get('identityKey');
   const fingerprint = data.get('fingerprint');
