@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { IMPORT_ENGINE_MAX_DOCUMENTS } from '@compra-car/core';
 import type { ImportDocumentsActionStateDto } from '@compra-car/contracts';
 
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureWrite23C } from '@/auth/account-tier-server';
 import { AdminImportDocumentsForm } from '@/components/admin/admin-import-documents-form';
 import { PageHeader } from '@/components/admin/page-header';
 import { loadAdminImportBatch } from '@/server/import-engine-service';
@@ -14,7 +14,7 @@ export default async function AddImportDocumentsPage({
 }: {
   readonly params: Promise<{ batchId: string }>;
 }) {
-  await requireRole('admin');
+  await requireFeatureWrite23C('settings');
   const { batchId } = await params;
   const batch = await loadAdminImportBatch(batchId);
   if (!batch || !['uploaded', 'ready'].includes(batch.status)) notFound();
