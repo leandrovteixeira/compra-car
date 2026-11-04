@@ -1,7 +1,7 @@
 import 'server-only';
 import { loadFipeReviewItems } from './fipe-review-inbox';
 
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureIdentity23C } from '@/auth/account-tier-server';
 import { createPrivilegedAdminClient } from '@/auth/admin-client';
 import type { ReviewStatus, ReviewQueueItem } from '@compra-car/core/agent-platform';
 import {
@@ -85,7 +85,7 @@ export async function loadReviewInbox(options:Readonly<{
   sort?:ReviewSort;
   direction?:ReviewDirection;
 }>={}):Promise<ReviewInboxResponse>{
-  await requireRole('admin');
+  await requireFeatureIdentity23C('agents', 'write');
   const client=createPrivilegedAdminClient();
   const [findings,runsResult,reviewsResult,canonicalResult,connectorResult,fipeItems]=await Promise.all([
     readAllFindings(client),
