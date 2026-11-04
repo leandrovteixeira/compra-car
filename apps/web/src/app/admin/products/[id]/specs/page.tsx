@@ -19,8 +19,6 @@ export default async function AdminProductSpecsPage({ params }: AdminProductSpec
   const vehicle = await loadAdminProductForEditing(id);
   if (!vehicle) notFound();
   const model = await loadAdminProductSpecs(id);
-  const identity = `${vehicle.brand} ${vehicle.model} ${vehicle.version} ${vehicle.productionYear}/${vehicle.modelYear}`;
-
   return (
     <>
       <CatalogPageHeading title="Especificações" description="Gestão de especificações e equipamentos" />
