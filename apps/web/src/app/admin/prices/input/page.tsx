@@ -1,5 +1,5 @@
 
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureWrite23C } from '@/auth/account-tier-server';
 import { AdminPriceBatchGrid } from '@/components/admin/admin-price-batch-grid';
 import { CatalogPageHeading } from '@/components/admin/catalog-page-heading';
 import { loadManualPriceBatchProductOptions } from '@/server/manual-price-batch-service';
@@ -9,7 +9,7 @@ import { withDevTiming } from '@/server/dev-timing';
 import { createManualPriceBatchAction } from './actions';
 
 export default async function AdminPriceInputPage() {
-  await requireRole('admin');
+  await requireFeatureWrite23C('price-administration');
   const [products, brands] = await Promise.all([withDevTiming('pricing.page.input', loadManualPriceBatchProductOptions),loadExistingCatalogBrands()]);
 
   return (
