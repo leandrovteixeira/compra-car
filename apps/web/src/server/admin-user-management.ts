@@ -16,10 +16,10 @@ import {
   getAdminInviteRedirectUrl,
   getAdminRecoveryRedirectUrl,
 } from '@/auth/admin-user-redirects';
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureIdentity23C } from '@/auth/account-tier-server';
 
 const dependencies: AdminUserManagementDependencies = {
-  authorize: () => requireRole('admin'),
+  authorize: () => requireFeatureIdentity23C('settings', 'write'),
   createManager: () => new AdminUserSupabaseAdapter(createPrivilegedAdminClient()),
   inviteRedirectUrl: getAdminInviteRedirectUrl,
   recoveryRedirectUrl: getAdminRecoveryRedirectUrl,
