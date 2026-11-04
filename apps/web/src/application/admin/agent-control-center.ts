@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureIdentity23C } from '@/auth/account-tier-server';
 import { createPrivilegedAdminClient } from '@/auth/admin-client';
 
 export type AgentFamilyHealth = Readonly<{
@@ -60,7 +60,7 @@ async function lastRunForTypes(
 }
 
 export async function loadAgentControlCenterSummary(): Promise<AgentControlCenterSummary> {
-  await requireRole('admin');
+  await requireFeatureIdentity23C('agents', 'write');
   const client = createPrivilegedAdminClient();
 
   const [brandPending, mmvPending, yearPending, brandRun, mmvRun, yearRun, jobs] =
