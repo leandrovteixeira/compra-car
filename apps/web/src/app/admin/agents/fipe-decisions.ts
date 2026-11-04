@@ -1,10 +1,10 @@
 'use server';
 import { revalidatePath } from 'next/cache';
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureIdentity23C } from '@/auth/account-tier-server';
 import { createPrivilegedAdminClient } from '@/auth/admin-client';
 export type FipeDecisionState={status:'idle'|'success'|'error';message:string};
 export async function reviewFipeCandidateAction(_state:FipeDecisionState,data:FormData):Promise<FipeDecisionState>{
- const {profile}=await requireRole('admin');
+ const {profile}=await requireFeatureIdentity23C('agents', 'write');
  const candidate=data.get('candidateId'),decision=data.get('decision');
  if(typeof candidate!=='string'||!/^[a-f\d-]{36}$/i.test(candidate)||
  !['ACCEPT','REJECT','DEFER'].includes(String(decision)))
