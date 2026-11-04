@@ -134,7 +134,7 @@ export class OpenAIGenerationVisionAdapter {
         providerModel:response.model??this.opts.model,
         inputTokens:usage.input_tokens,cachedInputTokens:cached,
         outputTokens:usage.output_tokens,estimatedCostUsd:cost,priced:true,
-        callStatus:response.status,reason:'GENERATION_DESIGN_COMPARISON',
+        callStatus:response.status??'unknown',reason:'GENERATION_DESIGN_COMPARISON',
       });
       if(cost>limit)throw new GenerationVisionError('GENERATION_BUDGET_EXCEEDED');
     }else throw new GenerationVisionError('GENERATION_MODEL_INCOMPLETE');
