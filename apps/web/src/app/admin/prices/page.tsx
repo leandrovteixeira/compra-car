@@ -7,7 +7,7 @@ import {
   parseAdminPriceSort,
   type AdminPriceQuery,
 } from '@/application/admin/admin-price-query';
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureWrite23C } from '@/auth/account-tier-server';
 import { AdminPriceError } from '@/components/admin/admin-price-error';
 import { AdminPriceFilters } from '@/components/admin/admin-price-filters';
 import { AdminPriceManager } from '@/components/admin/admin-price-manager';
@@ -26,7 +26,7 @@ interface AdminPricesPageProps {
 }
 
 export default async function AdminPricesPage({ searchParams }: AdminPricesPageProps) {
-  await requireRole('admin');
+  await requireFeatureWrite23C('price-administration');
   const params = await searchParams;
   const sorting = parseAdminPriceSort(params);
   const filters = parseAdminPriceFilters(params);
