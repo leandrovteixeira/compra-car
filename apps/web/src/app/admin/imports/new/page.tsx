@@ -1,13 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import type { ImportBatchActionStateDto } from '@compra-car/contracts';
 
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureWrite23C } from '@/auth/account-tier-server';
 import { AdminImportForm } from '@/components/admin/admin-import-form';
 import { PageHeader } from '@/components/admin/page-header';
 import { createImportBatchAction } from '../actions';
 
 export default async function NewAdminImportPage() {
-  await requireRole('admin');
+  await requireFeatureWrite23C('settings');
   const initialState: ImportBatchActionStateDto = {
     status: 'idle',
     values: {
