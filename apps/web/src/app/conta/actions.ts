@@ -42,11 +42,30 @@ export async function requestCorporateUpgrade(form: FormData): Promise<never> {
     !contactPhone || contactPhone.length < 6 || message === null) {
     redirect('/conta/upgrade?error=invalid');
   }
+
   const client = await createMutableServerClient();
   const user = await getVerifiedAuthUser(client);
   if (!user) redirect('/login');
+
+  const { data: organizations, error: organizationError } = await client
+    .from('account_organizations')
+    .select('id,name')
+    .eq('kind', 'corporate')
+    .eq('status', 'active')
+    .limit(200);
+  if (organizationError) redirect('/conta/upgrade?error=save');
+
+  const normalizedCompany = company.toLocaleLowerCase('pt-BR');
+  const matchedOrganization = (organizations ?? []).find(
+    (organization) => organization.name.trim().toLocaleLowerCase('pt-BR') === normalizedCompany,
+  );
+
   const { error } = await client.from('account_upgrade_requests').insert({
-    user_id: user.id, company, job_title: jobTitle, contact_phone: contactPhone,
+    user_id: user.id,
+    company: matchedOrganization?.name ?? company,
+    requested_organization_id: matchedOrganization?.id ?? null,
+    job_title: jobTitle,
+    contact_phone: contactPhone,
     message: message || null,
   });
   if (error) redirect('/conta/upgrade?error=save');
