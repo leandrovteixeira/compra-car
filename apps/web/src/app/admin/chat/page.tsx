@@ -1,6 +1,8 @@
+import { requireFeature23C } from '@/auth/account-tier-server';
 import { CatalogPageHeading } from '@/components/admin/catalog-page-heading';
 
-export default function Page() {
+export default async function Page() {
+  await requireFeature23C('chat');
   return <main className="min-w-0 text-text-primary">
     <CatalogPageHeading title="Chat" description="Canal de atendimento em preparação." />
     <div className="mt-3 rounded-lg border border-[#D6DEE3] bg-white p-8 text-center">

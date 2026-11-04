@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { buttonClassName, fieldClassName } from '@compra-car/ui';
 
 import { parseAdminImportQuery, type AdminImportQuery } from '@/application/admin/import-query';
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureWrite23C } from '@/auth/account-tier-server';
 import { AdminImportList } from '@/components/admin/admin-import-list';
 import { PageHeader } from '@/components/admin/page-header';
 import { loadAdminImportBatches } from '@/server/import-engine-service';
@@ -12,7 +12,7 @@ export default async function AdminImportsPage({
 }: {
   readonly searchParams: Promise<AdminImportQuery>;
 }) {
-  await requireRole('admin');
+  await requireFeatureWrite23C('settings');
   const query = parseAdminImportQuery(await searchParams);
   const page = await loadAdminImportBatches(query);
   return (

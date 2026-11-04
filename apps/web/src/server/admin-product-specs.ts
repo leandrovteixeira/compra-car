@@ -8,14 +8,14 @@ import type {
 import { LoadAdministrativeProductSpecs, SaveAdministrativeProductSpecs } from '@compra-car/core';
 import { revalidatePath } from 'next/cache';
 
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureIdentity23C } from '@/auth/account-tier-server';
 
 export type SaveAdminProductSpecsResult =
   | { readonly ok: true; readonly model: AdministrativeProductSpecsModel }
   | { readonly ok: false; readonly message: string };
 
 export async function loadAdminProductSpecs(id: string): Promise<AdministrativeProductSpecsModel> {
-  await requireRole('admin');
+  await requireFeatureIdentity23C('vehicle-administration', 'write');
   return new LoadAdministrativeProductSpecs(new LegacySupabaseAdapter()).execute(id);
 }
 
@@ -23,7 +23,7 @@ export async function saveAdminProductSpecs(
   id: string,
   submissions: readonly AdministrativeSpecSubmission[],
 ): Promise<SaveAdminProductSpecsResult> {
-  await requireRole('admin');
+  await requireFeatureIdentity23C('vehicle-administration', 'write');
   const repository = new LegacySupabaseAdapter();
   try {
     await new SaveAdministrativeProductSpecs(repository).execute(id, submissions);

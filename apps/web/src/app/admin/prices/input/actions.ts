@@ -3,7 +3,7 @@
 import type { ManualPriceBatchActionStateDto } from '@compra-car/contracts';
 import { randomUUID } from 'node:crypto';
 
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureIdentity23C } from '@/auth/account-tier-server';
 import { createLegacySupabaseClientFromEnv } from '@compra-car/adapter-supabase';
 import { canonicalAmountFromPtBr } from '@/application/admin/product-public-price-form';
 import { revalidatePath } from 'next/cache';
@@ -28,7 +28,7 @@ export async function createManualPriceBatchAction(
       const amount = Number(canonicalAmountFromPtBr(row.amount));
       return { ...row, amount: Number.isFinite(amount) ? amount.toFixed(2) : 'invalid', endsOn: row.endsOn || '' };
     });
-    const { profile } = await requireRole('admin');
+    const { profile } = await requireFeatureIdentity23C('price-administration', 'write');
     const { data, error } = await createLegacySupabaseClientFromEnv().rpc(
       'create_and_publish_manual_price_batch',
       { p_rows: normalized, p_actor_id: profile.id, p_correlation_id: actionCorrelationId },

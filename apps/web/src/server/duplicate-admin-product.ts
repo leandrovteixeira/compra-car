@@ -8,10 +8,10 @@ import {
   executeAdminProductDuplication as executeDuplication,
   type DuplicateAdminProductDependencies,
 } from '@/application/admin/duplicate-admin-product';
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureIdentity23C } from '@/auth/account-tier-server';
 
 const defaultDependencies: DuplicateAdminProductDependencies = {
-  authorize: () => requireRole('admin'),
+  authorize: () => requireFeatureIdentity23C('vehicle-administration', 'write'),
   createRepository: () => new LegacySupabaseAdapter(),
   revalidate: revalidatePath,
 };

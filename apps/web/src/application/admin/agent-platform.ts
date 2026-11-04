@@ -10,7 +10,7 @@ import {
   type AgentReviewDecision,
 } from '@compra-car/core/agent-platform';
 import { revalidatePath } from 'next/cache';
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureIdentity23C } from '@/auth/account-tier-server';
 import { createPrivilegedAdminClient } from '@/auth/admin-client';
 export interface AgentAdminDependencies {
   readonly authorize: () => Promise<{ readonly profile: { readonly id: string } }>;
@@ -18,7 +18,7 @@ export interface AgentAdminDependencies {
   readonly revalidate: (path: string) => void;
 }
 const defaults: AgentAdminDependencies = {
-  authorize: () => requireRole('admin'),
+  authorize: () => requireFeatureIdentity23C('agents', 'write'),
   repository: () => new AgentPlatformSupabaseAdapter(createPrivilegedAdminClient()),
   revalidate: revalidatePath,
 };

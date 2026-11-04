@@ -56,7 +56,7 @@ import {
 } from './segmented-import-runtime';
 import { createConfiguredStructuredExtractionProvider } from './structured-extraction-provider';
 
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureIdentity23C } from '@/auth/account-tier-server';
 import {
   exceedsImportSelectionLimit,
   IMPORT_ENGINE_REQUEST_TOO_LARGE_MESSAGE,
@@ -134,7 +134,7 @@ export async function processAdminImportBatch(
       : undefined;
   const identity = dependencies.authorize
     ? await dependencies.authorize()
-    : await requireRole('admin').then(({ profile }) => ({ actorId: profile.id }));
+    : await requireFeatureIdentity23C('settings', 'write').then(({ profile }) => ({ actorId: profile.id }));
   const correlationId = dependencies.createCorrelationId?.() ?? randomUUID();
   const repository = dependencies.repository ?? createRepository();
   const processing = dependencies.processingRepository ?? new ImportProcessingSupabaseAdapter();
@@ -312,7 +312,7 @@ export async function createAdminImportBatch(
 ): Promise<ImportBatchActionStateDto> {
   const identity = dependencies.authorize
     ? await dependencies.authorize()
-    : await requireRole('admin').then(({ profile }) => ({ actorId: profile.id }));
+    : await requireFeatureIdentity23C('settings', 'write').then(({ profile }) => ({ actorId: profile.id }));
   const current = values(formData);
   const correlationId = dependencies.createCorrelationId?.() ?? randomUUID();
   const repository = dependencies.repository ?? createRepository();
@@ -512,7 +512,7 @@ export async function addAdminImportDocuments(
 ): Promise<ImportDocumentsActionStateDto> {
   const identity = dependencies.authorize
     ? await dependencies.authorize()
-    : await requireRole('admin').then(({ profile }) => ({ actorId: profile.id }));
+    : await requireFeatureIdentity23C('settings', 'write').then(({ profile }) => ({ actorId: profile.id }));
   const current = addDocumentValues(formData);
   const correlationId = dependencies.createCorrelationId?.() ?? randomUUID();
   const repository = dependencies.repository ?? createRepository();
@@ -699,13 +699,13 @@ function batchDto(
 }
 
 export async function loadAdminImportBatches(query: ImportBatchListQuery) {
-  await requireRole('admin');
+  await requireFeatureIdentity23C('settings', 'write');
   const result = await new ListImportBatches(createRepository()).execute(query);
   return { ...result, items: result.items.map(batchDto) };
 }
 
 export async function loadAdminImportBatch(batchId: string): Promise<ImportBatchDetailsDto | null> {
-  await requireRole('admin');
+  await requireFeatureIdentity23C('settings', 'write');
   if (!/^\d+$/u.test(batchId)) return null;
   const batch = await new GetImportBatch(createRepository()).execute(batchId);
   if (!batch) return null;
@@ -729,7 +729,7 @@ export async function loadAdminImportBatch(batchId: string): Promise<ImportBatch
 export async function createAdminImportDocumentSignedUrl(
   documentId: string,
 ): Promise<string | null> {
-  await requireRole('admin');
+  await requireFeatureIdentity23C('settings', 'write');
   if (!/^\d+$/u.test(documentId)) return null;
   return createRepository().createDocumentSignedUrl(
     documentId,
@@ -742,7 +742,7 @@ export async function updateAdminImportDocumentRole(input: {
   readonly role: string;
   readonly expectedLockVersion: number;
 }) {
-  const { profile } = await requireRole('admin');
+  const { profile } = await requireFeatureIdentity23C('settings', 'write');
   if (!/^\d+$/u.test(input.documentId) || !isImportDocumentRole(input.role))
     throw new Error('INVALID_INPUT');
   return createRepository().updateDocumentRole({
@@ -759,7 +759,7 @@ export async function rejectAdminImportDocument(input: {
   readonly expectedLockVersion: number;
   readonly reason: string;
 }) {
-  const { profile } = await requireRole('admin');
+  const { profile } = await requireFeatureIdentity23C('settings', 'write');
   if (!/^\d+$/u.test(input.documentId) || !input.reason.trim()) throw new Error('INVALID_INPUT');
   return createRepository().rejectDocument({
     documentId: input.documentId,
@@ -775,7 +775,7 @@ export async function archiveAdminImportBatch(input: {
   readonly expectedLockVersion: number;
   readonly reason: string;
 }) {
-  const { profile } = await requireRole('admin');
+  const { profile } = await requireFeatureIdentity23C('settings', 'write');
   if (!/^\d+$/u.test(input.batchId) || !input.reason.trim()) throw new Error('INVALID_INPUT');
   await createRepository().archiveBatch({
     batchId: input.batchId,

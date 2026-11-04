@@ -5,7 +5,7 @@ import { randomUUID } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 
 import { canonicalAmountFromPtBr } from '@/application/admin/product-public-price-form';
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureIdentity23C } from '@/auth/account-tier-server';
 
 export interface WorkspaceMutationResult {
   readonly ok: boolean;
@@ -18,7 +18,7 @@ const positiveId = (value: FormDataEntryValue | null) => {
 };
 
 async function context() {
-  const { profile } = await requireRole('admin');
+  const { profile } = await requireFeatureIdentity23C('price-administration', 'write');
   return { actorId: profile.id, correlationId: randomUUID() };
 }
 

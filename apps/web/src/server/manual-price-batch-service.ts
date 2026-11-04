@@ -16,7 +16,7 @@ import {
   executeManualPriceBatchCreation,
   type SaveManualPriceBatchDependencies,
 } from '@/application/admin/manual-price-batch';
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureIdentity23C } from '@/auth/account-tier-server';
 import { withDevTiming } from '@/server/dev-timing';
 
 export interface ManualPriceBatchServiceDependencies {
@@ -26,7 +26,7 @@ export interface ManualPriceBatchServiceDependencies {
 
 const defaultListDependencies: ManualPriceBatchServiceDependencies = {
   authorize: async () => {
-    const identity = await requireRole('admin');
+    const identity = await requireFeatureIdentity23C('price-administration', 'write');
     return { actorId: identity.profile.id };
   },
   createRepository: () => new ManualPriceBatchSupabaseAdapter(),

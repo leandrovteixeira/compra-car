@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureWrite23C } from '@/auth/account-tier-server';
 import { AdminProductForm } from '@/components/admin/admin-product-form';
 import { PageHeader } from '@/components/admin/page-header';
 import { loadAdminProductForEditing } from '@/server/admin-product-service';
@@ -14,7 +14,7 @@ interface DuplicateAdminProductPageProps {
 export default async function DuplicateAdminProductPage({
   params,
 }: DuplicateAdminProductPageProps) {
-  await requireRole('admin');
+  await requireFeatureWrite23C('vehicle-administration');
   const { id } = await params;
   const values = await loadAdminProductForEditing(id);
   if (!values) notFound();

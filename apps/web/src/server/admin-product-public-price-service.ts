@@ -6,7 +6,7 @@ import {
 } from '@compra-car/core';
 import type { ProductPublicPriceListPageDto } from '@compra-car/contracts';
 
-import { requireRole } from '../auth/authorization';
+import { requireFeature23C, requireFeatureIdentity23C } from '../auth/account-tier-server';
 import { randomUUID } from 'node:crypto';
 
 export type AdminProductPublicPriceListResult =
@@ -18,7 +18,7 @@ export interface AdminProductPublicPriceServiceDependencies {
 }
 
 const defaultDependencies: AdminProductPublicPriceServiceDependencies = {
-  authorize: () => requireRole('admin'),
+  authorize: () => requireFeature23C('price-list'),
   createRepository: () => new ProductPublicPriceSupabaseAdapter(),
 };
 
@@ -43,7 +43,7 @@ export async function publishAdminProductPublicPrice(formData: FormData): Promis
   readonly ok: boolean;
   readonly message: string;
 }> {
-  const { profile } = await requireRole('admin');
+  const { profile } = await requireFeatureIdentity23C('price-administration', 'write');
   const id = String(formData.get('id') ?? '');
   const expectedLockVersion = Number(formData.get('lockVersion'));
   if (!/^\d+$/u.test(id) || !Number.isSafeInteger(expectedLockVersion) || expectedLockVersion < 1) {

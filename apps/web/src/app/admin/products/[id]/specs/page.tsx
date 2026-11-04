@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { saveAdminProductSpecsAction } from './actions';
 
 import { CarbootBackLink } from '@/components/carboot-back-link';
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureWrite23C } from '@/auth/account-tier-server';
 import { AdminProductSpecsEditor } from '@/components/admin/admin-product-specs-editor';
 import { CatalogPageHeading } from '@/components/admin/catalog-page-heading';
 import { loadAdminProductSpecs } from '@/server/admin-product-specs';
@@ -14,13 +14,11 @@ interface AdminProductSpecsPageProps {
 }
 
 export default async function AdminProductSpecsPage({ params }: AdminProductSpecsPageProps) {
-  await requireRole('admin');
+  await requireFeatureWrite23C('vehicle-administration');
   const { id } = await params;
   const vehicle = await loadAdminProductForEditing(id);
   if (!vehicle) notFound();
   const model = await loadAdminProductSpecs(id);
-  const identity = `${vehicle.brand} ${vehicle.model} ${vehicle.version} ${vehicle.productionYear}/${vehicle.modelYear}`;
-
   return (
     <>
       <CatalogPageHeading title="Especificações" description="Gestão de especificações e equipamentos" />

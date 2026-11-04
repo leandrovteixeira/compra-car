@@ -23,8 +23,28 @@ export async function updateContactProfile(form: FormData): Promise<never> {
   const client = await createMutableServerClient();
   const user = await getVerifiedAuthUser(client);
   if (!user) redirect('/login');
+
+  const tier = await getAccountTier();
+  let companyToSave = company || null;
+  if (tier === 'corporate') {
+    const { data: grant, error: grantError } = await client
+      .from('account_access_grants')
+      .select('organization_id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (grantError || !grant?.organization_id) redirect('/conta/perfil?error=save');
+
+    const { data: organization, error: organizationError } = await client
+      .from('account_organizations')
+      .select('name')
+      .eq('id', grant.organization_id)
+      .maybeSingle();
+    if (organizationError || !organization?.name) redirect('/conta/perfil?error=save');
+    companyToSave = organization.name;
+  }
+
   const { error } = await client.from('profiles')
-    .update({ phone: phone || null, company: company || null, job_title: jobTitle || null })
+    .update({ phone: phone || null, company: companyToSave, job_title: jobTitle || null })
     .eq('id', user.id);
   if (error) redirect('/conta/perfil?error=save');
   revalidatePath('/conta/perfil');
@@ -42,11 +62,30 @@ export async function requestCorporateUpgrade(form: FormData): Promise<never> {
     !contactPhone || contactPhone.length < 6 || message === null) {
     redirect('/conta/upgrade?error=invalid');
   }
+
   const client = await createMutableServerClient();
   const user = await getVerifiedAuthUser(client);
   if (!user) redirect('/login');
+
+  const { data: organizations, error: organizationError } = await client
+    .from('account_organizations')
+    .select('id,name')
+    .eq('kind', 'corporate')
+    .eq('status', 'active')
+    .limit(200);
+  if (organizationError) redirect('/conta/upgrade?error=save');
+
+  const normalizedCompany = company.toLocaleLowerCase('pt-BR');
+  const matchedOrganization = (organizations ?? []).find(
+    (organization) => organization.name.trim().toLocaleLowerCase('pt-BR') === normalizedCompany,
+  );
+
   const { error } = await client.from('account_upgrade_requests').insert({
-    user_id: user.id, company, job_title: jobTitle, contact_phone: contactPhone,
+    user_id: user.id,
+    company: matchedOrganization?.name ?? company,
+    requested_organization_id: matchedOrganization?.id ?? null,
+    job_title: jobTitle,
+    contact_phone: contactPhone,
     message: message || null,
   });
   if (error) redirect('/conta/upgrade?error=save');

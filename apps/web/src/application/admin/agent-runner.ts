@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureIdentity23C } from '@/auth/account-tier-server';
 import { createPrivilegedAdminClient } from '@/auth/admin-client';
 
 export interface AgentLaunchState {
@@ -33,7 +33,7 @@ function inputText(data: FormData, name: string, maxLength: number): string {
 export async function launchSourceMonitor(
   data: FormData,
 ): Promise<AgentLaunchState> {
-  const { profile } = await requireRole('admin');
+  const { profile } = await requireFeatureIdentity23C('agents', 'write');
 
   if (process.env.APP_ENV !== 'qa') {
     return {
@@ -73,7 +73,7 @@ export async function launchSourceMonitor(
 export async function launchForceMmv(
   data: FormData,
 ): Promise<AgentLaunchState> {
-  const { profile } = await requireRole('admin');
+  const { profile } = await requireFeatureIdentity23C('agents', 'write');
 
   if (process.env.APP_ENV !== 'qa') {
     return {
@@ -112,7 +112,7 @@ export async function launchForceMmv(
 }
 
 export async function loadAgentJobs(limit = 20): Promise<readonly AgentJobListItem[]> {
-  await requireRole('admin');
+  await requireFeatureIdentity23C('agents', 'write');
   const client = createPrivilegedAdminClient();
   const { data, error } = await client
     .from('agent_jobs')
