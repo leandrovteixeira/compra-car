@@ -33,7 +33,7 @@ export async function reviewMmvIdentityAction(
   const identities = Array.isArray(finding.proposal.identities) ? finding.proposal.identities : [];
   if (identities.filter((item: {identityKey?: unknown})=>item?.identityKey===identityKey).length!==1)
     return {status:'error',message:'Identidade não encontrada ou duplicada neste finding.'};
-  const {data:result,error:writeError}=await client.rpc('s26_decide_mmv_identity',{
+  const {error:writeError}=await client.rpc('s26_decide_mmv_identity',{
     p_finding:findingId,p_identity_key:identityKey,p_fingerprint:fingerprint,
     p_decision:decision,p_actor:profile.id,
   });
