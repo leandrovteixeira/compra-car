@@ -71,3 +71,5 @@ export * from './engineering-cost-policy';
 export * from './mmv-generation-change-classifier';
 
 export * from './mmv-generation-review';
+
+export * from './mmv-generation-evidence';
