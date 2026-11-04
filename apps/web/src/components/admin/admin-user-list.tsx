@@ -4,7 +4,6 @@ import { APP_NAME } from '@/config/app-identity';
 import { AdminUserActions } from './admin-user-actions';
 import {
   adminUserProfileStateLabel,
-  adminUserRoleLabel,
   adminUserStatusLabel,
   formatAdminUserCreatedAt,
   formatAdminUserLastSignIn,
