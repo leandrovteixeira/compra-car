@@ -43,7 +43,7 @@ export async function reviewGenerationDecisionAction(
       return {status:'error',message:'Classificação já decidida. Recarregue a fila.'};
     const assessment=detail.finding.payload.generationAssessment;
     const sourceSignals=assessment!==null && typeof assessment==='object' && !Array.isArray(assessment)
-      ?assessment.signals:null;
+      ?(assessment as Record<string,unknown>).signals:null;
     if(decision==='ACCEPT' &&
       (detail.finding.proposal.changeType==='UNKNOWN'||
        !Array.isArray(sourceSignals)))
