@@ -31,7 +31,7 @@ export async function correctPublishedProductPublicPriceAction(
   _previousState: ProductPublicPriceActionStateDto,
   formData: FormData,
 ): Promise<ProductPublicPriceActionStateDto> {
-  const { requireRole } = await import('@/auth/authorization');
+  const { requireFeatureIdentity23C } = await import('@/auth/account-tier-server');
   const { createLegacySupabaseClientFromEnv } = await import('@compra-car/adapter-supabase');
   const { canonicalAmountFromPtBr, readProductPublicPriceForm } =
     await import('@/application/admin/product-public-price-form');
@@ -51,7 +51,7 @@ export async function correctPublishedProductPublicPriceAction(
   if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(values.startsOn) ||
       (values.endsOn && values.endsOn < values.startsOn))
     return fail('Revise as datas de vigência.');
-  const { profile } = await requireRole('admin');
+  const { profile } = await requireFeatureIdentity23C('price-administration', 'write');
   try {
     const { error } = await createLegacySupabaseClientFromEnv().rpc(
       'correct_published_product_public_price',
