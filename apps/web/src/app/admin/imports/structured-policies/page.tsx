@@ -1,11 +1,11 @@
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureWrite23C } from '@/auth/account-tier-server';
 import { PageHeader } from '@/components/admin/page-header';
 import { StructuredPoliciesForm } from '@/components/admin/structured-policies-form';
 
 export const runtime = 'nodejs';
 
 export default async function StructuredPoliciesPage() {
-  await requireRole('admin');
+  await requireFeatureWrite23C('settings');
   return (
     <>
       <PageHeader
