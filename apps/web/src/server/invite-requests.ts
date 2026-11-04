@@ -19,11 +19,11 @@ import {
 } from '@/auth/admin-user-redirects';
 const deps: InviteRequestDependencies = {
   authorizeActive: requireActiveProfile,
-  authorizeAdmin: () => requireRole('admin'),
+  authorizeAdmin: () => requireFeatureIdentity23C('settings', 'write'),
   repository: () => new InviteRequestSupabaseAdapter(createPrivilegedAdminClient()),
   users: () => new AdminUserSupabaseAdapter(createPrivilegedAdminClient()),
   adminInviteDependencies: {
-    authorize: () => requireRole('admin'),
+    authorize: () => requireFeatureIdentity23C('settings', 'write'),
     createManager: () => new AdminUserSupabaseAdapter(createPrivilegedAdminClient()),
     inviteRedirectUrl: getAdminInviteRedirectUrl,
     recoveryRedirectUrl: getAdminRecoveryRedirectUrl,
@@ -39,7 +39,7 @@ export async function loadMyInviteRequests() {
   return (await userRepo()).listMine(user.id);
 }
 export async function loadAdminInviteRequests() {
-  await requireRole('admin');
+  await requireFeatureIdentity23C('settings', 'write');
   return new InviteRequestSupabaseAdapter(createPrivilegedAdminClient()).listPending();
 }
 export async function createInviteRequestAction(
