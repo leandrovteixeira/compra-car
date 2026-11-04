@@ -21,6 +21,13 @@ function badgeClass(status: UserStatus | null): string {
   return 'border-slate-700 bg-slate-900 text-slate-300';
 }
 
+function accessTierLabel(user: AdminUserDto): string {
+  if (user.accessTier === 'master') return 'Master';
+  if (user.accessTier === 'admin') return 'Admin';
+  if (user.accessTier === 'corporate') return user.organizationName ? `Corporate · ${user.organizationName}` : 'Corporate';
+  return 'Free';
+}
+
 function ProfileBadges({ user }: { readonly user: AdminUserDto }) {
   if (user.profileState !== 'valid') {
     return (
@@ -32,7 +39,7 @@ function ProfileBadges({ user }: { readonly user: AdminUserDto }) {
 
   return (
     <div className="flex flex-wrap gap-2">
-      <span className="ui-badge ui-badge--info">{adminUserRoleLabel(user.role)}</span>
+      <span className="ui-badge ui-badge--info">{accessTierLabel(user)}</span>
       <span className={`ui-badge ${badgeClass(user.status)}`}>
         {adminUserStatusLabel(user.status)}
       </span>
