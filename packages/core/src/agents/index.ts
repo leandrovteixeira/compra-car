@@ -67,3 +67,7 @@ export * from './engineering-brand-replay';
 export * from './engineering-brand-accepted-replay';
 export * from './engineering-cost-governance-audit';
 export * from './engineering-cost-policy';
+
+export * from './mmv-generation-change-classifier';
+
+export * from './mmv-generation-review';
