@@ -41,9 +41,12 @@ export async function reviewGenerationDecisionAction(
       return {status:'error',message:'Finding alterado ou não elegível. Recarregue a fila.'};
     if(detail.latestReview &&detail.latestReview.decision!=='DEFER')
       return {status:'error',message:'Classificação já decidida. Recarregue a fila.'};
+    const assessment=detail.finding.payload.generationAssessment;
+    const sourceSignals=assessment!==null && typeof assessment==='object' && !Array.isArray(assessment)
+      ?assessment.signals:null;
     if(decision==='ACCEPT' &&
       (detail.finding.proposal.changeType==='UNKNOWN'||
-       !Array.isArray(detail.finding.payload.generationAssessment?.signals)))
+       !Array.isArray(sourceSignals)))
       return {status:'error',message:'Evidências insuficientes para aprovar a classificação.'};
     await repository.addReview({
       findingId,decision:decision as 'ACCEPT'|'REJECT'|'DEFER',
