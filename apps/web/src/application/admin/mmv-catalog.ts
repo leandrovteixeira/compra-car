@@ -12,7 +12,7 @@ import {
   type AgentPlatformRepository,
 } from '@compra-car/core/agent-platform';
 import { revalidatePath } from 'next/cache';
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureIdentity23C } from '@/auth/account-tier-server';
 import { createPrivilegedAdminClient } from '@/auth/admin-client';
 
 export interface MmvApplyActionState {
@@ -28,7 +28,7 @@ export interface MmvAdminDependencies {
 }
 
 const defaults: MmvAdminDependencies = {
-  authorize: () => requireRole('admin'),
+  authorize: () => requireFeatureIdentity23C('agents', 'write'),
   platform: () => new AgentPlatformSupabaseAdapter(createPrivilegedAdminClient()),
   repository: () => new CanonicalMmvSupabaseAdapter(createPrivilegedAdminClient()),
   revalidate: revalidatePath,
