@@ -1,5 +1,5 @@
-export const APP_NAME = 'Compra Car' as const;
-export const APP_SHORT_NAME = 'Compra Car' as const;
+export const APP_NAME = 'Plataforma' as const;
+export const APP_SHORT_NAME = 'Plataforma' as const;
 export const APP_DESCRIPTION = 'Seleção mobile-first de veículos para comparação.' as const;
 
 export const APP_THEME_COLOR = '#9ABCC8' as const;
