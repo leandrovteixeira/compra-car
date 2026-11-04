@@ -19,38 +19,49 @@ describe('shared desktop and mobile navigation by account tier', () => {
     ]);
   });
 
-  it('adds only the price list for Corporate', () => {
-    expect(links('corporate')).toEqual([...links('public'), '/admin/prices/list']);
+  it('keeps Corporate consultation-only', () => {
+    const corporate = links('corporate');
+    expect(corporate).toContain('/admin/prices/list');
+    expect(corporate).not.toContain('/admin/products');
+    expect(corporate).not.toContain('/admin/prices');
+    expect(corporate).not.toContain('/admin/agents');
+    expect(corporate).not.toContain('/admin/users');
   });
 
-  it('keeps both Agents destinations exclusive to Master', () => {
-    expect(links('admin')).toContain('/admin/products');
-    expect(links('admin')).not.toContain('/admin/users');
-    expect(links('admin')).not.toContain('/admin/agents');
-    expect(links('admin')).not.toContain('/admin/agents/flight-control');
-    expect(links('master')).toEqual(
-      expect.arrayContaining([
-        '/admin/users',
-        '/admin/agents',
-        '/admin/agents/flight-control',
-        '/admin/products',
-      ]),
-    );
-    const agents = getSidebarNavigation('master').find((item) => item.label === 'Agentes');
-    expect(agents?.children?.map(({ label, href }) => ({ label, href }))).toEqual([
-      { label: 'Revisões', href: '/admin/agents' },
-      { label: 'Flight Control', href: '/admin/agents/flight-control' },
-    ]);
-  });
-  it('keeps operational Master navigation destinations active after QA branch merges', () => {
-    const nav = getSidebarNavigation('master');
-    const prices = nav.find((item) => item.label === 'Preços');
-    const policies = prices?.children?.find((child) => child.href === '/admin/prices/policies/current');
-    expect(policies).toMatchObject({ label: 'Políticas Vigentes', status: 'active' });
-    const agents = nav.find((item) => item.label === 'Agentes');
-    expect(agents?.children).toEqual(expect.arrayContaining([
-      expect.objectContaining({ href: '/admin/agents', label: 'Revisões', status: 'active' }),
-      expect.objectContaining({ href: '/admin/agents/flight-control', label: 'Flight Control', status: 'active' }),
+  it('gives internal Admin operational tools but not global Settings', () => {
+    const admin = links('admin');
+    expect(admin).toEqual(expect.arrayContaining([
+      '/admin/products',
+      '/admin/prices',
+      '/admin/prices/input',
+      '/admin/prices/policies/input',
+      '/admin/prices/policies/current',
+      '/admin/news',
+      '/admin/agents',
+      '/admin/agents/flight-control',
     ]));
+    expect(admin).not.toContain('/admin/users');
+    expect(admin).not.toContain('/admin/imports');
+  });
+
+  it('keeps global configuration exclusive to Master', () => {
+    const master = links('master');
+    expect(master).toEqual(expect.arrayContaining([
+      '/admin/users',
+      '/admin/imports',
+      '/admin/agents',
+      '/admin/agents/flight-control',
+      '/admin/products',
+    ]));
+  });
+
+  it('keeps Agents destinations active for Admin and Master', () => {
+    for (const tier of ['admin', 'master'] as const) {
+      const agents = getSidebarNavigation(tier).find((item) => item.label === 'Agentes');
+      expect(agents?.children?.map(({ label, href }) => ({ label, href }))).toEqual([
+        { label: 'Revisões', href: '/admin/agents' },
+        { label: 'Flight Control', href: '/admin/agents/flight-control' },
+      ]);
+    }
   });
 });
