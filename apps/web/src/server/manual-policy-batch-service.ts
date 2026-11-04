@@ -5,10 +5,10 @@ import type { ManualPolicyBatchActionStateDto } from '@compra-car/contracts';
 import { randomUUID } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { executeManualPolicyBatchCreation } from '@/application/admin/manual-policy-batch';
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureIdentity23C } from '@/auth/account-tier-server';
 import { withDevTiming } from '@/server/dev-timing';
 const authorize = async () => {
-  const identity = await requireRole('admin');
+  const identity = await requireFeatureIdentity23C('price-administration', 'write');
   return { actorId: identity.profile.id };
 };
 export async function loadManualPolicyBatchOptions() {
