@@ -3,7 +3,7 @@ import { CarbootBackLink } from '@/components/carboot-back-link';
 import { CatalogPageHeading } from '@/components/admin/catalog-page-heading';
 import { TechnicalSheetActions } from '@/components/admin/technical-sheet-actions';
 import { TechnicalSpecCategoryTable } from '@/components/admin/technical-spec-category-table';
-import { requireRole } from '@/auth/authorization';
+import { requireFeature23C } from '@/auth/account-tier-server';
 import { createLegacySupabaseClientFromEnv } from '@compra-car/adapter-supabase';
 import { loadCurrentModelCards } from '@/server/public-model-catalog';
 
@@ -41,7 +41,7 @@ const money = (value: number | null) =>
       }).format(value);
 
 export default async function CurrentModelSpecsPage({ searchParams }: Props) {
-  await requireRole('admin');
+  await requireFeature23C('vehicle-specs');
   const { brand, model } = await searchParams;
   const all = await loadCurrentModelCards();
   const selected = all.find((x) => x.brand === brand && x.model === model);
