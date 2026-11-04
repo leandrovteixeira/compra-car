@@ -7,7 +7,7 @@ export type FipeReviewItem={
  fipeLabel:string;confidence:number;decision:string;sourceUrl:string;dependencyState:string;createdAt:string;
 };
 export async function loadFipeReviewItems():Promise<FipeReviewItem[]>{
- await requireRole('admin');
+ await requireFeatureIdentity23C('agents', 'write');
  const client=createPrivilegedAdminClient();
  const {data,error}=await client.from('agent_fipe_mapping_candidates')
   .select('id,mmv_id,fipe_code,fipe_model_label,match_confidence,decision,source_url,created_at')
