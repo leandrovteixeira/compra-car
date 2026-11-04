@@ -1,7 +1,7 @@
 import 'server-only';
 
 import Link from 'next/link';
-import { requireRole } from '@/auth/authorization';
+import { requireFeature23C } from '@/auth/account-tier-server';
 import { createPrivilegedAdminClient } from '@/auth/admin-client';
 import { CatalogPageHeading } from '@/components/admin/catalog-page-heading';
 
@@ -42,7 +42,7 @@ export default async function NewsPage({
 }: {
   readonly searchParams: Promise<Query>;
 }) {
-  await requireRole('admin');
+  await requireFeature23C('news');
   const params = await searchParams;
   const q = typeof params.q === 'string' ? params.q.trim().slice(0, 100) : '';
   const status = ['all', 'COMPLETED', 'FAILED', 'PENDING'].includes(params.status ?? '')
