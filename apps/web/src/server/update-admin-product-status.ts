@@ -8,7 +8,7 @@ import type {
 import { revalidatePath } from 'next/cache';
 
 import { executeAdminProductStatusUpdate } from '@/application/admin/update-admin-product-status';
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureIdentity23C } from '@/auth/account-tier-server';
 import { invalidateCatalog } from './catalog-cache';
 
 export async function updateAdminProductStatus(
@@ -16,7 +16,7 @@ export async function updateAdminProductStatus(
   patch: AdministrativeVehicleStatusPatchDto,
 ): Promise<UpdateAdministrativeVehicleStatusActionResultDto> {
   return executeAdminProductStatusUpdate(id, patch, {
-    authorize: () => requireRole('admin'),
+    authorize: () => requireFeatureIdentity23C('vehicle-administration', 'write'),
     createRepository: () => new LegacySupabaseAdapter(),
     invalidateCatalog,
     revalidate: revalidatePath,
