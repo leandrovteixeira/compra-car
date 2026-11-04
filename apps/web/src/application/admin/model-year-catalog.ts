@@ -9,7 +9,7 @@ import {
 } from '@compra-car/core/agents';
 import { assertAgentUuid, type AgentPlatformRepository } from '@compra-car/core/agent-platform';
 import { revalidatePath } from 'next/cache';
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureIdentity23C } from '@/auth/account-tier-server';
 import { createPrivilegedAdminClient } from '@/auth/admin-client';
 
 export interface ModelYearApplyActionState {
@@ -25,7 +25,7 @@ export interface ModelYearAdminDependencies {
 }
 
 const defaults: ModelYearAdminDependencies = {
-  authorize: () => requireRole('admin'),
+  authorize: () => requireFeatureIdentity23C('agents', 'write'),
   platform: () => new AgentPlatformSupabaseAdapter(createPrivilegedAdminClient()),
   repository: () => new CanonicalModelYearSupabaseAdapter(createPrivilegedAdminClient()),
   revalidate: revalidatePath,
