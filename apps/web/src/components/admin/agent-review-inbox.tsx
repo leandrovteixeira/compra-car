@@ -275,10 +275,14 @@ function FipeReviewDetail({row}:{row:ReviewInboxRow}){
     <section className="rounded-md bg-white p-3">
       <h3 className="text-xs font-semibold uppercase text-[#526670]">Proposta e decisão</h3>
       <p className="mt-2 text-xs text-[#526670]">Correspondência sugerida · Confiança {percent(row.confidence)}</p>
-      <p className="mt-1 text-xs text-[#526670]">{candidate.dependencyState==='READY'?'Pronto para decisão':'Dependência pendente'}</p>
+      <p className="mt-1 text-xs text-[#526670]">
+        {candidate.dependencyState==='READY'||candidate.dependencyState==='APPLIED'
+          ?'Pronto para decisão'
+          :'Dependência não liberada: não há nó READY para este candidato FIPE. Use um candidato READY correspondente ou resolva a dependência.'}
+      </p>
       <form action={action} onClick={e=>e.stopPropagation()} className="mt-3 flex flex-wrap gap-2">
         <input type="hidden" name="candidateId" value={candidate.id}/>
-        <button type="submit" name="decision" value="ACCEPT" disabled={pending||candidate.dependencyState!=='READY'} className="ui-button ui-button--primary ui-button--action">Aprovar</button>
+        <button type="submit" name="decision" value="ACCEPT" disabled={pending||!['READY','APPLIED'].includes(candidate.dependencyState)} className="ui-button ui-button--primary ui-button--action">Aprovar</button>
         <button type="submit" name="decision" value="REJECT" disabled={pending} className="ui-button ui-button--destructive ui-button--action">Rejeitar</button>
         <button type="submit" name="decision" value="DEFER" disabled={pending} className="ui-button ui-button--secondary ui-button--action">Adiar</button>
         {state.message?<p role={state.status==='error'?'alert':'status'} className="w-full text-xs">{state.message}</p>:null}
