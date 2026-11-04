@@ -524,11 +524,15 @@ export interface AuthProfile {
 
 export type AdminUserProfileState = 'invalid' | 'missing' | 'valid';
 
+export type AccountAccessTierDto = 'public' | 'corporate' | 'admin' | 'master';
+
 export interface AdminUserDto {
   readonly id: string;
   readonly email: string | null;
   readonly fullName: string | null;
   readonly role: AppRole | null;
+  readonly accessTier?: AccountAccessTierDto | null;
+  readonly organizationName?: string | null;
   readonly status: UserStatus | null;
   readonly profileState: AdminUserProfileState;
   readonly passwordRecoveryRequestedAt: string | null;

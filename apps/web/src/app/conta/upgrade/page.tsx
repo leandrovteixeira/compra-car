@@ -14,12 +14,38 @@ export default async function UpgradeAccountPage() {
   const { data: profile } = await db.from('profiles').select('phone,company,job_title').eq('id', user.id).single();
   const { data: pending, error } = await db.from('account_upgrade_requests').select('id').eq('user_id', user.id).eq('status','pending').maybeSingle();
   if (error) throw new Error('Não foi possível carregar sua solicitação.');
+  const { data: organizations, error: organizationsError } = await db
+    .from('account_organizations')
+    .select('id,name')
+    .eq('kind', 'corporate')
+    .eq('status', 'active')
+    .order('name')
+    .limit(200);
+  if (organizationsError) throw new Error('Não foi possível carregar as organizações.');
+
   return <main className="mx-auto max-w-2xl px-5 py-8 text-text-primary">
     <h1 className="text-2xl font-semibold">Upgrade de conta</h1>
     <p className="mt-3 text-sm text-text-secondary">Solicite acesso Corporate para utilizar os recursos profissionais. O pedido não altera seu plano automaticamente.</p>
     {pending ? <p role="status" className="mt-7 rounded-xl border border-border bg-surface p-6">Sua solicitação está pendente de análise.</p> :
     <form action={requestCorporateUpgrade} className="mt-7 space-y-5 rounded-xl border border-border bg-surface p-6">
-      <label className="block text-sm">Empresa *<input required minLength={2} maxLength={160} className="ui-field mt-2 w-full" name="company" defaultValue={profile?.company ?? ''} /></label>
+      <label className="block text-sm">
+        Organização *
+        <input
+          required
+          minLength={2}
+          maxLength={160}
+          className="ui-field mt-2 w-full"
+          name="company"
+          list="corporate-organizations"
+          autoComplete="organization"
+          defaultValue={profile?.company ?? ''}
+          placeholder="Selecione uma organização ou digite uma nova"
+        />
+        <datalist id="corporate-organizations">
+          {(organizations ?? []).map((organization) => <option key={organization.id} value={organization.name} />)}
+        </datalist>
+        <span className="mt-1 block text-xs text-text-muted">Você pode escolher uma organização existente ou digitar uma nova.</span>
+      </label>
       <label className="block text-sm">Cargo / Função *<input required minLength={2} maxLength={120} className="ui-field mt-2 w-full" name="jobTitle" defaultValue={profile?.job_title ?? ''} /></label>
       <label className="block text-sm">Telefone / WhatsApp *<input required minLength={6} maxLength={40} className="ui-field mt-2 w-full" name="phone" type="tel" defaultValue={profile?.phone ?? ''} /></label>
       <label className="block text-sm">Como pretende utilizar a plataforma?<textarea maxLength={1500} rows={3} className="ui-field mt-2 w-full" name="message" /></label>
