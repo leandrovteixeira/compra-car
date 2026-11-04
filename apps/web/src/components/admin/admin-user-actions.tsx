@@ -10,6 +10,7 @@ import {
   setAdminUserStatusAction,
 } from '@/app/admin/users/actions';
 import { removeUnusedPendingAccount } from '@/app/admin/users/remove-pending-action';
+import { promoteUserToAdmin } from '@/app/admin/users/access-tier-actions';
 import { APP_NAME } from '@/config/app-identity';
 import { adminUserRoleLabel } from './admin-user-presentation';
 
@@ -41,6 +42,10 @@ export function AdminUserActions({ user }: { readonly user: AdminUserDto }) {
   const [roleState, roleAction, rolePending] = useActionState(setAdminUserRoleAction, INITIAL);
   const [recoveryState, recoveryAction, recoveryPending] = useActionState(
     sendAdminUserPasswordRecoveryAction,
+    INITIAL,
+  );
+  const [promoteState, promoteAction, promotePending] = useActionState(
+    promoteUserToAdmin,
     INITIAL,
   );
   useEffect(() => {
@@ -108,6 +113,18 @@ export function AdminUserActions({ user }: { readonly user: AdminUserDto }) {
           <button type="button" onClick={() => { actionsMenu.current?.removeAttribute("open"); deleteDialog.current?.showModal(); }} className={`${buttonClass} border-rose-800 text-rose-300`}>Excluir conta não ativada</button>
         ) : null}
         <Feedback state={deleteState} />
+        {healthy && user.status === 'active' && user.accessTier !== 'admin' && user.accessTier !== 'master' ? (
+          <form action={promoteAction}>
+            <input name="userId" type="hidden" value={user.id} />
+            <button
+              className={`${buttonClass} border-[#EF7732] text-[#EF7732]`}
+              disabled={promotePending}
+            >
+              {promotePending ? 'Promovendo…' : 'Promover para Admin'}
+            </button>
+          </form>
+        ) : null}
+        <Feedback state={promoteState} />
         {user.email ? (
           <form action={recoveryAction}>
             <input name="userId" type="hidden" value={user.id} />
