@@ -98,24 +98,15 @@ function SidebarContent({
     <>
       <div className="flex min-h-[88px] items-center gap-0 overflow-hidden px-[14px]">
         <img
-          alt="Carboot"
+          alt=""
+          aria-hidden="true"
           src="/carboot/icon_logo_official.svg"
           className="size-12 shrink-0 object-contain"
         />
-        <div
-          aria-hidden="true"
-          className={`h-12 shrink-0 overflow-hidden transition-[width,opacity] duration-200 ${expanded ? 'w-[180px] opacity-100' : 'w-0 opacity-0'}`}
-        >
-          <img
-            alt=""
-            src="/carboot/name_logo_official.svg"
-            className="h-12 w-[180px] max-w-none object-contain"
-          />
-        </div>
       </div>
       <div className="mx-3 h-px bg-white/20" />
       <nav
-        aria-label="Navegação Carboot"
+        aria-label="Navegação principal"
         onClickCapture={(event) => {
           if (event.target instanceof Element && event.target.closest('a[href]'))
             setOpenGroup(null);
