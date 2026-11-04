@@ -242,7 +242,7 @@ function SidebarContent({
           <UserMenu
             displayName={displayName}
             logoutAction={logoutAction}
-            roleLabel={tier === 'master' ? 'Master' : 'Administrador'}
+            roleLabel={tier === 'master' ? 'Master' : tier === 'admin' ? 'Administrador' : tier === 'corporate' ? 'Corporate' : 'Free'}
             tier={tier}
             sidebar
           />
