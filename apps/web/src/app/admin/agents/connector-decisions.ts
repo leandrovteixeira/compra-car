@@ -1,12 +1,12 @@
 'use server';
 import { revalidatePath } from 'next/cache';
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureIdentity23C } from '@/auth/account-tier-server';
 import { createPrivilegedAdminClient } from '@/auth/admin-client';
 export type ConnectorDecisionState={status:'idle'|'success'|'error';message:string};
 export async function reviewConnectorAction(
   _state:ConnectorDecisionState,data:FormData,
 ):Promise<ConnectorDecisionState>{
-  const {profile}=await requireRole('admin');
+  const {profile}=await requireFeatureIdentity23C('agents', 'write');
   const findingId=data.get('findingId'),fingerprint=data.get('fingerprint'),
     decision=data.get('decision');
   if(typeof findingId!=='string'||!/^[a-f0-9-]{36}$/iu.test(findingId)||
