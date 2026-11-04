@@ -78,6 +78,21 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
   const data = detail.evidenceAssessment as Record<string,unknown>|null;
   const readiness = data && typeof data==='object' && typeof data.readiness==='string'
     ? data.readiness : null;
+  const generation=detail.technicalPayload.generationAssessment;
+  const generationData = generation && typeof generation==='object' && !Array.isArray(generation)
+    ? generation as Record<string,unknown> : null;
+  const signals=Array.isArray(generationData?.signals)
+    ? generationData.signals.filter((x):x is Record<string,unknown>=>
+        x!==null&&typeof x==='object'&&!Array.isArray(x)):[];
+  const generationLabels:Record<string,string>={
+    design:'Design',powertrain:'Motorização',dimensions:'Dimensões',
+  };
+  const generationWeights:Record<string,string>={
+    design:'35%',powertrain:'35%',dimensions:'30%',
+  };
+  const currentGenerationMY=get('currentModelYear');
+  const previousGenerationMY=get('previousModelYear');
+  const isQaGenerationFixture=detail.technicalPayload.qaFixture===true;
   return (
     <div className="rounded-b-lg border border-t-0 border-[#D6DEE3] bg-[#F6F7F8] p-3 sm:p-4">
       <div className="grid gap-3 xl:grid-cols-[1fr_1fr_1.1fr]">
@@ -87,6 +102,14 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
           {row.version?<p className="mt-1 text-xs font-medium text-[#526670]">
             Versão selecionada: {row.version}
           </p>:null}
+          {row.caseKind==='MMV_GENERATION' && previousGenerationMY && currentGenerationMY?
+            <p className="mt-1 text-xs font-medium text-[#526670]">
+              Comparação: MY {previousGenerationMY} → MY {currentGenerationMY}
+            </p>:null}
+          {isQaGenerationFixture?
+            <p className="mt-2 text-xs font-semibold text-[#A9541B]">
+              QA: teste de aprovação, não é confirmação técnica do veículo.
+            </p>:null}
           {technical.length?<p className="mt-1 text-xs text-[#526670]">
             {technical.map(([k,v])=>k+': '+String(v)).join(' · ')}
           </p>:null}
@@ -108,6 +131,21 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
               informações comerciais ou preços próprios. A escolha exigirá confirmação do destino.
             </p>:null}
           <p className="mt-1 text-xs text-[#526670]">Confiança {percent(row.confidence)}{readiness?` · Evidência: ${readiness}`:''}</p>
+          {row.caseKind==='MMV_GENERATION' && signals.length?
+            <div className="mt-3 space-y-1.5 rounded-md border border-[#D6DEE3] p-2 text-xs">
+              <p className="font-semibold">Classificação: {String(detail.proposal?.changeType??'—')}</p>
+              {signals.map((signal,i)=>(
+                <p key={i} className="flex justify-between gap-3">
+                  <span>{generationLabels[String(signal.dimension)]??String(signal.dimension)} ({generationWeights[String(signal.dimension)]??'—'})</span>
+                  <strong>{typeof signal.severity==='number'?`${signal.severity}/3`:'Sem evidência'}</strong>
+                </p>
+              ))}
+              <p className="border-t border-[#EAF1F4] pt-1 text-[#526670]">
+                Índice ponderado: {typeof detail.proposal?.weightedScore==='number'
+                  ?Number(detail.proposal.weightedScore).toLocaleString('pt-BR',{maximumFractionDigits:2})
+                  :'não calculado'}
+              </p>
+            </div>:null}
           <p className="mt-2 text-xs leading-5 text-[#526670]">
             {row.legacyAccepted
               ? 'Existe uma revisão ACCEPT legada. Ela não comprova alteração canônica.'
