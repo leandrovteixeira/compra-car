@@ -1,4 +1,4 @@
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureWrite23C } from '@/auth/account-tier-server';
 import Link from 'next/link';
 import {
   parseAdminProductFilters,
@@ -17,7 +17,7 @@ interface AdminProductsPageProps {
 }
 
 export default async function AdminProductsPage({ searchParams }: AdminProductsPageProps) {
-  await requireRole('admin');
+  await requireFeatureWrite23C('vehicle-administration');
   const params = await searchParams;
   const parsed = parseAdminProductFilters(params);
   const creating = params.new === '1';
