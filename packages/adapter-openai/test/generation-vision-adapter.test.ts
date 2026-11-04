@@ -21,7 +21,7 @@ function response(input:Partial<{status:string;output_text:string;usage:boolean}
 }
 describe('OpenAI Generation Vision adapter',()=>{
  it('uses low-detail source images, dedicated key, no web search and reports actual usage',async()=>{
-  const transport=vi.fn(async()=>response());
+  const transport=vi.fn(async(_request:unknown)=>response());
   const onUsage=vi.fn();
   const agent=new OpenAIGenerationVisionAdapter({
    apiKey:'fixture-only',model:'gpt-5.4-mini',pricing,
