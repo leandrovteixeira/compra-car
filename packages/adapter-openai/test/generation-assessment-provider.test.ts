@@ -62,7 +62,7 @@ describe('Generation assessment provider integrates with MMV matched candidate',
    repository:{load:assess},vision:{assess} as any,
   });
   const got=await provider.assess({scope:{country:'BR',brand:'GWM'},
-   matchedCandidates:[{...match,matchedMmvIdentities:[{id:'a'},{id:'b'}]}]});
+   matchedCandidates:[{...match,matchedMmvIdentities:[{id:'a'},{id:'b'}]} as unknown as MatchedProductCandidate]});
   expect(got).toHaveLength(0);
   expect(assess).not.toHaveBeenCalled();
  });
