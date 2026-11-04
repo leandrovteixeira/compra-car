@@ -127,6 +127,21 @@ begin
       updated_at = now(),
       valid_until = null;
 
+    update public.profiles
+    set company = v_name,
+        job_title = (
+          select nullif(trim(job_title), '')
+          from public.account_upgrade_requests
+          where id = p_request
+        ),
+        phone = (
+          select nullif(trim(contact_phone), '')
+          from public.account_upgrade_requests
+          where id = p_request
+        ),
+        updated_at = now()
+    where id = v_subject;
+
     update public.account_upgrade_requests
     set status = p_decision,
         company = v_name,
