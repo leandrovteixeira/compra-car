@@ -8,7 +8,7 @@ import {
 } from '@compra-car/ui';
 
 import { IMPORT_DOCUMENT_ROLES, IMPORT_ENGINE_MAX_DOCUMENTS } from '@compra-car/core';
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureWrite23C } from '@/auth/account-tier-server';
 import { PageHeader } from '@/components/admin/page-header';
 import { loadAdminImportBatch } from '@/server/import-engine-service';
 import {
@@ -38,7 +38,7 @@ export default async function AdminImportDetailsPage({
 }: {
   readonly params: Promise<{ batchId: string }>;
 }) {
-  await requireRole('admin');
+  await requireFeatureWrite23C('settings');
   const { batchId } = await params;
   const batch = await loadAdminImportBatch(batchId);
   if (!batch) notFound();
