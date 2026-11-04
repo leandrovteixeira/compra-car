@@ -4,9 +4,11 @@ import { getAuthProfile, getVerifiedAuthUser } from '@compra-car/adapter-supabas
 
 import {
   canExecuteFeature,
+  canWriteFeature,
   type AccountTier,
   type Feature23C,
 } from './entitlements-23c';
+import { requireActiveProfile, type ActiveIdentity } from './authorization';
 import { createReadOnlyServerClient } from './server-client';
 
 /**
@@ -64,4 +66,22 @@ export async function requireFeature23C(feature: Feature23C): Promise<AccountTie
     throw new Error('Acesso não autorizado.');
   }
   return tier;
+}
+
+
+export async function requireFeatureWrite23C(feature: Feature23C): Promise<AccountTier> {
+  const tier = await getAccountTier();
+  if (!canExecuteFeature(tier, feature) || !canWriteFeature(tier, feature)) {
+    throw new Error('Acesso não autorizado.');
+  }
+  return tier;
+}
+
+export async function requireFeatureIdentity23C(
+  feature: Feature23C,
+  mode: 'read' | 'write' = 'read',
+): Promise<ActiveIdentity> {
+  if (mode === 'write') await requireFeatureWrite23C(feature);
+  else await requireFeature23C(feature);
+  return requireActiveProfile();
 }
