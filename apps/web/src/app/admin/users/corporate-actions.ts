@@ -17,19 +17,25 @@ export async function reviewCorporateRequest(
   await requireFeature23C('settings');
   const requestId = form.get('requestId');
   const decision = form.get('decision');
-  const organizationId = form.get('organizationId');
+  const organizationName = form.get('organizationName');
 
   if (typeof requestId !== 'string' || !/^[0-9a-f-]{36}$/i.test(requestId) ||
       (decision !== 'approved' && decision !== 'rejected') ||
-      (decision === 'approved' && (typeof organizationId !== 'string' || !/^[0-9a-f-]{36}$/i.test(organizationId)))) {
+      (decision === 'approved' && (
+        typeof organizationName !== 'string' ||
+        organizationName.trim().length < 2 ||
+        organizationName.trim().length > 160
+      ))) {
     return { status: 'error', message: 'Dados da decisão inválidos.' };
   }
 
   const client = await createMutableServerClient();
-  const { data, error } = await client.rpc('review_corporate_upgrade_23c', {
+  const { data, error } = await client.rpc('review_corporate_upgrade_23c_v2', {
     p_request: requestId,
     p_decision: decision,
-    p_org: decision === 'approved' ? organizationId : null,
+    p_org_name: decision === 'approved' && typeof organizationName === 'string'
+      ? organizationName.trim()
+      : null,
   });
   if (error) return { status: 'error', message: 'A decisão não foi aplicada. Verifique permissões e status.' };
   if (data !== true) return { status: 'error', message: 'Solicitação não está mais pendente.' };
