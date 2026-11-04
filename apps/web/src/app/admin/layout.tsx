@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import { requireRole } from '@/auth/authorization';
+import { requireActiveProfile } from '@/auth/authorization';
 import { getAccountTier } from '@/auth/account-tier-server';
 import { AdminShell } from '@/components/admin/admin-shell';
 
@@ -9,7 +9,7 @@ interface AdminLayoutProps {
 }
 
 export default async function AdminLayout({ children }: AdminLayoutProps) {
-  const { profile } = await requireRole('admin');
+  const { profile } = await requireActiveProfile();
   const displayName = profile.fullName?.trim() || 'Administrador';
   const tier = await getAccountTier();
 
