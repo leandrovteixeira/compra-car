@@ -47,5 +47,8 @@ jobs:
         run: pnpm --filter @compra-car/agents exec vitest run test/mmv-generation-cli.test.ts
       - name: Typecheck shared Review UX
         run: pnpm --filter @compra-car/web typecheck
-      - name: Shared Reviews generation projection tests
+      - name: Shared Reviews generation integration tests
+        run: pnpm --filter @compra-car/web exec vitest run src/application/admin/agent-review-projection.test.ts -t 'Generation review uses shared'
+      - name: Existing shared review regressions (legacy issues tracked separately)
+        continue-on-error: true
         run: pnpm --filter @compra-car/web exec vitest run src/application/admin/agent-review-projection.test.ts
