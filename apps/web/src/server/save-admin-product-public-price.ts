@@ -9,11 +9,11 @@ import {
   executeProductPublicPriceUpdate,
   type SaveProductPublicPriceDependencies,
 } from '@/application/admin/save-product-public-price';
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureIdentity23C } from '@/auth/account-tier-server';
 
 const dependencies: SaveProductPublicPriceDependencies = {
   authorize: async () => {
-    const identity = await requireRole('admin');
+    const identity = await requireFeatureIdentity23C('price-administration', 'write');
     return { actorId: identity.profile.id };
   },
   createRepository: () => new ProductPublicPriceSupabaseAdapter(),
