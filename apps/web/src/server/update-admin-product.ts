@@ -8,11 +8,11 @@ import {
   executeAdminProductUpdate as executeUpdate,
   type UpdateAdminProductDependencies,
 } from '@/application/admin/update-admin-product';
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureIdentity23C } from '@/auth/account-tier-server';
 import { invalidateCatalog } from './catalog-cache';
 
 const defaultDependencies: UpdateAdminProductDependencies = {
-  authorize: () => requireRole('admin'),
+  authorize: () => requireFeatureIdentity23C('vehicle-administration', 'write'),
   createRepository: () => new LegacySupabaseAdapter(),
   revalidate: revalidatePath,
   invalidateCatalog,
