@@ -222,3 +222,24 @@ describe('Sprint 26 complete spec CREATE contract', () => {
     })).toThrow('INVALID_SPEC_MERGE_TARGET');
   });
 });
+
+
+describe('generation decisions share operator policy without canonical side effects',()=>{
+  it('supports standard approve/reject/postpone but never creates a new MMV',()=>{
+    const policy=REVIEW_CASE_POLICIES.MMV_GENERATION;
+    expect(policy.actions).toEqual(['APPROVE','REJECT','POSTPONE']);
+    expect(policy.approveEffect).toBe('NONE');
+    expect(policy.mergeTarget).toBeNull();
+    expect(policy.showInReviewQueue).toBe(true);
+  });
+  it('refuses Merge for a generation classification',()=>{
+    const row=caseItem('MMV_GENERATION');
+    const command:ReviewDecisionCommand={
+      caseId:row.caseId,action:'MERGE',expectedCaseVersion:row.caseVersion,
+      expectedSnapshotFingerprint:row.snapshotFingerprint,
+      idempotencyKey:'test-idempotency',actorId:'operator-1',canonicalTargetId:'mmv-1',
+    };
+    expect(()=>validateReviewDecision(row,command)).toThrow();
+    expect(validateReviewDecision(row,{...command,action:'APPROVE',canonicalTargetId:undefined}).effect).toBe('NONE');
+  });
+});
