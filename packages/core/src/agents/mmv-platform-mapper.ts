@@ -330,6 +330,11 @@ export function mapMmvRunToPlatform(
   findings.push(...bodyFindings);
   const generationFindings: AgentFindingBundle[] = (result.generationChangeProposals ?? []).map(
     ({assessment,classification}) => {
+      const matched=result.matchedCandidates.find(m=>
+        m.candidate.modelYear===assessment.currentModelYear &&
+        m.matchedMmvIdentities.length===1 &&
+        m.matchedMmvIdentities[0]?.id===assessment.currentMmvId);
+      if(!matched)throw new AgentPlatformError('INVALID_INPUT');
       const id=uuid();
       const fingerprint=createHash('sha256').update(canonicalAgentJson([
         'mmv-generation-change:v1', result.market, result.brand,
@@ -370,6 +375,8 @@ export function mapMmvRunToPlatform(
           confidence:null,requiresReview:true,
           subject:{
             brand:result.brand,
+            model:matched.candidate.model,
+            officialVersionLabel:matched.candidate.officialVersionLabel,
             previousMmvId:assessment.previousMmvId,
             currentMmvId:assessment.currentMmvId,
             previousModelYear:assessment.previousModelYear,
