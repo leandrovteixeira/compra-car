@@ -9,3 +9,5 @@ export * from './price-reconciliation-provider';
 export * from './agent-cost-admission';
 
 export * from './generation-vision-adapter';
+
+export * from './generation-assessment-provider';
