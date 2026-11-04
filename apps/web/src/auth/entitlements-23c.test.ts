@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
-  canCompareCount, canExecuteFeature, comparisonLimit, featureAvailability,
+  accessMode,
+  canCompareCount,
+  canExecuteFeature,
+  canWriteFeature,
+  comparisonLimit,
+  featureAvailability,
   type AccountTier,
 } from './entitlements-23c';
 
@@ -22,20 +27,32 @@ describe('Sprint 23C account entitlements', () => {
     expect(canExecuteFeature('public', 'share')).toBe(true);
   });
 
-  it('shows future features disabled only to entitled roles', () => {
-    expect(featureAvailability('public', 'tpva')).toBe('hidden');
-    expect(featureAvailability('corporate', 'tpva')).toBe('disabled');
-    expect(featureAvailability('corporate', 'news')).toBe('hidden');
-    expect(featureAvailability('admin', 'current-policies')).toBe('disabled');
-    expect(featureAvailability('master', 'chat')).toBe('disabled');
-    expect(canExecuteFeature('master', 'tpva')).toBe(false);
+  it('keeps Corporate read-only on current operational capabilities', () => {
+    expect(accessMode('corporate', 'price-list')).toBe('read');
+    expect(accessMode('corporate', 'price-administration')).toBe('none');
+    expect(accessMode('corporate', 'vehicle-administration')).toBe('none');
+    expect(accessMode('corporate', 'agents')).toBe('none');
+    expect(canWriteFeature('corporate', 'price-list')).toBe(false);
   });
 
-  it('separates corporate, admin and master capabilities', () => {
-    expect(featureAvailability('corporate', 'vehicle-administration')).toBe('hidden');
-    expect(featureAvailability('admin', 'agents')).toBe('hidden');
+  it('treats Admin as internal Compra Car operations without global settings', () => {
+    expect(accessMode('admin', 'price-administration')).toBe('manage');
+    expect(accessMode('admin', 'vehicle-administration')).toBe('manage');
+    expect(featureAvailability('admin', 'agents')).toBe('enabled');
     expect(featureAvailability('admin', 'settings')).toBe('hidden');
+  });
+
+  it('reserves global settings for Master', () => {
     expect(featureAvailability('master', 'agents')).toBe('enabled');
     expect(featureAvailability('master', 'settings')).toBe('enabled');
+    expect(canWriteFeature('master', 'settings')).toBe(true);
+  });
+
+  it('shows planned intelligence only to entitled roles', () => {
+    expect(featureAvailability('public', 'tpva')).toBe('hidden');
+    expect(featureAvailability('corporate', 'tpva')).toBe('disabled');
+    expect(featureAvailability('admin', 'tpva')).toBe('disabled');
+    expect(featureAvailability('master', 'chat')).toBe('disabled');
+    expect(canExecuteFeature('master', 'tpva')).toBe(false);
   });
 });
