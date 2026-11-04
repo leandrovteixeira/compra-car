@@ -1,12 +1,12 @@
 'use server';
 import { revalidatePath } from 'next/cache';
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureIdentity23C } from '@/auth/account-tier-server';
 import { createPrivilegedAdminClient } from '@/auth/admin-client';
 export type ModelYearDecisionState={status:'idle'|'success'|'error';message:string};
 export async function reviewModelYearAction(
  _state:ModelYearDecisionState,data:FormData,
 ):Promise<ModelYearDecisionState>{
- const {profile}=await requireRole('admin');
+ const {profile}=await requireFeatureIdentity23C('agents', 'write');
  const id=data.get('findingId'),fp=data.get('fingerprint'),decision=data.get('decision');
  if(typeof id!=='string'||!/^[0-9a-f-]{36}$/iu.test(id)||
     typeof fp!=='string'||fp.length>4000||
