@@ -1,9 +1,12 @@
+import { getAccountTier } from '@/auth/account-tier-server';
 import { requireActiveProfile } from '@/auth/authorization';
 import { createReadOnlyServerClient } from '@/auth/server-client';
+import { PendingSubmitButton } from '@/components/pending-submit-button';
 import { updateContactProfile } from '../actions';
 
 export default async function MyProfilePage() {
   const { user, profile } = await requireActiveProfile();
+  const tier = await getAccountTier();
   const db = await createReadOnlyServerClient();
   const { data, error } = await db.from('profiles').select('phone,company,job_title').eq('id', user.id).single();
   if (error) throw new Error('Não foi possível carregar o perfil.');
@@ -14,9 +17,9 @@ export default async function MyProfilePage() {
       <p className="text-sm">Nome completo: <strong>{profile.fullName || 'Não informado'}</strong></p>
       <p className="text-sm">Email: <strong>{user.email}</strong></p>
       <label className="block text-sm">Telefone / WhatsApp<input className="ui-field mt-2 w-full" name="phone" type="tel" maxLength={40} defaultValue={data.phone ?? ''} /></label>
-      <label className="block text-sm">Empresa<input className="ui-field mt-2 w-full" name="company" maxLength={160} defaultValue={data.company ?? ''} /></label>
+      <label className="block text-sm">{tier === 'corporate' ? 'Organização' : 'Empresa'}<input className="ui-field mt-2 w-full" name="company" maxLength={160} defaultValue={data.company ?? ''} readOnly={tier === 'corporate'} aria-readonly={tier === 'corporate'} /></label>
       <label className="block text-sm">Cargo / Função<input className="ui-field mt-2 w-full" name="jobTitle" maxLength={120} defaultValue={data.job_title ?? ''} /></label>
-      <button type="submit" className="rounded-lg bg-[#EF7732] px-6 py-3 text-white">Salvar alterações</button>
+      <PendingSubmitButton idleLabel="Salvar alterações" pendingLabel="Salvando…" className="rounded-lg bg-[#EF7732] px-6 py-3 text-white disabled:opacity-60" />
     </form>
   </main>;
 }
