@@ -4,6 +4,7 @@ on:
     paths:
       - 'packages/core/src/agents/mmv-generation-change-classifier.ts'
       - 'packages/core/src/agent-platform/review-contract.ts'
+      - 'packages/core/test/agent-review-contract-26.test.ts'
       - 'apps/web/src/application/admin/agent-review-*'
       - 'apps/web/src/components/admin/agent-review-inbox.tsx'
       - 'apps/web/src/app/admin/agents/generation-decisions.ts'
@@ -39,7 +40,7 @@ jobs:
         continue-on-error: true
         run: pnpm --filter @compra-car/core typecheck
       - name: MMV generation unit tests
-        run: pnpm --filter @compra-car/core exec vitest run test/mmv-generation-change-classifier.test.ts test/mmv-generation-integration.test.ts
+        run: pnpm --filter @compra-car/core exec vitest run test/mmv-generation-change-classifier.test.ts test/mmv-generation-integration.test.ts test/agent-review-contract-26.test.ts
       - name: Typecheck operational agent scripts
         run: pnpm --filter @compra-car/agents typecheck
       - name: MMV generation CLI regression
