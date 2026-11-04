@@ -8,7 +8,7 @@ import {
   type AgentRunListItem,
 } from '@compra-car/core/agent-platform';
 import { revalidatePath } from 'next/cache';
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureIdentity23C } from '@/auth/account-tier-server';
 import { createPrivilegedAdminClient } from '@/auth/admin-client';
 export interface BrandAdminDependencies {
   readonly authorize: () => Promise<{ readonly profile: { readonly id: string } }>;
@@ -17,7 +17,7 @@ export interface BrandAdminDependencies {
   readonly revalidate: (path: string) => void;
 }
 const defaults: BrandAdminDependencies = {
-  authorize: () => requireRole('admin'),
+  authorize: () => requireFeatureIdentity23C('agents', 'write'),
   repository: () => new BrandConnectorSupabaseAdapter(createPrivilegedAdminClient()),
   platform: () => new AgentPlatformSupabaseAdapter(createPrivilegedAdminClient()),
   revalidate: revalidatePath,
