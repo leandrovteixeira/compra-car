@@ -9,6 +9,7 @@ import {
   setAdminUserRoleAction,
   setAdminUserStatusAction,
 } from '@/app/admin/users/actions';
+import { promoteUserToAdmin } from '@/app/admin/users/access-tier-actions';
 import { APP_NAME } from '@/config/app-identity';
 import { adminUserRoleLabel } from './admin-user-presentation';
 
@@ -39,6 +40,10 @@ export function AdminUserActions({ user }: { readonly user: AdminUserDto }) {
     sendAdminUserPasswordRecoveryAction,
     INITIAL,
   );
+  const [promoteState, promoteAction, promotePending] = useActionState(
+    promoteUserToAdmin,
+    INITIAL,
+  );
   const healthy = user.profileState === 'valid';
   const label = user.fullName || user.email || 'este usuário';
 
@@ -59,13 +64,6 @@ export function AdminUserActions({ user }: { readonly user: AdminUserDto }) {
       <div className="z-10 mt-2 grid min-w-64 gap-3 rounded-xl border border-slate-700 bg-slate-900 p-3 shadow-xl md:absolute md:right-0">
         {healthy ? (
           <>
-            <button
-              className={buttonClass}
-              onClick={() => roleDialog.current?.showModal()}
-              type="button"
-            >
-              Alterar perfil
-            </button>
             {user.status === 'active' ? (
               <button
                 className={`${buttonClass} border-rose-800 text-rose-300`}
@@ -93,6 +91,15 @@ export function AdminUserActions({ user }: { readonly user: AdminUserDto }) {
             Perfil inconsistente: alterações de perfil e status indisponíveis.
           </p>
         )}
+        {healthy && user.status === 'active' && user.accessTier !== 'admin' && user.accessTier !== 'master' ? (
+          <form action={promoteAction}>
+            <input name="userId" type="hidden" value={user.id} />
+            <button className={`${buttonClass} border-[#EF7732] text-[#EF7732]`} disabled={promotePending}>
+              {promotePending ? 'Promovendo…' : 'Promover para Admin'}
+            </button>
+          </form>
+        ) : null}
+        <Feedback state={promoteState} />
         {user.email ? (
           <form action={recoveryAction}>
             <input name="userId" type="hidden" value={user.id} />
