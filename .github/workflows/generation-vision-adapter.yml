@@ -1,0 +1,36 @@
+name: Generation Vision Adapter
+on:
+  pull_request:
+    paths:
+      - 'packages/core/src/agents/mmv-generation-evidence.ts'
+      - 'packages/core/src/agents/index.ts'
+      - 'packages/core/test/mmv-generation-evidence.test.ts'
+      - 'packages/adapter-openai/src/generation-vision-adapter.ts'
+      - 'packages/adapter-openai/src/generation-assessment-provider.ts'
+      - 'packages/adapter-openai/src/index.ts'
+      - 'packages/adapter-openai/test/generation-*.test.ts'
+      - '.github/workflows/generation-vision-adapter.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Enable pinned pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.34.5 --activate
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Typecheck vision adapter
+        run: pnpm --filter @compra-car/adapter-openai typecheck
+      - name: Vision adapter tests (no paid calls)
+        run: pnpm --filter @compra-car/adapter-openai exec vitest run test/generation-vision-adapter.test.ts test/generation-assessment-provider.test.ts
+      - name: Core generation tests
+        run: pnpm --filter @compra-car/core exec vitest run test/mmv-generation-evidence.test.ts test/mmv-generation-change-classifier.test.ts
