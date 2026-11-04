@@ -131,7 +131,7 @@ export class OpenAIGenerationVisionAdapter {
         usage.input_tokens_details?.cached_tokens??0);
       const cost=money(usage.input_tokens,cached,usage.output_tokens,this.opts.pricing);
       await this.opts.onUsage?.({
-        providerModel:response.model,
+        providerModel:response.model??this.opts.model,
         inputTokens:usage.input_tokens,cachedInputTokens:cached,
         outputTokens:usage.output_tokens,estimatedCostUsd:cost,priced:true,
         callStatus:response.status,reason:'GENERATION_DESIGN_COMPARISON',
