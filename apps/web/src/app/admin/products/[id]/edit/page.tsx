@@ -3,7 +3,7 @@ import Link from 'next/link';
 
 import { updateAdminProductAction } from './actions';
 
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureWrite23C } from '@/auth/account-tier-server';
 import { AdminProductForm } from '@/components/admin/admin-product-form';
 import { PageHeader } from '@/components/admin/page-header';
 import { loadAdminProductForEditing } from '@/server/admin-product-service';
@@ -13,7 +13,7 @@ interface EditAdminProductPageProps {
 }
 
 export default async function EditAdminProductPage({ params }: EditAdminProductPageProps) {
-  await requireRole('admin');
+  await requireFeatureWrite23C('vehicle-administration');
   const { id } = await params;
   const values = await loadAdminProductForEditing(id);
   if (!values) notFound();
