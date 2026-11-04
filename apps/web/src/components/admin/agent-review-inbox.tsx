@@ -5,6 +5,7 @@ import { reviewMmvIdentityAction } from '@/app/admin/agents/identity-actions';
 import { reviewConnectorAction } from '@/app/admin/agents/connector-decisions';
 import { reviewModelYearAction } from '@/app/admin/agents/model-year-decisions';
 import { reviewFipeCandidateAction } from '@/app/admin/agents/fipe-decisions';
+import { reviewGenerationDecisionAction } from '@/app/admin/agents/generation-decisions';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { ReviewStatus } from '@compra-car/core/agent-platform';
 import type { ReviewInboxRow, ReviewSort, ReviewDirection } from '@/application/admin/agent-review-inbox';
@@ -53,7 +54,8 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
   const [reviewState, reviewAction, reviewPending] = useActionState(reviewMmvIdentityAction, {status:'idle' as const,message:''});
   const [connectorState, connectorAction, connectorPending]=useActionState(reviewConnectorAction,{status:'idle' as const,message:''});
   const [yearState,yearAction,yearPending]=useActionState(reviewModelYearAction,{status:'idle' as const,message:''});
-  useEffect(()=>{if(reviewState.status==='success'||connectorState.status==='success'||yearState.status==='success')router.refresh();},[reviewState.status,connectorState.status,yearState.status,router]);
+  const [generationState,generationAction,generationPending]=useActionState(reviewGenerationDecisionAction,{status:'idle' as const,message:''});
+  useEffect(()=>{if(reviewState.status==='success'||connectorState.status==='success'||yearState.status==='success'||generationState.status==='success')router.refresh();},[reviewState.status,connectorState.status,yearState.status,generationState.status,router]);
   const subject = detail.subject ?? {};
   const get = (key:string) => {
     const val=subject[key];
@@ -111,6 +113,25 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
               ? 'Existe uma revisão ACCEPT legada. Ela não comprova alteração canônica.'
               : 'As ações gerais desta fila continuam em preparação. Connectors podem ser revisados no fluxo administrativo existente.'}
           </p>
+          {row.caseKind==='MMV_GENERATION'?(
+            <form action={generationAction} className="mt-3 flex flex-wrap gap-2"
+              onClick={event=>event.stopPropagation()}>
+              <input type="hidden" name="findingId" value={detail.findingId}/>
+              <input type="hidden" name="fingerprint" value={row.snapshotFingerprint}/>
+              <button type="submit" name="decision" value="ACCEPT" disabled={generationPending||detail.proposal?.changeType==='UNKNOWN'}
+                className="ui-button ui-button--primary ui-button--action">Aprovar</button>
+              <button type="submit" name="decision" value="REJECT" disabled={generationPending}
+                className="ui-button ui-button--destructive ui-button--action">Rejeitar</button>
+              <button type="submit" name="decision" value="DEFER" disabled={generationPending}
+                className="ui-button ui-button--secondary ui-button--action">Adiar</button>
+              {generationState.message?<p className="w-full text-xs"
+                role={generationState.status==='error'?'alert':'status'}>{generationState.message}</p>:null}
+              <p className="w-full text-xs text-[#526670]">
+                Aprovar registra a classificação para uso futuro; não modifica MMVs,
+                specs ou carry-over. Sem evidência suficiente, a aprovação fica indisponível.
+              </p>
+            </form>
+          ):null}
           {row.caseKind==='MODEL_YEAR_NEW'?(
             <form action={yearAction} className="mt-3 flex flex-wrap gap-2"
               onClick={event=>event.stopPropagation()}>
@@ -156,7 +177,7 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
               {reviewState.message?<p className="w-full text-xs" role={reviewState.status==='error'?'alert':'status'}>{reviewState.message}</p>:null}
               <p className="w-full text-xs text-[#526670]">Aprovar aplica a identidade ao catálogo automaticamente; Rejeitar e Adiar não alteram o catálogo.</p>
             </form>
-          ):(row.caseKind==='CONNECTOR_NEW'||row.caseKind==='CONNECTOR_UPDATE'||row.caseKind==='MODEL_YEAR_NEW')?null:(
+          ):(row.caseKind==='CONNECTOR_NEW'||row.caseKind==='CONNECTOR_UPDATE'||row.caseKind==='MODEL_YEAR_NEW'||row.caseKind==='MMV_GENERATION')?null:(
             <div className="mt-2">
               <p className="text-xs text-[#526670]">Ações por identidade indisponíveis neste caso; o finding de origem pode conter múltiplas versões.</p>
               <a className="mt-2 inline-block text-xs text-[#A9541B] underline"
