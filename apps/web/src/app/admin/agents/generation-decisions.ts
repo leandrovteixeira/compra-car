@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureIdentity23C } from '@/auth/account-tier-server';
 import { createPrivilegedAdminClient } from '@/auth/admin-client';
 import { AgentPlatformSupabaseAdapter } from '@compra-car/adapter-supabase';
 import { reviewPolicy } from '@compra-car/core/agent-platform';
@@ -17,7 +17,7 @@ export async function reviewGenerationDecisionAction(
   _state:GenerationDecisionState,
   data:FormData,
 ):Promise<GenerationDecisionState>{
-  const {profile}=await requireRole('admin');
+  const {profile}=await requireFeatureIdentity23C('agents', 'write');
   const findingId=data.get('findingId');
   const fingerprint=data.get('fingerprint');
   const decision=data.get('decision');
