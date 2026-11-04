@@ -2,7 +2,6 @@ import Link from 'next/link';
 
 export default function WelcomePage() {
   return <div className="mx-auto w-full max-w-6xl px-6 py-12 sm:py-16">
-    <p className="text-xs font-bold uppercase tracking-[.17em] text-[#EF7732]">Bem-vindo ao Compra Car</p>
     <h1 className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight text-text-primary sm:text-4xl">Inteligência automotiva, de forma simples.</h1>
     <p className="mt-4 max-w-2xl text-base text-text-secondary">Explore os modelos disponíveis, conheça equipamentos e compare versões lado a lado. Selecione uma opção no menu para começar.</p>
     <div className="mt-10 grid gap-4 sm:grid-cols-2">
