@@ -1,5 +1,5 @@
 import 'server-only';
-import { requireRole } from '@/auth/authorization';
+import { requireFeatureIdentity23C } from '@/auth/account-tier-server';
 import { createPrivilegedAdminClient } from '@/auth/admin-client';
 
 export type AgentHandoffRow = Readonly<{
@@ -24,7 +24,7 @@ export type AgentHandoffSummary = Readonly<{
 }>;
 /** Read-only operational introspection. Never triggers dispatch or paid provider calls. */
 export async function loadAgentHandoffSummary(): Promise<AgentHandoffSummary> {
-  await requireRole('admin');
+  await requireFeatureIdentity23C('agents', 'write');
   if (process.env.APP_ENV !== 'qa') return {
     total:0,queued:0,blocked:0,completed:0,items:[],
   };
