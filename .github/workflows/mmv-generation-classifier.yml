@@ -3,6 +3,10 @@ on:
   pull_request:
     paths:
       - 'packages/core/src/agents/mmv-generation-change-classifier.ts'
+      - 'packages/core/src/agent-platform/review-contract.ts'
+      - 'apps/web/src/application/admin/agent-review-*'
+      - 'apps/web/src/components/admin/agent-review-inbox.tsx'
+      - 'apps/web/src/app/admin/agents/generation-decisions.ts'
       - 'packages/core/src/agents/mmv-generation-review.ts'
       - 'packages/core/src/agents/new-product-check-agent.ts'
       - 'packages/core/src/agents/new-product-check-types.ts'
@@ -40,3 +44,7 @@ jobs:
         run: pnpm --filter @compra-car/agents typecheck
       - name: MMV generation CLI regression
         run: pnpm --filter @compra-car/agents exec vitest run test/mmv-generation-cli.test.ts
+      - name: Typecheck shared Review UX
+        run: pnpm --filter @compra-car/web typecheck
+      - name: Shared Reviews generation projection tests
+        run: pnpm --filter @compra-car/web exec vitest run src/application/admin/agent-review-projection.test.ts
