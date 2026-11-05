@@ -82,6 +82,28 @@ describe('OpenAI research adapter (mock transport only)', () => {
     expect(result.candidates[4]?.powertrainLabel).toBe('Hurricane Flex');
   });
 
+  it('forwards validated brand source entries including model and comparison pages', async () => {
+    const transport = vi.fn<ProductResearchTransport>(async () => response());
+    await new OpenAIProductResearchProvider({
+      apiKey: secret, model: 'configured-model', prompt: 'Official sources only',
+      transport,
+    }).researchProducts(scope, {
+      ...scope,
+      allowedDomains:['ford.com.br'],
+      allowedHosts:['www.ford.com.br'],
+      searchHints:['site:ford.com.br Ranger versões'],
+      sourceEntries:[
+        {type:'MODEL_PAGE',url:'https://www.ford.com.br/picapes/ranger/',priority:1},
+        {type:'VERSION_DOCUMENT',url:'https://www.ford.com.br/picapes/ranger/compare-as-versoes/',priority:2},
+      ],
+    });
+    const sent=JSON.parse(transport.mock.calls[0]![0].input as string);
+    expect(sent.sourceEntries).toEqual([
+      {type:'MODEL_PAGE',url:'https://www.ford.com.br/picapes/ranger/',priority:1},
+      {type:'VERSION_DOCUMENT',url:'https://www.ford.com.br/picapes/ranger/compare-as-versoes/',priority:2},
+    ]);
+  });
+
   it('uses Responses, web search, allowlist, required schema and configured model', async () => {
     vi.stubGlobal('fetch', () => {
       throw new Error('Network forbidden');
