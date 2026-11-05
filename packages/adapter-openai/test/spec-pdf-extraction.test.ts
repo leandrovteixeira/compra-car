@@ -21,6 +21,21 @@ describe('manufacturer PDF supervised adapter',()=>{
   expect(r.estimatedCostUsd).toBeGreaterThan(0);
   expect(events).toHaveLength(1);
  });
+ it('keeps original 8-inch cluster evidence but strips the measurement from the spec concept',async()=>{
+   const mock={...response(),output_text:JSON.stringify({
+     modelYearEvidence:'Ranger MY 2027',versionEvidence:'Ranger Limited',
+     claims:[{ordinal:1,page:2,label:'Painel de instrumentos colorido de 8’’',
+       kind:'numeric',rawValue:'8',unit:'inch',
+       sourceExcerpt:'Painel de instrumentos colorido de 8’’ — Limited 8’’'}]
+   })} as unknown as Response;
+   const result=await extractManufacturerPdfClaims27({
+     source,apiKey:'test',transport:async()=>mock
+   });
+   expect(result.claims[0]).toMatchObject({
+     label:'Painel de instrumentos colorido',rawLabel:'Painel de instrumentos colorido de 8’’',
+     rawValue:'8',unit:'inch'
+   });
+ });
  it('rejects an unproven model year',async()=>{
   await expect(extractManufacturerPdfClaims27({source,apiKey:'test',
    transport:async()=>response('Ranger MY 2025')}))
