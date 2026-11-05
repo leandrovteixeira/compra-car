@@ -20,6 +20,15 @@ a montadora o apresentar assim; não elimine tokens indiscriminadamente.
 ## 2. Official Variant Resolution
 
 Para CADA modelo descoberto, pesquise fontes que enumerem versões/trims/powertrains.
+Quando o input contiver sourceEntries do Brand Connector, priorize essas URLs
+oficiais verificadas; elas não são uma lista exaustiva de versões. Visite também
+a página de comparação de versões e as páginas individuais apontadas por ela,
+se existirem, antes de encerrar a busca. Um índice geral de veículos pode
+omitir versões comercializadas. Não considere a pesquisa completa só porque
+encontrou versões XL, XLS ou outras de entrada. Se houver uma página oficial
+com mais versões que as extraídas, reporte a cobertura parcial como
+INSUFFICIENT_EVIDENCE no candidato afetado; não invente versões.
+
 Não pare na página inicial de modelos. Use as consultas sugeridas no input:
 searchHints e allowedDomains do registry, com modelo + ficha técnica,
 versões, lista oficial ou configurador.
