@@ -103,7 +103,7 @@ export async function runSupervisedFordPdfJob(input:{
     capturedAt:new Date().toISOString(),declaredModelYear:input.source.modelYear,
     authority:'MANUFACTURER'},
    claims:extracted.claims.map(c=>({
-    ordinal:c.ordinal,page:c.page,label:c.label,kind:c.kind,
+    ordinal:c.ordinal,page:c.page,label:c.label,rawLabel:c.rawLabel,kind:c.kind,
     unit:c.unit,rawValue:c.rawValue
    })),
    operatorVerified:true
