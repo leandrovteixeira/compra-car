@@ -208,6 +208,12 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
   const isSpecCase=row.caseKind==='SPEC_NEW'||row.caseKind==='SPEC_AMBIGUOUS';
   const specName=typeof detail.proposal?.sourceLabel==='string'?
     detail.proposal.sourceLabel:detail.title.split(' · ').slice(-1)[0]??detail.title;
+  const specValue=typeof detail.proposal?.observedValue==='string'
+    ?detail.proposal.observedValue:null;
+  const specUnit=typeof detail.proposal?.observedUnit==='string'
+    ?detail.proposal.observedUnit:null;
+  const specRawLabel=typeof detail.proposal?.rawLabel==='string'
+    ?detail.proposal.rawLabel:null;
   const specKind=typeof detail.proposal?.kind==='string'?detail.proposal.kind:null;
   const specPage=typeof detail.proposal?.page==='number'?detail.proposal.page:null;
   const specVersions=Array.isArray(detail.proposal?.versionColumns)
@@ -227,6 +233,11 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
             <div className="mt-2 space-y-2 rounded-md border border-[#F2C0A0] bg-[#FFF3EA] p-3 text-sm">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-[#A9541B]">Especificação identificada na fonte</p>
               <p className="break-words text-base font-bold leading-6 text-[#293D47]">{specName}</p>
+              {specValue!==null?<p className="text-sm font-semibold text-[#293D47]">
+                Valor observado: {specValue}{specUnit?' '+specUnit:''}
+              </p>:null}
+              {specRawLabel&&specRawLabel!==specName?
+                <p className="text-xs text-[#526670]">Texto original: {specRawLabel}</p>:null}
               <p className="text-xs text-[#526670]">Tipo: {specKind??'não informado'}{specPage?' · Página '+specPage:''}</p>
               {specVersions.length?<p className="text-xs text-[#526670]">Colunas da ficha: {specVersions.join(' · ')}</p>:null}
               {scopeOnly?<p className="text-xs font-medium text-[#A9541B]">
