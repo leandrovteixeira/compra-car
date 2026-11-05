@@ -1,5 +1,14 @@
 name: S27 supervised integration checks
 on:
+  pull_request:
+    paths:
+      - 'packages/core/src/agents/**'
+      - 'packages/core/test/**'
+      - 'packages/adapter-openai/src/**'
+      - 'packages/adapter-openai/test/**'
+      - 'scripts/agents/**'
+      - 'apps/web/src/application/admin/agent-review-projection.ts'
+      - '.github/workflows/s27-supervised-integration.yml'
   push:
     branches:
       - integration/s27-supervised-ford-pipeline
