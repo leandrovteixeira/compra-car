@@ -39,7 +39,7 @@ function validSnapshot(s:SupervisedSpecSourceSnapshot):void{
     throw new Error('SPEC_SUPERVISED_SOURCE_NOT_VERIFIED');
 }
 export async function runSupervisedFordSpecJob(input:{
-  jobId:string;market:string;brand:string;snapshot:SupervisedSpecSourceSnapshot;
+  jobId:string;jobCreatedAt:string;market:string;brand:string;snapshot:SupervisedSpecSourceSnapshot;
   db:SupabaseClient;now?:()=>string;approvedAliases?:readonly SupervisedSpecAlias27[];
 }):Promise<{runId:string;reviewFindings:number;unmatched:number}>{
   const {snapshot:s,db}=input;validSnapshot(s);
@@ -80,6 +80,8 @@ export async function runSupervisedFordSpecJob(input:{
     catalog,aliases:approvedAliases
   });
   const now=input.now?.()??new Date().toISOString();
+  if(!Number.isFinite(Date.parse(input.jobCreatedAt))||Date.parse(input.jobCreatedAt)>Date.parse(now))
+    throw new Error('SPEC_SUPERVISED_JOB_TIME_INVALID');
   const runId=input.jobId; // stable one-shot retry key
   const findings:AgentRunBundle['findings'][number][]=
     observations.filter(o=>o.requiresReview).map(o=>{
@@ -120,7 +122,7 @@ export async function runSupervisedFordSpecJob(input:{
     id:runId,agentType:'SPEC_INTELLIGENCE',status:'COMPLETED',
     market:'BR',brand:'Ford',provider:'deterministic',
     runMode:'SUPERVISED_SOURCE_CLAIMS',schemaVersion:'SPEC-S27-REVIEW.1',
-    startedAt:now,completedAt:now,
+    startedAt:input.jobCreatedAt,completedAt:now,
     input:{productId:s.target.productId,modelYear:s.target.modelYear,
       documentSha256:s.source.sha256,sourceUrl:s.source.url,
       operatorVerified:true},
