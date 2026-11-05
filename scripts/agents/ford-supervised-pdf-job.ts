@@ -25,7 +25,7 @@ function officialFordUrl(url:string):URL{
  if(!/\.pdf(?:$)/iu.test(u.pathname))throw new Error('FORD_PDF_EXPECTED');
  return u;
 }
-async function officialPdfBytes(url:string):Promise<Uint8Array>{
+export async function officialFordPdfBytes(url:string):Promise<Uint8Array>{
  const target=officialFordUrl(url);
  const response=await fetch(target.href,{redirect:'manual',signal:AbortSignal.timeout(30000),
   headers:{accept:'application/pdf'}});
@@ -68,7 +68,7 @@ export async function runSupervisedFordPdfJob(input:{
    String(product.version).toLowerCase()!==input.source.version.toLowerCase()||
    Number(product.model_year)!==input.source.modelYear)
    throw new Error('FORD_PDF_CANONICAL_TARGET_REQUIRED');
- const bytes=await officialPdfBytes(input.source.url);
+ const bytes=await officialFordPdfBytes(input.source.url);
  const hash=createHash('sha256').update(bytes).digest('hex');
  if(input.source.expectedSha256&&input.source.expectedSha256!==hash)
   throw new Error('FORD_PDF_REVISION_CHANGED');
