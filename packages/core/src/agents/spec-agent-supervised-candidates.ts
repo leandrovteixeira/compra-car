@@ -6,7 +6,7 @@ import {normalizeAliasLabel} from '../agent-platform/canonical-alias-contract';
  * approved aliases can resolve automatically. Unmapped labels stay reviewable.
  */
 export type SupervisedSpecClaim27=Readonly<{
-  ordinal:number;page:number;label:string;kind:'binary'|'numeric'|'scale';
+  ordinal:number;page:number;label:string;rawLabel?:string;kind:'binary'|'numeric'|'scale';
   unit?:string|null;rawValue:string;
 }>;
 export type SupervisedSpecCatalog27=Readonly<{
@@ -14,7 +14,7 @@ export type SupervisedSpecCatalog27=Readonly<{
 }>;
 export type SupervisedSpecAlias27=Readonly<{label:string;specCode:string;approved:boolean}>;
 export type SupervisedSpecCandidate27=Readonly<{
-  ordinal:number;page:number;label:string;rawValue:string;kind:SupervisedSpecClaim27['kind'];
+  ordinal:number;page:number;label:string;rawLabel:string;rawValue:string;kind:SupervisedSpecClaim27['kind'];
   status:'MATCHED_ALIAS'|'SPEC_NEW'|'SPEC_AMBIGUOUS';
   matchCode:string|null;candidateCodes:readonly string[];
   fingerprint:string;requiresReview:boolean;
@@ -61,7 +61,7 @@ export function classifySupervisedSpecClaims27(input:{
       input.documentSha256,claim.ordinal,claim.page,normalized,claim.kind,
       claim.rawValue,claim.unit??null
     ])).digest('hex');
-    return {ordinal:claim.ordinal,page:claim.page,label:claim.label,
+    return {ordinal:claim.ordinal,page:claim.page,label:claim.label,rawLabel:claim.rawLabel??claim.label,
       kind:claim.kind,rawValue:claim.rawValue,status,matchCode,candidateCodes,
       fingerprint,requiresReview:status!=='MATCHED_ALIAS'};
   });
