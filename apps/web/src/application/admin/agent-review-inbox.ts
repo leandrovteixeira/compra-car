@@ -196,6 +196,31 @@ export async function loadReviewInbox(options:Readonly<{
         status:decision==='ACCEPT'?'APPROVED':decision==='REJECT'?'REJECTED':'POSTPONED'};
     }
   }
+  // A review ACCEPT is not sufficient evidence of a catalog mutation.
+  // For model-year reviews, however, the canonical row explicitly records
+  // the exact originating finding: use that receipt to show APPROVED and
+  // remove it from the WAITING filter after the atomic apply succeeds.
+  const yearRows=all.filter(row=>row.sourceAgent==='PRODUCT_YEAR'&&
+    row.caseKind==='MODEL_YEAR_NEW'&&row.findingId);
+  if(yearRows.length){
+    const receiptIds=yearRows.map(row=>row.findingId);
+    const {data:appliedYears,error:appliedYearsError}=await client
+      .from('catalog_mmv_model_years')
+      .select('source_finding_id,last_confirmed_finding_id')
+      .in('source_finding_id',receiptIds);
+    if(appliedYearsError||!appliedYears)
+      throw new Error('REVIEW_INBOX_MODEL_YEAR_RECEIPTS_UNAVAILABLE');
+    const confirmed=new Set(appliedYears.flatMap(item=>[
+      item.source_finding_id,item.last_confirmed_finding_id,
+    ]).filter((id):id is string=>typeof id==='string'));
+    for(let i=0;i<all.length;i++){
+      const row=all[i]!;
+      if(row.sourceAgent==='PRODUCT_YEAR'&&row.caseKind==='MODEL_YEAR_NEW'&&
+        confirmed.has(row.findingId)){
+        all[i]={...row,status:'APPROVED'};
+      }
+    }
+  }
   const statusCounts:Record<ReviewStatus,number>={
     WAITING:0,APPROVED:0,REJECTED:0,POSTPONED:0,
   };
