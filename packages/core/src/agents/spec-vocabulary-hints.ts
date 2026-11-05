@@ -1,7 +1,11 @@
 /** Conservative read-only recommendations for unclassified source vocabulary.
  * These are review hints, never an approved alias or canonical spec writes.
  */
-import {normalizeAliasLabel} from '../agent-platform/canonical-alias-contract';
+// Keep review hints independent of the Sprint 27 alias module until
+// the full agent-core branches are reconciled in QA.
+const normalizeAliasLabel=(raw:string)=>raw.normalize('NFKD')
+  .replace(/[\u0300-\u036f]/gu,'').toLowerCase()
+  .replace(/[^a-z0-9]+/gu,' ').trim();
 import {separateSpecConceptAndValue27} from './spec-claim-value-separation';
 
 export type VocabularyCandidate27=Readonly<{
