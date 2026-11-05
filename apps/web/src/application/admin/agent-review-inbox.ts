@@ -221,6 +221,25 @@ export async function loadReviewInbox(options:Readonly<{
       }
     }
   }
+  // Spec approvals are valid only if the controlled alias decision event
+  // committed and the case is APPROVED. Never infer from a bare ACCEPT.
+  const specRows=all.filter(row=>row.sourceAgent==='SPEC_INTELLIGENCE'&&
+    (row.caseKind==='SPEC_NEW'||row.caseKind==='SPEC_AMBIGUOUS'));
+  if(specRows.length){
+    const {data:specReceipts,error:specReceiptsError}=await client
+      .from('agent_review_cases').select('source_ref,status,case_kind')
+      .in('source_ref',specRows.map(row=>row.findingId))
+      .eq('status','APPROVED');
+    if(specReceiptsError||!specReceipts)
+      throw new Error('REVIEW_INBOX_SPEC_RECEIPTS_UNAVAILABLE');
+    const appliedSpecIds=new Set(specReceipts.map(row=>row.source_ref));
+    for(let i=0;i<all.length;i++){
+      const row=all[i]!;
+      if(row.sourceAgent==='SPEC_INTELLIGENCE'&&appliedSpecIds.has(row.findingId)){
+        all[i]={...row,status:'APPROVED'};
+      }
+    }
+  }
   const statusCounts:Record<ReviewStatus,number>={
     WAITING:0,APPROVED:0,REJECTED:0,POSTPONED:0,
   };
