@@ -12,6 +12,7 @@ import { runPriceCli } from './run-price';
 import { runOra5PriceProbe } from './price-ora5-direct-probe';
 import { runSupervisedFordSpecJob, type SupervisedSpecSourceSnapshot } from './spec-supervised-worker';
 import {runSupervisedFordPdfJob,type SupervisedFordPdfJob} from './ford-supervised-pdf-job';
+import {runFordSpecVocabularyJob} from './ford-spec-vocabulary-worker';
 import { monitorBrandSources } from './source-monitor';
 import { runMmvLaunchWatch } from './mmv-launch-watch';
 import { journalWorkerJob } from './engineering-worker-telemetry';
@@ -47,6 +48,8 @@ type JobRow = {
     priceProbeModel?: 'ORA5' | 'WEY07';
     supervisedSpecSnapshot?: SupervisedSpecSourceSnapshot;
     supervisedPdfSource?: SupervisedFordPdfJob;
+    vocabularySourceRunId?: string;
+    vocabularyPdfUrl?: string;
   };
 };
 
@@ -166,37 +169,52 @@ async function execute(job: JobRow) {
   // extracted, verified and bound to the actual Ford MY and product.
   // Review proposals only; no product_specs or canonical dictionary mutations.
   if(job.job_type==='SPEC_INTELLIGENCE'){
-    if(env.QA_SUPERVISED_SPEC_ENABLED!=='1'||
-      job.market!=='BR'||job.brand.toUpperCase()!=='FORD'||
-      (!job.input.supervisedSpecSnapshot&&!job.input.supervisedPdfSource)||
-      (job.input.supervisedSpecSnapshot&&job.input.supervisedPdfSource))
+    const vocabulary=Boolean(job.input.vocabularySourceRunId && job.input.vocabularyPdfUrl);
+    const attested=Boolean(job.input.supervisedSpecSnapshot);
+    const pdf=Boolean(job.input.supervisedPdfSource);
+    if(env.QA_SUPERVISED_SPEC_ENABLED!=='1' ||
+       job.market!=='BR'||job.brand.toUpperCase()!=='FORD'||
+       Number(vocabulary)+Number(attested)+Number(pdf)!==1)
       throw new Error('SPEC_SUPERVISED_DISABLED_OR_SOURCE_MISSING');
-    // The AI PDF mode is only permitted with its own dedicated key and
-    // an admitted budget reservation; no fallback to a generic key.
-    const paidSpec=Boolean(job.input.supervisedPdfSource);
+    const paidSpec=vocabulary||pdf;
+    if(paidSpec&&!env.OPENAI_SPEC_AGENT_API_KEY?.trim())
+      throw new Error('SPEC_DEDICATED_KEY_REQUIRED');
     const specReservation=paidSpec
       ?await reserveAgentPilotBudget(client as unknown as AgentBudgetClient,job)
       :null;
-    let r:{runId:string;reviewFindings:number;unmatched:number};
     try{
-      r=job.input.supervisedPdfSource
-        ?await runSupervisedFordPdfJob({
+      if(vocabulary){
+        const r=await runFordSpecVocabularyJob({
           jobId:job.id,jobCreatedAt:job.created_at,
-          market:job.market,brand:job.brand,
-          source:job.input.supervisedPdfSource,db:client,
-          apiKey:env.OPENAI_SPEC_AGENT_API_KEY??''
-        })
-        :await runSupervisedFordSpecJob({
-          jobId:job.id,jobCreatedAt:job.created_at,
-          market:job.market,brand:job.brand,
-          snapshot:job.input.supervisedSpecSnapshot!,db:client
+          market:job.market,brand:job.brand,db:client,
+          sourceRunId:job.input.vocabularySourceRunId!,
+          pdfUrl:job.input.vocabularyPdfUrl!,
+          apiKey:env.OPENAI_SPEC_AGENT_API_KEY!
         });
+        await complete(job.id,r.runId);
+        await journal('SUCCESS',r.runId);
+        log('Spec vocabulary review-only: '+JSON.stringify(r));
+      }else{
+        const r=pdf
+          ?await runSupervisedFordPdfJob({
+            jobId:job.id,jobCreatedAt:job.created_at,
+            market:job.market,brand:job.brand,
+            source:job.input.supervisedPdfSource!,db:client,
+            apiKey:env.OPENAI_SPEC_AGENT_API_KEY!
+          })
+          :await runSupervisedFordSpecJob({
+            jobId:job.id,jobCreatedAt:job.created_at,
+            market:job.market,brand:job.brand,
+            snapshot:job.input.supervisedSpecSnapshot!,db:client
+          });
+        await complete(job.id,r.runId);
+        await journal('SUCCESS',r.runId);
+        log('Spec review-only: '+JSON.stringify(r));
+      }
     }finally{
-      if(specReservation)await finishAgentPilotBudget(client as unknown as AgentBudgetClient,specReservation);
+      if(specReservation)
+        await finishAgentPilotBudget(client as unknown as AgentBudgetClient,specReservation);
     }
-    await complete(job.id,r.runId);
-    await journal('SUCCESS',r.runId);
-    log('Spec review-only: '+JSON.stringify(r));
     return;
   }
 
