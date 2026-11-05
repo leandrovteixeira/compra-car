@@ -80,7 +80,7 @@ export async function extractManufacturerPdfClaims27(input:{
   input:[{role:'user',content:[
    {type:'input_text',text:'Return the structured extraction. No recommendations or canonical mapping.'},
    {type:'input_file',filename:'manufacturer-ficha.pdf',
-    file_data:'data:application/pdf;base64,'+bytes.toString('base64'),detail:'low'}
+    file_data:'data:application/pdf;base64,'+bytes.toString('base64')}
   ]}],
   text:{format:{type:'json_schema',name:'manufacturer_spec_claims_s27',strict:true,schema}}
  });
