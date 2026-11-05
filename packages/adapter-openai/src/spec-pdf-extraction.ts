@@ -1,13 +1,14 @@
 import OpenAI from 'openai';
 import type {Response,ResponseCreateParamsNonStreaming} from 'openai/resources/responses/responses';
 import {createHash} from 'node:crypto';
+import {separateSpecConceptAndValue27} from '@compra-car/core/agents';
 
 export type VerifiedManufacturerPdf=Readonly<{
   brand:string;model:string;version:string;modelYear:number;
   sourceUrl:string;bytes:Uint8Array;
 }>;
 export type ExtractedManufacturerClaim=Readonly<{
-  ordinal:number;page:number;label:string;kind:'binary'|'numeric'|'scale';
+  ordinal:number;page:number;label:string;rawLabel:string;kind:'binary'|'numeric'|'scale';
   rawValue:string;unit:string|null;sourceExcerpt:string;
 }>;
 export type ManufacturerPdfExtraction=Readonly<{
@@ -71,6 +72,8 @@ export async function extractManufacturerPdfClaims27(input:{
    'The expected vehicle is '+s.brand+' '+s.model+' '+s.version+' MY '+s.modelYear+'.',
    'The document may have a multi-column version matrix: include ONLY values explicitly belonging to this version.',
    'Never assume that a listed feature is standard on every version. Never infer absent equipment from missing lines.',
+   'Report the equipment concept/field name separately from its measured value and unit. Never incorporate a measured 8-inch screen size into the canonical field label.',
+   'For example: original painel de instrumentos colorido de 8 polegadas => label painel de instrumentos colorido; rawValue 8; unit inch; excerpt must retain the original full text.',
    'Report page and short source excerpt supporting each claim, including raw value and unit.',
    'Supply a literal excerpt proving the model year and exact version from the document.',
    'If the expected MY or exact version cannot be verified, return zero claims and empty evidence strings.',
@@ -110,8 +113,14 @@ export async function extractManufacturerPdfClaims27(input:{
     typeof c.rawValue!=='string'||c.label.length>500||c.rawValue.length>500)
     throw new Error('SPEC_PDF_CLAIM_INVALID');
   seen.add(c.ordinal!);
-  return {ordinal:c.ordinal!,page:c.page!,label:c.label!,kind:c.kind!,
-    rawValue:c.rawValue,unit:c.unit??null,sourceExcerpt:c.sourceExcerpt};
+  const separated=separateSpecConceptAndValue27(c.label!);
+  // The literal original remains auditable while field matching uses the
+  // equipment concept, never a dimensional value embedded in the name.
+  return {ordinal:c.ordinal!,page:c.page!,label:separated.specLabel,
+    rawLabel:separated.rawLabel,kind:c.kind!,
+    rawValue:separated.observedValue??c.rawValue,
+    unit:separated.observedUnit??c.unit??null,
+    sourceExcerpt:c.sourceExcerpt};
  });
  return {documentSha256:createHash('sha256').update(bytes).digest('hex'),
    sourceUrl:s.sourceUrl,modelYear:s.modelYear,declaredYearEvidence:year,
