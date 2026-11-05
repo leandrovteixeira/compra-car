@@ -10,6 +10,7 @@ import { runMyLaunchBenchmark } from './my-launch-benchmark';
 import { runFipePilot } from './fipe-agent-pilot';
 import { runPriceCli } from './run-price';
 import { runOra5PriceProbe } from './price-ora5-direct-probe';
+import { runSupervisedFordSpecJob, type SupervisedSpecSourceSnapshot } from './spec-supervised-worker';
 import { monitorBrandSources } from './source-monitor';
 import { runMmvLaunchWatch } from './mmv-launch-watch';
 import { journalWorkerJob } from './engineering-worker-telemetry';
@@ -42,6 +43,7 @@ type JobRow = {
     priceAuditOnly?: boolean;
     priceDirectProbe?: boolean;
     priceProbeModel?: 'ORA5' | 'WEY07';
+    supervisedSpecSnapshot?: SupervisedSpecSourceSnapshot;
   };
 };
 
@@ -154,6 +156,24 @@ async function execute(job: JobRow) {
     },log);
     await complete(job.id,runId);
     await journal('SUCCESS',runId);
+    return;
+  }
+
+  // Explicitly supervised QA pilot only: source claims must already have been
+  // extracted, verified and bound to the actual Ford MY and product.
+  // Review proposals only; no product_specs or canonical dictionary mutations.
+  if(job.job_type==='SPEC_INTELLIGENCE'){
+    if(env.QA_SUPERVISED_SPEC_ENABLED!=='1'||
+      job.market!=='BR'||job.brand.toUpperCase()!=='FORD'||
+      !job.input.supervisedSpecSnapshot)
+      throw new Error('SPEC_SUPERVISED_DISABLED_OR_SOURCE_MISSING');
+    const r=await runSupervisedFordSpecJob({
+      jobId:job.id,market:job.market,brand:job.brand,
+      snapshot:job.input.supervisedSpecSnapshot,db:client
+    });
+    await complete(job.id,r.runId);
+    await journal('SUCCESS',r.runId);
+    log('Spec review-only: '+JSON.stringify(r));
     return;
   }
 
