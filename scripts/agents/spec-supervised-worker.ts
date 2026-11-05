@@ -10,8 +10,8 @@ import {
  type SupervisedSpecCatalog27,type SupervisedSpecAlias27,
 } from '@compra-car/core/agents';
 import type {AgentRunBundle,AgentObject} from '@compra-car/core/agent-platform';
-import {AgentPlatformSupabaseAdapter} from '@compra-car/adapter-supabase';
-import type {SupabaseClient} from '@supabase/supabase-js';
+import {AgentPlatformSupabaseAdapter,createLegacySupabaseClient} from '@compra-car/adapter-supabase';
+type SupabaseClient=ReturnType<typeof createLegacySupabaseClient>;
 
 export type SupervisedSpecSourceSnapshot=Readonly<{
   target:{productId:number;modelYear:number;brand:string;model:string;version:string};
