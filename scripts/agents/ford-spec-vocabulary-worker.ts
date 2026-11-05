@@ -19,13 +19,13 @@ export async function runFordSpecVocabularyJob(input:{
   throw new Error('FORD_VOCAB_JOB_INVALID');
  const {data:parent,error:parentError}=await input.db.from('agent_runs')
   .select('id,brand,market,agent_type,status').eq('id',input.sourceRunId).single();
- const {data:findings,error:findingError}=await input.db.from('agent_findings')
+ const {data:parentFindings,error:findingError}=await input.db.from('agent_findings')
   .select('proposal').eq('run_id',input.sourceRunId).limit(2);
  if(parentError||findingError||!parent||parent.brand!=='Ford'||
    parent.market!=='BR'||parent.status!=='COMPLETED'||
-   parent.agent_type!=='BRAND_CONNECTOR'||findings?.length!==1)
+   parent.agent_type!=='BRAND_CONNECTOR'||parentFindings?.length!==1)
   throw new Error('FORD_VOCAB_PARENT_INVALID');
- const proposal=findings[0]?.proposal as {sourceEntries?:{url?:string;type?:string}[]} | null;
+ const proposal=parentFindings[0]?.proposal as {sourceEntries?:{url?:string;type?:string}[]} | null;
  if(!proposal?.sourceEntries?.some(x=>x.url===input.pdfUrl&&x.type==='TECHNICAL_SHEET'))
   throw new Error('FORD_VOCAB_SOURCE_NOT_DISCOVERED');
  const bytes=await officialFordPdfBytes(input.pdfUrl);
