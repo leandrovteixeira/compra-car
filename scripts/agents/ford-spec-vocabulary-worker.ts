@@ -6,6 +6,7 @@ import {createHash,randomUUID} from 'node:crypto';
 import {extractFordSpecVocabulary27} from '@compra-car/adapter-openai';
 import {AgentPlatformSupabaseAdapter,createLegacySupabaseClient} from '@compra-car/adapter-supabase';
 import {normalizeAliasLabel} from '@compra-car/core/agent-platform';
+import {separateSpecConceptAndValue27} from '@compra-car/core/agents';
 import type {AgentRunBundle,AgentObject} from '@compra-car/core/agent-platform';
 import {officialFordPdfBytes} from './ford-supervised-pdf-job';
 type Client=ReturnType<typeof createLegacySupabaseClient>;
@@ -77,15 +78,17 @@ export async function runFordSpecVocabularyJob(input:{
  });
  const now=new Date().toISOString();
  const entries=extraction.claims.map(claim=>{
-  const norm=normalizeAliasLabel(claim.label);
+  const separated=separateSpecConceptAndValue27(claim.label);
+  const norm=normalizeAliasLabel(separated.specLabel);
+  const rawNorm=normalizeAliasLabel(separated.rawLabel);
   const sameKind=catalog.filter(s=>s.kind===claim.kind);
   const confirmed=[...new Set(aliases.filter(a=>a.spec.kind===claim.kind&&
-   normalizeAliasLabel(a.label)===norm).map(a=>a.spec.code))].sort();
+   [norm,rawNorm].includes(normalizeAliasLabel(a.label))).map(a=>a.spec.code))].sort();
   const exact=[...new Set(sameKind.filter(s=>normalizeAliasLabel(s.label)===norm)
     .map(s=>s.code))].sort();
   const status=confirmed.length===1?'MATCHED_ALIAS':
    confirmed.length>1||exact.length>0?'SPEC_AMBIGUOUS':'SPEC_NEW';
-  return {claim,status,match:confirmed.length===1?confirmed[0]:null,
+  return {claim,separated,status,match:confirmed.length===1?confirmed[0]:null,
    candidateCodes:[...new Set([...confirmed,...exact])].sort(),
    fingerprint:createHash('sha256').update(JSON.stringify([
     'FORD_VOCAB_V1',extraction.documentHash,claim.ordinal,norm,claim.kind,
@@ -100,7 +103,7 @@ export async function runFordSpecVocabularyJob(input:{
   return {finding:{
     id,runId:input.jobId,findingType:'UNMATCHED_SPEC',fingerprint:x.fingerprint,
     subjectKey:JSON.stringify(['FORD_RANGER_VOCAB',extraction.documentHash,x.claim.ordinal]),
-    title:('Ford Ranger · '+x.claim.label).slice(0,500),
+    title:('Ford Ranger · '+x.separated.specLabel).slice(0,500),
     summary:x.status==='SPEC_NEW'
       ?'Source term not identified in approved canonical dictionary; review for creation or alias.'
       :'Potential canonical specification match needs review.',
@@ -108,11 +111,15 @@ export async function runFordSpecVocabularyJob(input:{
     subject:{brand:'Ford',model:'Ranger',officialVersionLabel:null,
      modelYear:null,sourceScope:'VOCABULARY_ONLY'} as AgentObject,
     proposal:{action:x.status,reviewOnly:true,candidateCodes:x.candidateCodes,
-     sourceLabel:x.claim.label,kind:x.claim.kind,page:x.claim.page,
+     sourceLabel:x.separated.specLabel,rawLabel:x.separated.rawLabel,
+     observedValue:x.separated.observedValue,observedUnit:x.separated.observedUnit,
+     valueSource:x.separated.valueSource,kind:x.claim.kind,page:x.claim.page,
      versionColumns:[...x.claim.versionColumns],noProductAssignment:true} as AgentObject,
     payload:{reasonCode:x.status,sourceUrl:input.pdfUrl,
      sourceDocumentSha256:extraction.documentHash,
      sourcePage:x.claim.page,sourceExcerpt:x.claim.sourceExcerpt,
+     rawLabel:x.separated.rawLabel,observedValue:x.separated.observedValue,
+     observedUnit:x.separated.observedUnit,
      noModelYearInference:true,noEquipmentAssignment:true,canonicalWrites:false} as AgentObject,
     createdAt:now,updatedAt:now
    },evidence:[{
