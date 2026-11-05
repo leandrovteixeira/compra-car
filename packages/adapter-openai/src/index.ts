@@ -18,3 +18,4 @@ export * from './price-compact-matcher';
 export * from './generation-vision-adapter';
 export * from './generation-assessment-provider';
 export * from './spec-pdf-extraction';
+export * from './spec-pdf-vocabulary';
