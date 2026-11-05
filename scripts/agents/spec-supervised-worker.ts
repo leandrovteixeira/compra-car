@@ -101,9 +101,9 @@ export async function runSupervisedFordSpecJob(input:{
             modelYear:s.target.modelYear} as AgentObject,
           proposal:{action:o.status,reviewOnly:true,
             candidateCodes:[...o.candidateCodes],rawValue:o.rawValue,
-            kind:o.kind,sourceLabel:o.label,page:o.page} as AgentObject,
+            kind:o.kind,sourceLabel:o.label,rawLabel:o.rawLabel,page:o.page} as AgentObject,
           payload:{reasonCode:o.status,sourceDocumentSha256:s.source.sha256,
-            sourceUrl:s.source.url,sourcePage:o.page,
+            sourceUrl:s.source.url,sourcePage:o.page,rawLabel:o.rawLabel,
             operatorVerified:true,canonicalWrites:false} as AgentObject,
           createdAt:now,updatedAt:now
         },
