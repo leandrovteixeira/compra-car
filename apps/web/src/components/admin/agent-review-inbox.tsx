@@ -51,6 +51,8 @@ function Status({status}:{readonly status:ReviewStatus}){
 }
 function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:ReviewInboxRow}){
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = '/admin/agents' + (searchParams.toString() ? '?' + searchParams.toString() : '');
   const [reviewState, reviewAction, reviewPending] = useActionState(reviewMmvIdentityAction, {status:'idle' as const,message:''});
   const [connectorState, connectorAction, connectorPending]=useActionState(reviewConnectorAction,{status:'idle' as const,message:''});
   const [yearState,yearAction,yearPending]=useActionState(reviewModelYearAction,{status:'idle' as const,message:''});
@@ -244,7 +246,7 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
         <p><strong>Run de origem:</strong> <code>{row.runId}</code></p>
         <p><strong>Finding:</strong> <code>{row.findingId}</code></p>
         <p><strong>Observado em:</strong> {date(row.observedAt)} · {row.priorRuns} observação(ões) consolidada(s)</p>
-        <a className="mt-2 inline-block underline underline-offset-2" href={'/admin/agents/runs/'+row.runId}
+        <a className="mt-2 inline-block underline underline-offset-2" href={'/admin/agents/runs/'+row.runId+'?returnTo='+encodeURIComponent(returnTo)}
           onClick={event=>event.stopPropagation()}>Abrir execução de origem</a>
       </div>
       <details className="mt-3 rounded-md border border-[#D6DEE3] bg-white p-3 text-xs">
