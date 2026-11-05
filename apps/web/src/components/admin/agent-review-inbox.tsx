@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useActionState, useEffect, useState } from 'react';
+import { Fragment, useActionState, useEffect, useRef, useState } from 'react';
 import { reviewMmvIdentityAction } from '@/app/admin/agents/identity-actions';
 import { reviewConnectorAction } from '@/app/admin/agents/connector-decisions';
 import { reviewModelYearAction } from '@/app/admin/agents/model-year-decisions';
@@ -51,6 +51,112 @@ const labelClasses:Record<ReviewStatus,string> = {
 function Status({status}:{readonly status:ReviewStatus}){
   return <span className={`inline-flex whitespace-nowrap rounded-md px-2 py-1 text-[11px] font-semibold ${labelClasses[status]}`}>{statusLabels[status]}</span>;
 }
+type CanonicalSpecOption={id:number;code:string;label:string;group:string;type:string};
+function CanonicalSpecCombobox({
+  options,value,onChange,disabled,id,
+}:{
+  options:readonly CanonicalSpecOption[];
+  value:string;
+  onChange:(next:string)=>void;
+  disabled:boolean;
+  id:string;
+}){
+  const root=useRef<HTMLDivElement>(null);
+  const input=useRef<HTMLInputElement>(null);
+  const [query,setQuery]=useState('');
+  const [open,setOpen]=useState(false);
+  const [active,setActive]=useState(0);
+  const normalize=(raw:string)=>raw.normalize('NFD').replace(/\\p{M}/gu,'')
+    .toLocaleLowerCase('pt-BR').trim();
+  const selected=options.find(option=>String(option.id)===value);
+  const words=normalize(query).split(/\\s+/u).filter(Boolean);
+  const matches=(words.length?options.filter(option=>{
+    const haystack=normalize([option.code,option.label,option.group].join(' '));
+    return words.every(word=>haystack.includes(word));
+  }):options).slice(0,50);
+  useEffect(()=>{
+    const outside=(event:PointerEvent)=>{
+      if(root.current&&!root.current.contains(event.target as Node))setOpen(false);
+    };
+    document.addEventListener('pointerdown',outside);
+    return ()=>document.removeEventListener('pointerdown',outside);
+  },[]);
+  const choose=(option:CanonicalSpecOption)=>{
+    onChange(String(option.id));
+    setQuery('');
+    setOpen(false);
+    setActive(0);
+  };
+  const listId=id+'-options';
+  return <div ref={root} className="relative w-full">
+    <input type="hidden" name="targetSpecId" value={value}/>
+    <div className="relative">
+      <input
+        ref={input}
+        id={id}
+        type="search"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={listId}
+        aria-activedescendant={open&&matches.length?listId+'-'+active:undefined}
+        autoComplete="off"
+        disabled={disabled}
+        value={open?query:(selected?selected.code+' · '+selected.label:query)}
+        placeholder="Buscar spec por código ou descrição..."
+        className="w-full rounded-md border border-[#BCCAD0] bg-white py-2 pl-3 pr-9 text-xs outline-none focus:border-[#EF7732] focus:ring-1 focus:ring-[#EF7732]"
+        onFocus={()=>{setQuery('');setOpen(true);setActive(0);}}
+        onChange={event=>{
+          setQuery(event.target.value);
+          onChange('');
+          setOpen(true);
+          setActive(0);
+        }}
+        onKeyDown={event=>{
+          if(event.key==='Escape'){setOpen(false);event.stopPropagation();return;}
+          if(event.key==='ArrowDown'){
+            event.preventDefault();setOpen(true);
+            setActive(i=>Math.min(matches.length-1,Math.max(0,i+1)));return;
+          }
+          if(event.key==='ArrowUp'){
+            event.preventDefault();setActive(i=>Math.max(0,i-1));return;
+          }
+          if(event.key==='Enter'&&open){
+            event.preventDefault();
+            if(matches[active])choose(matches[active]);
+          }
+        }}
+      />
+      <button type="button" tabIndex={-1} aria-label="Mostrar especificações"
+        disabled={disabled}
+        onClick={()=>{setOpen(prev=>!prev);input.current?.focus();}}
+        className="absolute right-2 top-1/2 -translate-y-1/2 px-1 text-[#526670]"
+      ><span aria-hidden="true">⌄</span></button>
+    </div>
+    {open&&!disabled?<div id={listId} role="listbox"
+      aria-label="Especificações canônicas compatíveis"
+      className="absolute left-0 right-0 z-40 mt-1 max-h-60 overflow-y-auto rounded-md border border-[#BCCAD0] bg-white p-1 shadow-lg">
+      {matches.length?matches.map((option,i)=>
+        <button type="button" key={option.id} role="option"
+          id={listId+'-'+i}
+          aria-selected={String(option.id)===value}
+          onMouseEnter={()=>setActive(i)}
+          onMouseDown={event=>event.preventDefault()}
+          onClick={()=>choose(option)}
+          className={'block w-full rounded px-3 py-2 text-left text-xs '+
+            (i===active?'bg-[#EDF4F6] text-[#293D47]':'hover:bg-[#EDF4F6]')}
+        >
+          <span className="font-semibold">{option.code}</span> · {option.label}
+          {option.group?<span className="ml-1 text-[#526670]">— {option.group}</span>:null}
+        </button>
+      ):<p className="px-3 py-2 text-xs text-[#526670]">Nenhum spec encontrado.</p>}
+      {words.length&&matches.length===50?
+        <p className="px-3 py-2 text-[11px] text-[#526670]">Refine sua busca para ver mais resultados.</p>:null}
+    </div>:null}
+  </div>;
+}
+
 function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:ReviewInboxRow}){
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -61,7 +167,6 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
   const [generationState,generationAction,generationPending]=useActionState(reviewGenerationDecisionAction,{status:'idle' as const,message:''});
   const [specState,specAction,specPending]=useActionState(reviewSpecFindingAction,{status:'idle' as const,message:''});
   const [specTargetId,setSpecTargetId]=useState('');
-  const [specSearch,setSpecSearch]=useState('');
   useEffect(()=>{if(reviewState.status==='success'||connectorState.status==='success'||yearState.status==='success'||generationState.status==='success'||specState.status==='success')router.refresh();},[reviewState.status,connectorState.status,yearState.status,generationState.status,specState.status,router]);
   const subject = detail.subject ?? {};
   const get = (key:string) => {
@@ -110,13 +215,6 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
   const specCandidates=Array.isArray(detail.proposal?.candidateCodes)
     ?detail.proposal.candidateCodes.filter((x):x is string=>typeof x==='string'):[];
   const applicableCatalog=detail.canonicalOptions??[];
-  const specSearchKey=(raw:string)=>raw.normalize('NFKD')
-    .replace(/[\u0300-\u036f]/gu,'').toLocaleLowerCase('pt-BR').trim();
-  const searchTokens=specSearchKey(specSearch).split(/\s+/u).filter(Boolean);
-  const filteredCatalog=applicableCatalog.filter(option=>{
-    const haystack=specSearchKey([option.code,option.label,option.group].join(' '));
-    return searchTokens.every(token=>haystack.includes(token)) || String(option.id)===specTargetId;
-  }).slice(0,100);
   const specIsScale=specKind==='scale';
   const scopeOnly=detail.technicalPayload.noProductAssignment===true;
   return (
@@ -177,25 +275,13 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
                 <label htmlFor={'spec-canonical-'+detail.findingId} className="block text-xs font-semibold">
                   Especificação canônica existente
                 </label>
-                <input type="search"
-                  aria-label="Buscar especificação canônica por nome, código ou grupo"
-                  placeholder="Buscar por nome, código ou categoria..."
-                  value={specSearch}
-                  onChange={event=>setSpecSearch(event.target.value)}
+                <CanonicalSpecCombobox
+                  id={'spec-canonical-'+detail.findingId}
+                  options={applicableCatalog}
+                  value={specTargetId}
+                  onChange={setSpecTargetId}
                   disabled={specPending||specIsScale}
-                  className="w-full rounded-md border border-[#BCCAD0] bg-white px-3 py-2 text-xs outline-none focus:border-[#EF7732]"
                 />
-                <select id={'spec-canonical-'+detail.findingId} name="targetSpecId"
-                  value={specTargetId} onChange={event=>setSpecTargetId(event.target.value)}
-                  disabled={specPending||specIsScale}
-                  className="w-full rounded-md border border-[#BCCAD0] bg-white px-3 py-2 text-xs">
-                  <option value="">Selecione um spec para canonicalizar...</option>
-                  {filteredCatalog.map(option=>(
-                    <option key={option.id} value={option.id}>
-                      {option.code} · {option.label}{option.group?' — '+option.group:''}
-                    </option>
-                  ))}
-                </select>
                 {specCandidates.length?<p className="text-[11px] text-[#526670]">
                   Sugestões do agente: {specCandidates.join(', ')}
                 </p>:null}
