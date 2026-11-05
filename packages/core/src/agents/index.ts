@@ -71,3 +71,5 @@ export * from './engineering-cost-policy';
 export * from './mmv-generation-change-classifier';
 
 export * from './mmv-generation-review';
+export * from './spec-claim-value-separation';
+export * from './spec-vocabulary-hints';
