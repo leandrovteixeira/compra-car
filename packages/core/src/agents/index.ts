@@ -99,3 +99,4 @@ export * from './mmv-generation-change-classifier';
 export * from './mmv-generation-review';
 export * from './mmv-generation-evidence';
 export * from './generation-evidence-collector';
+export * from './spec-agent-supervised-candidates';
