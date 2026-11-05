@@ -4,6 +4,7 @@ import { Fragment, useActionState, useEffect, useState } from 'react';
 import { reviewMmvIdentityAction } from '@/app/admin/agents/identity-actions';
 import { reviewConnectorAction } from '@/app/admin/agents/connector-decisions';
 import { reviewModelYearAction } from '@/app/admin/agents/model-year-decisions';
+import { reviewSpecFindingAction } from '@/app/admin/agents/spec-decisions';
 import { reviewFipeCandidateAction } from '@/app/admin/agents/fipe-decisions';
 import { reviewGenerationDecisionAction } from '@/app/admin/agents/generation-decisions';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -13,6 +14,7 @@ import type { ReviewInboxRow, ReviewSort, ReviewDirection } from '@/application/
 type FindingDetail = {
   findingId: string;
   title: string;
+  canonicalOptions?: readonly {id:number;code:string;label:string;group:string;type:string}[];
   summary: string | null;
   sourceAgent: string;
   subject: Record<string, unknown>;
@@ -57,7 +59,9 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
   const [connectorState, connectorAction, connectorPending]=useActionState(reviewConnectorAction,{status:'idle' as const,message:''});
   const [yearState,yearAction,yearPending]=useActionState(reviewModelYearAction,{status:'idle' as const,message:''});
   const [generationState,generationAction,generationPending]=useActionState(reviewGenerationDecisionAction,{status:'idle' as const,message:''});
-  useEffect(()=>{if(reviewState.status==='success'||connectorState.status==='success'||yearState.status==='success'||generationState.status==='success')router.refresh();},[reviewState.status,connectorState.status,yearState.status,generationState.status,router]);
+  const [specState,specAction,specPending]=useActionState(reviewSpecFindingAction,{status:'idle' as const,message:''});
+  const [specTargetId,setSpecTargetId]=useState('');
+  useEffect(()=>{if(reviewState.status==='success'||connectorState.status==='success'||yearState.status==='success'||generationState.status==='success'||specState.status==='success')router.refresh();},[reviewState.status,connectorState.status,yearState.status,generationState.status,specState.status,router]);
   const subject = detail.subject ?? {};
   const get = (key:string) => {
     const val=subject[key];
@@ -95,12 +99,35 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
   const currentGenerationMY=get('currentModelYear');
   const previousGenerationMY=get('previousModelYear');
   const isQaGenerationFixture=detail.technicalPayload.qaFixture===true;
+  const isSpecCase=row.caseKind==='SPEC_NEW'||row.caseKind==='SPEC_AMBIGUOUS';
+  const specName=typeof detail.proposal?.sourceLabel==='string'?
+    detail.proposal.sourceLabel:detail.title.split(' · ').slice(-1)[0]??detail.title;
+  const specKind=typeof detail.proposal?.kind==='string'?detail.proposal.kind:null;
+  const specPage=typeof detail.proposal?.page==='number'?detail.proposal.page:null;
+  const specVersions=Array.isArray(detail.proposal?.versionColumns)
+    ?detail.proposal.versionColumns.filter((x):x is string=>typeof x==='string'):[];
+  const specCandidates=Array.isArray(detail.proposal?.candidateCodes)
+    ?detail.proposal.candidateCodes.filter((x):x is string=>typeof x==='string'):[];
+  const applicableCatalog=detail.canonicalOptions??[];
+  const specIsScale=specKind==='scale';
+  const scopeOnly=detail.technicalPayload.noProductAssignment===true;
   return (
     <div className="rounded-b-lg border border-t-0 border-[#D6DEE3] bg-[#F6F7F8] p-3 sm:p-4">
       <div className="grid gap-3 xl:grid-cols-[1fr_1fr_1.1fr]">
         <section className="rounded-md bg-white p-3">
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#526670]">Observado</h3>
           <p className="text-[13px] font-semibold">{observed || detail.title}</p>
+          {isSpecCase?(
+            <div className="mt-2 space-y-2 rounded-md border border-[#F2C0A0] bg-[#FFF3EA] p-3 text-sm">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-[#A9541B]">Especificação identificada na fonte</p>
+              <p className="break-words text-base font-bold leading-6 text-[#293D47]">{specName}</p>
+              <p className="text-xs text-[#526670]">Tipo: {specKind??'não informado'}{specPage?' · Página '+specPage:''}</p>
+              {specVersions.length?<p className="text-xs text-[#526670]">Colunas da ficha: {specVersions.join(' · ')}</p>:null}
+              {scopeOnly?<p className="text-xs font-medium text-[#A9541B]">
+                Descoberta de vocabulário: ainda não vinculada a uma versão ou MY.
+              </p>:null}
+            </div>
+          ):null}
           {row.version?<p className="mt-1 text-xs font-medium text-[#526670]">
             Versão selecionada: {row.version}
           </p>:null}
@@ -133,6 +160,57 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
               informações comerciais ou preços próprios. A escolha exigirá confirmação do destino.
             </p>:null}
           <p className="mt-1 text-xs text-[#526670]">Confiança {percent(row.confidence)}{readiness?` · Evidência: ${readiness}`:''}</p>
+          {isSpecCase?(
+            <form action={specAction} onClick={event=>event.stopPropagation()}
+              className="mt-3 space-y-3">
+              <input type="hidden" name="findingId" value={detail.findingId}/>
+              <input type="hidden" name="fingerprint" value={row.snapshotFingerprint}/>
+              <div className="space-y-1">
+                <label htmlFor={'spec-canonical-'+detail.findingId} className="block text-xs font-semibold">
+                  Especificação canônica existente
+                </label>
+                <select id={'spec-canonical-'+detail.findingId} name="targetSpecId"
+                  value={specTargetId} onChange={event=>setSpecTargetId(event.target.value)}
+                  disabled={specPending||specIsScale}
+                  className="w-full rounded-md border border-[#BCCAD0] bg-white px-3 py-2 text-xs">
+                  <option value="">Selecione um spec para canonicalizar...</option>
+                  {applicableCatalog.map(option=>(
+                    <option key={option.id} value={option.id}>
+                      {option.code} · {option.label}{option.group?' — '+option.group:''}
+                    </option>
+                  ))}
+                </select>
+                {specCandidates.length?<p className="text-[11px] text-[#526670]">
+                  Sugestões do agente: {specCandidates.join(', ')}
+                </p>:null}
+                {specIsScale?<p className="text-xs text-[#A9541B]">
+                  Specs de escala exigem vínculo com família de opções; canonicalização desabilitada nesta etapa.
+                </p>:null}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button type="submit" name="decision" value="CANONICALIZE"
+                  disabled={specPending||!specTargetId||specIsScale}
+                  className="ui-button ui-button--primary ui-button--action">Canonicalizar</button>
+                <button type="button" disabled title="Criação de specs na próxima etapa de manutenção do catálogo"
+                  className="ui-button ui-button--secondary ui-button--action opacity-50 cursor-not-allowed">
+                  Criar (em breve)
+                </button>
+                <button type="submit" name="decision" value="REJECT" disabled={specPending}
+                  className="ui-button ui-button--destructive ui-button--action">Rejeitar</button>
+                <button type="submit" name="decision" value="DEFER" disabled={specPending}
+                  className="ui-button ui-button--secondary ui-button--action">Adiar</button>
+              </div>
+              {specPending?<p role="status" className="flex items-center gap-2 text-xs font-medium text-[#A9541B]">
+                <span className="inline-block size-3 animate-spin rounded-full border-2 border-[#EF7732] border-t-transparent" aria-hidden="true"/>
+                Registrando a decisão do spec...
+              </p>:null}
+              {specState.message?<p role={specState.status==='error'?'alert':'status'}
+                className="text-xs">{specState.message}</p>:null}
+              <p className="text-xs text-[#526670]">
+                Canonicalizar registra um alias aprovado. Não altera valores das fichas técnicas.
+              </p>
+            </form>
+          ):null}
           {row.caseKind==='MMV_GENERATION' && signals.length?
             <div className="mt-3 space-y-1.5 rounded-md border border-[#D6DEE3] p-2 text-xs">
               <p className="font-semibold">Classificação: {String(detail.proposal?.changeType??'—')}</p>
@@ -148,11 +226,11 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
                   :'não calculado'}
               </p>
             </div>:null}
-          <p className="mt-2 text-xs leading-5 text-[#526670]">
+          {!isSpecCase?<p className="mt-2 text-xs leading-5 text-[#526670]">
             {row.legacyAccepted
               ? 'Existe uma revisão ACCEPT legada. Ela não comprova alteração canônica.'
               : 'As ações gerais desta fila continuam em preparação. Connectors podem ser revisados no fluxo administrativo existente.'}
-          </p>
+          </p>:null}
           {row.caseKind==='MMV_GENERATION'?(
             <form action={generationAction} className="mt-3 flex flex-wrap gap-2"
               onClick={event=>event.stopPropagation()}>
@@ -221,7 +299,7 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
               {reviewState.message?<p className="w-full text-xs" role={reviewState.status==='error'?'alert':'status'}>{reviewState.message}</p>:null}
               <p className="w-full text-xs text-[#526670]">Aprovar aplica a identidade ao catálogo automaticamente; Rejeitar e Adiar não alteram o catálogo.</p>
             </form>
-          ):(row.caseKind==='CONNECTOR_NEW'||row.caseKind==='CONNECTOR_UPDATE'||row.caseKind==='MODEL_YEAR_NEW'||row.caseKind==='MMV_GENERATION')?null:(
+          ):(row.caseKind==='CONNECTOR_NEW'||row.caseKind==='CONNECTOR_UPDATE'||row.caseKind==='MODEL_YEAR_NEW'||row.caseKind==='MMV_GENERATION'||isSpecCase)?null:(
             <div className="mt-2">
               <p className="text-xs text-[#526670]">Ações por identidade indisponíveis neste caso; o finding de origem pode conter múltiplas versões.</p>
               <a className="mt-2 inline-block text-xs text-[#A9541B] underline"
