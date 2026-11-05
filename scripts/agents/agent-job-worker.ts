@@ -11,6 +11,7 @@ import { runFipePilot } from './fipe-agent-pilot';
 import { runPriceCli } from './run-price';
 import { runOra5PriceProbe } from './price-ora5-direct-probe';
 import { runSupervisedFordSpecJob, type SupervisedSpecSourceSnapshot } from './spec-supervised-worker';
+import {runSupervisedFordPdfJob,type SupervisedFordPdfJob} from './ford-supervised-pdf-job';
 import { monitorBrandSources } from './source-monitor';
 import { runMmvLaunchWatch } from './mmv-launch-watch';
 import { journalWorkerJob } from './engineering-worker-telemetry';
