@@ -300,7 +300,7 @@ export function extractDeterministicPrice(
     }
 
     const bonus = part.match(
-      /(?:b[oô]nus(?:\s+varejo)?|retail\s+bonus)\s*(?:de)?\s*[:\-]?\s*(R\$\s*[0-9.]+(?:,[0-9]{2})?)/iu,
+      /(?:b[oô]nus(?:\s+(?:varejo|promocional))?|retail\s+bonus)\s*(?:de)?\s*[:\-]?\s*(R\$\s*[0-9.]+(?:,[0-9]{2})?)/iu,
     );
     if (bonus && !isConditionalCommercialText(part)) {
       retailBonusAmount = money(bonus[1]!);
@@ -487,7 +487,7 @@ export class DeterministicFirstPriceResearch implements PriceResearchProvider {
     // labels. Such candidates must remain eligible for AI reconciliation.
     const hasValidPrice = (o: PriceObservation) =>
       o.msrpAmount !== null &&
-      /^\\d+(?:\\.\\d{2})$/u.test(o.msrpAmount) &&
+      /^\d+(?:\.\d{2})$/u.test(o.msrpAmount) &&
       o.evidence.length > 0 &&
       o.ambiguityReasons.length === 0 &&
       (o.retailBonusAmount === null || o.retailBonusAmount !== o.msrpAmount);
