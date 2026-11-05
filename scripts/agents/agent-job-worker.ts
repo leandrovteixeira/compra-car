@@ -23,6 +23,7 @@ type JobRow = {
   market: string;
   brand: string;
   created_by?: string | null;
+  created_at: string;
   input: {
     provider?: string;
     persistFindings?: boolean;
@@ -168,7 +169,7 @@ async function execute(job: JobRow) {
       !job.input.supervisedSpecSnapshot)
       throw new Error('SPEC_SUPERVISED_DISABLED_OR_SOURCE_MISSING');
     const r=await runSupervisedFordSpecJob({
-      jobId:job.id,market:job.market,brand:job.brand,
+      jobId:job.id,jobCreatedAt:job.created_at,market:job.market,brand:job.brand,
       snapshot:job.input.supervisedSpecSnapshot,db:client
     });
     await complete(job.id,r.runId);
