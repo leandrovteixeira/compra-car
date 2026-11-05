@@ -42,11 +42,12 @@ export function classifySupervisedSpecClaims27(input:{
       throw new Error('SPEC_SUPERVISED_CLAIM_INVALID');
     seen.add(claim.ordinal);
     const normalized=normalizeAliasLabel(claim.label);
+    const normalizedRaw=normalizeAliasLabel(claim.rawLabel??claim.label);
     const eligible=(c:SupervisedSpecCatalog27)=>
       c.kind===claim.kind && (claim.kind!=='numeric'||
         !claim.unit||!c.unit||claim.unit.trim().toLowerCase()===c.unit.trim().toLowerCase());
     const aliasCodes=[...new Set(input.aliases.filter(a=>a.approved&&
-      normalizeAliasLabel(a.label)===normalized&&canonical.has(a.specCode)&&
+      [normalized,normalizedRaw].includes(normalizeAliasLabel(a.label))&&canonical.has(a.specCode)&&
       eligible(canonical.get(a.specCode)!)).map(a=>a.specCode))].sort();
     const exactCodes=[...new Set(input.catalog.filter(c=>
       eligible(c)&&normalizeAliasLabel(c.label)===normalized).map(c=>c.code))].sort();
@@ -59,7 +60,7 @@ export function classifySupervisedSpecClaims27(input:{
     const fingerprint=createHash('sha256').update(JSON.stringify([
       'SPEC_SUPERVISED_V1',input.brand,input.model,input.version,input.modelYear,
       input.documentSha256,claim.ordinal,claim.page,normalized,claim.kind,
-      claim.rawValue,claim.unit??null
+      claim.rawLabel??claim.label,claim.rawValue,claim.unit??null
     ])).digest('hex');
     return {ordinal:claim.ordinal,page:claim.page,label:claim.label,rawLabel:claim.rawLabel??claim.label,
       kind:claim.kind,rawValue:claim.rawValue,status,matchCode,candidateCodes,
