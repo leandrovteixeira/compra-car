@@ -46,6 +46,7 @@ type JobRow = {
     priceDirectProbe?: boolean;
     priceProbeModel?: 'ORA5' | 'WEY07';
     supervisedSpecSnapshot?: SupervisedSpecSourceSnapshot;
+    supervisedPdfSource?: SupervisedFordPdfJob;
   };
 };
 
@@ -167,12 +168,32 @@ async function execute(job: JobRow) {
   if(job.job_type==='SPEC_INTELLIGENCE'){
     if(env.QA_SUPERVISED_SPEC_ENABLED!=='1'||
       job.market!=='BR'||job.brand.toUpperCase()!=='FORD'||
-      !job.input.supervisedSpecSnapshot)
+      (!job.input.supervisedSpecSnapshot&&!job.input.supervisedPdfSource)||
+      (job.input.supervisedSpecSnapshot&&job.input.supervisedPdfSource))
       throw new Error('SPEC_SUPERVISED_DISABLED_OR_SOURCE_MISSING');
-    const r=await runSupervisedFordSpecJob({
-      jobId:job.id,jobCreatedAt:job.created_at,market:job.market,brand:job.brand,
-      snapshot:job.input.supervisedSpecSnapshot,db:client
-    });
+    // The AI PDF mode is only permitted with its own dedicated key and
+    // an admitted budget reservation; no fallback to a generic key.
+    const paidSpec=Boolean(job.input.supervisedPdfSource);
+    const specReservation=paidSpec
+      ?await reserveAgentPilotBudget(client as unknown as AgentBudgetClient,job)
+      :null;
+    let r:{runId:string;reviewFindings:number;unmatched:number};
+    try{
+      r=job.input.supervisedPdfSource
+        ?await runSupervisedFordPdfJob({
+          jobId:job.id,jobCreatedAt:job.created_at,
+          market:job.market,brand:job.brand,
+          source:job.input.supervisedPdfSource,db:client,
+          apiKey:env.OPENAI_SPEC_AGENT_API_KEY??''
+        })
+        :await runSupervisedFordSpecJob({
+          jobId:job.id,jobCreatedAt:job.created_at,
+          market:job.market,brand:job.brand,
+          snapshot:job.input.supervisedSpecSnapshot!,db:client
+        });
+    }finally{
+      if(specReservation)await finishAgentPilotBudget(client as unknown as AgentBudgetClient,specReservation);
+    }
     await complete(job.id,r.runId);
     await journal('SUCCESS',r.runId);
     log('Spec review-only: '+JSON.stringify(r));
