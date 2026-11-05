@@ -60,3 +60,14 @@ Flight Control dashboard, visual controls, production promotion, broad semi-auto
 3. Collector must capture and bind historical official design image pairs for previous/current MY; Generation Vision is prepared but not yet wired end to end.
 4. Verify the full queue/review flow with targeted tests on QA worker integration, then separately deploy the integrated worker while leaving `QA_SUPERVISED_SPEC_ENABLED` disabled until the supervised run.
 5. Execute Brand → MMV → FIPE/MY → Generation → Spec → Price with recorded checkpoints; stop if upstream identity is ambiguous.
+
+## 2026-11-05 — Ford Ranger MMV source coverage follow-up
+
+- Operator approved 8 Ranger XL/XLS MMVs and Ranger Raptor in QA.
+- Two commercially explicit MY2027 Ranger variants absent from the MMV Discovery proposals: Black 2.0L 4x2 AT Diesel and Limited 3.0 V6 Diesel 4WD AT.
+- QA source evidence confirms 8 Ranger variants were present in the original aggregated finding and none represented Black/Limited; they were not rejected by identity matcher. The stored Ford Brand Connector contains general Ranger and Ford index pages, but not the individual Black/Limited comparison pages.
+- Inspected OpenAIProductResearchProvider: MMV input previously included searchHints but omitted verified sourceEntries entirely. Forwarding sourceEntries is now implemented and tested, and the prompt explicitly requires model-specific version page exploration before concluding.
+- Candidate confidence 0.80 reflects original provider extraction; aggregated NEW_MODEL finding retained representative confidence, not per-version confidence. XLS source warnings included INSUFFICIENT_EVIDENCE. Do not convert 0.80 into certainty merely because the official site now has a version page.
+- QA paid brand/MMV reservations remain reserved in ledger; do not repeat a paid MMV run without settling accounting or separate budget approval.
+- Supervised FIPE attempt for canonical Ranger XLS 3.0 V6 (job 59d0c5df-bb4f-4341-96ae-2c44b165a503) FAILED with generic worker code. Added constrained FIPE diagnostic code propagation for a future attempt. Do not imply FIPE mapping succeeded.
+- Approved MMV identities are preserved, no Black/Limited MMVs created by direct SQL, and no Model Year/product/spec writes were performed.
