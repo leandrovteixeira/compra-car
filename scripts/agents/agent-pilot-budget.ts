@@ -3,7 +3,7 @@
  * in-flight OpenAI request can never exceed the declared USD ceiling.
  * The dedicated OpenAI project budget and model/call limits are separate.
  */
-export type PaidAgentKind='BRAND_CONNECTOR'|'MMV_DISCOVERY'|'PRODUCT_YEAR'|'PRICE_INTELLIGENCE';
+export type PaidAgentKind='BRAND_CONNECTOR'|'MMV_DISCOVERY'|'PRODUCT_YEAR'|'PRICE_INTELLIGENCE'|'SPEC_INTELLIGENCE';
 export type AgentBudgetJob=Readonly<{
   job_type:string;market:string;brand:string;
   input?:Readonly<{parentRunId?:string|null;provider?:string}>;
@@ -24,6 +24,7 @@ export function needsAgentBudget(job:AgentBudgetJob,env:Readonly<Record<string,s
     case 'BRAND_CONNECTOR':
     case 'MMV_DISCOVERY':return true;
     case 'PRODUCT_YEAR':return !job.input?.parentRunId;
+    case 'SPEC_INTELLIGENCE':return true;
     case 'PRICE_INTELLIGENCE':return job.input?.provider==='openai' || job.input?.provider==='compact-match' || env.PRICE_AGENT_LLM_ENABLED==='1';
     default:return false;
   }
@@ -32,7 +33,7 @@ export function agentPilotBudgetKey(job:AgentBudgetJob):string{
   const market=job.market.trim().toUpperCase();
   const brand=job.brand.trim().toUpperCase().replace(/\s+/gu,' ');
   if(!/^[A-Z]{2}$/u.test(market)||!brand||brand.length>80||
-     !['BRAND_CONNECTOR','MMV_DISCOVERY','PRODUCT_YEAR','PRICE_INTELLIGENCE'].includes(job.job_type))
+     !['BRAND_CONNECTOR','MMV_DISCOVERY','PRODUCT_YEAR','PRICE_INTELLIGENCE','SPEC_INTELLIGENCE'].includes(job.job_type))
     throw new Error('COST_INVALID_SCOPE');
   return ['qa',market,brand,job.job_type].join(':');
 }
