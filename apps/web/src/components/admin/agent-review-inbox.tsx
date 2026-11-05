@@ -183,6 +183,10 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
                 className="ui-button ui-button--destructive ui-button--action">Rejeitar</button>
               <button type="submit" name="decision" value="DEFER" disabled={yearPending}
                 className="ui-button ui-button--secondary ui-button--action">Adiar</button>
+              {yearPending?<p className="flex w-full items-center gap-2 text-xs font-medium text-[#A9541B]" role="status" aria-live="polite">
+                <span className="inline-block size-3 animate-spin rounded-full border-2 border-[#EF7732] border-t-transparent" aria-hidden="true"/>
+                Aplicando decisão de ano-modelo...
+              </p>:null}
               {yearState.message?<p className="w-full text-xs" role={yearState.status==='error'?'alert':'status'}>{yearState.message}</p>:null}
               <p className="w-full text-xs text-[#526670]">Aprovar aplica imediatamente o ano-modelo ao catálogo.</p>
             </form>
@@ -235,8 +239,21 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
                   <span className="text-[#526670]">{e.sourceType} · {date(e.capturedAt)}</span>
                   <p className="mt-1 font-medium">{e.title||'Fonte sem título'}</p>
                   {e.excerpt?<p className="mt-1 line-clamp-2 text-[#526670]">{e.excerpt}</p>:null}
-                  {e.url?<a className="mt-1 inline-block text-[#A9541B] underline underline-offset-2"
-                    href={e.url} target="_blank" rel="noopener noreferrer">Abrir fonte</a>:null}
+                  {e.url&&(e.sourceType==='FIPE'||e.url.startsWith('https://fipe.parallelum.com.br/api/'))?
+                    <div className="mt-1 space-y-1">
+                      <a className="inline-block text-[#A9541B] underline underline-offset-2"
+                        href="https://veiculos.fipe.org.br/" target="_blank" rel="noopener noreferrer">
+                        Consultar no site da Tabela FIPE
+                      </a>
+                      {typeof detail.proposal?.fipeCode==='string'?
+                        <p className="text-[#526670]">Código FIPE: {detail.proposal.fipeCode} (pesquisar no site)</p>:null}
+                      <div><a className="text-[#526670] underline underline-offset-2"
+                        href={e.url} target="_blank" rel="noopener noreferrer">
+                        Ver dados da API (JSON)
+                      </a></div>
+                    </div>
+                    :e.url?<a className="mt-1 inline-block text-[#A9541B] underline underline-offset-2"
+                      href={e.url} target="_blank" rel="noopener noreferrer">Abrir fonte</a>:null}
                 </li>
               ))}
             </ul>}
@@ -329,21 +346,23 @@ export function AgentReviewInbox({items,sort,direction}:{readonly items:readonly
   const [detail,setDetail]=useState<FindingDetail|null>(null);
   const [loading,setLoading]=useState(false);
   const [error,setError]=useState<string|null>(null);
+  const selectedRow=items.find(row=>row.caseId===expanded);
+  const selectedFindingId=selectedRow?.findingId??null;
+  const selectedIsFipe=Boolean(selectedRow?.fipeCandidate);
   useEffect(()=>{
     if(!expanded){setDetail(null);setError(null);setLoading(false);return;}
-    const selected=items.find(row=>row.caseId===expanded);
-    if(!selected){setExpanded(null);return;}
-    if(selected.fipeCandidate){setDetail(null);setError(null);setLoading(false);return;}
+    if(!selectedFindingId){setExpanded(null);return;}
+    if(selectedIsFipe){setDetail(null);setError(null);setLoading(false);return;}
     const controller=new AbortController();
     setLoading(true);setError(null);setDetail(null);
-    fetch('/admin/agents/review-detail/'+encodeURIComponent(selected.findingId),{
+    fetch('/admin/agents/review-detail/'+encodeURIComponent(selectedFindingId),{
       signal:controller.signal,cache:'no-store',
     }).then(async r=>{if(!r.ok)throw new Error('DETAIL_UNAVAILABLE');return r.json() as Promise<FindingDetail>;})
       .then(data=>{if(!controller.signal.aborted)setDetail(data);})
       .catch(()=>{if(!controller.signal.aborted)setError('Não foi possível carregar o detalhe. Tente novamente.');})
       .finally(()=>{if(!controller.signal.aborted)setLoading(false);});
     return ()=>controller.abort();
-  },[expanded,items]);
+  },[expanded,selectedFindingId,selectedIsFipe]);
   const toggle=(id:string)=>setExpanded(prev=>prev===id?null:id);
   const onKey=(event:React.KeyboardEvent,caseId:string)=>{
     if(event.key==='Enter'||event.key===' '){
