@@ -61,6 +61,7 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
   const [generationState,generationAction,generationPending]=useActionState(reviewGenerationDecisionAction,{status:'idle' as const,message:''});
   const [specState,specAction,specPending]=useActionState(reviewSpecFindingAction,{status:'idle' as const,message:''});
   const [specTargetId,setSpecTargetId]=useState('');
+  const [specSearch,setSpecSearch]=useState('');
   useEffect(()=>{if(reviewState.status==='success'||connectorState.status==='success'||yearState.status==='success'||generationState.status==='success'||specState.status==='success')router.refresh();},[reviewState.status,connectorState.status,yearState.status,generationState.status,specState.status,router]);
   const subject = detail.subject ?? {};
   const get = (key:string) => {
@@ -109,6 +110,13 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
   const specCandidates=Array.isArray(detail.proposal?.candidateCodes)
     ?detail.proposal.candidateCodes.filter((x):x is string=>typeof x==='string'):[];
   const applicableCatalog=detail.canonicalOptions??[];
+  const specSearchKey=(raw:string)=>raw.normalize('NFKD')
+    .replace(/[\u0300-\u036f]/gu,'').toLocaleLowerCase('pt-BR').trim();
+  const searchTokens=specSearchKey(specSearch).split(/\s+/u).filter(Boolean);
+  const filteredCatalog=applicableCatalog.filter(option=>{
+    const haystack=specSearchKey([option.code,option.label,option.group].join(' '));
+    return searchTokens.every(token=>haystack.includes(token)) || String(option.id)===specTargetId;
+  }).slice(0,100);
   const specIsScale=specKind==='scale';
   const scopeOnly=detail.technicalPayload.noProductAssignment===true;
   return (
@@ -169,12 +177,20 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
                 <label htmlFor={'spec-canonical-'+detail.findingId} className="block text-xs font-semibold">
                   Especificação canônica existente
                 </label>
+                <input type="search"
+                  aria-label="Buscar especificação canônica por nome, código ou grupo"
+                  placeholder="Buscar por nome, código ou categoria..."
+                  value={specSearch}
+                  onChange={event=>setSpecSearch(event.target.value)}
+                  disabled={specPending||specIsScale}
+                  className="w-full rounded-md border border-[#BCCAD0] bg-white px-3 py-2 text-xs outline-none focus:border-[#EF7732]"
+                />
                 <select id={'spec-canonical-'+detail.findingId} name="targetSpecId"
                   value={specTargetId} onChange={event=>setSpecTargetId(event.target.value)}
                   disabled={specPending||specIsScale}
                   className="w-full rounded-md border border-[#BCCAD0] bg-white px-3 py-2 text-xs">
                   <option value="">Selecione um spec para canonicalizar...</option>
-                  {applicableCatalog.map(option=>(
+                  {filteredCatalog.map(option=>(
                     <option key={option.id} value={option.id}>
                       {option.code} · {option.label}{option.group?' — '+option.group:''}
                     </option>
@@ -208,6 +224,8 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
                 className="text-xs">{specState.message}</p>:null}
               <p className="text-xs text-[#526670]">
                 Canonicalizar registra um alias aprovado. Não altera valores das fichas técnicas.
+                Rejeitar se aplica somente a este finding de origem: não bloqueia nomes iguais
+                encontrados em outros documentos, veículos ou tipos de bateria.
               </p>
             </form>
           ):null}
