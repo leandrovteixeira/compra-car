@@ -182,6 +182,11 @@ export class OpenAIProductResearchProvider implements ProductResearchProvider {
               allowedSubdomainRoots: this.options.allowExternalSources ? [] : (source.allowedSubdomainRoots ?? []),
               researchStages: ['MODEL_DISCOVERY', 'VARIANT_RESOLUTION'],
               searchHints: source.searchHints,
+              // Without these verified pages the model was searching only generic hints;
+              // pass approved Brand Connector URLs explicitly to the research model.
+              sourceEntries: (source.sourceEntries ?? []).map(entry=>({
+                type:entry.type,url:entry.url,priority:entry.priority,
+              })),
               researchedAt: new Date().toISOString(),
             }),
             tools: [
