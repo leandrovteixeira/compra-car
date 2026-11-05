@@ -445,10 +445,17 @@ for (;;) {
           'COST_INVALID_SCOPE','COST_INVALID_RESERVATION',
           'COST_ADMISSION_FAILED'].includes(error.message)
           ? error.message : null;
-      console.error('[agent-worker] execution failed', job.id,
-        budgetError ?? 'AGENT_JOB_EXECUTION_FAILED');
+      // Preserve only allowlisted, non-sensitive FIPE failure codes so QA
+      // pilots can distinguish rate limit, HTTP, identity, mapping and DB
+      // failures. Never persist raw provider bodies or credentials.
+      const fipeCode = job.job_type==='FIPE_DISCOVERY' &&
+        error instanceof Error &&
+        /^FIPE_(?:[A-Z][A-Z0-9_]{2,80}|HTTP_[0-9]{3})$/u.test(error.message)
+        ? error.message : null;
+      const failureCode=budgetError??fipeCode??'AGENT_JOB_EXECUTION_FAILED';
+      console.error('[agent-worker] execution failed', job.id,failureCode);
       try {
-        await fail(job.id, budgetError ?? 'AGENT_JOB_EXECUTION_FAILED');
+        await fail(job.id,failureCode);
         try {await journalWorkerJob(client,{runId:job.id,jobType:job.job_type,brand:job.brand,
           startedAtMs:Date.now(),status:'FAILED',failureCode:'AGENT_JOB_EXECUTION_FAILED'});}
         catch {console.error('[engineering] QA central failure logging unavailable',job.id);}
