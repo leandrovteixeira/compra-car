@@ -1,0 +1,63 @@
+{
+  "previousMmvId": "1e61c710-60c5-4936-8cac-b3933e1b8f04",
+  "currentMmvId": "1e61c710-60c5-4936-8cac-b3933e1b8f04",
+  "brand": "GWM",
+  "previous": {
+    "modelYear": 2026,
+    "dimensionMeasurements": {
+      "lengthMm": 4703,
+      "widthMm": 1886,
+      "heightMm": 1730,
+      "wheelbaseMm": 2738
+    },
+    "dimensionsSource": {
+      "modelYear": 2026,
+      "url": "https://www.gwmmotors.com.br/content/dam/gwm/pages/br/pt/models/haval-h6-phev19-my25/lancamento-/Ficha%20T%C3%A9cnica%20-%20Novo%20Haval%20PHEV19%202026.pdf",
+      "sourceKind": "MANUFACTURER",
+      "excerpt": "GWM MY'26 data: comprimento 4703; largura 1886; altura 1730; entre-eixos 2738 mm"
+    },
+    "powertrain": {
+      "propulsion": "PHEV",
+      "architecture": "PHEV19",
+      "engineFamily": "1.5 turbo injeção direta",
+      "fuel": "GASOLINE",
+      "transmissionFamily": null
+    },
+    "powertrainSource": {
+      "modelYear": 2026,
+      "url": "https://www.gwmmotors.com.br/content/dam/gwm/pages/br/pt/models/haval-h6-phev19-my25/lancamento-/Ficha%20T%C3%A9cnica%20-%20Novo%20Haval%20PHEV19%202026.pdf",
+      "sourceKind": "MANUFACTURER",
+      "excerpt": "MY2026: motor a combustão 1.5 turbo injeção direta à gasolina; PHEV19"
+    }
+  },
+  "current": {
+    "modelYear": 2027,
+    "dimensionMeasurements": {
+      "lengthMm": 4703,
+      "widthMm": 1886,
+      "heightMm": 1730,
+      "wheelbaseMm": 2738
+    },
+    "dimensionsSource": {
+      "modelYear": 2027,
+      "url": "https://www.gwmmotors.com.br/content/dam/gwm/pages/br/pt/models/haval-h6-phev19-my25/ficha-tecnica-haval-h6-phev19-flex.pdf",
+      "sourceKind": "MANUFACTURER",
+      "excerpt": "GWM MY2027 Flex: comprimento 4703; largura 1886; altura 1730; entre-eixos 2738 mm"
+    },
+    "powertrain": {
+      "propulsion": "PHEV",
+      "architecture": "PHEV19",
+      "engineFamily": "1.5 turbo injeção direta",
+      "fuel": "FLEX",
+      "transmissionFamily": null
+    },
+    "powertrainSource": {
+      "modelYear": 2027,
+      "url": "https://www.gwmmotors.com.br/content/dam/gwm/pages/br/pt/models/haval-h6-phev19-my25/ficha-tecnica-haval-h6-phev19-flex.pdf",
+      "sourceKind": "MANUFACTURER",
+      "excerpt": "MY2027: motor a combustão 1.5 Turbo Flex; PHEV19"
+    }
+  },
+  "designSources": null,
+  "images": null
+}
