@@ -15,6 +15,7 @@ type FindingDetail = {
   findingId: string;
   title: string;
   canonicalOptions?: readonly {id:number;code:string;label:string;group:string;type:string}[];
+  specReviewHints?: readonly {code:string;label:string;score:number;reasons:readonly string[]}[];
   summary: string | null;
   sourceAgent: string;
   subject: Record<string, unknown>;
@@ -53,9 +54,10 @@ function Status({status}:{readonly status:ReviewStatus}){
 }
 type CanonicalSpecOption={id:number;code:string;label:string;group:string;type:string};
 function CanonicalSpecCombobox({
-  options,value,onChange,disabled,id,
+  options,value,onChange,disabled,id,suggestedCodes=[],
 }:{
   options:readonly CanonicalSpecOption[];
+  suggestedCodes?:readonly string[];
   value:string;
   onChange:(next:string)=>void;
   disabled:boolean;
@@ -70,10 +72,17 @@ function CanonicalSpecCombobox({
     .toLocaleLowerCase('pt-BR').trim();
   const selected=options.find(option=>String(option.id)===value);
   const words=normalize(query).split(/\s+/u).filter(Boolean);
-  const matches=(words.length?options.filter(option=>{
+  const ranked=[...options].sort((a,b)=>{
+    const ai=suggestedCodes.indexOf(a.code),bi=suggestedCodes.indexOf(b.code);
+    if(ai>=0&&bi<0)return -1;
+    if(ai<0&&bi>=0)return 1;
+    if(ai>=0&&bi>=0)return ai-bi;
+    return a.code.localeCompare(b.code);
+  });
+  const matches=(words.length?ranked.filter(option=>{
     const haystack=normalize([option.code,option.label,option.group].join(' '));
     return words.every(word=>haystack.includes(word));
-  }):options).slice(0,50);
+  }):ranked).slice(0,50);
   useEffect(()=>{
     const outside=(event:PointerEvent)=>{
       if(root.current&&!root.current.contains(event.target as Node))setOpen(false);
@@ -148,6 +157,7 @@ function CanonicalSpecCombobox({
             (i===active?'bg-[#EDF4F6] text-[#293D47]':'hover:bg-[#EDF4F6]')}
         >
           <span className="font-semibold">{option.code}</span> · {option.label}
+          {suggestedCodes.includes(option.code)?<span className="ml-1 text-[10px] text-[#A9541B]">· Sugestão para revisão</span>:null}
           {option.group?<span className="ml-1 text-[#526670]">— {option.group}</span>:null}
         </button>
       ):<p className="px-3 py-2 text-xs text-[#526670]">Nenhum spec encontrado.</p>}
@@ -289,10 +299,15 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
                 <CanonicalSpecCombobox
                   id={'spec-canonical-'+detail.findingId}
                   options={applicableCatalog}
+                  suggestedCodes={(detail.specReviewHints??[]).map(h=>h.code)}
                   value={specTargetId}
                   onChange={setSpecTargetId}
                   disabled={specPending||specIsScale}
                 />
+                {(detail.specReviewHints??[]).length?<p className="text-[11px] text-[#526670]">
+                  Correspondências sugeridas para análise: {(detail.specReviewHints??[])
+                    .map(h=>h.code).join(' · ')}. Nenhuma será selecionada automaticamente.
+                </p>:null}
                 {specCandidates.length?<p className="text-[11px] text-[#526670]">
                   Sugestões do agente: {specCandidates.join(', ')}
                 </p>:null}
