@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import type {Response,ResponseCreateParamsNonStreaming} from 'openai/resources/responses/responses';
 import {createHash} from 'node:crypto';
 
 export type VerifiedManufacturerPdf=Readonly<{
@@ -15,8 +16,7 @@ export type ManufacturerPdfExtraction=Readonly<{
   claims:readonly ExtractedManufacturerClaim[];
   model:string;inputTokens:number;outputTokens:number;estimatedCostUsd:number;
 }>;
-type Transport=(request:Parameters<OpenAI['responses']['create']>[0])=>
-  Promise<Awaited<ReturnType<OpenAI['responses']['create']>>>;
+type Transport=(request:ResponseCreateParamsNonStreaming)=>Promise<Response>;
 const schema={
  type:'object',additionalProperties:false,required:['modelYearEvidence','versionEvidence','claims'],
  properties:{
@@ -62,7 +62,7 @@ export async function extractManufacturerPdfClaims27(input:{
  if(!Number.isFinite(cap)||cap<=0||cap>2||admission>cap)
    throw new Error('SPEC_PDF_BUDGET_PRECHECK_FAILED');
  const client=input.transport?null:new OpenAI({apiKey:input.apiKey,maxRetries:0,timeout:120000});
- const call=input.transport??(p=>client!.responses.create(p) as Promise<Awaited<ReturnType<OpenAI['responses']['create']>>>);
+ const call:Transport=input.transport??(p=>client!.responses.create(p));
  const response=await call({
   model:'gpt-5.4-mini-2026-03-17',
   store:false,max_output_tokens:8000,
