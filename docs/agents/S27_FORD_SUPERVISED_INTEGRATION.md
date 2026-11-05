@@ -29,3 +29,17 @@ Flight Control dashboard, visual controls, production promotion, broad semi-auto
 - Generation adapter modules are staged selectively but the worker dispatch path is not yet integrated.
 - Spec-agent runs have been isolated pilots; integration with the live worker and review queue requires validation.
 - No full supervised Ford run has occurred.
+
+## Integration progress — 2026-11-05
+- Created integration branch from S27, preserving original QA worker branch.
+- Ported generation Core classifier/evidence/review, OpenAI Vision and assessment adapter, tests, QA-only pilot and GWM fixture from S26 generation branch; updated shared exports without replacing S27 modules.
+- Added deterministic `generation-evidence-collector.ts` and eight targeted tests. It selects verified image pairs handed over by trusted source adapters. It DOES NOT yet fetch official website images or parse PDF image assets.
+- Added dedicated CI `s27-supervised-integration.yml` with targeted tests and package typechecks. GitHub combined status has not yet reported a result; CI is not claimed green.
+- No change to the live Railway agent-worker, no DB changes, and no Ford job has been dispatched.
+
+### Implementation blockers before the Ford run
+1. Brand Connector image/PDF adapter must produce immutable asset records with verified historical MY and view metadata. Historical image bytes should be captured in a trusted persistent store and fetched for Vision only when verified.
+2. Implement and test the Generation Assessment repository against those records; integrate into worker/job dispatch behind supervised QA gate.
+3. Implement production-quality Spec Agent runner for an arbitrary Ford MMV and source (current GWM one-shot is fixture-specific), including cost receipts and durable `SPEC_NEW`/`SPEC_AMBIGUOUS` review cases.
+4. Add safe supervised orchestration and targeted queue tests; do not reuse the ordinary autonomous schedule or assume the current database job enum accepts new types.
+5. Require green checks and live QA identity verification before changing any Railway deployment.
