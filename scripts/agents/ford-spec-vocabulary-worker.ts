@@ -19,15 +19,33 @@ export async function runFordSpecVocabularyJob(input:{
   throw new Error('FORD_VOCAB_JOB_INVALID');
  const {data:parent,error:parentError}=await input.db.from('agent_runs')
   .select('id,brand,market,agent_type,status').eq('id',input.sourceRunId).single();
- const {data:parentFindings,error:findingError}=await input.db.from('agent_findings')
-  .select('proposal').eq('run_id',input.sourceRunId).limit(2);
- if(parentError||findingError||!parent||parent.brand!=='Ford'||
-   parent.market!=='BR'||parent.status!=='COMPLETED'||
-   parent.agent_type!=='BRAND_CONNECTOR'||parentFindings?.length!==1)
-  throw new Error('FORD_VOCAB_PARENT_INVALID');
- const proposal=parentFindings[0]?.proposal as {sourceEntries?:{url?:string;type?:string}[]} | null;
- if(!proposal?.sourceEntries?.some(x=>x.url===input.pdfUrl&&x.type==='TECHNICAL_SHEET'))
-  throw new Error('FORD_VOCAB_SOURCE_NOT_DISCOVERED');
+ if(parentError||!parent||parent.brand!=='Ford'||parent.market!=='BR'||
+   parent.status!=='COMPLETED'||
+   !['BRAND_CONNECTOR','MMV_DISCOVERY'].includes(parent.agent_type))
+   throw new Error('FORD_VOCAB_PARENT_INVALID');
+ if(parent.agent_type==='BRAND_CONNECTOR'){
+   const {data:findings,error:findingError}=await input.db.from('agent_findings')
+    .select('proposal').eq('run_id',input.sourceRunId).limit(2);
+   if(findingError||findings?.length!==1)
+     throw new Error('FORD_VOCAB_BRAND_SOURCE_INVALID');
+   const proposal=findings[0]?.proposal as {sourceEntries?:{url?:string;type?:string}[]} | null;
+   if(!proposal?.sourceEntries?.some(x=>x.url===input.pdfUrl&&x.type==='TECHNICAL_SHEET'))
+     throw new Error('FORD_VOCAB_SOURCE_NOT_DISCOVERED');
+ }else{
+   // A second technical sheet may be found downstream during MMV discovery.
+   // Only accept a manufacturer technical-sheet evidence explicitly linked
+   // to the Ranger model in that completed MMV run.
+   const {data:findings,error:findingError}=await input.db.from('agent_findings')
+     .select('id').eq('run_id',input.sourceRunId).eq('finding_type','NEW_MODEL')
+     .eq('title','Ford Ranger').limit(4);
+   if(findingError||!findings?.length)
+     throw new Error('FORD_VOCAB_MMV_RANGER_NOT_FOUND');
+   const {data:evidence,error:evidenceError}=await input.db.from('agent_evidence')
+     .select('source_url,source_type').in('finding_id',findings.map(f=>f.id))
+     .eq('source_url',input.pdfUrl).eq('source_type','TECHNICAL_SHEET').limit(1);
+   if(evidenceError||!evidence?.length)
+     throw new Error('FORD_VOCAB_SOURCE_NOT_DISCOVERED');
+ }
  const bytes=await officialFordPdfBytes(input.pdfUrl);
  const {data:rawCatalog,error:catalogError}=await input.db.from('specs')
   .select('id,code,type,display_pt,detail_pt,detail,unit').limit(2000);
@@ -112,7 +130,7 @@ export async function runFordSpecVocabularyJob(input:{
   market:'BR',brand:'Ford',provider:'openai',
   runMode:'SUPERVISED_VOCABULARY',schemaVersion:'SPEC-S27-VOCAB.1',
   startedAt:input.jobCreatedAt,completedAt:now,
-  input:{sourceBrandRunId:input.sourceRunId,sourceUrl:input.pdfUrl,
+  input:{sourceEvidenceRunId:input.sourceRunId,sourceUrl:input.pdfUrl,
    sourceSha256:extraction.documentHash,model:'Ranger',modelYear:null},
   summary:{claims:entries.length,reviewFindings:review.length,
    newSpecCandidates:review.filter(x=>x.status==='SPEC_NEW').length,
