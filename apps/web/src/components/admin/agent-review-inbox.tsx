@@ -68,6 +68,7 @@ function CanonicalSpecCombobox({
   const [query,setQuery]=useState('');
   const [open,setOpen]=useState(false);
   const [active,setActive]=useState(0);
+  const [showAll,setShowAll]=useState(false);
   const normalize=(raw:string)=>raw.normalize('NFD').replace(/\p{M}/gu,'')
     .toLocaleLowerCase('pt-BR').trim();
   const selected=options.find(option=>String(option.id)===value);
@@ -79,10 +80,13 @@ function CanonicalSpecCombobox({
     if(ai>=0&&bi>=0)return ai-bi;
     return a.code.localeCompare(b.code);
   });
-  const matches=(words.length?ranked.filter(option=>{
+  // Start with only the relevant review hints; searching always searches the
+  // entire compatible catalog. Showing all is an explicit operator choice.
+  const scoped=words.length?ranked.filter(option=>{
     const haystack=normalize([option.code,option.label,option.group].join(' '));
     return words.every(word=>haystack.includes(word));
-  }):ranked).slice(0,50);
+  }):showAll?ranked:ranked.filter(option=>suggestedCodes.includes(option.code));
+  const matches=scoped.slice(0,50);
   useEffect(()=>{
     const outside=(event:PointerEvent)=>{
       if(root.current&&!root.current.contains(event.target as Node))setOpen(false);
@@ -95,6 +99,7 @@ function CanonicalSpecCombobox({
     setQuery('');
     setOpen(false);
     setActive(0);
+    setShowAll(false);
   };
   const listId=id+'-options';
   return <div ref={root} className="relative w-full">
@@ -115,12 +120,13 @@ function CanonicalSpecCombobox({
         value={open?query:(selected?selected.code+' · '+selected.label:query)}
         placeholder="Buscar spec por código ou descrição..."
         className="w-full rounded-md border border-[#BCCAD0] bg-white py-2 pl-3 pr-9 text-xs outline-none focus:border-[#EF7732] focus:ring-1 focus:ring-[#EF7732]"
-        onFocus={()=>{setQuery('');setOpen(true);setActive(0);}}
+        onFocus={()=>{setQuery('');setOpen(true);setActive(0);setShowAll(false);}}
         onChange={event=>{
           setQuery(event.target.value);
           onChange('');
           setOpen(true);
           setActive(0);
+          setShowAll(false);
         }}
         onKeyDown={event=>{
           if(event.key==='Escape'){setOpen(false);event.stopPropagation();return;}
@@ -160,7 +166,14 @@ function CanonicalSpecCombobox({
           {suggestedCodes.includes(option.code)?<span className="ml-1 text-[10px] text-[#A9541B]">· Sugestão para revisão</span>:null}
           {option.group?<span className="ml-1 text-[#526670]">— {option.group}</span>:null}
         </button>
-      ):<p className="px-3 py-2 text-xs text-[#526670]">Nenhum spec encontrado.</p>}
+      ):<p className="px-3 py-2 text-xs text-[#526670]">{words.length?'Nenhum spec encontrado.':'Nenhuma sugestão segura para este item.'}</p>}
+      {!words.length&&!showAll?(
+        <button type="button" onMouseDown={event=>event.preventDefault()}
+          onClick={()=>{setShowAll(true);setActive(0);}}
+          className="mt-1 w-full border-t border-[#EAF1F4] px-3 py-2 text-left text-xs font-medium text-[#A9541B] hover:bg-[#EDF4F6]">
+          {suggestedCodes.length?'Pesquisar também nos demais specs':'Ver catálogo completo'}
+        </button>
+      ):null}
       {words.length&&matches.length===50?
         <p className="px-3 py-2 text-[11px] text-[#526670]">Refine sua busca para ver mais resultados.</p>:null}
     </div>:null}
