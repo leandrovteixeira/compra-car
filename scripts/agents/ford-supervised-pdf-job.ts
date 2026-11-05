@@ -59,6 +59,15 @@ export async function runSupervisedFordPdfJob(input:{
    !Number.isInteger(input.source.modelYear)||
    !Number.isFinite(Date.parse(input.jobCreatedAt)))
    throw new Error('FORD_PDF_JOB_INVALID');
+ const {data:product,error:productError}=await input.db.from('products')
+  .select('id,brand,model,version,model_year,mmv_id')
+  .eq('id',input.source.productId).maybeSingle();
+ if(productError||!product||!product.mmv_id||
+   String(product.brand).toLowerCase()!=='ford'||
+   String(product.model).toLowerCase()!==input.source.model.toLowerCase()||
+   String(product.version).toLowerCase()!==input.source.version.toLowerCase()||
+   Number(product.model_year)!==input.source.modelYear)
+   throw new Error('FORD_PDF_CANONICAL_TARGET_REQUIRED');
  const bytes=await officialPdfBytes(input.source.url);
  const hash=createHash('sha256').update(bytes).digest('hex');
  if(input.source.expectedSha256&&input.source.expectedSha256!==hash)
