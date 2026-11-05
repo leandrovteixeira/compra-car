@@ -112,7 +112,15 @@ export async function runFipePilot(
    const years=items(await getJson('/cars/brands/'+manufacturer.code+'/models/'+encodeURIComponent(model.code)+'/years',budget));
    // Newest FIPE model years first; avoid spending the complete daily cap
    // on historical data from 1998-2001 before reaching current MYs.
-   years.sort((a,b)=>Number.parseInt(b.code.slice(0,4),10)-Number.parseInt(a.code.slice(0,4),10));
+   // FIPE yearCode 32000 means zero-km, not model year 32000.
+   // Keep it outside MY discovery and process documented MY years first.
+   years.sort((a,b)=>{
+     const year=(x:string)=>{
+       const n=Number.parseInt(x.slice(0,4),10);
+       return Number.isInteger(n)&&n>=1900&&n<=2100?n:0;
+     };
+     return year(b.code)-year(a.code);
+   });
    for(const year of years){
      if(budget.count>=budget.max)break;
      // Preserve the provider's distinct year/fuel identifier exactly.
@@ -120,7 +128,9 @@ export async function runFipePilot(
      const fipeCode=typeof detail.codeFipe==='string'?detail.codeFipe:'';
      const label=typeof detail.model==='string'?detail.model:model.name;
      if(!/^\d{6}-\d$/.test(fipeCode))continue;
-     const targetYear=Number(typeof detail.modelYear==='string'?detail.modelYear.match(/\d{4}/)?.[0]:detail.modelYear);
+     const targetYear=Number(typeof detail.modelYear==='string'?detail.modelYear.match(/\d{4,5}/)?.[0]:detail.modelYear);
+     // 32000 = FIPE zero-km sentinel, never a canonical MY.
+     if(!Number.isInteger(targetYear)||targetYear<1900||targetYear>2100)continue;
      const reference=typeof detail.referenceMonth==='string'?month(detail.referenceMonth):null;
      const amount=typeof detail.price==='string'?price(detail.price):null;
      // Matching is review-only: do not promote a tentative FIPE code to canonical.
