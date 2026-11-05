@@ -229,6 +229,26 @@ describe('Price Agent', () => {
     expect(reconciliation.reconcile).not.toHaveBeenCalled();
   });
 
+  it('avoids AI reconciliation when an official deterministic MSRP is valid', async () => {
+    const reconcile = vi.fn(async (..._args: [readonly PriceTarget[], BrandConnector, number]) => ({
+      observations: [], mappings: [], usage: [],
+    }));
+    const research = new DeterministicFirstPriceResearch({
+      fetch: async () => [makePriceSnapshot({
+        target,
+        sourceUrl: 'https://www.jeep.com.br/compass.html',
+        sourceKind: 'OFFICIAL_MODEL_PAGE',
+        body: 'Jeep Compass Longitude T270. Preço público sugerido: R$ 189.990,00.',
+      })],
+      reconciliation: { reconcile },
+      hardCostCapUsd: 2,
+    });
+    const result = await research.researchPrices([target], connector);
+    expect(result.observations.some((item) => item.msrpAmount === '189990.00')).toBe(true);
+    expect(result.metrics.llmCalls ?? 0).toBe(0);
+    expect(reconcile).not.toHaveBeenCalled();
+  });
+
   it('selects ACCEPT-reviewed product years from the latest completed run', async () => {
     const run = {
       id: '11111111-1111-4111-8111-111111111111',
