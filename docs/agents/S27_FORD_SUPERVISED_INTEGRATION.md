@@ -43,3 +43,20 @@ Flight Control dashboard, visual controls, production promotion, broad semi-auto
 3. Implement production-quality Spec Agent runner for an arbitrary Ford MMV and source (current GWM one-shot is fixture-specific), including cost receipts and durable `SPEC_NEW`/`SPEC_AMBIGUOUS` review cases.
 4. Add safe supervised orchestration and targeted queue tests; do not reuse the ordinary autonomous schedule or assume the current database job enum accepts new types.
 5. Require green checks and live QA identity verification before changing any Railway deployment.
+
+## 2026-11-05 — Supervised Spec integration and QA preflight
+
+- Added `spec-agent-supervised-candidates.ts` and its unit tests for approved alias, ambiguous exact labels, genuine new candidates, units and stable document fingerprints. This is source-claim reconciliation, not raw PDF parsing.
+- Added `scripts/agents/spec-supervised-worker.ts` and a QA-flagged `SPEC_INTELLIGENCE` worker branch. The runner reads the current `specs` and confirmed `spec_field_aliases` from QA and persists review-only `UNMATCHED_SPEC` findings with reason `SPEC_NEW` or `SPEC_AMBIGUOUS`; the Review projection differentiates them. No canonical spec writes.
+- The runner requires `QA_SUPERVISED_SPEC_ENABLED=1`, Ford BR, an operator-attested official source hash, a specific source MY and version, and an existing QA product linked to a canonical MMV. It cannot consume an arbitrary unverified vehicle identifier.
+- QA read-only baseline: 321 canonical specs (170 binary, 59 numeric, 92 scale); zero saved `spec_field_aliases` rows. The only Ford product found was Territory MY2026 product 1007, without a canonical `mmv_id`. There was **no Ranger product or Ford canonical MMV** at the time of preflight.
+- QA migration `s27_qa_supervised_spec_job_type` succeeded, and readback confirmed `SPEC_INTELLIGENCE` added to the `agent_jobs_job_type_check` allowlist. Existing jobs remain unchanged; no job was enqueued.
+- Draft PR #28 opened against Sprint 27. Initial CI exposed missing Generation provider bindings; ported the missing `NewProductCheckAgent`, result and review mapper contracts while preserving S27 behavior. Latest completed Sprint 27 Spec Agent checks after that reconciliation: PASS.
+- No Railway worker deployment, Ford run, OpenAI inference, or spec approvals occurred as part of this step.
+
+## Remaining run blockers
+1. Ford Ranger must pass actual Brand Connector/MMV review and be tied to an approved canonical product and explicitly verified MY. Do not create fake product rows.
+2. A real Ford manufacturer technical source must be retrieved and its version-specific claims extracted automatically (current GWM pilot is specialized). The new generic runner accepts verified claims; it is NOT itself an automatic PDF extractor.
+3. Collector must capture and bind historical official design image pairs for previous/current MY; Generation Vision is prepared but not yet wired end to end.
+4. Verify the full queue/review flow with targeted tests on QA worker integration, then separately deploy the integrated worker while leaving `QA_SUPERVISED_SPEC_ENABLED` disabled until the supervised run.
+5. Execute Brand → MMV → FIPE/MY → Generation → Spec → Price with recorded checkpoints; stop if upstream identity is ambiguous.
