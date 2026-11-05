@@ -66,10 +66,10 @@ function CanonicalSpecCombobox({
   const [query,setQuery]=useState('');
   const [open,setOpen]=useState(false);
   const [active,setActive]=useState(0);
-  const normalize=(raw:string)=>raw.normalize('NFD').replace(/\\p{M}/gu,'')
+  const normalize=(raw:string)=>raw.normalize('NFD').replace(/\p{M}/gu,'')
     .toLocaleLowerCase('pt-BR').trim();
   const selected=options.find(option=>String(option.id)===value);
-  const words=normalize(query).split(/\\s+/u).filter(Boolean);
+  const words=normalize(query).split(/\s+/u).filter(Boolean);
   const matches=(words.length?options.filter(option=>{
     const haystack=normalize([option.code,option.label,option.group].join(' '));
     return words.every(word=>haystack.includes(word));
