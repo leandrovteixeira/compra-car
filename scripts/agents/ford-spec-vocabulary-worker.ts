@@ -6,7 +6,7 @@ import {createHash,randomUUID} from 'node:crypto';
 import {extractFordSpecVocabulary27} from '@compra-car/adapter-openai';
 import {AgentPlatformSupabaseAdapter,createLegacySupabaseClient} from '@compra-car/adapter-supabase';
 import {normalizeAliasLabel} from '@compra-car/core/agent-platform';
-import {separateSpecConceptAndValue27} from '@compra-car/core/agents';
+import {separateSpecConceptAndValue27,suggestVocabularyMatches27} from '@compra-car/core/agents';
 import type {AgentRunBundle,AgentObject} from '@compra-car/core/agent-platform';
 import {officialFordPdfBytes} from './ford-supervised-pdf-job';
 type Client=ReturnType<typeof createLegacySupabaseClient>;
@@ -53,7 +53,7 @@ export async function runFordSpecVocabularyJob(input:{
  if(catalogError||!rawCatalog?.length)throw new Error('FORD_VOCAB_CATALOG_UNAVAILABLE');
  const catalog=rawCatalog.map(x=>({
   id:String(x.id),code:String(x.code),kind:String(x.type),
-  label:String(x.display_pt??x.detail_pt??x.detail??'')
+  label:String(x.display_pt??x.detail_pt??x.detail??''),unit:typeof x.unit==='string'?x.unit:null
  }));
  const {data:rawAliases,error:aliasError}=await input.db.from('spec_field_aliases')
   .select('alias,target_spec_id,value_type,status,locale,source_context_key')
@@ -86,9 +86,13 @@ export async function runFordSpecVocabularyJob(input:{
    [norm,rawNorm].includes(normalizeAliasLabel(a.label))).map(a=>a.spec.code))].sort();
   const exact=[...new Set(sameKind.filter(s=>normalizeAliasLabel(s.label)===norm)
     .map(s=>s.code))].sort();
+  const hints=suggestVocabularyMatches27({
+    label:separated.specLabel,rawLabel:separated.rawLabel,
+    kind:claim.kind,unit:separated.observedUnit,catalog,limit:5
+  });
   const status=confirmed.length===1?'MATCHED_ALIAS':
    confirmed.length>1||exact.length>0?'SPEC_AMBIGUOUS':'SPEC_NEW';
-  return {claim,separated,status,match:confirmed.length===1?confirmed[0]:null,
+  return {claim,separated,hints,status,match:confirmed.length===1?confirmed[0]:null,
    candidateCodes:[...new Set([...confirmed,...exact])].sort(),
    fingerprint:createHash('sha256').update(JSON.stringify([
     'FORD_VOCAB_V1',extraction.documentHash,claim.ordinal,norm,claim.kind,
@@ -114,6 +118,7 @@ export async function runFordSpecVocabularyJob(input:{
      sourceLabel:x.separated.specLabel,rawLabel:x.separated.rawLabel,
      observedValue:x.separated.observedValue,observedUnit:x.separated.observedUnit,
      valueSource:x.separated.valueSource,kind:x.claim.kind,page:x.claim.page,
+     suggestedCodes:x.hints.map(h=>h.code),semanticHints:x.hints.map(h=>({...h})),
      versionColumns:[...x.claim.versionColumns],noProductAssignment:true} as AgentObject,
     payload:{reasonCode:x.status,sourceUrl:input.pdfUrl,
      sourceDocumentSha256:extraction.documentHash,
