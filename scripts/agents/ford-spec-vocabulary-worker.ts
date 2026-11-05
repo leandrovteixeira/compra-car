@@ -52,7 +52,7 @@ export async function runFordSpecVocabularyJob(input:{
   .select('id,code,type,display_pt,detail_pt,detail,unit').limit(2000);
  if(catalogError||!rawCatalog?.length)throw new Error('FORD_VOCAB_CATALOG_UNAVAILABLE');
  const catalog=rawCatalog.map(x=>({
-  id:String(x.id),code:String(x.code),kind:String(x.type),
+  id:String(x.id),code:String(x.code),kind:String(x.type) as 'numeric'|'binary'|'scale',
   label:String(x.display_pt??x.detail_pt??x.detail??''),unit:typeof x.unit==='string'?x.unit:null
  }));
  const {data:rawAliases,error:aliasError}=await input.db.from('spec_field_aliases')
