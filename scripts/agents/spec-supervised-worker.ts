@@ -46,8 +46,14 @@ export async function runSupervisedFordSpecJob(input:{
   if(input.market!=='BR'||input.brand.toUpperCase()!=='FORD'||
     !/^[a-f0-9-]{36}$/iu.test(input.jobId))throw new Error('SPEC_SUPERVISED_JOB_INVALID');
   // Fail closed if the target no longer exists. Do not manufacture an MMV identity.
-  const target=await db.from('products').select('id').eq('id',s.target.productId).maybeSingle();
-  if(target.error||!target.data)throw new Error('SPEC_SUPERVISED_PRODUCT_NOT_FOUND');
+  const target=await db.from('products').select('id,brand,model,version,model_year,mmv_id')
+    .eq('id',s.target.productId).maybeSingle();
+  if(target.error||!target.data||!target.data.mmv_id||
+    String(target.data.brand).toLowerCase()!==s.target.brand.toLowerCase()||
+    String(target.data.model).toLowerCase()!==s.target.model.toLowerCase()||
+    String(target.data.version).toLowerCase()!==s.target.version.toLowerCase()||
+    Number(target.data.model_year)!==s.target.modelYear)
+    throw new Error('SPEC_SUPERVISED_CANONICAL_TARGET_REQUIRED');
   const {data:rawCatalog,error}=await db.from('specs').select('*').limit(2000);
   if(error||!rawCatalog?.length)throw new Error('SPEC_SUPERVISED_CATALOG_UNAVAILABLE');
   const catalog:SupervisedSpecCatalog27[]=rawCatalog.map((raw:Record<string,unknown>)=>({
@@ -56,10 +62,22 @@ export async function runSupervisedFordSpecJob(input:{
     kind:String(raw.type??'') as SupervisedSpecCatalog27['kind'],
     unit:typeof raw.unit==='string'?raw.unit:null
   }));
+  // Only use confirmed, scoped aliases. An empty dictionary is valid and
+  // produces review candidates instead of speculative automatic mappings.
+  const {data:aliasRows,error:aliasError}=await db.from('spec_field_aliases')
+    .select('alias,target_spec_id,value_type,locale,category_key,source_context_key,status')
+    .eq('status','CONFIRMED').eq('locale','pt-BR')
+    .limit(1000);
+  if(aliasError)throw new Error('SPEC_SUPERVISED_ALIAS_READ_FAILED');
+  const bySpecId=new Map(catalog.map(row=>[row.id,row]));
+  const approvedAliases:SupervisedSpecAlias27[]=(aliasRows??[])
+    .filter(row=>row.source_context_key==='FORD'&&row.target_spec_id!==null &&
+      row.value_type===bySpecId.get(String(row.target_spec_id))?.kind)
+    .map(row=>({label:String(row.alias),specCode:bySpecId.get(String(row.target_spec_id))!.code,approved:true}));
   const observations=classifySupervisedSpecClaims27({
     brand:s.target.brand,model:s.target.model,version:s.target.version,
     modelYear:s.target.modelYear,documentSha256:s.source.sha256,claims:s.claims,
-    catalog,aliases:input.approvedAliases??[]
+    catalog,aliases:approvedAliases
   });
   const now=input.now?.()??new Date().toISOString();
   const runId=input.jobId; // stable one-shot retry key
