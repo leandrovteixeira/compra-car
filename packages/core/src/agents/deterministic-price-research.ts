@@ -300,7 +300,7 @@ export function extractDeterministicPrice(
     }
 
     const bonus = part.match(
-      /(?:b[oô]nus(?:\s+varejo)?|retail\s+bonus)\s*(?:de)?\s*[:\-]?\s*(R\$\s*[0-9.]+(?:,[0-9]{2})?)/iu,
+      /(?:b[oô]nus(?:\s+(?:varejo|promocional))?|retail\s+bonus)\s*(?:de)?\s*[:\-]?\s*(R\$\s*[0-9.]+(?:,[0-9]{2})?)/iu,
     );
     if (bonus && !isConditionalCommercialText(part)) {
       retailBonusAmount = money(bonus[1]!);
