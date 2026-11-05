@@ -1,0 +1,31 @@
+name: QA Price Agent typecheck regression (offline)
+on:
+  push:
+    branches:
+      - qa/engineering-price-typecheck-20261105
+
+permissions:
+  contents: read
+
+jobs:
+  core-price-offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      OPENAI_API_KEY: ''
+      SUPABASE_SERVER_KEY: ''
+      APP_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '10.34.5'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Core typecheck (offline)
+        run: pnpm --filter @compra-car/core typecheck
+      - name: Price Agent regression tests (offline)
+        run: pnpm --filter @compra-car/core exec vitest run test/price-agent.test.ts test/price-check-classification-26.test.ts
