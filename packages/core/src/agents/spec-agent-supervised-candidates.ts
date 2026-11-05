@@ -37,7 +37,7 @@ export function classifySupervisedSpecClaims27(input:{
   return input.claims.map(claim=>{
     if(!Number.isInteger(claim.ordinal)||claim.ordinal<1||seen.has(claim.ordinal)||
       !Number.isInteger(claim.page)||claim.page<1||claim.page>500||
-      !claim.label?.trim()||claim.label.length>500||claim.rawValue?.length>500||
+      !claim.label?.trim()||claim.label.length>500||typeof claim.rawValue!=='string'||claim.rawValue.length>500||
       !['binary','numeric','scale'].includes(claim.kind))
       throw new Error('SPEC_SUPERVISED_CLAIM_INVALID');
     seen.add(claim.ordinal);
