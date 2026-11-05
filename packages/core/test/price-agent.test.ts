@@ -371,7 +371,9 @@ describe('Sprint 26C invalid MSRP AI handoff', () => {
   it('routes a promotional bonus mistaken for MSRP to reconciliation under cap', async () => {
     const n: PriceTarget = { ...target, brand: 'Kia', model: 'Niro',
       version: 'EX', modelYear: 2027, currentPrice: null };
-    const reconcile = vi.fn(async () => ({ observations: [], mappings: [], usage: [] }));
+    const reconcile = vi.fn(async (..._args: [readonly PriceTarget[], BrandConnector, number]) => (
+      { observations: [], mappings: [], usage: [] }
+    ));
     const research = new DeterministicFirstPriceResearch({
       fetch: async () => [makePriceSnapshot({
         target: n,
