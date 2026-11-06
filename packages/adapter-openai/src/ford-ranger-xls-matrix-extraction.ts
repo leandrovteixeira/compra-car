@@ -122,6 +122,20 @@ export async function extractFordRangerXlsMatrix27(input:{
   payload.cells.length===0||payload.cells.length>180)
    throw new Error('FORD_XLS_MATRIX_INVALID_RESULT');
  const cells=payload.cells as RangerXlsMatrixCell27[];
+ // Production extraction requires all spatial reference rows. Pure row-level
+ // validation remains independently testable for individual negative cases.
+ const fold=(s:string)=>s.normalize('NFKD')
+   .replace(/[\\u0300-\\u036f]/gu,'').toLowerCase().replace(/\\s+/gu,' ').trim();
+ const mandatoryAnchors=[
+   /^ajuste eletrico da altura dos farois$/u,
+   /^bagageiro de teto$/u,
+   /^degraus? de acesso a cacamba$/u,
+   /^estribo plataforma$/u,
+   /^farois de neblina em led$/u
+ ];
+ const labels=cells.map(cell=>fold(cell.rowLabel));
+ if(mandatoryAnchors.some(pattern=>!labels.some(label=>pattern.test(label))))
+   throw new Error('FORD_XLS_MATRIX_ANCHOR_ROWS_MISSING');
  const sha=createHash('sha256').update(bytes).digest('hex');
  const claims=validateFordRangerXlsMatrix27({
   pdfUrl:input.sourceUrl,sha256:sha,
