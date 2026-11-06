@@ -62,7 +62,5 @@ export async function auditFordXls2027SourceJob(input:{
   config_snapshot:{supervised:true,manufacturer:'Ford',snapshotRequired:true}
  });
  if(runError)throw new Error('FORD_XLS_SOURCE_AUDIT_PERSIST_FAILED');
- if(assessment.status!=='VERIFIED_FOR_REVIEW')
-  throw new Error('FORD_XLS_SOURCE_NOT_VERIFIED');
- return {runId:input.runId,verified:true,documentSha256:digest};
+ return {runId:input.runId,verified:assessment.status==='VERIFIED_FOR_REVIEW',documentSha256:digest};
 }
