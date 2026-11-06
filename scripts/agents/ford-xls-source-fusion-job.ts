@@ -32,8 +32,11 @@ export async function reconcileFordXls2027Qa27(input:{
   !Array.isArray(run.summary?.claims)||run.summary.claims.length<50||
   run.summary.claims.length>180)
   throw new Error('FORD_XLS_FUSION_PDF_SOURCE_UNVERIFIED');
- const pdfClaims=(run.summary.claims as FordSourceClaim27[])
-  .map(normalizeFordPdfTechnicalClaim27);
+ let pdfClaims:FordSourceClaim27[];
+ try{
+  pdfClaims=(run.summary.claims as FordSourceClaim27[])
+   .map(normalizeFordPdfTechnicalClaim27);
+ }catch{throw new Error('FORD_XLS_FUSION_PDF_NORMALIZATION_FAILED');}
  let html:string|undefined;
  try{
   const response=await fetch(FORD_XLS_2027_URL,{redirect:'manual',
@@ -91,9 +94,18 @@ export async function reconcileFordXls2027Qa27(input:{
    vehicle:{brand:'Ford',model:'Ranger',version:'XLS 3.0 V6 Diesel 4WD AT',modelYear:2027},
    evidence:[]};
  }
- const htmlClaims=extractFordXlsHtmlClaims27({visibleText:text,sha256:htmlSha256,pdfClaims});
- const proposals=reconcileFordXls2027Sources({
-  htmlAssessment:assessment,pdfClaims,htmlClaims});
+ let htmlClaims:readonly FordSourceClaim27[];
+ try{htmlClaims=extractFordXlsHtmlClaims27({visibleText:text,sha256:htmlSha256,pdfClaims});}
+ catch(error){
+  if(error instanceof Error&&error.message.startsWith('FORD_XLS_'))throw error;
+  throw new Error('FORD_XLS_FUSION_HTML_CLAIMS_EXCEPTION');
+ }
+ let proposals:ReturnType<typeof reconcileFordXls2027Sources>;
+ try{proposals=reconcileFordXls2027Sources({htmlAssessment:assessment,pdfClaims,htmlClaims});}
+ catch(error){
+  if(error instanceof Error&&error.message.startsWith('FORD_XLS_'))throw error;
+  throw new Error('FORD_XLS_FUSION_PROPOSAL_RECONCILIATION_EXCEPTION');
+ }
  const abstains=proposals.filter(p=>p.decision==='ABSTAIN');
  const corroborated=proposals.filter(p=>p.reason==='BOTH_OFFICIAL_SOURCES_CORROBORATE');
  if(proposals.length<pdfClaims.length||abstains.length<1)
