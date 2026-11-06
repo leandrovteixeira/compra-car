@@ -56,7 +56,7 @@ export function validateFordRangerXlsMatrix27(input:{
   const raw=cell.rawCell.trim();
   const dash=['-','–','—'].includes(raw);
   const check=/^x$/iu.test(raw);
-  const isNumber=/^\d+(?:[.,]\d+)?(?:\s*(?:\"|”|″|pol|cv|nm|kg|mm|l))?$/iu.test(raw);
+    const isNumber=/^\d+(?:[.,]\d+)?(?:\s*(?:["”″]|pol|cv|nm|kg|mm|l))?$/iu.test(raw);
   const expected:FordEquipmentAvailability27=check||isNumber?'STANDARD':
     dash?'NOT_AVAILABLE':'UNKNOWN';
   // The PDF uses an x as present in the printed equipment table. Its separate
