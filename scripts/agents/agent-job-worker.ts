@@ -14,6 +14,7 @@ import { runSupervisedFordSpecJob, type SupervisedSpecSourceSnapshot } from './s
 import {runSupervisedFordPdfJob,type SupervisedFordPdfJob} from './ford-supervised-pdf-job';
 import {runFordSpecVocabularyJob} from './ford-spec-vocabulary-worker';
 import {auditFordXls2027SourceJob} from './ford-xls-2027-source-audit-job';
+import {stageFordRangerXlsMatrix27} from './ford-xls-matrix-staging-job';
 import { monitorBrandSources } from './source-monitor';
 import { runMmvLaunchWatch } from './mmv-launch-watch';
 import { journalWorkerJob } from './engineering-worker-telemetry';
@@ -53,6 +54,8 @@ type JobRow = {
     vocabularyPdfUrl?: string;
     sourceAuditOnly?: boolean;
     sourceAuditProductId?: number;
+    xlsMatrixStageOnly?: boolean;
+    xlsMatrixProductId?: number;
   };
 };
 
@@ -172,6 +175,27 @@ async function execute(job: JobRow) {
   // extracted, verified and bound to the actual Ford MY and product.
   // Review proposals only; no product_specs or canonical dictionary mutations.
   if(job.job_type==='SPEC_INTELLIGENCE'){
+    if(job.input.xlsMatrixStageOnly===true){
+      if(env.QA_SUPERVISED_SPEC_ENABLED!=='1'||job.brand!=='Ford'||
+        job.market!=='BR'||job.input.xlsMatrixProductId!==1236||
+        !env.OPENAI_SPEC_AGENT_API_KEY?.trim())
+        throw new Error('FORD_XLS_MATRIX_QA_SCOPE_DENIED');
+      const reservation=await reserveAgentPilotBudget(
+        client as unknown as AgentBudgetClient,job);
+      try{
+        const result=await stageFordRangerXlsMatrix27({
+          db:client,jobId:job.id,jobCreatedAt:job.created_at,
+          productId:job.input.xlsMatrixProductId,
+          apiKey:env.OPENAI_SPEC_AGENT_API_KEY
+        });
+        await complete(job.id,result.runId);
+        await journal('SUCCESS',result.runId);
+        log('Ford XLS exact-column matrix staged for review: '+JSON.stringify(result));
+      }finally{
+        await finishAgentPilotBudget(client as unknown as AgentBudgetClient,reservation);
+      }
+      return;
+    }
     if(job.input.sourceAuditOnly===true){
       if(env.QA_SUPERVISED_SPEC_ENABLED!=='1'||job.brand!=='Ford'||
          job.market!=='BR'||job.input.sourceAuditProductId!==1236)
