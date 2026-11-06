@@ -1,54 +1,63 @@
 import {describe,expect,it} from 'vitest';
-import {validateFordRangerXlsMatrix27,RANGER_XLS_MATRIX_PDF,type RangerXlsMatrixCell27}
+import {validateFordRangerXlsMatrix27,RANGER_XLS_MATRIX_PDF,
+ type RangerXlsMatrixCell27,type RangerXlsMatrixBinding27}
  from '../src/agents/ford-ranger-xls-matrix';
-const base:RangerXlsMatrixCell27={
- ordinal:1,page:2,rowLabel:'Painel de instrumentos colorido de 8 polegadas',
- columnHeader:'Ranger XLS 3.0 V6 Diesel 4x4 AT',
- legendExcerpt:'S = série; O = opcional; — = indisponível',
- rawCell:'S',rawRowExcerpt:'Painel instrumentos colorido de 8 polegadas',
- concept:'Painel de instrumentos digital',value:'8',unit:'inch',
- availability:'STANDARD',
+
+export const binding:RangerXlsMatrixBinding27={
+ page:2,headers:['XLS 4x4','Black','XLS 4WD','XLT 4WD','Limited'],columnIndex:2,
+ engineRowLabel:'Motor 3.0 V6 turbo Diesel',
+ engineCells:['-','-','x','x','x'],
+ transmissionRowLabel:'Transmissão',
+ transmissionCells:['AT 6 Vel.','AT 6 Vel.','AT 10 Vel.','AT 10 Vel.','AT 10 Vel.']
 };
-const input={pdfUrl:RANGER_XLS_MATRIX_PDF,sha256:'a'.repeat(64),cells:[base]};
-describe('Ford XLS matrix cells',()=>{
- it('keeps only the exact XLS diesel V6 4x4 cell and its legend',()=>{
+export const cell:RangerXlsMatrixCell27={
+ ordinal:1,page:2,rowSection:'INTERIOR',
+ rowLabel:'Painel de instrumentos colorido, configuráveis através de comandos no volante',
+ columnHeader:'XLS 4WD',legendExcerpt:'',
+ rawCell:'8”',rawRowExcerpt:'Painel de instrumentos colorido, configuráveis através de comandos no volante',
+ concept:'Painel de instrumentos digital',value:'8',unit:'inch',availability:'STANDARD'
+};
+const input={pdfUrl:RANGER_XLS_MATRIX_PDF,sha256:'a'.repeat(64),binding,cells:[cell]};
+describe('Ford actual printed XLS 4WD matrix binding',()=>{
+ it('accepts third XLS 4WD column only when engine/transmission align',()=>{
   expect(validateFordRangerXlsMatrix27(input)[0]).toMatchObject({
-   availability:'STANDARD',value:'8',unit:'inch',scope:'XLS_MATRIX_CELL',
-   evidenceExcerpt:expect.stringContaining('Coluna: Ranger XLS 3.0 V6')
+   value:'8',unit:'inch',availability:'STANDARD',scope:'XLS_MATRIX_CELL',
+   evidenceExcerpt:expect.stringContaining('Coluna impressa 3/5: XLS 4WD')
   });
  });
- it('rejects Limited optional screen even though the PDF contains it',()=>{
-  expect(()=>validateFordRangerXlsMatrix27({...input,cells:[
-    {...base,columnHeader:'Ranger Limited 3.0 V6 Diesel 4x4 AT',
-     rowLabel:'Painel de instrumentos 12,4 polegadas',value:'12.4',
-     availability:'OPTIONAL',rawCell:'O'}
-  ]})).toThrow('FORD_XLS_MATRIX_CELL_INVALID');
- });
- it('does not guess availability without legend',()=>{
-  expect(()=>validateFordRangerXlsMatrix27({...input,cells:[
-   {...base,legendExcerpt:''}
-  ]})).toThrow('FORD_XLS_MATRIX_LEGEND_MISSING');
- });
- it('requires a cell to justify absence',()=>{
-  expect(()=>validateFordRangerXlsMatrix27({...input,cells:[
-   {...base,availability:'NOT_AVAILABLE',rawCell:''}
-  ]})).toThrow('FORD_XLS_MATRIX_LEGEND_MISSING');
- });
- it('rejects a header falsely presented as the equipment legend',()=>{
-  expect(()=>validateFordRangerXlsMatrix27({...input,cells:[{
-   ...base,rawCell:'x',availability:'OPTIONAL',
-   legendExcerpt:'VERSÕES: XLS 3.0 V6 Diesel 4WD AT'
-  }]})).toThrow('FORD_XLS_MATRIX_LEGEND_UNVERIFIED');
- });
- it('will not invent x meaning: the official legend must define the symbol',()=>{
-  expect(()=>validateFordRangerXlsMatrix27({...input,cells:[{
-   ...base,rawCell:'x',availability:'OPTIONAL',
-   legendExcerpt:'S = série; O = opcional; - = não disponível'
-  }]})).toThrow('FORD_XLS_MATRIX_LEGEND_UNVERIFIED');
- });
- it('keeps UNKNOWN when manufacturer table is unclear',()=>{
+ it('maps printed x to STANDARD (present), never OPTIONAL',()=>{
   expect(validateFordRangerXlsMatrix27({...input,cells:[
-   {...base,availability:'UNKNOWN',rawCell:'',legendExcerpt:''}
+   {...cell,rawCell:'x',availability:'STANDARD'}
+  ]})[0]?.availability).toBe('STANDARD');
+  expect(()=>validateFordRangerXlsMatrix27({...input,cells:[
+   {...cell,rawCell:'x',availability:'OPTIONAL'}
+  ]})).toThrow('FORD_XLS_MATRIX_AVAILABILITY_MISMATCH');
+ });
+ it('maps dash to NOT_AVAILABLE, not optional',()=>{
+  expect(validateFordRangerXlsMatrix27({...input,cells:[
+   {...cell,rawCell:'-',value:null,availability:'NOT_AVAILABLE'}
+  ]})[0]?.availability).toBe('NOT_AVAILABLE');
+ });
+ it('rejects first XLS 4x4, Limited, false technical header, and wrong engine binding',()=>{
+  for(const heading of ['XLS 4x4','Limited','Ranger XLS 3.0 V6 Diesel 4WD AT']){
+   expect(()=>validateFordRangerXlsMatrix27({...input,cells:[
+    {...cell,columnHeader:heading}
+   ]})).toThrow('FORD_XLS_MATRIX_CELL_INVALID');
+  }
+  expect(()=>validateFordRangerXlsMatrix27({...input,binding:{
+   ...binding,engineCells:['x','-','-','x','x']
+  }})).toThrow('FORD_XLS_MATRIX_COLUMN_IDENTITY_UNVERIFIED');
+ });
+ it('excludes Limited optional 12.4-inch content from XLS',()=>{
+  expect(()=>validateFordRangerXlsMatrix27({...input,cells:[{
+   ...cell,columnHeader:'Limited',rawCell:'OPT',value:'12.4',
+   rowLabel:'Kit Opcional da versão Limited – Painel de instrumentos 12,4 polegadas',
+   availability:'OPTIONAL'
+  }]})).toThrow('FORD_XLS_MATRIX_CELL_INVALID');
+ });
+ it('keeps unknown or ambiguous cells UNKNOWN',()=>{
+  expect(validateFordRangerXlsMatrix27({...input,cells:[
+   {...cell,rawCell:'',value:null,availability:'UNKNOWN'}
   ]})[0]?.availability).toBe('UNKNOWN');
  });
 });
