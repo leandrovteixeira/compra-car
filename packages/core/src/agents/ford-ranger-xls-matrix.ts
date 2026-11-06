@@ -36,9 +36,32 @@ export function validateFordRangerXlsMatrix27(input:{
     !['STANDARD','OPTIONAL','NOT_AVAILABLE','UNKNOWN'].includes(cell.availability))
      throw new Error('FORD_XLS_MATRIX_CELL_INVALID');
   seen.add(cell.ordinal);
-  // Missing or unclear legends cannot establish factory availability.
-  if(cell.availability!=='UNKNOWN'&&!cell.legendExcerpt.trim())
-    throw new Error('FORD_XLS_MATRIX_LEGEND_MISSING');
+  // An unrelated heading such as "VERSÕES: XLS" is not a legend.
+  // Never guess what a checkmark/x/dash means: require an explicit mapping
+  // for the literal symbol in this exact cell, including its status.
+  if(cell.availability!=='UNKNOWN'){
+    const symbol=cell.rawCell.trim();
+    const rawLegend=folded(cell.legendExcerpt).replace(/[–—]/gu,'-');
+    const rawSymbol=folded(symbol).replace(/[–—]/gu,'-');
+    if(!symbol||symbol.length>10||!cell.legendExcerpt.trim())
+      throw new Error('FORD_XLS_MATRIX_LEGEND_MISSING');
+    const lines=rawLegend.split(/[;|,\n]+/gu).map(s=>s.trim());
+    const statement=lines.find(s=>{
+      const match=/^(.{1,10}?)\s*(?:=|:|-)\s*(.{2,100})$/u.exec(s);
+      return Boolean(match&&match[1]!.trim()===rawSymbol);
+    })??'';
+    const meaning=statement.replace(/^.{1,10}?\s*(?:=|:|-)\s*/u,'').trim();
+    const allowed=cell.availability==='STANDARD'
+      ?/(?:serie|standard|padrao|equipamento de serie)/u.test(meaning)
+      :cell.availability==='OPTIONAL'
+        ?/(?:opcional|option|acessorio)/u.test(meaning)
+        :/(?:nao disponivel|indisponivel|ausente|nao equipado)/u.test(meaning);
+    // A numeric value (e.g. "6" speakers) is a measurement, not a
+    // legend marker. Keep it UNKNOWN until a column-specific source is
+    // corroborated. A fabricated "6 = série" is not a valid legend.
+    if(!allowed||/^\d+(?:[.,]\d+)?$/u.test(rawSymbol))
+      throw new Error('FORD_XLS_MATRIX_LEGEND_UNVERIFIED');
+  }
   if(cell.availability==='NOT_AVAILABLE'&&!cell.rawCell.trim())
     throw new Error('FORD_XLS_MATRIX_ABSENCE_NOT_PROVEN');
   return {
