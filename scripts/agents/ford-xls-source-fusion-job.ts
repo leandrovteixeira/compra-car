@@ -33,7 +33,9 @@ export async function reconcileFordXls2027Qa27(input:{
  const pdfClaims=(run.summary.claims as FordSourceClaim27[])
   .map(normalizeFordPdfTechnicalClaim27);
  const response=await fetch(FORD_XLS_2027_URL,{redirect:'manual',
-  headers:{accept:'text/html'},signal:AbortSignal.timeout(25000)});
+  headers:{accept:'text/html','accept-language':'pt-BR,pt;q=0.9,en;q=0.5',
+   'user-agent':'Mozilla/5.0 (compatible; OfficialSourceReview/1.0)'},
+  signal:AbortSignal.timeout(25000)});
  if(!response.ok||response.status>=300)
   throw new Error('FORD_XLS_FUSION_HTML_HTTP_'+response.status);
  if(!(response.headers.get('content-type')??'').includes('text/html'))
