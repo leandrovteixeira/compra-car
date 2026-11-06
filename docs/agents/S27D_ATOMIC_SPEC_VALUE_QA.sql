@@ -32,6 +32,7 @@ DECLARE
  v_obs uuid;
  v_previous uuid;
  v_receipt jsonb;
+ v_recorded_action text;
  v_label text;
  v_alias_key text;
  v_alias_existing bigint;
@@ -45,6 +46,7 @@ BEGIN
     OR p_action NOT IN ('MERGE','CREATE','REJECT','POSTPONE')
     OR length(coalesce(p_idempotency,''))<12 OR length(p_idempotency)>200
  THEN RAISE EXCEPTION 'SPEC_VALUE_BAD_COMMAND'; END IF;
+ v_recorded_action:=CASE WHEN p_action='CREATE' THEN 'APPROVE' ELSE p_action END;
  SELECT * INTO v_f FROM public.agent_findings WHERE id=p_finding FOR UPDATE;
  IF NOT FOUND OR v_f.fingerprint<>p_fingerprint OR
     v_f.finding_type<>'SPEC_VALUE_REVIEW' OR
@@ -60,7 +62,7 @@ BEGIN
    WHERE idempotency_key=p_idempotency;
  IF FOUND THEN
    IF NOT EXISTS(SELECT 1 FROM public.agent_decision_events WHERE id=v_previous
-      AND case_id=v_case.id AND action=p_action AND actor_id=v_actor)
+      AND case_id=v_case.id AND action=v_recorded_action AND actor_id=v_actor)
    THEN RAISE EXCEPTION 'SPEC_VALUE_IDEMPOTENCY_CONFLICT'; END IF;
    RETURN jsonb_build_object('status','REPLAYED','caseId',v_case.id,'decisionId',v_previous);
  END IF;
@@ -176,7 +178,7 @@ BEGIN
  INSERT INTO public.agent_decision_events(case_id,prior_case_revision,
   snapshot_fingerprint,action,resulting_status,actor_id,idempotency_key,
   canonical_kind,canonical_target_ref,effect_receipt)
- VALUES(v_case.id,v_case.revision,p_fingerprint,p_action,'APPROVED',
+ VALUES(v_case.id,v_case.revision,p_fingerprint,v_recorded_action,'APPROVED',
   v_actor,p_idempotency,'SPEC_FIELD',v_target_id::text,
   jsonb_build_object('productId',1236,'modelYear',2027,'specId',v_target_id,
     'value',v_value,'isPresent',v_is_present,'sourceFusionRunId',v_fusion.id))
