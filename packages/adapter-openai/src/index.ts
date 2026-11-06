@@ -20,3 +20,5 @@ export * from './generation-assessment-provider';
 export * from './spec-pdf-extraction';
 export * from './spec-pdf-vocabulary';
 export * from './ford-ranger-xls-matrix-extraction';
+
+export * from './ford-ranger-xls-cropped-matrix';
