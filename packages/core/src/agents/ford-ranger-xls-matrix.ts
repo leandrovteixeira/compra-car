@@ -50,23 +50,30 @@ export function validateFordRangerXlsMatrix27(input:{
     !cell.rawRowExcerpt?.trim()||folded(cell.columnHeader)!=='xls 4wd'||
     !['EXTERIOR','INTERIOR','SAFETY','TECHNOLOGY','MULTIMEDIA','PERFORMANCE','DIMENSIONS'].includes(cell.rowSection)||
     typeof cell.rawCell!=='string'||cell.rawCell.length>200||
+    !Array.isArray(cell.rowCells)||cell.rowCells.length!==5||
+    cell.rowCells.some(v=>typeof v!=='string'||v.length>200)||
     !['STANDARD','OPTIONAL','NOT_AVAILABLE','UNKNOWN'].includes(cell.availability))
     throw new Error('FORD_XLS_MATRIX_CELL_INVALID');
   seen.add(cell.ordinal);
+  // Validate the full row before interpreting its third cell. The per-cell
+  // answer must match the visual row transcription in the same response.
+  if(cell.rawCell.trim()!==cell.rowCells[2]!.trim())
+    throw new Error('FORD_XLS_MATRIX_ROW_COLUMN_MISMATCH');
   // Golden row checks were visually verified against page 2 of the
   // September 2026 manufacturer PDF. They are QA invariants for detecting
   // spatial column drift in model-extracted table coordinates.
-  const golden:readonly [RegExp,'x'|'-'][]=[
-    [/^ajuste eletrico da altura dos farois$/u,'x'],
-    [/^bagageiro de teto$/u,'-'],
-    [/^degraus? de acesso a cacamba$/u,'x'],
-    [/^estribo plataforma$/u,'-'],
-    [/^farois de neblina em led$/u,'-']
+  const golden:readonly [RegExp,readonly string[]][]=[
+    [/^ajuste eletrico da altura dos farois$/u,['x','x','x','x','x']],
+    [/^bagageiro de teto$/u,['-','-','-','-','x']],
+    [/^degraus? de acesso a cacamba$/u,['x','x','x','x','x']],
+    [/^estribo plataforma$/u,['-','x','-','x','x']],
+    [/^farois de neblina em led$/u,['-','-','-','x','x']]
   ];
   const row=folded(cell.rowLabel);
   const expectedAnchor=golden.find(([pattern])=>pattern.test(row))?.[1];
-  const actualAnchor=['-','–','—'].includes(cell.rawCell.trim())?'-':cell.rawCell.trim().toLowerCase();
-  if(expectedAnchor&&actualAnchor!==expectedAnchor)
+  const normalizeCell=(v:string)=>['-','–','—'].includes(v.trim())?'-':v.trim().toLowerCase();
+  if(expectedAnchor&&expectedAnchor.some((expected,i)=>
+    normalizeCell(cell.rowCells[i]!)!==expected))
     throw new Error('FORD_XLS_MATRIX_GOLDEN_ROW_MISMATCH');
   const raw=cell.rawCell.trim();
   const dash=['-','–','—'].includes(raw);
@@ -90,7 +97,8 @@ export function validateFordRangerXlsMatrix27(input:{
     evidenceExcerpt:[
       'Coluna impressa 3/5: XLS 4WD (motor 3.0 V6 Diesel, AT10)',
       'Seção: '+cell.rowSection,'Linha: '+cell.rawRowExcerpt,
-      'Célula: '+(raw||'(sem leitura)'),
+      'Linha 5 células: '+cell.rowCells.join(' | '),
+      'Célula XLS 4WD: '+(raw||'(sem leitura)'),
       'Interpretação determinística: '+expected,
       'Kit Opcional Limited: excluído'
     ].join(' | ')
