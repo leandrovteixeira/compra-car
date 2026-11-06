@@ -2,7 +2,9 @@
  * Does not create findings for product values, canonical aliases, or product_specs.
  * Row-level evidence is staged in a completed run summary for later source fusion.
  */
-import {extractFordRangerXlsMatrix27} from '@compra-car/adapter-openai';
+import {extractFordXlsCroppedMatrix27} from '@compra-car/adapter-openai';
+import {renderFordMatrixRegions27} from './ford-xls-raster-regions';
+import {createHash} from 'node:crypto';
 import {RANGER_XLS_MATRIX_PDF} from '@compra-car/core/agents';
 import {createLegacySupabaseClient} from '@compra-car/adapter-supabase';
 import {officialFordPdfBytes} from './ford-supervised-pdf-job';
@@ -29,8 +31,12 @@ export async function stageFordRangerXlsMatrix27(input:{
    a.summary?.eligibleForSourceReview===true))
    throw new Error('FORD_XLS_MY2027_HTML_AUDIT_REQUIRED');
  const pdf=await officialFordPdfBytes(RANGER_XLS_MATRIX_PDF);
- const extracted=await extractFordRangerXlsMatrix27({
-   sourceUrl:RANGER_XLS_MATRIX_PDF,pdf,apiKey:input.apiKey,maxCostUsd:2,
+ const crops=await renderFordMatrixRegions27(pdf);
+ const extracted=await extractFordXlsCroppedMatrix27({
+   sourceUrl:RANGER_XLS_MATRIX_PDF,
+   sha256:createHash('sha256').update(pdf).digest('hex'),
+   images:crops.map(c=>({region:c.region,imagePng:c.imagePng})),
+   apiKey:input.apiKey,
    onUsage:async usage=>{
      const {error}=await input.db.from('agent_ai_usage_events').insert({
       job_id:input.jobId,agent_type:'SPEC_INTELLIGENCE',market:'BR',brand:'Ford',
