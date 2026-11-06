@@ -31,6 +31,26 @@ describe('Ranger XLS dual official source review',()=>{
    availability:'STANDARD',evidence:[pdf,html]
   })]);
  });
+ it('corroborates unitless drivetrain values without alias normalization failure',()=>{
+  const drivetrain={...pdf,concept:'Tração',rawLabel:'Tração',
+   value:'4WD',unit:null,availability:'STANDARD' as const};
+  const website={...html,concept:'Tração',rawLabel:'Tração',
+   value:'4WD',unit:null,availability:'STANDARD' as const};
+  const result=reconcileFordXls2027Sources({
+   htmlAssessment:verified,pdfClaims:[drivetrain],htmlClaims:[website]
+  });
+  expect(result[0]).toMatchObject({
+   concept:'Tração',value:'4WD',unit:null,
+   decision:'REVIEW_REQUIRED',reason:'BOTH_OFFICIAL_SOURCES_CORROBORATE'
+  });
+ });
+ it('flags contradictions for unitless technical values',()=>{
+  const drivetrain={...pdf,concept:'Tração',rawLabel:'Tração',value:'4WD',unit:null};
+  const website={...html,concept:'Tração',rawLabel:'Tração',value:'4x2',unit:null};
+  expect(reconcileFordXls2027Sources({
+   htmlAssessment:verified,pdfClaims:[drivetrain],htmlClaims:[website]
+  })[0]).toMatchObject({decision:'ABSTAIN',reason:'MANUFACTURER_SOURCES_CONFLICT'});
+ });
  it('stops on conflicting screen sizes or equipment availability',()=>{
   const result=reconcileFordXls2027Sources({
    htmlAssessment:verified,pdfClaims:[pdf],
