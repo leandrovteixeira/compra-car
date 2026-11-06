@@ -510,12 +510,19 @@ for (;;) {
         error instanceof Error &&
         /^FIPE_(?:[A-Z][A-Z0-9_]{2,80}|HTTP_[0-9]{3})$/u.test(error.message)
         ? error.message : null;
-      const failureCode=budgetError??fipeCode??'AGENT_JOB_EXECUTION_FAILED';
+      // Persist only enumerated Ford matrix validation codes; never raw
+      // model/provider responses or secrets. Distinguish source extraction
+      // refusal from infrastructure failure in QA telemetry.
+      const matrixCode=job.job_type==='SPEC_INTELLIGENCE' &&
+        job.input.xlsMatrixStageOnly===true && error instanceof Error &&
+        /^FORD_XLS_MATRIX_(?:INVALID_RESULT|INVALID_JSON|INCOMPLETE|CELL_INVALID|COLUMN_IDENTITY_UNVERIFIED|AVAILABILITY_MISMATCH|ROW_EVIDENCE_MISSING|SOURCE_INVALID|PDF_INVALID|USAGE_MISSING|BUDGET_EXCEEDED|RUN_PERSIST_FAILED|TARGET_NOT_CANONICAL)$/u.test(error.message)
+        ?error.message:null;
+      const failureCode=budgetError??fipeCode??matrixCode??'AGENT_JOB_EXECUTION_FAILED';
       console.error('[agent-worker] execution failed', job.id,failureCode);
       try {
         await fail(job.id,failureCode);
         try {await journalWorkerJob(client,{runId:job.id,jobType:job.job_type,brand:job.brand,
-          startedAtMs:Date.now(),status:'FAILED',failureCode:'AGENT_JOB_EXECUTION_FAILED'});}
+          startedAtMs:Date.now(),status:'FAILED',failureCode});}
         catch {console.error('[engineering] QA central failure logging unavailable',job.id);}
       } catch (failError) {
         console.error('[agent-worker] could not mark failed', job.id, failError);
