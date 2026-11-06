@@ -554,7 +554,15 @@ for (;;) {
         job.input.xlsMatrixStageOnly===true && error instanceof Error &&
         /^FORD_XLS_MATRIX_(?:INVALID_RESULT|INVALID_JSON|INCOMPLETE|CELL_INVALID|COLUMN_IDENTITY_UNVERIFIED|AVAILABILITY_MISMATCH|GOLDEN_ROW_MISMATCH|ROW_EVIDENCE_MISSING|SOURCE_INVALID|PDF_INVALID|USAGE_MISSING|BUDGET_EXCEEDED|RUN_PERSIST_FAILED|TARGET_NOT_CANONICAL)$/u.test(error.message)
         ?error.message:null;
-      const failureCode=budgetError??fipeCode??matrixCode??'AGENT_JOB_EXECUTION_FAILED';
+      const geometryCode=job.input.xlsCoordinateProbeOnly===true &&
+        error instanceof Error && [
+        'FORD_PDF_BBOX_PAGE_UNREADABLE','FORD_PDF_BBOX_DIMENSIONS_INVALID',
+        'FORD_PDF_BBOX_WORD_INVALID','FORD_PDF_BBOX_TOO_MANY_WORDS',
+        'FORD_PDF_BBOX_TEXT_MISSING','FORD_PDF_POPPLER_UNAVAILABLE',
+        'FORD_PDF_POPPLER_TIMEOUT','FORD_PDF_POPPLER_FAILED',
+        'FORD_XLS_GEOMETRY_RUN_PERSIST_FAILED','FORD_PDF_FETCH_FAILED'
+        ].includes(error.message)?error.message:null;
+      const failureCode=budgetError??fipeCode??matrixCode??geometryCode??'AGENT_JOB_EXECUTION_FAILED';
       console.error('[agent-worker] execution failed', job.id,failureCode);
       try {
         await fail(job.id,failureCode);
