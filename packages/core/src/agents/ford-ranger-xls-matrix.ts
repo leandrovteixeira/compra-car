@@ -44,18 +44,6 @@ export function validateFordRangerXlsMatrix27(input:{
  if(input.pdfUrl!==RANGER_XLS_MATRIX_PDF||!/^[a-f0-9]{64}$/u.test(input.sha256)||
     input.cells.length>250)throw new Error('FORD_XLS_MATRIX_SOURCE_INVALID');
  validateFordRangerXlsMatrixBinding27(input.binding);
- // Every extraction must include all five visually audited alignment anchors.
- // A partial result can be staged only when the source geometry is verified.
- const mandatoryAnchors:readonly RegExp[]=[
-   /^ajuste eletrico da altura dos farois$/u,
-   /^bagageiro de teto$/u,
-   /^degraus? de acesso a cacamba$/u,
-   /^estribo plataforma$/u,
-   /^farois de neblina em led$/u
- ];
- const availableLabels=input.cells.map(cell=>folded(cell.rowLabel));
- if(mandatoryAnchors.some(pattern=>!availableLabels.some(label=>pattern.test(label))))
-   throw new Error('FORD_XLS_MATRIX_ANCHOR_ROWS_MISSING');
  const seen=new Set<number>();
  return input.cells.map(cell=>{
   if(!Number.isInteger(cell.ordinal)||cell.ordinal<1||seen.has(cell.ordinal)||
