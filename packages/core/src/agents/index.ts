@@ -108,3 +108,5 @@ export * from './ford-xls-2027-source-fusion';
 export * from './ford-ranger-xls-matrix';
 
 export * from './ford-xls-my2027-html-evidence';
+
+export * from './ford-xls-source-quality-gate';
