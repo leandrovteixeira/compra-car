@@ -17,6 +17,7 @@ export type ReviewInboxRow = ReviewQueueItem & Readonly<{
   fipeCandidate: { id:string; code:string; label:string; url:string; dependencyState:string } | null;
   identityDecision: 'ACCEPT'|'REJECT'|'DEFER'|null;
   findingType: string;
+  sourceSheetLabel: string | null;
   agentLabel: string;
   reasonCode: string | null;
   brand: string;
@@ -125,6 +126,15 @@ export async function loadReviewInbox(options:Readonly<{
       fipeCandidate:null,
       identityDecision:null,
       findingType:g.finding.finding_type,
+      sourceSheetLabel:g.run.agent_type==='SPEC_INTELLIGENCE'
+        ?(typeof g.finding.payload?.sourceUrl==='string'&&
+          g.finding.payload.sourceUrl.includes('/update-images/pdf/fbr-nova-ford-ranger-ficha-tecnica.pdf')
+          ?'Ficha Ford — Ranger XL'
+          :typeof g.finding.payload?.sourceUrl==='string'&&
+           g.finding.payload.sourceUrl.includes('/pdf/fbr-ranger-ficha-tecnica.pdf')
+          ?'Ficha Ford — XLS / Black / XLT / Limited'
+          :'Ficha técnica — fonte a verificar')
+        :null,
       sourceFindingType:g.finding.finding_type,
       sourceAgent:g.run.agent_type,
       agentLabel:g.kind==='MMV_GENERATION'?'New Generation':labels[g.run.agent_type]??g.run.agent_type,
@@ -159,7 +169,7 @@ export async function loadReviewInbox(options:Readonly<{
         id:item.id,code:item.fipeCode,label:item.fipeLabel,url:item.sourceUrl,
         dependencyState:item.dependencyState,
       },
-      identityDecision:null,findingType:'FIPE_MAPPING',
+      identityDecision:null,findingType:'FIPE_MAPPING',sourceSheetLabel:null,
       sourceFindingType:'FIPE_MAPPING',sourceAgent:'FIPE_DISCOVERY',
       agentLabel:'FIPE Agent',reasonCode:null,businessKey:'FIPE:'+item.id,
       brand:item.brand,model:item.model,version:item.version??'',
