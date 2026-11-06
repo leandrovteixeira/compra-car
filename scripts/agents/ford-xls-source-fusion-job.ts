@@ -60,9 +60,9 @@ export async function reconcileFordXls2027Qa27(input:{
  let priorAuditHtmlSha256:string|null=null;
  if(html){
   text=plain(html);
-  const headings=[...html.matchAll(/<(?:h1|h2|h3|title)\\b[^>]*>([\\s\\S]*?)<\\/(?:h1|h2|h3|title)>/giu)]
+  const headings=[...html.matchAll(/<(?:h1|h2|h3|title)\b[^>]*>([\s\S]*?)<\/(?:h1|h2|h3|title)>/giu)]
    .map(m=>plain(m[1]??''));
-  const heading=headings.find(h=>/XLS\\s+3[.,]0.*V6.*diesel.*4WD.*AT.*2027/iu.test(h))??'';
+  const heading=headings.find(h=>/XLS\s+3[.,]0.*V6.*diesel.*4WD.*AT.*2027/iu.test(h))??'';
   assessment=auditFordXls2027VersionPage({
    sourceUrl:FORD_XLS_2027_URL,heading,visibleMainText:text});
   if(assessment.status!=='VERIFIED_FOR_REVIEW')
