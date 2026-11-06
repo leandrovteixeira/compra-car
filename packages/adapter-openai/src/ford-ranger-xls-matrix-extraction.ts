@@ -7,20 +7,30 @@ import type {Response,ResponseCreateParamsNonStreaming} from 'openai/resources/r
 import {createHash} from 'node:crypto';
 import {
  validateFordRangerXlsMatrix27,RANGER_XLS_MATRIX_PDF,
- type RangerXlsMatrixCell27,type FordSourceClaim27
+ type RangerXlsMatrixCell27,type RangerXlsMatrixBinding27,type FordSourceClaim27
 } from '@compra-car/core/agents';
 
 type Transport=(request:ResponseCreateParamsNonStreaming)=>Promise<Response>;
 const schema={
- type:'object',additionalProperties:false,required:['columns','legendExcerpt','cells'],
+ type:'object',additionalProperties:false,required:['binding','cells'],
  properties:{
-  columns:{type:'array',items:{type:'string'}},
-  legendExcerpt:{type:'string'},
+  binding:{type:'object',additionalProperties:false,
+   required:['page','headers','columnIndex','engineRowLabel','engineCells',
+    'transmissionRowLabel','transmissionCells'],
+   properties:{
+    page:{type:'integer'},headers:{type:'array',items:{type:'string'}},
+    columnIndex:{type:'integer'},engineRowLabel:{type:'string'},
+    engineCells:{type:'array',items:{type:'string'}},
+    transmissionRowLabel:{type:'string'},
+    transmissionCells:{type:'array',items:{type:'string'}}
+   }
+  },
   cells:{type:'array',items:{type:'object',additionalProperties:false,
-   required:['ordinal','page','rowLabel','columnHeader','legendExcerpt',
+   required:['ordinal','page','rowLabel','columnHeader','legendExcerpt','rowSection',
     'rawCell','rawRowExcerpt','concept','value','unit','availability'],
    properties:{
     ordinal:{type:'integer'},page:{type:'integer'},rowLabel:{type:'string'},
+    rowSection:{type:'string',enum:['EXTERIOR','INTERIOR','SAFETY','TECHNOLOGY','MULTIMEDIA','PERFORMANCE','DIMENSIONS']},
     columnHeader:{type:'string'},legendExcerpt:{type:'string'},
     rawCell:{type:'string'},rawRowExcerpt:{type:'string'},
     concept:{type:'string'},value:{type:['string','null']},
@@ -59,12 +69,19 @@ export async function extractFordRangerXlsMatrix27(input:{
   store:false,max_output_tokens:11000,
   instructions:[
    'Read the attached Ford Ranger equipment matrix.',
-   'Identify the exact technical column Ranger XLS 3.0 V6 Diesel 4WD AT (4x4).',
-   'Ignore ALL cells for XL, Black, XLT, Limited and Limited optional packages.',
-   'Explicitly transcribe the column header, cell value, source row, page and table legend.',
+   'The PDF has FIVE printed columns in this exact order: XLS 4x4, Black, XLS 4WD, XLT 4WD, Limited.',
+   'Target the THIRD printed column XLS 4WD (zero-based columnIndex=2), NOT the first XLS 4x4.',
+   'The printed header is XLS 4WD; DO NOT invent a header with 3.0 V6 Diesel.',
+   'Read the full Motor 3.0 V6 turbo Diesel row across all five columns: the THIRD has x, first two have dash.',
+   'Read the Transmissão row in the SAME third column; it must be AT10.',
+   'Output the headers, engine row and transmission row as binding evidence.',
+   'Read ONLY cells of column three, excluding the Kit Opcional da versão Limited block.',
+   'In this Ford PDF x means equipment PRESENT and dash means NOT AVAILABLE.',
+   'A raw numeric value is present and should be parsed as number/unit without interpreting it as an optional item.',
+   'OPTIONAL must NEVER be assigned from this XLS standard equipment matrix.',
+   'Record actual printed header XLS 4WD, cell, source row and page=2.',
    'Do not infer model year from the PDF URL or publication date.',
-   'Interpret STANDARD/OPTIONAL/NOT_AVAILABLE only when the printed legend proves the meaning of that cell.',
-   'If a cell is empty, ambiguous, a merged-column header or its legend is missing, set UNKNOWN.',
+   'If a cell is empty or ambiguous, set UNKNOWN, not OPTIONAL.',
    'For a numeric row separate technical concept, numeric value and unit.',
    'Keep the exact source row and complete cell source excerpt.',
    'Never assign the 12.4 inch Limited optional instrument display to the XLS.',
@@ -91,15 +108,15 @@ export async function extractFordRangerXlsMatrix27(input:{
  try{decoded=JSON.parse(result.output_text);}
  catch{throw new Error('FORD_XLS_MATRIX_INVALID_JSON');}
  if(!decoded||typeof decoded!=='object')throw new Error('FORD_XLS_MATRIX_INVALID_JSON');
- const payload=decoded as {columns?:unknown;legendExcerpt?:unknown;cells?:unknown};
- if(!Array.isArray(payload.columns)||!Array.isArray(payload.cells)||
-  payload.cells.length===0||payload.cells.length>180||
-  typeof payload.legendExcerpt!=='string')
+ const payload=decoded as {binding?:unknown;cells?:unknown};
+ if(!payload.binding||!Array.isArray(payload.cells)||
+  payload.cells.length===0||payload.cells.length>180)
    throw new Error('FORD_XLS_MATRIX_INVALID_RESULT');
  const cells=payload.cells as RangerXlsMatrixCell27[];
  const sha=createHash('sha256').update(bytes).digest('hex');
  const claims=validateFordRangerXlsMatrix27({
-  pdfUrl:input.sourceUrl,sha256:sha,cells
+  pdfUrl:input.sourceUrl,sha256:sha,
+  binding:payload.binding as RangerXlsMatrixBinding27,cells
  });
  return {documentSha256:sha,claims,cellCount:cells.length,
   model:result.model,inputTokens:u.input_tokens,outputTokens:u.output_tokens,
