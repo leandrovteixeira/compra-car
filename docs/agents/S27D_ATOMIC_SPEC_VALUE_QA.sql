@@ -38,7 +38,7 @@ DECLARE
 BEGIN
  IF v_actor IS NULL OR NOT EXISTS (
    SELECT 1 FROM public.profiles
-   WHERE id=v_actor AND lower(role) IN ('admin','master') AND status='active'
+   WHERE id=v_actor AND lower(role::text) IN ('admin','master') AND status='active'
  ) THEN RAISE EXCEPTION 'SPEC_VALUE_NOT_AUTHORIZED'; END IF;
  IF p_finding IS NULL OR length(coalesce(p_fingerprint,''))<16 OR
     p_revision IS NULL OR p_revision<1 OR p_action IS NULL
