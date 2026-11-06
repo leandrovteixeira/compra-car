@@ -458,6 +458,8 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
               {detail.evidence.slice(0,6).map((e,i)=>(
                 <li key={i} className="border-b border-[#EAF1F4] pb-2 text-xs">
                   <span className="text-[#526670]">{e.sourceType} · {date(e.capturedAt)}</span>
+                  {row.sourceSheetLabel&&e.sourceType==='TECHNICAL_SHEET'?
+                    <p className="mt-1 font-semibold text-[#A9541B]">{row.sourceSheetLabel}</p>:null}
                   <p className="mt-1 font-medium">{e.title||'Fonte sem título'}</p>
                   {e.excerpt?<p className="mt-1 line-clamp-2 text-[#526670]">{e.excerpt}</p>:null}
                   {e.url&&(e.sourceType==='FIPE'||e.url.startsWith('https://fipe.parallelum.com.br/api/'))?
@@ -640,6 +642,7 @@ export function AgentReviewInbox({items,sort,direction}:{readonly items:readonly
                   </td>
                   <td className="min-w-0 px-2.5 py-3" title={row.title}>
                     <p className="truncate whitespace-nowrap font-medium" title={row.title}>{row.title}</p>
+                    {row.sourceSheetLabel?<p className="mt-1 truncate text-[10px] font-medium text-[#61747B]">{row.sourceSheetLabel}</p>:null}
                     {row.priorRuns>1?<p className="mt-1 truncate whitespace-nowrap text-[10px] text-[#61747B]">
                       {row.priorRuns} observações consolidadas
                     </p>:null}
@@ -677,6 +680,7 @@ export function AgentReviewInbox({items,sort,direction}:{readonly items:readonly
                   <h3 className="text-[13px] font-semibold">{[row.brand,row.model].filter(Boolean).join(' ')}</h3>
                   {row.version?<p className="mt-1 text-xs font-medium">Versão: {row.version}</p>:null}
                   <p className="mt-1 text-xs">{row.title}</p>
+                  {row.sourceSheetLabel?<p className="mt-1 text-[11px] text-[#61747B]">{row.sourceSheetLabel}</p>:null}
                   <p className="mt-1 text-[11px] text-[#526670]">{row.agentLabel} · {date(row.observedAt)} · {percent(row.confidence)}</p>
                 </div>
                 <Status status={row.status}/>
