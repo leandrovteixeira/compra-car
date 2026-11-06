@@ -40,7 +40,8 @@ BEGIN
    SELECT 1 FROM public.profiles
    WHERE id=v_actor AND lower(role) IN ('admin','master') AND status='active'
  ) THEN RAISE EXCEPTION 'SPEC_VALUE_NOT_AUTHORIZED'; END IF;
- IF p_finding IS NULL OR length(coalesce(p_fingerprint,''))<16 OR p_revision<1
+ IF p_finding IS NULL OR length(coalesce(p_fingerprint,''))<16 OR
+    p_revision IS NULL OR p_revision<1 OR p_action IS NULL
     OR p_action NOT IN ('MERGE','CREATE','REJECT','POSTPONE')
     OR length(coalesce(p_idempotency,''))<12 OR length(p_idempotency)>200
  THEN RAISE EXCEPTION 'SPEC_VALUE_BAD_COMMAND'; END IF;
