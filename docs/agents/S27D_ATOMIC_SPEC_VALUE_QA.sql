@@ -190,7 +190,7 @@ BEGIN
  END IF;
  INSERT INTO public.agent_spec_documents(source_family_key,source_document_key,
   content_sha256,source_authority,source_url,source_captured_at,import_agent_run_id)
- VALUES('FORD_RANGER_XLS_2027','FORD_XLS_MATRIX_'||v_fusion.input->>'pdfRunId',
+ VALUES('FORD_RANGER_XLS_2027',('FORD_XLS_MATRIX_' || (v_fusion.input->>'pdfRunId')),
   v_fusion.input->>'pdfSha256','MANUFACTURER',
   (v_proposal->'evidence'->0)->>'sourceUrl',now(),v_fusion.id)
  ON CONFLICT(source_document_key,content_sha256)
