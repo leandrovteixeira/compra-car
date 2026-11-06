@@ -32,9 +32,14 @@ const isOfficial=(s:string)=>{
  }catch{return false;}
 };
 const key=(x:FordSourceClaim27)=>normalizeAliasLabel(x.concept);
+// A technical value (e.g. "4WD") may legitimately have no physical unit.
+// The canonical alias normalizer rejects empty labels, so represent a missing
+// unit as null instead of incorrectly normalizing an empty string.
+const comparable=(value:string|null):string|null=>
+  value===null||!value.trim()?null:normalizeAliasLabel(value);
 const equalValue=(a:FordSourceClaim27,b:FordSourceClaim27)=>
-  normalizeAliasLabel(a.value??'')===normalizeAliasLabel(b.value??'') &&
-  normalizeAliasLabel(a.unit??'')===normalizeAliasLabel(b.unit??'');
+  comparable(a.value)===comparable(b.value) &&
+  comparable(a.unit)===comparable(b.unit);
 export function reconcileFordXls2027Sources(input:{
   htmlAssessment:FordXls2027SourceAssessment;
   pdfClaims:readonly FordSourceClaim27[];
