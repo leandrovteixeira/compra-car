@@ -193,6 +193,28 @@ async function execute(job: JobRow) {
         log('Ford XLS exact-column matrix staged for review: '+JSON.stringify(result));
       }finally{
         await finishAgentPilotBudget(client as unknown as AgentBudgetClient,reservation);
+        // Reconcile metered usage even when the source quality gate refuses
+        // the run after an actual paid request. A rejected extraction is not
+        // equivalent to zero provider cost. Unknown stays reserved if the
+        // provider ledger is missing/inconsistent.
+        const {data:usage,error:usageError}=await client.from('agent_ai_usage_events')
+          .select('estimated_cost_usd,input_tokens,output_tokens,model')
+          .eq('job_id',job.id).eq('reason','FORD_XLS_COLUMN_MATRIX_EXTRACTION');
+        if(!usageError&&usage?.length===1){
+          const measured=Number(usage[0]?.estimated_cost_usd);
+          if(Number.isFinite(measured)&&measured>=0&&
+             measured<=reservation.reservedUsd&&
+             Number(usage[0]?.input_tokens)>0&&Number(usage[0]?.output_tokens)>=0&&
+             typeof usage[0]?.model==='string'&&usage[0].model.length>1){
+            const {error:reconcileError}=await client.rpc('agent_spend_reconcile',{
+              p_reservation_id:reservation.id,p_actual_usd:measured,
+              p_source:'PROVIDER_USAGE'
+            });
+            if(reconcileError)
+              console.error('[spec-budget] usage recorded; reconciliation pending',job.id);
+            else log('Spec XLS cost reconciled from token usage: USD '+measured.toFixed(6));
+          }
+        }
       }
       return;
     }
@@ -515,7 +537,7 @@ for (;;) {
       // refusal from infrastructure failure in QA telemetry.
       const matrixCode=job.job_type==='SPEC_INTELLIGENCE' &&
         job.input.xlsMatrixStageOnly===true && error instanceof Error &&
-        /^FORD_XLS_MATRIX_(?:INVALID_RESULT|INVALID_JSON|INCOMPLETE|CELL_INVALID|COLUMN_IDENTITY_UNVERIFIED|AVAILABILITY_MISMATCH|ROW_EVIDENCE_MISSING|SOURCE_INVALID|PDF_INVALID|USAGE_MISSING|BUDGET_EXCEEDED|RUN_PERSIST_FAILED|TARGET_NOT_CANONICAL)$/u.test(error.message)
+        /^FORD_XLS_MATRIX_(?:INVALID_RESULT|INVALID_JSON|INCOMPLETE|CELL_INVALID|COLUMN_IDENTITY_UNVERIFIED|AVAILABILITY_MISMATCH|GOLDEN_ROW_MISMATCH|ROW_EVIDENCE_MISSING|SOURCE_INVALID|PDF_INVALID|USAGE_MISSING|BUDGET_EXCEEDED|RUN_PERSIST_FAILED|TARGET_NOT_CANONICAL)$/u.test(error.message)
         ?error.message:null;
       const failureCode=budgetError??fipeCode??matrixCode??'AGENT_JOB_EXECUTION_FAILED';
       console.error('[agent-worker] execution failed', job.id,failureCode);
