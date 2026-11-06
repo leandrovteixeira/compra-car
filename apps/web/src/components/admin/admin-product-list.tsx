@@ -72,6 +72,10 @@ export function AdminProductList({ products, brands, initialNew = false }: Admin
   const submit = (event: FormEvent<HTMLFormElement>, product: AdminProductListItem, mode: Mode) => {
     event.preventDefault();
     if (!draft || pending) return;
+    if(mode==='edit'&&!draft.productionYear){
+      setMessage('Ano de produção ainda pendente. Não é permitido presumir este valor ao salvar.');
+      return;
+    }
     const data = new FormData();
     data.set('brand', draft.brand);
     data.set('model', draft.model);
@@ -282,6 +286,9 @@ export function AdminProductList({ products, brands, initialNew = false }: Admin
                         <Link className="block cc-type-data !font-semibold text-[#1A1D21] hover:underline"
                           href={`/admin/products/${product.id}/specs`} title="Abrir ficha técnica">{identity}</Link>
                       )}
+                      {!product.productionYear?<p className="mt-1 text-[11px] font-medium text-[#A9541B]">
+                        Ano de produção pendente · cadastro por agente
+                      </p>:null}
                       {opened?.id === product.id && opened.mode === 'edit' && message &&
                         <p role="alert" className="mt-1 text-xs text-red-700">{message}</p>}
                     </td>

@@ -17,6 +17,7 @@ export type ReviewInboxRow = ReviewQueueItem & Readonly<{
   fipeCandidate: { id:string; code:string; label:string; url:string; dependencyState:string } | null;
   identityDecision: 'ACCEPT'|'REJECT'|'DEFER'|null;
   findingType: string;
+  sourceSheetLabel: string | null;
   agentLabel: string;
   reasonCode: string | null;
   brand: string;
@@ -125,9 +126,18 @@ export async function loadReviewInbox(options:Readonly<{
       fipeCandidate:null,
       identityDecision:null,
       findingType:g.finding.finding_type,
+      sourceSheetLabel:g.run.agent_type==='SPEC_INTELLIGENCE'
+        ?(typeof g.finding.payload?.sourceUrl==='string'&&
+          g.finding.payload.sourceUrl.includes('/update-images/pdf/fbr-nova-ford-ranger-ficha-tecnica.pdf')
+          ?'Ficha Ford — Ranger XL'
+          :typeof g.finding.payload?.sourceUrl==='string'&&
+           g.finding.payload.sourceUrl.includes('/pdf/fbr-ranger-ficha-tecnica.pdf')
+          ?'Ficha Ford — XLS / Black / XLT / Limited'
+          :'Ficha técnica — fonte a verificar')
+        :null,
       sourceFindingType:g.finding.finding_type,
       sourceAgent:g.run.agent_type,
-      agentLabel:labels[g.run.agent_type]??g.run.agent_type,
+      agentLabel:g.kind==='MMV_GENERATION'?'New Generation':labels[g.run.agent_type]??g.run.agent_type,
       reasonCode:typeof g.finding.payload?.reasonCode==='string'
         ?g.finding.payload.reasonCode:null,
       businessKey:g.businessKey,
@@ -159,7 +169,7 @@ export async function loadReviewInbox(options:Readonly<{
         id:item.id,code:item.fipeCode,label:item.fipeLabel,url:item.sourceUrl,
         dependencyState:item.dependencyState,
       },
-      identityDecision:null,findingType:'FIPE_MAPPING',
+      identityDecision:null,findingType:'FIPE_MAPPING',sourceSheetLabel:null,
       sourceFindingType:'FIPE_MAPPING',sourceAgent:'FIPE_DISCOVERY',
       agentLabel:'FIPE Agent',reasonCode:null,businessKey:'FIPE:'+item.id,
       brand:item.brand,model:item.model,version:item.version??'',
@@ -196,6 +206,50 @@ export async function loadReviewInbox(options:Readonly<{
         status:decision==='ACCEPT'?'APPROVED':decision==='REJECT'?'REJECTED':'POSTPONED'};
     }
   }
+  // A review ACCEPT is not sufficient evidence of a catalog mutation.
+  // For model-year reviews, however, the canonical row explicitly records
+  // the exact originating finding: use that receipt to show APPROVED and
+  // remove it from the WAITING filter after the atomic apply succeeds.
+  const yearRows=all.filter(row=>row.sourceAgent==='PRODUCT_YEAR'&&
+    row.caseKind==='MODEL_YEAR_NEW'&&row.findingId);
+  if(yearRows.length){
+    const receiptIds=yearRows.map(row=>row.findingId);
+    const {data:appliedYears,error:appliedYearsError}=await client
+      .from('catalog_mmv_model_years')
+      .select('source_finding_id,last_confirmed_finding_id')
+      .in('source_finding_id',receiptIds);
+    if(appliedYearsError||!appliedYears)
+      throw new Error('REVIEW_INBOX_MODEL_YEAR_RECEIPTS_UNAVAILABLE');
+    const confirmed=new Set(appliedYears.flatMap(item=>[
+      item.source_finding_id,item.last_confirmed_finding_id,
+    ]).filter((id):id is string=>typeof id==='string'));
+    for(let i=0;i<all.length;i++){
+      const row=all[i]!;
+      if(row.sourceAgent==='PRODUCT_YEAR'&&row.caseKind==='MODEL_YEAR_NEW'&&
+        confirmed.has(row.findingId)){
+        all[i]={...row,status:'APPROVED'};
+      }
+    }
+  }
+  // Spec approvals are valid only if the controlled alias decision event
+  // committed and the case is APPROVED. Never infer from a bare ACCEPT.
+  const specRows=all.filter(row=>row.sourceAgent==='SPEC_INTELLIGENCE'&&
+    (row.caseKind==='SPEC_NEW'||row.caseKind==='SPEC_AMBIGUOUS'));
+  if(specRows.length){
+    const {data:specReceipts,error:specReceiptsError}=await client
+      .from('agent_review_cases').select('source_ref,status,case_kind')
+      .in('source_ref',specRows.map(row=>row.findingId))
+      .eq('status','APPROVED');
+    if(specReceiptsError||!specReceipts)
+      throw new Error('REVIEW_INBOX_SPEC_RECEIPTS_UNAVAILABLE');
+    const appliedSpecIds=new Set(specReceipts.map(row=>row.source_ref));
+    for(let i=0;i<all.length;i++){
+      const row=all[i]!;
+      if(row.sourceAgent==='SPEC_INTELLIGENCE'&&appliedSpecIds.has(row.findingId)){
+        all[i]={...row,status:'APPROVED'};
+      }
+    }
+  }
   const statusCounts:Record<ReviewStatus,number>={
     WAITING:0,APPROVED:0,REJECTED:0,POSTPONED:0,
   };
@@ -207,7 +261,11 @@ export async function loadReviewInbox(options:Readonly<{
     (!options.agent||(
       options.agent==='YEAR'
         ?['MODEL_YEAR','PRODUCT_YEAR'].includes(row.sourceAgent)
-        :row.sourceAgent===options.agent))&&
+        :options.agent==='GENERATION_CLASSIFIER'
+          ?row.caseKind==='MMV_GENERATION'
+          :options.agent==='MMV_DISCOVERY'
+            ?row.sourceAgent==='MMV_DISCOVERY'&&row.caseKind!=='MMV_GENERATION'
+            :row.sourceAgent===options.agent))&&
     (!term||[row.brand+' '+row.model+' '+row.version,row.brand+' '+row.model,
       row.brand,row.model,row.version,row.title,row.shortDescription,
       row.recommendation,row.agentLabel,row.reasonCode]

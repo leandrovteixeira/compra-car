@@ -273,10 +273,12 @@ export function buildReviewProjection(
         }
       }else if(r.agent_type==='SPEC_INTELLIGENCE'){
         if(f.finding_type==='UNMATCHED_SPEC'||f.finding_type==='SPEC_CHANGE'){
-          kind=f.finding_type==='UNMATCHED_SPEC'?'SPEC_AMBIGUOUS':'SPEC_NEW';
+          kind=f.payload?.reasonCode==='SPEC_NEW'?'SPEC_NEW':f.payload?.reasonCode==='SPEC_AMBIGUOUS'?'SPEC_AMBIGUOUS':f.finding_type==='UNMATCHED_SPEC'?'SPEC_AMBIGUOUS':'SPEC_NEW';
           businessKey=JSON.stringify(['SPEC',baseKey,f.subject_key]);
-          discovery=kind==='SPEC_AMBIGUOUS'?'Spec sem correspondência':'Nova especificação';
-          recommendation='Criar ou reconciliar spec';
+          const label=value(obj(f.proposal)?.sourceLabel) ||
+            f.title.replace(/^.*? · /u,'').trim();
+          discovery=(kind==='SPEC_AMBIGUOUS'?'Correspondência incerta: ':'Novo spec: ')+label;
+          recommendation=kind==='SPEC_NEW'?'Canonicalizar ou criar spec':'Confirmar correspondência';
         }
       }
       if(!kind)continue;

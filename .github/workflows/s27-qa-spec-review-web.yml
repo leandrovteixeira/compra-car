@@ -1,0 +1,22 @@
+name: QA Spec Review Web Build
+on:
+  push:
+    branches:
+      - qa/fipe-generation-filter-20261104
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: corepack enable && corepack prepare pnpm@10.34.5 --activate
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @compra-car/core typecheck
+      - run: pnpm --filter @compra-car/web exec tsc --noEmit
+      - run: pnpm --filter @compra-car/web build
