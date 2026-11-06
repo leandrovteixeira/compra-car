@@ -12,7 +12,7 @@ const binding={page:2,
 const cell={ordinal:1,page:2,rowSection:'INTERIOR',
  rowLabel:'Painel de instrumentos colorido, configuráveis através de comandos no volante',
  columnHeader:'XLS 4WD',legendExcerpt:'',
- rawCell:'8”',rawRowExcerpt:'Painel de instrumentos colorido, configuráveis através de comandos no volante',
+ rawCell:'8”',rowCells:['8”','8”','8”','8”','8”'],rawRowExcerpt:'Painel de instrumentos colorido, configuráveis através de comandos no volante',
  concept:'Painel de instrumentos digital',value:'8',unit:'inch',
  availability:'STANDARD'};
 const result=(cells:unknown[],b:unknown=binding)=>({
@@ -36,7 +36,7 @@ describe('Ford actual XLS matrix extractor',()=>{
  });
  it('rejects x as OPTIONAL rather than present',async()=>{
   await expect(extractFordRangerXlsMatrix27({...base,
-   transport:async()=>result([{...cell,rawCell:'x',availability:'OPTIONAL'}])
+   transport:async()=>result([{...cell,rawCell:'x',rowCells:['x','x','x','x','x'],availability:'OPTIONAL'}])
   })).rejects.toThrow('FORD_XLS_MATRIX_AVAILABILITY_MISMATCH');
  });
  it('rejects hallucinated V6 label instead of printed XLS 4WD header',async()=>{
