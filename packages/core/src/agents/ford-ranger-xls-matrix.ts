@@ -18,6 +18,7 @@ export type RangerXlsMatrixBinding27=Readonly<{
 }>;
 export type RangerXlsMatrixCell27=Readonly<{
  ordinal:number;page:number;rowLabel:string;columnHeader:string;
+ rowCells:readonly string[];
  legendExcerpt:string;rawCell:string;rawRowExcerpt:string;
  concept:string;value:string|null;unit:string|null;
  availability:FordEquipmentAvailability27;
