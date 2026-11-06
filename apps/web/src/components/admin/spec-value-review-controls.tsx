@@ -97,9 +97,9 @@ export function SpecValueReviewControls({findingId,fingerprint,revision,proposal
      className="ui-button ui-button--primary ui-button--action">
      {mode==='MERGE'?'Confirmar Merge + salvar valor':'CREATE + salvar valor'}
     </button>
-    <button type="submit" name="decision" value="REJECT" disabled={pending}
+    <button type="submit" name="decision" value="REJECT" formNoValidate disabled={pending}
      className="ui-button ui-button--destructive ui-button--action">Rejeitar</button>
-    <button type="submit" name="decision" value="POSTPONE" disabled={pending}
+    <button type="submit" name="decision" value="POSTPONE" formNoValidate disabled={pending}
      className="ui-button ui-button--secondary ui-button--action">Adiar</button>
    </div>
    {state.message?<p role={state.status==='error'?'alert':'status'} className="text-xs">{state.message}</p>:null}
