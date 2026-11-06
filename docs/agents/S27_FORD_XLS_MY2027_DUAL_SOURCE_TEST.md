@@ -48,3 +48,21 @@ Core modules: `ford-xls-my2027-source-audit.ts` and `ford-xls-2027-source-fusion
 - Each output is supported by an immutable original source and explicit applicability.
 - Disagreements block application.
 - Every canonical write requires later human approval; today's stage is review-only.
+
+## QA execution record — 2026-11-06
+
+- Agent worker deployment: bb842c3f-12a9-4557-975b-a45199be4742, SUCCESS, integration branch.
+- Source audit job/run: e73b34fb-8ca6-401c-bb3c-ab115a14e375, COMPLETED.
+- Result: VERIFIED_FOR_REVIEW / OFFICIAL_VERSION_HEADING_AND_EVIDENCE.
+- Official HTML source SHA-256: 4a3da998973eb2236e977909a0c9ca8b90bcee0ba438eb708d6a1ae41452ff02.
+- Checked: powertrain, power, torque, transmission. No AI calls and no catalog/product_specs mutations.
+- The dual-source reconciliation pure module and tests are integrated, but **the XLS PDF matrix-cell extraction and combined review finding persistence have NOT yet executed**. Do not represent this HTML audit as completed per-spec XLS population.
+
+## Specific human test checklist
+
+- HTML: confirm exact MY2027 XLS variant and values 250 cv, 600 Nm, AT10. Save URL and screenshot of heading.
+- PDF: select correct XLS 3.0 V6 AT column, not the broad XLS family or Limited/optional package. Check factory/optional legend carefully.
+- Compare two positive examples (powertrain and 8-inch cluster) and one negative example (12.4-inch Limited panel).
+- Check the 10-inch central multimedia display separately from the instrument panel.
+- In QA product 1236, ensure the spec values remain blank until a reviewed product-specific proposal exists.
+- If PDF does not prove MY2027, classify as PDF_ONLY pending MY-specific corroboration, not as confirmed MY2027 equipment.
