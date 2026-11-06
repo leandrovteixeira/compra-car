@@ -110,3 +110,5 @@ export * from './ford-ranger-xls-matrix';
 export * from './ford-xls-my2027-html-evidence';
 
 export * from './ford-xls-source-quality-gate';
+
+export * from './spec-review-value-commit';
