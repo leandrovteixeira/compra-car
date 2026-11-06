@@ -43,6 +43,20 @@ export async function stageFordRangerXlsMatrix27(input:{
      if(error)throw new Error('FORD_XLS_MATRIX_USAGE_LEDGER_FAILED');
    }
  });
+ // Full-source gate belongs to the QA staging boundary, not the pure
+ // single-row extractor: refuse partial spatial evidence before persisting a run.
+ const fold=(s:string)=>s.normalize('NFKD')
+   .replace(/[\u0300-\u036f]/gu,'').toLowerCase().replace(/\s+/gu,' ').trim();
+ const labels=extracted.claims.map(claim=>fold(claim.rawLabel));
+ const anchors=[
+   /^ajuste eletrico da altura dos farois$/u,
+   /^bagageiro de teto$/u,
+   /^degraus? de acesso a cacamba$/u,
+   /^estribo plataforma$/u,
+   /^farois de neblina em led$/u
+ ];
+ if(anchors.some(pattern=>!labels.some(label=>pattern.test(label))))
+   throw new Error('FORD_XLS_MATRIX_ANCHOR_ROWS_MISSING');
  const now=new Date().toISOString();
  const {error:runError}=await input.db.from('agent_runs').insert({
    id:input.jobId,agent_type:'SPEC_INTELLIGENCE',status:'COMPLETED',
