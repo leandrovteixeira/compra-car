@@ -2,7 +2,7 @@
 
 import {createHash} from 'node:crypto';
 import {revalidatePath} from 'next/cache';
-import {requireRole} from '@/auth/authorization';
+import {requireFeatureIdentity23C} from '@/auth/account-tier-server';
 import {createMutableServerClient} from '@/auth/server-client';
 
 export type SpecValueDecisionState={status:'idle'|'success'|'error';message:string};
@@ -10,7 +10,7 @@ const s=(value:FormDataEntryValue|null)=>typeof value==='string'?value.trim():''
 export async function reviewSpecValueAction(
  _state:SpecValueDecisionState,data:FormData
 ):Promise<SpecValueDecisionState>{
- const {profile}=await requireRole('admin');
+ const {profile}=await requireFeatureIdentity23C('agents','write');
  const findingId=s(data.get('findingId'));
  const fingerprint=s(data.get('fingerprint'));
  const revision=Number(s(data.get('caseRevision')));
