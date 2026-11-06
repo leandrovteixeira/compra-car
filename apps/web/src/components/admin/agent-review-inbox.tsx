@@ -7,6 +7,7 @@ import { reviewModelYearAction } from '@/app/admin/agents/model-year-decisions';
 import { reviewSpecFindingAction } from '@/app/admin/agents/spec-decisions';
 import { reviewFipeCandidateAction } from '@/app/admin/agents/fipe-decisions';
 import { reviewGenerationDecisionAction } from '@/app/admin/agents/generation-decisions';
+import {SpecValueReviewControls} from './spec-value-review-controls';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { ReviewStatus } from '@compra-car/core/agent-platform';
 import type { ReviewInboxRow, ReviewSort, ReviewDirection } from '@/application/admin/agent-review-inbox';
@@ -229,6 +230,7 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
   const previousGenerationMY=get('previousModelYear');
   const isQaGenerationFixture=detail.technicalPayload.qaFixture===true;
   const isSpecCase=row.caseKind==='SPEC_NEW'||row.caseKind==='SPEC_AMBIGUOUS';
+  const isSpecValueReview=row.findingType==='SPEC_VALUE_REVIEW';
   const specName=typeof detail.proposal?.sourceLabel==='string'?
     detail.proposal.sourceLabel:detail.title.split(' · ').slice(-1)[0]??detail.title;
   const specValue=typeof detail.proposal?.observedValue==='string'
@@ -300,7 +302,15 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
               informações comerciais ou preços próprios. A escolha exigirá confirmação do destino.
             </p>:null}
           <p className="mt-1 text-xs text-[#526670]">Confiança {percent(row.confidence)}{readiness?` · Evidência: ${readiness}`:''}</p>
-          {isSpecCase?(
+          {isSpecValueReview?<SpecValueReviewControls
+            findingId={detail.findingId}
+            fingerprint={row.snapshotFingerprint}
+            revision={row.caseVersion}
+            proposal={detail.proposal}
+            payload={detail.technicalPayload}
+            status={row.status}
+          />:null}
+          {isSpecCase&&!isSpecValueReview?(
             <form action={specAction} onClick={event=>event.stopPropagation()}
               className="mt-3 space-y-3">
               <input type="hidden" name="findingId" value={detail.findingId}/>
