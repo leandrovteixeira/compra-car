@@ -13,6 +13,7 @@ import { runOra5PriceProbe } from './price-ora5-direct-probe';
 import { runSupervisedFordSpecJob, type SupervisedSpecSourceSnapshot } from './spec-supervised-worker';
 import {runSupervisedFordPdfJob,type SupervisedFordPdfJob} from './ford-supervised-pdf-job';
 import {runFordSpecVocabularyJob} from './ford-spec-vocabulary-worker';
+import {auditFordXls2027SourceJob} from './ford-xls-2027-source-audit-job';
 import { monitorBrandSources } from './source-monitor';
 import { runMmvLaunchWatch } from './mmv-launch-watch';
 import { journalWorkerJob } from './engineering-worker-telemetry';
@@ -50,6 +51,8 @@ type JobRow = {
     supervisedPdfSource?: SupervisedFordPdfJob;
     vocabularySourceRunId?: string;
     vocabularyPdfUrl?: string;
+    sourceAuditOnly?: boolean;
+    sourceAuditProductId?: number;
   };
 };
 
@@ -169,6 +172,19 @@ async function execute(job: JobRow) {
   // extracted, verified and bound to the actual Ford MY and product.
   // Review proposals only; no product_specs or canonical dictionary mutations.
   if(job.job_type==='SPEC_INTELLIGENCE'){
+    if(job.input.sourceAuditOnly===true){
+      if(env.QA_SUPERVISED_SPEC_ENABLED!=='1'||job.brand!=='Ford'||
+         job.market!=='BR'||job.input.sourceAuditProductId!==1236)
+        throw new Error('FORD_XLS_AUDIT_QA_SCOPE_DENIED');
+      const result=await auditFordXls2027SourceJob({
+        db:client,runId:job.id,createdAt:job.created_at,
+        productId:job.input.sourceAuditProductId
+      });
+      await complete(job.id,result.runId);
+      await journal('SUCCESS',result.runId);
+      log('Ford XLS MY source audit only: '+JSON.stringify(result));
+      return;
+    }
     const vocabulary=Boolean(job.input.vocabularySourceRunId && job.input.vocabularyPdfUrl);
     const attested=Boolean(job.input.supervisedSpecSnapshot);
     const pdf=Boolean(job.input.supervisedPdfSource);
