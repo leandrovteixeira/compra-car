@@ -88,7 +88,7 @@ export async function loadReviewInbox(options:Readonly<{
 }>={}):Promise<ReviewInboxResponse>{
   await requireFeatureIdentity23C('agents', 'write');
   const client=createPrivilegedAdminClient();
-  const [findings,runsResult,reviewsResult,canonicalResult,connectorResult,fipeItems]=await Promise.all([
+  const [findings,runsResult,reviewsResult,canonicalResult,connectorResult,fipeItems,specCaseResult]=await Promise.all([
     readAllFindings(client),
     client.from('agent_runs').select('id,agent_type,brand,status,started_at,market'),
     client.from('agent_reviews').select('finding_id,decision,created_at')
@@ -98,8 +98,12 @@ export async function loadReviewInbox(options:Readonly<{
       .eq('status','ACTIVE'),
     client.from('brand_connectors').select('source_finding_id').eq('status','ACTIVE'),
     loadFipeReviewItems(),
+    client.from('agent_review_cases')
+      .select('id,source_ref,source_snapshot_fingerprint,status,revision')
+      .like('scope_key','s27d:spec-value:%').limit(500),
   ]);
   if(runsResult.error||reviewsResult.error||canonicalResult.error||connectorResult.error||
+     specCaseResult.error||!specCaseResult.data||
      !runsResult.data||!reviewsResult.data||!canonicalResult.data||!connectorResult.data)
     throw new Error('REVIEW_INBOX_DATA_UNAVAILABLE');
 
@@ -116,10 +120,13 @@ export async function loadReviewInbox(options:Readonly<{
     !isResolvedMmvCase(g,existingCanonical) &&
     !(g.kind.startsWith('CONNECTOR_') && activeConnectorSources.has(g.finding.id))
   );
+  const specCasesByFinding=new Map(specCaseResult.data.map(c=>[c.source_ref,c]));
   const all:ReviewInboxRow[]=activeCases.map(g=>{
     const confidence=g.finding.confidence==null?null:Number(g.finding.confidence);
+    const specCase=g.finding.finding_type==='SPEC_VALUE_REVIEW'
+      ?specCasesByFinding.get(g.finding.id):undefined;
     return {
-      caseId:g.businessKey,
+      caseId:specCase?.id??g.businessKey,
       caseKind:g.kind,
       findingId:g.finding.id,
       runId:g.run.id,
@@ -154,10 +161,11 @@ export async function loadReviewInbox(options:Readonly<{
       evidencePreview:null,
       primaryEvidenceUrl:null,
       observedAt:g.finding.created_at,
-      status:g.kind==='MMV_GENERATION' && g.reviewedSameFingerprint==='ACCEPT'
-        ?'APPROVED':reviewState(g.reviewedSameFingerprint),
-      snapshotFingerprint:g.finding.fingerprint,
-      caseVersion:0,
+      status:specCase?.status as ReviewStatus??(
+        g.kind==='MMV_GENERATION' && g.reviewedSameFingerprint==='ACCEPT'
+          ?'APPROVED':reviewState(g.reviewedSameFingerprint)),
+      snapshotFingerprint:specCase?.source_snapshot_fingerprint??g.finding.fingerprint,
+      caseVersion:specCase?.revision??0,
       legacyAccepted:g.reviewedSameFingerprint==='ACCEPT',
       priorRuns:g.priorRuns,
     };
