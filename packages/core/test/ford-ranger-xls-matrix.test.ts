@@ -32,7 +32,19 @@ describe('Ford XLS matrix cells',()=>{
  it('requires a cell to justify absence',()=>{
   expect(()=>validateFordRangerXlsMatrix27({...input,cells:[
    {...base,availability:'NOT_AVAILABLE',rawCell:''}
-  ]})).toThrow('FORD_XLS_MATRIX_ABSENCE_NOT_PROVEN');
+  ]})).toThrow('FORD_XLS_MATRIX_LEGEND_MISSING');
+ });
+ it('rejects a header falsely presented as the equipment legend',()=>{
+  expect(()=>validateFordRangerXlsMatrix27({...input,cells:[{
+   ...base,rawCell:'x',availability:'OPTIONAL',
+   legendExcerpt:'VERSÕES: XLS 3.0 V6 Diesel 4WD AT'
+  }]})).toThrow('FORD_XLS_MATRIX_LEGEND_UNVERIFIED');
+ });
+ it('will not invent x meaning: the official legend must define the symbol',()=>{
+  expect(()=>validateFordRangerXlsMatrix27({...input,cells:[{
+   ...base,rawCell:'x',availability:'OPTIONAL',
+   legendExcerpt:'S = série; O = opcional; - = não disponível'
+  }]})).toThrow('FORD_XLS_MATRIX_LEGEND_UNVERIFIED');
  });
  it('keeps UNKNOWN when manufacturer table is unclear',()=>{
   expect(validateFordRangerXlsMatrix27({...input,cells:[
