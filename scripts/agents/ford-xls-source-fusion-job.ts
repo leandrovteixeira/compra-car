@@ -34,10 +34,12 @@ export async function reconcileFordXls2027Qa27(input:{
   .map(normalizeFordPdfTechnicalClaim27);
  const response=await fetch(FORD_XLS_2027_URL,{redirect:'manual',
   headers:{accept:'text/html'},signal:AbortSignal.timeout(25000)});
- if(!response.ok||response.status>=300||
-  !(response.headers.get('content-type')??'').includes('text/html')||
-  Number(response.headers.get('content-length')??0)>2_000_000)
-  throw new Error('FORD_XLS_FUSION_HTML_FETCH_FAILED');
+ if(!response.ok||response.status>=300)
+  throw new Error('FORD_XLS_FUSION_HTML_HTTP_'+response.status);
+ if(!(response.headers.get('content-type')??'').includes('text/html'))
+  throw new Error('FORD_XLS_FUSION_HTML_CONTENT_TYPE_INVALID');
+ if(Number(response.headers.get('content-length')??0)>2_000_000)
+  throw new Error('FORD_XLS_FUSION_HTML_TOO_LARGE');
  const html=await response.text();
  if(html.length>2_000_000)throw new Error('FORD_XLS_FUSION_HTML_TOO_LARGE');
  const text=plain(html);
