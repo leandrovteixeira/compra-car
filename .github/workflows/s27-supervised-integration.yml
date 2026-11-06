@@ -34,3 +34,5 @@ jobs:
         run: pnpm --filter @compra-car/adapter-openai typecheck
       - name: Agents typecheck
         run: pnpm --filter @compra-car/agents typecheck
+      - name: Web review typecheck
+        run: pnpm --filter @compra-car/web typecheck
