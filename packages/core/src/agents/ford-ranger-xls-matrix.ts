@@ -61,7 +61,7 @@ export function validateFordRangerXlsMatrix27(input:{
     dash?'NOT_AVAILABLE':'UNKNOWN';
   // The PDF uses an x as present in the printed equipment table. Its separate
   // "Kit Opcional da versão Limited" section must NEVER create XLS optionality.
-  if(cell.availability!==expected||cell.availability==='OPTIONAL')
+  if(cell.availability!==expected)
     throw new Error('FORD_XLS_MATRIX_AVAILABILITY_MISMATCH');
   // Evidence cannot be only an auto-generated title/column header.
   if(!cell.rawRowExcerpt.toLocaleLowerCase('pt-BR').includes(
