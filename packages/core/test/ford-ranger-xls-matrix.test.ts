@@ -14,7 +14,7 @@ export const cell:RangerXlsMatrixCell27={
  ordinal:1,page:2,rowSection:'INTERIOR',
  rowLabel:'Painel de instrumentos colorido, configuráveis através de comandos no volante',
  columnHeader:'XLS 4WD',legendExcerpt:'',
- rawCell:'8”',rawRowExcerpt:'Painel de instrumentos colorido, configuráveis através de comandos no volante',
+ rawCell:'8”',rowCells:['8”','8”','8”','8”','8”'],rawRowExcerpt:'Painel de instrumentos colorido, configuráveis através de comandos no volante',
  concept:'Painel de instrumentos digital',value:'8',unit:'inch',availability:'STANDARD'
 };
 const input={pdfUrl:RANGER_XLS_MATRIX_PDF,sha256:'a'.repeat(64),binding,cells:[cell]};
@@ -27,15 +27,15 @@ describe('Ford actual printed XLS 4WD matrix binding',()=>{
  });
  it('maps printed x to STANDARD (present), never OPTIONAL',()=>{
   expect(validateFordRangerXlsMatrix27({...input,cells:[
-   {...cell,rawCell:'x',availability:'STANDARD'}
+   {...cell,rawCell:'x',rowCells:['x','x','x','x','x'],availability:'STANDARD'}
   ]})[0]?.availability).toBe('STANDARD');
   expect(()=>validateFordRangerXlsMatrix27({...input,cells:[
-   {...cell,rawCell:'x',availability:'OPTIONAL'}
+   {...cell,rawCell:'x',rowCells:['x','x','x','x','x'],availability:'OPTIONAL'}
   ]})).toThrow('FORD_XLS_MATRIX_AVAILABILITY_MISMATCH');
  });
  it('maps dash to NOT_AVAILABLE, not optional',()=>{
   expect(validateFordRangerXlsMatrix27({...input,cells:[
-   {...cell,rawCell:'-',value:null,availability:'NOT_AVAILABLE'}
+   {...cell,rawCell:'-',rowCells:['-','-','-','-','-'],value:null,availability:'NOT_AVAILABLE'}
   ]})[0]?.availability).toBe('NOT_AVAILABLE');
  });
  it('rejects first XLS 4x4, Limited, false technical header, and wrong engine binding',()=>{
@@ -58,7 +58,7 @@ describe('Ford actual printed XLS 4WD matrix binding',()=>{
  it('catches third-column drift when LLM copies x from another version',()=>{
   for(const rowLabel of ['Bagageiro de teto','Estribo Plataforma','Faróis de neblina em Led']){
    expect(()=>validateFordRangerXlsMatrix27({...input,cells:[{
-    ...cell,rowLabel,rawRowExcerpt:rowLabel,rawCell:'x',
+    ...cell,rowLabel,rawRowExcerpt:rowLabel,rawCell:'x',rowCells:['x','x','x','x','x'],
     value:null,availability:'STANDARD'
    }]})).toThrow('FORD_XLS_MATRIX_GOLDEN_ROW_MISMATCH');
   }
@@ -66,12 +66,12 @@ describe('Ford actual printed XLS 4WD matrix binding',()=>{
  it('recognizes verified Ford XLS anchor cells',()=>{
   expect(validateFordRangerXlsMatrix27({...input,cells:[{
    ...cell,rowLabel:'Bagageiro de teto',rawRowExcerpt:'Bagageiro de teto',
-   rawCell:'-',value:null,availability:'NOT_AVAILABLE'
+   rawCell:'-',rowCells:['-','-','-','-','x'],value:null,availability:'NOT_AVAILABLE'
   }]})[0]?.availability).toBe('NOT_AVAILABLE');
  });
  it('keeps unknown or ambiguous cells UNKNOWN',()=>{
   expect(validateFordRangerXlsMatrix27({...input,cells:[
-   {...cell,rawCell:'',value:null,availability:'UNKNOWN'}
+   {...cell,rawCell:'',rowCells:['','','','',''],value:null,availability:'UNKNOWN'}
   ]})[0]?.availability).toBe('UNKNOWN');
  });
 });
