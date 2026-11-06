@@ -1,9 +1,9 @@
 import {NextResponse} from 'next/server';
-import {requireRole} from '@/auth/authorization';
+import {requireFeatureIdentity23C} from '@/auth/account-tier-server';
 import {createPrivilegedAdminClient} from '@/auth/admin-client';
 
 export async function GET(){
- await requireRole('admin');
+ await requireFeatureIdentity23C('agents','write');
  const db=createPrivilegedAdminClient();
  const {data,error}=await db.from('specs')
   .select('id,code,display_pt,detail_pt,detail,type,unit')
