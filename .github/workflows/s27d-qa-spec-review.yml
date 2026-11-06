@@ -1,0 +1,23 @@
+name: S27D QA Spec Value Review
+on:
+  push:
+    branches:
+      - qa/s27d-spec-value-review-20261106
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: corepack enable && corepack prepare pnpm@10.34.5 --activate
+      - run: pnpm install --frozen-lockfile
+      - name: Typecheck QA Web
+        run: pnpm --filter @compra-car/web typecheck
+      - name: Review projection regression
+        run: pnpm --filter @compra-car/web exec vitest run src/application/admin/agent-review-projection.test.ts
