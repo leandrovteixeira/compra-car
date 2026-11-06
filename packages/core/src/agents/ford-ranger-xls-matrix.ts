@@ -53,6 +53,21 @@ export function validateFordRangerXlsMatrix27(input:{
     !['STANDARD','OPTIONAL','NOT_AVAILABLE','UNKNOWN'].includes(cell.availability))
     throw new Error('FORD_XLS_MATRIX_CELL_INVALID');
   seen.add(cell.ordinal);
+  // Golden row checks were visually verified against page 2 of the
+  // September 2026 manufacturer PDF. They are QA invariants for detecting
+  // spatial column drift in model-extracted table coordinates.
+  const golden:readonly [RegExp,'x'|'-'][]=[
+    [/^ajuste eletrico da altura dos farois$/u,'x'],
+    [/^bagageiro de teto$/u,'-'],
+    [/^degraus? de acesso a cacamba$/u,'x'],
+    [/^estribo plataforma$/u,'-'],
+    [/^farois de neblina em led$/u,'-']
+  ];
+  const row=folded(cell.rowLabel);
+  const expectedAnchor=golden.find(([pattern])=>pattern.test(row))?.[1];
+  const actualAnchor=['-','–','—'].includes(cell.rawCell.trim())?'-':cell.rawCell.trim().toLowerCase();
+  if(expectedAnchor&&actualAnchor!==expectedAnchor)
+    throw new Error('FORD_XLS_MATRIX_GOLDEN_ROW_MISMATCH');
   const raw=cell.rawCell.trim();
   const dash=['-','–','—'].includes(raw);
   const check=/^x$/iu.test(raw);
