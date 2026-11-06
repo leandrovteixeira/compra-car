@@ -51,7 +51,8 @@ export function suggestVocabularyMatches27(input:{
  const max=input.limit??5;
  if(!Number.isInteger(max)||max<1||max>20)throw Error('SPEC_HINT_LIMIT_INVALID');
  const separated=separateSpecConceptAndValue27(input.rawLabel??input.label);
- const name=normalizeAliasLabel(input.label);
+ const name=normalizeAliasLabel(separated.valueSource==='EMBEDDED_LABEL'
+   ?separated.specLabel:input.label);
  const effectiveUnit=normalizedUnit(input.unit??separated.observedUnit);
  const a=tokens(name);
  const candidates:VocabularyHint27[]=[];
