@@ -55,6 +55,20 @@ describe('Ford actual printed XLS 4WD matrix binding',()=>{
    availability:'OPTIONAL'
   }]})).toThrow('FORD_XLS_MATRIX_CELL_INVALID');
  });
+ it('catches third-column drift when LLM copies x from another version',()=>{
+  for(const rowLabel of ['Bagageiro de teto','Estribo Plataforma','Faróis de neblina em Led']){
+   expect(()=>validateFordRangerXlsMatrix27({...input,cells:[{
+    ...cell,rowLabel,rawRowExcerpt:rowLabel,rawCell:'x',
+    value:null,availability:'STANDARD'
+   }]})).toThrow('FORD_XLS_MATRIX_GOLDEN_ROW_MISMATCH');
+  }
+ });
+ it('recognizes verified Ford XLS anchor cells',()=>{
+  expect(validateFordRangerXlsMatrix27({...input,cells:[{
+   ...cell,rowLabel:'Bagageiro de teto',rawRowExcerpt:'Bagageiro de teto',
+   rawCell:'-',value:null,availability:'NOT_AVAILABLE'
+  }]})[0]?.availability).toBe('NOT_AVAILABLE');
+ });
  it('keeps unknown or ambiguous cells UNKNOWN',()=>{
   expect(validateFordRangerXlsMatrix27({...input,cells:[
    {...cell,rawCell:'',value:null,availability:'UNKNOWN'}
