@@ -13,7 +13,7 @@ export type SeparatedSpecClaim27=Readonly<{
 // Restricted to an explicitly dimensioned digital/colored instrument cluster.
 // Avoid generic stripping of voltages, capacities and powertrain identifiers:
 // a 12 V auxiliary battery is NOT equivalent to an HV traction battery.
-const cluster=/^(painel de instrumentos\s+(?:colorido|digital))(?:\s+de)?\s+(\d+(?:[.,]\d+)?)\s*(?:polegadas?|pol\.?|["“”″]|[’‘]{2}|'{2})\s*$/iu;
+const cluster=/^(painel de instrumentos\s+(?:colorido|digital))(?:\s+de)?\s+(\d+(?:[.,]\d+)?)\s*(?:polegadas?|pol\.?|["“”″]|[’‘]{2}|'{2})(?:\s+configur[aá]vel\s+atrav[eé]s\s+de\s+comandos\s+no\s+volante)?\s*$/iu;
 
 export function separateSpecConceptAndValue27(rawLabel:string):SeparatedSpecClaim27{
   if(typeof rawLabel!=='string'||!rawLabel.trim()||rawLabel.length>500)
