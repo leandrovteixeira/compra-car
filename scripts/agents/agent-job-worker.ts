@@ -17,6 +17,7 @@ import {auditFordXls2027SourceJob} from './ford-xls-2027-source-audit-job';
 import {stageFordRangerXlsMatrix27} from './ford-xls-matrix-staging-job';
 import {runFordXlsCoordinateProbe27} from './ford-xls-coordinate-probe';
 import {reconcileFordXls2027Qa27} from './ford-xls-source-fusion-job';
+import {previewFordXlsCanonicalReview27} from './ford-xls-quality-review-preview';
 import { monitorBrandSources } from './source-monitor';
 import { runMmvLaunchWatch } from './mmv-launch-watch';
 import { journalWorkerJob } from './engineering-worker-telemetry';
@@ -56,6 +57,8 @@ type JobRow = {
     vocabularyPdfUrl?: string;
     sourceAuditOnly?: boolean;
     sourceAuditProductId?: number;
+    xlsReviewPreviewOnly?: boolean;
+    xlsReviewFusionRunId?: string;
     xlsFusionOnly?: boolean;
     xlsFusionPdfRunId?: string;
     xlsCoordinateProbeOnly?: boolean;
@@ -180,6 +183,20 @@ async function execute(job: JobRow) {
   // extracted, verified and bound to the actual Ford MY and product.
   // Review proposals only; no product_specs or canonical dictionary mutations.
   if(job.job_type==='SPEC_INTELLIGENCE'){
+    if(job.input.xlsReviewPreviewOnly===true){
+      if(env.QA_SUPERVISED_SPEC_ENABLED!=='1'||job.market!=='BR'||
+        job.brand!=='Ford'||job.input.xlsMatrixProductId!==1236||
+        !job.input.xlsReviewFusionRunId)
+        throw new Error('FORD_S27D_REVIEW_QA_SCOPE_DENIED');
+      const result=await previewFordXlsCanonicalReview27({
+        db:client,jobId:job.id,createdAt:job.created_at,
+        productId:1236,fusionRunId:job.input.xlsReviewFusionRunId
+      });
+      await complete(job.id,result.runId);
+      await journal('SUCCESS',result.runId);
+      log('Ford XLS source quality canonical review preview: '+JSON.stringify(result));
+      return;
+    }
     if(job.input.xlsFusionOnly===true){
       if(env.QA_SUPERVISED_SPEC_ENABLED!=='1'||job.brand!=='Ford'||
          job.market!=='BR'||job.input.xlsMatrixProductId!==1236||
@@ -583,7 +600,11 @@ for (;;) {
       const fusionCode=job.input.xlsFusionOnly===true && error instanceof Error &&
         /^FORD_XLS_FUSION_[A-Z0-9_]{3,70}$/u.test(error.message)
         ?error.message:null;
-      const failureCode=budgetError??fipeCode??matrixCode??geometryCode??fusionCode??'AGENT_JOB_EXECUTION_FAILED';
+      const reviewPreviewCode=job.input.xlsReviewPreviewOnly===true &&
+        error instanceof Error &&
+        /^FORD_S27D_REVIEW_[A-Z0-9_]{3,70}$/u.test(error.message)
+          ?error.message:null;
+      const failureCode=budgetError??fipeCode??matrixCode??geometryCode??fusionCode??reviewPreviewCode??'AGENT_JOB_EXECUTION_FAILED';
       console.error('[agent-worker] execution failed', job.id,failureCode);
       try {
         await fail(job.id,failureCode);
