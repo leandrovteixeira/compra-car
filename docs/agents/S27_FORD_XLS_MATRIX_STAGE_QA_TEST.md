@@ -31,3 +31,20 @@
 
 ## Current restriction
 The staging job stores JSON source claims in its run summary. A future persistent source snapshot table and per-claim human approval flow should be completed before the first canonical product value is applied. Never turn a PDF catalogue date into model year.
+
+## QA follow-up — 2026-11-06: actual printed matrix geometry
+
+Inspected the original official Ford PDF page 2 visually. Printed columns are exactly:
+`XLS 4x4 | Black | XLS 4WD | XLT 4WD | Limited`.
+
+The 3.0 V6 Diesel/AT10 target is **the third printed column XLS 4WD**, not the first XLS 4x4. Ford uses `x` for present and dash for not available in the standard-equipment matrix. `Kit Opcional da versão Limited` is a separate section; it does not describe XLS equipment.
+
+- Original extraction run `40da158e-03e9-491f-9196-a73bbd2bcdcc`: 30 claims, **REJECTED_LEGEND_UNVERIFIED**, estimated USD 0.01614375, usage reconciled.
+- Second run `6b577da9-9fe1-4240-8edf-94cd97a70a48`: failed without persisted claims, estimated USD ~0.0045525, usage reconciled.
+- Third run `26e11da5-2e39-4267-91b9-ff2e5c38602c`: five claims, **REJECTED_COLUMN_DRIFT**; incorrectly transcribed `x` in XLS for several absent items. Estimated USD 0.00524325, pending reconciliation. No values applied.
+- Implemented exact printed header and V6/AT10 binding; added a deterministic five-column row evidence requirement, known row reference checks, safety refusal on mismatched cells, and automatic per-run reconciliation for subsequent XLS jobs.
+- At least the following original-PDF reference rows are used for alignment detection: `Ajuste elétrico da altura dos faróis`, `Bagageiro de teto`, `Degrau de acesso à caçamba`, `Estribo Plataforma`, `Faróis de neblina em Led`. The reference checks are limited to the exact Ford source, not generic brand-agnostic rules.
+- Latest worker QA deployment `325d0713-9385-4808-824e-247241c51070` **SUCCESS** with five-cell evidence contract. CI integration and typechecks passed.
+- A fourth execution request was blocked by platform tooling; **not queued**. Do not report any new extraction result. The product `1236` still has **zero** `product_specs`.
+
+Next gate: obtain actual *full five-cell row arrays* from source PDF, ensure `rawCell === rowCells[2]` and golden anchors match, then run PDF + HTML fusion into review-only proposals. Do not apply equipment or numeric values automatically.
