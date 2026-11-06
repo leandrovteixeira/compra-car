@@ -29,7 +29,7 @@ jobs:
       - name: Core generation tests
         run: pnpm --filter @compra-car/core exec vitest run test/generation-evidence-collector.test.ts test/mmv-generation-evidence.test.ts test/mmv-generation-change-classifier.test.ts test/mmv-generation-integration.test.ts test/spec-agent-supervised-candidates.test.ts test/spec-claim-value-separation.test.ts test/spec-vocabulary-hints.test.ts test/pbev-source-observations.test.ts test/ford-xls-my2027-source-audit.test.ts test/ford-xls-2027-source-fusion.test.ts test/ford-ranger-xls-matrix.test.ts
       - name: OpenAI generation adapter tests
-        run: pnpm --filter @compra-car/adapter-openai exec vitest run test/generation-vision-adapter.test.ts test/generation-assessment-provider.test.ts test/spec-pdf-extraction.test.ts
+        run: pnpm --filter @compra-car/adapter-openai exec vitest run test/generation-vision-adapter.test.ts test/generation-assessment-provider.test.ts test/spec-pdf-extraction.test.ts test/ford-ranger-xls-matrix-extraction.test.ts
       - name: Adapter typecheck
         run: pnpm --filter @compra-car/adapter-openai typecheck
       - name: Agents typecheck
