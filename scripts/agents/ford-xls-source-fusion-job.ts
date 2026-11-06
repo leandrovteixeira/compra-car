@@ -5,7 +5,7 @@ import {createHash} from 'node:crypto';
 import {createLegacySupabaseClient} from '@compra-car/adapter-supabase';
 import {FORD_XLS_2027_URL,auditFordXls2027VersionPage,
  extractFordXlsHtmlClaims27,normalizeFordPdfTechnicalClaim27,
- reconcileFordXls2027Sources,type FordSourceClaim27} from '@compra-car/core/agents';
+ reconcileFordXls2027Sources,gateFordXlsSourceQuality27,type FordSourceClaim27} from '@compra-car/core/agents';
 import {FORD_XLS_HTML_REVIEW_SNAPSHOT_27,FORD_XLS_HTML_SNAPSHOT_DATE_27} from './ford-xls-html-snapshot-2027';
 import type {FordXls2027SourceAssessment} from '@compra-car/core/agents';
 type Db=ReturnType<typeof createLegacySupabaseClient>;
@@ -106,9 +106,12 @@ export async function reconcileFordXls2027Qa27(input:{
   if(error instanceof Error&&error.message.startsWith('FORD_XLS_'))throw error;
   throw new Error('FORD_XLS_FUSION_PROPOSAL_RECONCILIATION_EXCEPTION');
  }
- const abstains=proposals.filter(p=>p.decision==='ABSTAIN');
- const corroborated=proposals.filter(p=>p.reason==='BOTH_OFFICIAL_SOURCES_CORROBORATE');
- if(proposals.length<pdfClaims.length||abstains.length<1)
+ // Source-authority verification is not proof of readable cell geometry.
+ // Build QA-only gated proposals, without altering the historical extraction.
+ const guardedProposals=gateFordXlsSourceQuality27(proposals);
+ const abstains=guardedProposals.filter(p=>p.decision==='ABSTAIN');
+ const corroborated=guardedProposals.filter(p=>p.quality==='CORROBORATED');
+ if(guardedProposals.length<pdfClaims.length||abstains.length<1)
   throw new Error('FORD_XLS_FUSION_EXPECTED_CONFLICT_MISSING');
  const {error:writeError}=await input.db.from('agent_runs').insert({
   id:input.jobId,agent_type:'SPEC_INTELLIGENCE',status:'COMPLETED',
@@ -121,7 +124,10 @@ export async function reconcileFordXls2027Qa27(input:{
   summary:{proposalCount:proposals.length,abstainCount:abstains.length,
    corroboratedCount:corroborated.length,htmlClaimCount:htmlClaims.length,
    conflicts:abstains.map(p=>({concept:p.concept,reason:p.reason,evidence:p.evidence})),
-   proposals,htmlEvidenceMode:mode,
+   proposals:guardedProposals,sourceQualityGate:'S27D_FORD_V1',
+   sourceAmbiguousCount:guardedProposals.filter(p=>p.quality==='SOURCE_AMBIGUOUS').length,
+   pdfOnlyUnverifiedCount:guardedProposals.filter(p=>p.quality==='PDF_ONLY_UNVERIFIED').length,
+   proposalsAwaitingHumanReview:true,htmlEvidenceMode:mode,
    htmlHashKind:mode==='LIVE_HTML'?'FULL_HTML_SHA256':'CURATED_EXCERPT_SHA256',
    priorAuditId,priorAuditHtmlSha256,reviewOnly:true,operatorApprovalRequired:true,
    noCatalogWrites:true,noProductSpecWrites:true,aiCalls:0,estimatedCostUsd:0},
