@@ -86,6 +86,11 @@ export function assessMmvEvidence(input: {
     if (crossPrimary && strongExtraction && !highRiskReasons.has(input.reasonCode)) readiness = 'HIGH';
     else if (crossPrimary && acceptableExtraction) readiness = 'MEDIUM';
     else if (strongExtraction && !highRiskReasons.has(input.reasonCode)) readiness = 'MEDIUM';
+    else if (acceptableExtraction && !highRiskReasons.has(input.reasonCode) &&
+      input.sources.some(source => source.kind === 'MANUFACTURER'))
+      // A manufacturer-backed explicit commercial variant is review-ready,
+      // even without independent FIPE corroboration. Never raise to HIGH.
+      readiness = 'MEDIUM';
   }
 
   return {

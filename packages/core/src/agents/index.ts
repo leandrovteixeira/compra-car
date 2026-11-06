@@ -95,3 +95,20 @@ export * from './spec-agent-atomic-commit';
 export * from './spec-agent-gwm-technical';
 export * from './spec-agent-gwm-equipment';
 export * from './spec-agent-ai-review';
+export * from './mmv-generation-change-classifier';
+export * from './mmv-generation-review';
+export * from './mmv-generation-evidence';
+export * from './generation-evidence-collector';
+export * from './spec-agent-supervised-candidates';
+export * from './spec-claim-value-separation';
+export * from './spec-vocabulary-hints';
+export * from './pbev-source-observations';
+export * from './ford-xls-my2027-source-audit';
+export * from './ford-xls-2027-source-fusion';
+export * from './ford-ranger-xls-matrix';
+
+export * from './ford-xls-my2027-html-evidence';
+
+export * from './ford-xls-source-quality-gate';
+
+export * from './spec-review-value-commit';

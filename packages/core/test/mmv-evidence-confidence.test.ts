@@ -63,6 +63,20 @@ describe('MMV evidence confidence', () => {
     })).toMatchObject({corroborationLevel:'SECONDARY_ONLY',readiness:'LOW'});
   });
 
+  it('recognizes explicit 0.80 manufacturer variants as MEDIUM review readiness, not HIGH',()=>{
+    expect(assessMmvEvidence({
+      reasonCode:'NEW_COMMERCIAL_VARIANT',
+      extractionConfidence:0.80,
+      sources:[{kind:'MANUFACTURER',sourceKey:'ford.com.br/compare-as-versoes/limited'}],
+    })).toMatchObject({readiness:'MEDIUM',automationEligible:false});
+    expect(assessMmvEvidence({
+      reasonCode:'NEW_COMMERCIAL_VARIANT',
+      extractionConfidence:0.80,
+      sources:[{kind:'MANUFACTURER',sourceKey:'ford.com.br/compare-as-versoes/xls'}],
+      warnings:['INSUFFICIENT_EVIDENCE'],
+    }).readiness).toBe('LOW');
+  });
+
   it('uses multiple manufacturer sources as same-kind corroboration but not HIGH', () => {
     expect(assessMmvEvidence({
       reasonCode:'NEW_MODEL',

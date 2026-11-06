@@ -12,6 +12,33 @@ function matchingModel(mmv:Mmv,label:string):boolean {
  const candidate=modelTokens(label);
  return official.length>0 && official.every(t=>candidate.includes(t));
 }
+/** Ranking is only a request-budget priority, never a canonical approval.
+ * Prefer exact commercial version evidence before scanning historical FIPE rows.
+ */
+export function fipeModelPriority(input:{model:string;version:string|null},label:string):number{
+ if(!matchingModel({id:'',brand:'',model:input.model,official_version_label:input.version},label))return -1;
+ const source=modelTokens(label);
+ const version=modelTokens(input.version??'');
+ const overlap=version.filter(token=>source.includes(token)).length;
+ const numeric=version.filter(token=>/^\\d+$/u.test(token)||/^v\\d+$/u.test(token));
+ const missingPowertrain=numeric.filter(token=>!source.includes(token)).length;
+ return overlap*3-missingPowertrain*10;
+}
+/** Exact token membership is order-independent; a FIPE string may reorder
+ * trim/engine/traction. Missing key engine facts never become a strong match.
+ */
+export function fipeVersionEvidence(version:string,label:string):{
+  strong:boolean;partial:boolean
+}{
+ const target=modelTokens(version),source=modelTokens(label);
+ const trim=target.filter(x=>/^[a-z]{2,5}$/u.test(x)&&
+   !['diesel','flex','turbo','at','mt'].includes(x));
+ const engine=target.filter(x=>/^\\d+$/u.test(x)||/^v\\d+$/u.test(x));
+ const engineMatches=engine.every(x=>source.includes(x));
+ const trimMatches=trim.every(x=>source.includes(x));
+ return {strong:engineMatches&&trimMatches&&target.every(x=>source.includes(x)),
+  partial:engineMatches&&trimMatches};
+}
 async function getJson(path:string,budget:CallBudget):Promise<unknown>{
  if(budget.count>=budget.max)throw new Error('FIPE_REQUEST_BUDGET_EXHAUSTED');
  budget.count++;
@@ -75,11 +102,25 @@ export async function runFipePilot(
  const brandPath='/cars/brands/'+encodeURIComponent(manufacturer.code);
  const models=items(await getJson(brandPath+'/models',budget));
  let candidateCount=0,valuationCount=0;
- for(const model of models){
+ const rankedModels=[...models].sort((a,b)=>
+   Math.max(...targets.map(t=>fipeModelPriority({model:t.model,version:t.official_version_label},b.name)))-
+   Math.max(...targets.map(t=>fipeModelPriority({model:t.model,version:t.official_version_label},a.name))));
+ for(const model of rankedModels){
    const relevant=targets.filter(t=>matchingModel(t,model.name));
    if(!relevant.length)continue;
    if(budget.count>=budget.max-2)break;
    const years=items(await getJson('/cars/brands/'+manufacturer.code+'/models/'+encodeURIComponent(model.code)+'/years',budget));
+   // Newest FIPE model years first; avoid spending the complete daily cap
+   // on historical data from 1998-2001 before reaching current MYs.
+   // FIPE yearCode 32000 means zero-km, not model year 32000.
+   // Keep it outside MY discovery and process documented MY years first.
+   years.sort((a,b)=>{
+     const year=(x:string)=>{
+       const n=Number.parseInt(x.slice(0,4),10);
+       return Number.isInteger(n)&&n>=1900&&n<=2100?n:0;
+     };
+     return year(b.code)-year(a.code);
+   });
    for(const year of years){
      if(budget.count>=budget.max)break;
      // Preserve the provider's distinct year/fuel identifier exactly.
@@ -87,7 +128,9 @@ export async function runFipePilot(
      const fipeCode=typeof detail.codeFipe==='string'?detail.codeFipe:'';
      const label=typeof detail.model==='string'?detail.model:model.name;
      if(!/^\d{6}-\d$/.test(fipeCode))continue;
-     const targetYear=Number(typeof detail.modelYear==='string'?detail.modelYear.match(/\d{4}/)?.[0]:detail.modelYear);
+     const targetYear=Number(typeof detail.modelYear==='string'?detail.modelYear.match(/\d{4,5}/)?.[0]:detail.modelYear);
+     // 32000 = FIPE zero-km sentinel, never a canonical MY.
+     if(!Number.isInteger(targetYear)||targetYear<1900||targetYear>2100)continue;
      const reference=typeof detail.referenceMonth==='string'?month(detail.referenceMonth):null;
      const amount=typeof detail.price==='string'?price(detail.price):null;
      // Matching is review-only: do not promote a tentative FIPE code to canonical.
@@ -95,11 +138,12 @@ export async function runFipePilot(
        const labelNorm=normalize(label), versionNorm=normalize(target.official_version_label||'');
        const h6Phev19=normalize(target.model)==='haval h6' &&
          versionNorm==='phev19' && /\\bh6 19\\b/.test(labelNorm);
-       if(versionNorm&&!labelNorm.includes(versionNorm)&&!h6Phev19)continue;
+       const evidence=fipeVersionEvidence(target.official_version_label||'',label);
+       if(versionNorm&&!evidence.partial&&!h6Phev19)continue;
        const {error:candidateError}=await db.from('agent_fipe_mapping_candidates').upsert({
          mmv_id:target.id,fipe_code:fipeCode,fipe_model_label:label,provider:'parallelum-v2',
          source_url:BASE+'/cars/brands/'+manufacturer.code+'/models/'+model.code+'/years/'+year.code,
-         match_confidence:versionNorm?0.78:0.55,
+         match_confidence:evidence.strong?0.78:0.55,
          evidence:{brandName:manufacturer.name,modelCode:model.code,modelLabel:model.name,yearCode:year.code,modelYear:targetYear},
        },{onConflict:'mmv_id,fipe_code,provider',ignoreDuplicates:true});
        if(candidateError)throw new Error('FIPE_CANDIDATE_PERSIST_FAILED');

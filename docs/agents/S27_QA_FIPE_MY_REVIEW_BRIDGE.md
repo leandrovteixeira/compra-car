@@ -1,0 +1,12 @@
+-- QA-only; applied to Compra Car Staging 2026-11-05.
+-- s27_qa_fipe_my_review_bridge
+-- Source: confirmed FIPE mapping and PENDING year candidates, by candidate id.
+-- Creates review-only PRODUCT_YEAR run and finding; does NOT create product or MY.
+-- On approval the existing s26_decide_model_year + apply_catalog_mmv_model_year
+-- perform validated, transactional canonical writes.
+-- Function is SECURITY INVOKER and executable only by service_role.
+-- Idempotency: one finding per fipeCandidateId.
+-- Staged test case: Ranger XLS 3.0 4x4 V6 FIPE 003500-9 MY2027
+-- candidate dc14ada2-bc92-4ccb-8e84-171b1424fb55
+-- finding fb8b4fc4-4202-4e02-9203-d099b0b893b9
+-- The full routine is stored in the Supabase migration history.

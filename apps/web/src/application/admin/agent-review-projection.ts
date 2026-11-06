@@ -261,8 +261,14 @@ export function buildReviewProjection(
           recommendation='Validar preço público';
         }
       }else if(r.agent_type==='SPEC_INTELLIGENCE'){
-        if(f.finding_type==='UNMATCHED_SPEC'||f.finding_type==='SPEC_CHANGE'){
-          kind=f.finding_type==='UNMATCHED_SPEC'?'SPEC_AMBIGUOUS':'SPEC_NEW';
+        if(f.finding_type==='SPEC_VALUE_REVIEW'){
+          const codes=obj(f.proposal)?.candidateCodes;
+          kind=Array.isArray(codes)&&codes.length===0?'SPEC_NEW':'SPEC_AMBIGUOUS';
+          businessKey=JSON.stringify(['SPEC_VALUE',f.id]);
+          discovery=value(obj(f.proposal)?.sourceLabel)||'Spec com valor corroborado';
+          recommendation='Canonicalizar e salvar valor na ficha técnica';
+        }else if(f.finding_type==='UNMATCHED_SPEC'||f.finding_type==='SPEC_CHANGE'){
+          kind=f.payload?.reasonCode==='SPEC_NEW'?'SPEC_NEW':f.payload?.reasonCode==='SPEC_AMBIGUOUS'?'SPEC_AMBIGUOUS':f.finding_type==='UNMATCHED_SPEC'?'SPEC_AMBIGUOUS':'SPEC_NEW';
           businessKey=JSON.stringify(['SPEC',baseKey,f.subject_key]);
           discovery=kind==='SPEC_AMBIGUOUS'?'Spec sem correspondência':'Nova especificação';
           recommendation='Criar ou reconciliar spec';

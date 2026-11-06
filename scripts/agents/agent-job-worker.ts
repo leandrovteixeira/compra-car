@@ -10,6 +10,14 @@ import { runMyLaunchBenchmark } from './my-launch-benchmark';
 import { runFipePilot } from './fipe-agent-pilot';
 import { runPriceCli } from './run-price';
 import { runOra5PriceProbe } from './price-ora5-direct-probe';
+import { runSupervisedFordSpecJob, type SupervisedSpecSourceSnapshot } from './spec-supervised-worker';
+import {runSupervisedFordPdfJob,type SupervisedFordPdfJob} from './ford-supervised-pdf-job';
+import {runFordSpecVocabularyJob} from './ford-spec-vocabulary-worker';
+import {auditFordXls2027SourceJob} from './ford-xls-2027-source-audit-job';
+import {stageFordRangerXlsMatrix27} from './ford-xls-matrix-staging-job';
+import {runFordXlsCoordinateProbe27} from './ford-xls-coordinate-probe';
+import {reconcileFordXls2027Qa27} from './ford-xls-source-fusion-job';
+import {previewFordXlsCanonicalReview27} from './ford-xls-quality-review-preview';
 import { monitorBrandSources } from './source-monitor';
 import { runMmvLaunchWatch } from './mmv-launch-watch';
 import { journalWorkerJob } from './engineering-worker-telemetry';
@@ -22,6 +30,7 @@ type JobRow = {
   market: string;
   brand: string;
   created_by?: string | null;
+  created_at: string;
   input: {
     provider?: string;
     persistFindings?: boolean;
@@ -42,6 +51,19 @@ type JobRow = {
     priceAuditOnly?: boolean;
     priceDirectProbe?: boolean;
     priceProbeModel?: 'ORA5' | 'WEY07';
+    supervisedSpecSnapshot?: SupervisedSpecSourceSnapshot;
+    supervisedPdfSource?: SupervisedFordPdfJob;
+    vocabularySourceRunId?: string;
+    vocabularyPdfUrl?: string;
+    sourceAuditOnly?: boolean;
+    sourceAuditProductId?: number;
+    xlsReviewPreviewOnly?: boolean;
+    xlsReviewFusionRunId?: string;
+    xlsFusionOnly?: boolean;
+    xlsFusionPdfRunId?: string;
+    xlsCoordinateProbeOnly?: boolean;
+    xlsMatrixStageOnly?: boolean;
+    xlsMatrixProductId?: number;
   };
 };
 
@@ -154,6 +176,157 @@ async function execute(job: JobRow) {
     },log);
     await complete(job.id,runId);
     await journal('SUCCESS',runId);
+    return;
+  }
+
+  // Explicitly supervised QA pilot only: source claims must already have been
+  // extracted, verified and bound to the actual Ford MY and product.
+  // Review proposals only; no product_specs or canonical dictionary mutations.
+  if(job.job_type==='SPEC_INTELLIGENCE'){
+    if(job.input.xlsReviewPreviewOnly===true){
+      if(env.QA_SUPERVISED_SPEC_ENABLED!=='1'||job.market!=='BR'||
+        job.brand!=='Ford'||job.input.xlsMatrixProductId!==1236||
+        !job.input.xlsReviewFusionRunId)
+        throw new Error('FORD_S27D_REVIEW_QA_SCOPE_DENIED');
+      const result=await previewFordXlsCanonicalReview27({
+        db:client,jobId:job.id,createdAt:job.created_at,
+        productId:1236,fusionRunId:job.input.xlsReviewFusionRunId
+      });
+      await complete(job.id,result.runId);
+      await journal('SUCCESS',result.runId);
+      log('Ford XLS source quality canonical review preview: '+JSON.stringify(result));
+      return;
+    }
+    if(job.input.xlsFusionOnly===true){
+      if(env.QA_SUPERVISED_SPEC_ENABLED!=='1'||job.brand!=='Ford'||
+         job.market!=='BR'||job.input.xlsMatrixProductId!==1236||
+         !job.input.xlsFusionPdfRunId)
+        throw new Error('FORD_XLS_FUSION_QA_SCOPE_DENIED');
+      const result=await reconcileFordXls2027Qa27({
+        db:client,jobId:job.id,createdAt:job.created_at,
+        productId:job.input.xlsMatrixProductId,
+        pdfRunId:job.input.xlsFusionPdfRunId
+      });
+      await complete(job.id,result.runId);
+      await journal('SUCCESS',result.runId);
+      log('Ford XLS MY2027 PDF/HTML review fusion: '+JSON.stringify(result));
+      return;
+    }
+    if(job.input.xlsCoordinateProbeOnly===true){
+      if(env.QA_SUPERVISED_SPEC_ENABLED!=='1'||job.brand!=='Ford'||
+         job.market!=='BR'||job.input.xlsMatrixProductId!==1236)
+        throw new Error('FORD_XLS_GEOMETRY_QA_SCOPE_DENIED');
+      const result=await runFordXlsCoordinateProbe27({
+        db:client,jobId:job.id,createdAt:job.created_at,
+        productId:job.input.xlsMatrixProductId
+      });
+      await complete(job.id,result.runId);
+      await journal('SUCCESS',result.runId);
+      log('Ford XLS zero-AI geometry: '+JSON.stringify(result));
+      return;
+    }
+    if(job.input.xlsMatrixStageOnly===true){
+      if(env.QA_SUPERVISED_SPEC_ENABLED!=='1'||job.brand!=='Ford'||
+        job.market!=='BR'||job.input.xlsMatrixProductId!==1236||
+        !env.OPENAI_SPEC_AGENT_API_KEY?.trim())
+        throw new Error('FORD_XLS_MATRIX_QA_SCOPE_DENIED');
+      const reservation=await reserveAgentPilotBudget(
+        client as unknown as AgentBudgetClient,job);
+      try{
+        const result=await stageFordRangerXlsMatrix27({
+          db:client,jobId:job.id,jobCreatedAt:job.created_at,
+          productId:job.input.xlsMatrixProductId,
+          apiKey:env.OPENAI_SPEC_AGENT_API_KEY
+        });
+        await complete(job.id,result.runId);
+        await journal('SUCCESS',result.runId);
+        log('Ford XLS exact-column matrix staged for review: '+JSON.stringify(result));
+      }finally{
+        await finishAgentPilotBudget(client as unknown as AgentBudgetClient,reservation);
+        // Reconcile metered usage even when the source quality gate refuses
+        // the run after an actual paid request. A rejected extraction is not
+        // equivalent to zero provider cost. Unknown stays reserved if the
+        // provider ledger is missing/inconsistent.
+        const {data:usage,error:usageError}=await client.from('agent_ai_usage_events')
+          .select('estimated_cost_usd,input_tokens,output_tokens,model')
+          .eq('job_id',job.id).eq('reason','FORD_XLS_COLUMN_MATRIX_EXTRACTION');
+        if(!usageError&&usage?.length===1){
+          const measured=Number(usage[0]?.estimated_cost_usd);
+          if(Number.isFinite(measured)&&measured>=0&&
+             measured<=reservation.reservedUsd&&
+             Number(usage[0]?.input_tokens)>0&&Number(usage[0]?.output_tokens)>=0&&
+             typeof usage[0]?.model==='string'&&usage[0].model.length>1){
+            const {error:reconcileError}=await client.rpc('agent_spend_reconcile',{
+              p_reservation_id:reservation.id,p_actual_usd:measured,
+              p_source:'PROVIDER_USAGE'
+            });
+            if(reconcileError)
+              console.error('[spec-budget] usage recorded; reconciliation pending',job.id);
+            else log('Spec XLS cost reconciled from token usage: USD '+measured.toFixed(6));
+          }
+        }
+      }
+      return;
+    }
+    if(job.input.sourceAuditOnly===true){
+      if(env.QA_SUPERVISED_SPEC_ENABLED!=='1'||job.brand!=='Ford'||
+         job.market!=='BR'||job.input.sourceAuditProductId!==1236)
+        throw new Error('FORD_XLS_AUDIT_QA_SCOPE_DENIED');
+      const result=await auditFordXls2027SourceJob({
+        db:client,runId:job.id,createdAt:job.created_at,
+        productId:job.input.sourceAuditProductId
+      });
+      await complete(job.id,result.runId);
+      await journal('SUCCESS',result.runId);
+      log('Ford XLS MY source audit only: '+JSON.stringify(result));
+      return;
+    }
+    const vocabulary=Boolean(job.input.vocabularySourceRunId && job.input.vocabularyPdfUrl);
+    const attested=Boolean(job.input.supervisedSpecSnapshot);
+    const pdf=Boolean(job.input.supervisedPdfSource);
+    if(env.QA_SUPERVISED_SPEC_ENABLED!=='1' ||
+       job.market!=='BR'||job.brand.toUpperCase()!=='FORD'||
+       Number(vocabulary)+Number(attested)+Number(pdf)!==1)
+      throw new Error('SPEC_SUPERVISED_DISABLED_OR_SOURCE_MISSING');
+    const paidSpec=vocabulary||pdf;
+    if(paidSpec&&!env.OPENAI_SPEC_AGENT_API_KEY?.trim())
+      throw new Error('SPEC_DEDICATED_KEY_REQUIRED');
+    const specReservation=paidSpec
+      ?await reserveAgentPilotBudget(client as unknown as AgentBudgetClient,job)
+      :null;
+    try{
+      if(vocabulary){
+        const r=await runFordSpecVocabularyJob({
+          jobId:job.id,jobCreatedAt:job.created_at,
+          market:job.market,brand:job.brand,db:client,
+          sourceRunId:job.input.vocabularySourceRunId!,
+          pdfUrl:job.input.vocabularyPdfUrl!,
+          apiKey:env.OPENAI_SPEC_AGENT_API_KEY!
+        });
+        await complete(job.id,r.runId);
+        await journal('SUCCESS',r.runId);
+        log('Spec vocabulary review-only: '+JSON.stringify(r));
+      }else{
+        const r=pdf
+          ?await runSupervisedFordPdfJob({
+            jobId:job.id,jobCreatedAt:job.created_at,
+            market:job.market,brand:job.brand,
+            source:job.input.supervisedPdfSource!,db:client,
+            apiKey:env.OPENAI_SPEC_AGENT_API_KEY!
+          })
+          :await runSupervisedFordSpecJob({
+            jobId:job.id,jobCreatedAt:job.created_at,
+            market:job.market,brand:job.brand,
+            snapshot:job.input.supervisedSpecSnapshot!,db:client
+          });
+        await complete(job.id,r.runId);
+        await journal('SUCCESS',r.runId);
+        log('Spec review-only: '+JSON.stringify(r));
+      }
+    }finally{
+      if(specReservation)
+        await finishAgentPilotBudget(client as unknown as AgentBudgetClient,specReservation);
+    }
     return;
   }
 
@@ -402,12 +575,41 @@ for (;;) {
           'COST_INVALID_SCOPE','COST_INVALID_RESERVATION',
           'COST_ADMISSION_FAILED'].includes(error.message)
           ? error.message : null;
-      console.error('[agent-worker] execution failed', job.id,
-        budgetError ?? 'AGENT_JOB_EXECUTION_FAILED');
+      // Preserve only allowlisted, non-sensitive FIPE failure codes so QA
+      // pilots can distinguish rate limit, HTTP, identity, mapping and DB
+      // failures. Never persist raw provider bodies or credentials.
+      const fipeCode = job.job_type==='FIPE_DISCOVERY' &&
+        error instanceof Error &&
+        /^FIPE_(?:[A-Z][A-Z0-9_]{2,80}|HTTP_[0-9]{3})$/u.test(error.message)
+        ? error.message : null;
+      // Persist only enumerated Ford matrix validation codes; never raw
+      // model/provider responses or secrets. Distinguish source extraction
+      // refusal from infrastructure failure in QA telemetry.
+      const matrixCode=job.job_type==='SPEC_INTELLIGENCE' &&
+        job.input.xlsMatrixStageOnly===true && error instanceof Error &&
+        /^FORD_XLS_MATRIX_(?:INVALID_RESULT|INVALID_JSON|INCOMPLETE|CELL_INVALID|COLUMN_IDENTITY_UNVERIFIED|AVAILABILITY_MISMATCH|GOLDEN_ROW_MISMATCH|ROW_EVIDENCE_MISSING|SOURCE_INVALID|PDF_INVALID|USAGE_MISSING|BUDGET_EXCEEDED|RUN_PERSIST_FAILED|TARGET_NOT_CANONICAL)$/u.test(error.message)
+        ?error.message:null;
+      const geometryCode=job.input.xlsCoordinateProbeOnly===true &&
+        error instanceof Error && [
+        'FORD_PDF_BBOX_PAGE_UNREADABLE','FORD_PDF_BBOX_DIMENSIONS_INVALID',
+        'FORD_PDF_BBOX_WORD_INVALID','FORD_PDF_BBOX_TOO_MANY_WORDS',
+        'FORD_PDF_BBOX_TEXT_MISSING','FORD_PDF_POPPLER_UNAVAILABLE',
+        'FORD_PDF_POPPLER_TIMEOUT','FORD_PDF_POPPLER_FAILED',
+        'FORD_XLS_GEOMETRY_RUN_PERSIST_FAILED','FORD_PDF_FETCH_FAILED'
+        ].includes(error.message)?error.message:null;
+      const fusionCode=job.input.xlsFusionOnly===true && error instanceof Error &&
+        /^FORD_XLS_FUSION_[A-Z0-9_]{3,70}$/u.test(error.message)
+        ?error.message:null;
+      const reviewPreviewCode=job.input.xlsReviewPreviewOnly===true &&
+        error instanceof Error &&
+        /^FORD_S27D_REVIEW_[A-Z0-9_]{3,70}$/u.test(error.message)
+          ?error.message:null;
+      const failureCode=budgetError??fipeCode??matrixCode??geometryCode??fusionCode??reviewPreviewCode??'AGENT_JOB_EXECUTION_FAILED';
+      console.error('[agent-worker] execution failed', job.id,failureCode);
       try {
-        await fail(job.id, budgetError ?? 'AGENT_JOB_EXECUTION_FAILED');
+        await fail(job.id,failureCode);
         try {await journalWorkerJob(client,{runId:job.id,jobType:job.job_type,brand:job.brand,
-          startedAtMs:Date.now(),status:'FAILED',failureCode:'AGENT_JOB_EXECUTION_FAILED'});}
+          startedAtMs:Date.now(),status:'FAILED',failureCode});}
         catch {console.error('[engineering] QA central failure logging unavailable',job.id);}
       } catch (failError) {
         console.error('[agent-worker] could not mark failed', job.id, failError);

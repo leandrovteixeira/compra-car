@@ -5,6 +5,7 @@ import { reviewMmvIdentityAction } from '@/app/admin/agents/identity-actions';
 import { reviewConnectorAction } from '@/app/admin/agents/connector-decisions';
 import { reviewModelYearAction } from '@/app/admin/agents/model-year-decisions';
 import { reviewFipeCandidateAction } from '@/app/admin/agents/fipe-decisions';
+import {SpecValueReviewControls} from './spec-value-review-controls';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { ReviewStatus } from '@compra-car/core/agent-platform';
 import type { ReviewInboxRow, ReviewSort, ReviewDirection } from '@/application/admin/agent-review-inbox';
@@ -106,11 +107,19 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
               informações comerciais ou preços próprios. A escolha exigirá confirmação do destino.
             </p>:null}
           <p className="mt-1 text-xs text-[#526670]">Confiança {percent(row.confidence)}{readiness?` · Evidência: ${readiness}`:''}</p>
-          <p className="mt-2 text-xs leading-5 text-[#526670]">
+          {row.findingType==='SPEC_VALUE_REVIEW'?<SpecValueReviewControls
+            findingId={detail.findingId}
+            fingerprint={row.snapshotFingerprint}
+            revision={row.caseVersion}
+            proposal={detail.proposal}
+            payload={detail.technicalPayload}
+            status={row.status}
+          />:null}
+          {row.findingType==='SPEC_VALUE_REVIEW'?null:<p className="mt-2 text-xs leading-5 text-[#526670]">
             {row.legacyAccepted
               ? 'Existe uma revisão ACCEPT legada. Ela não comprova alteração canônica.'
               : 'As ações gerais desta fila continuam em preparação. Connectors podem ser revisados no fluxo administrativo existente.'}
-          </p>
+          </p>}
           {row.caseKind==='MODEL_YEAR_NEW'?(
             <form action={yearAction} className="mt-3 flex flex-wrap gap-2"
               onClick={event=>event.stopPropagation()}>
@@ -141,7 +150,7 @@ function DetailContent({detail,row}:{readonly detail:FindingDetail;readonly row:
               <p className="w-full text-xs text-[#526670]">Aprovar ativa o Connector imediatamente, sem segunda confirmação.</p>
             </form>
           ):null}
-          {row.caseKind==='MMV_NEW' && typeof row.selectedIdentity?.identityKey==='string' ? (
+          {row.findingType==='SPEC_VALUE_REVIEW'?null:row.caseKind==='MMV_NEW' && typeof row.selectedIdentity?.identityKey==='string' ? (
             <form action={reviewAction} className="mt-3 flex flex-wrap gap-2"
               onClick={event=>event.stopPropagation()}>
               <input type="hidden" name="findingId" value={detail.findingId}/>
