@@ -105,3 +105,4 @@ export * from './spec-vocabulary-hints';
 export * from './pbev-source-observations';
 export * from './ford-xls-my2027-source-audit';
 export * from './ford-xls-2027-source-fusion';
+export * from './ford-ranger-xls-matrix';
