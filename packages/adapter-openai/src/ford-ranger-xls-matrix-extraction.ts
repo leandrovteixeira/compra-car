@@ -125,7 +125,7 @@ export async function extractFordRangerXlsMatrix27(input:{
  // Production extraction requires all spatial reference rows. Pure row-level
  // validation remains independently testable for individual negative cases.
  const fold=(s:string)=>s.normalize('NFKD')
-   .replace(/[\\u0300-\\u036f]/gu,'').toLowerCase().replace(/\\s+/gu,' ').trim();
+   .replace(/[\u0300-\u036f]/gu,'').toLowerCase().replace(/\s+/gu,' ').trim();
  const mandatoryAnchors=[
    /^ajuste eletrico da altura dos farois$/u,
    /^bagageiro de teto$/u,
