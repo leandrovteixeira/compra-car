@@ -21,6 +21,7 @@ import {previewFordXlsCanonicalReview27} from './ford-xls-quality-review-preview
 import { monitorBrandSources } from './source-monitor';
 import { runMmvLaunchWatch } from './mmv-launch-watch';
 import { journalWorkerJob } from './engineering-worker-telemetry';
+import { createJobClaimError } from './agent-job-claim-error';
 import { needsAgentBudget, reserveAgentPilotBudget, finishAgentPilotBudget, type AgentBudgetClient } from './agent-pilot-budget';
 
 type JobRow = {
@@ -86,7 +87,7 @@ const sleep = (ms: number) => new Promise((resolvePromise) => setTimeout(resolve
 
 async function claim(): Promise<JobRow | null> {
   const { data, error } = await client.rpc('claim_next_agent_job');
-  if (error) throw new Error('AGENT_JOB_CLAIM_FAILED');
+  if (error) throw createJobClaimError(error);
   const rows = Array.isArray(data) ? data : data ? [data] : [];
   return (rows[0] as JobRow | undefined) ?? null;
 }
